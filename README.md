@@ -22,8 +22,10 @@ Using an AI assistant interactively looks fast, but the loop is slow and it need
 whole time:
 
 ```mermaid
-%%{init: {"theme": "base", "flowchart": {"curve": "basis", "nodeSpacing": 40, "rankSpacing": 50}, "themeVariables": {"fontFamily": "Inter, system-ui, sans-serif", "fontSize": "15px", "lineColor": "#94a3b8", "clusterBkg": "#f8fafc", "clusterBorder": "#e2e8f0"}}}%%
+%%{init: {"theme": "base", "flowchart": {"curve": "basis", "nodeSpacing": 40, "rankSpacing": 50}, "themeVariables": {"fontFamily": "Inter, system-ui, sans-serif", "fontSize": "15px", "lineColor": "#64748b", "background": "#ffffff", "textColor": "#0f172a", "titleColor": "#0f172a", "edgeLabelBackground": "#ffffff", "clusterBkg": "#f8fafc", "clusterBorder": "#e2e8f0"}}}%%
 flowchart TB
+    subgraph ALL[" "]
+    direction TB
     subgraph BUILD["Build"]
         direction LR
         P1("Prompt") --> W1("Wait for AI to build")
@@ -48,6 +50,9 @@ flowchart TB
 
     BUILD -- "good enough" --> PR("Raise a PR")
     PR --> VERIFY
+
+    end
+    style ALL fill:#ffffff,stroke:#ffffff,color:#ffffff
 
     classDef human fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#7f1d1d
     classDef wait fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#78350f,stroke-dasharray:4 3
@@ -79,8 +84,10 @@ GitHub process: specs, issues, pull requests, CI and review. Every step leaves a
 anyone can read, review and re-run.
 
 ```mermaid
-%%{init: {"theme": "base", "flowchart": {"curve": "basis", "nodeSpacing": 40, "rankSpacing": 50}, "themeVariables": {"fontFamily": "Inter, system-ui, sans-serif", "fontSize": "15px", "lineColor": "#94a3b8", "clusterBkg": "#f8fafc", "clusterBorder": "#e2e8f0"}}}%%
+%%{init: {"theme": "base", "flowchart": {"curve": "basis", "nodeSpacing": 40, "rankSpacing": 50}, "themeVariables": {"fontFamily": "Inter, system-ui, sans-serif", "fontSize": "15px", "lineColor": "#64748b", "background": "#ffffff", "textColor": "#0f172a", "titleColor": "#0f172a", "edgeLabelBackground": "#ffffff", "clusterBkg": "#f8fafc", "clusterBorder": "#e2e8f0"}}}%%
 flowchart TB
+    subgraph ALL[" "]
+    direction TB
     subgraph PLAN["Plan"]
         direction LR
         S("Write the spec<br/><small>Human + Speckit</small>") --> M1("Merge the spec PR")
@@ -101,6 +108,9 @@ flowchart TB
 
     PLAN -- "tests pass locally" --> PR("Agent raises a PR")
     PR --> VERIFY
+
+    end
+    style ALL fill:#ffffff,stroke:#ffffff,color:#ffffff
 
     classDef human fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#7f1d1d
     classDef agent fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
