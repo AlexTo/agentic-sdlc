@@ -19,14 +19,14 @@ const UI = 'packages/common/shadcn/src/components/video-controls.tsx';
 describe('isUiSource', () => {
   it.each([
     UI,
-    'packages/websites/student-portal/src/routes/index.tsx',
-    'packages/websites/admin-portal/src/styles.css',
+    'packages/notes-website/src/routes/index.tsx',
+    'packages/notes-website/src/styles.css',
   ])('counts %s', (name) => expect(isUiSource(name)).toBe(true));
 
   it.each([
     'packages/common/shadcn/src/components/video-controls.test.tsx',
-    'packages/websites/student-portal/src/routeTree.gen.ts',
-    'packages/websites/student-portal/src/lib/course-display.ts',
+    'packages/notes-website/src/routeTree.gen.ts',
+    'packages/notes-website/src/lib/course-display.ts',
     'packages/common/web-utils/src/video-player.ts',
     'packages/apis/core-api/src/router.ts',
   ])('ignores %s', (name) => expect(isUiSource(name)).toBe(false));

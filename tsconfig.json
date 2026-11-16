@@ -20,6 +20,9 @@
     },
     {
       "path": "./packages/common/constructs"
+    },
+    {
+      "path": "./packages/e2e"
     }
   ]
 }

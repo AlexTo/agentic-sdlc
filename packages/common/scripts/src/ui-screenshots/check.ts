@@ -21,7 +21,7 @@ export interface ChangedFile {
 // What a user sees: a portal's or the shared components' markup and styles.
 // Not their tests, and not generated files.
 const UI_SOURCE =
-  /^packages\/(websites\/[^/]+|common\/shadcn)\/src\/.*\.(tsx|css)$/;
+  /^packages\/(notes-website|common\/shadcn)\/src\/.*\.(tsx|css)$/;
 const NOT_UI = /(\.test\.tsx?$|\.gen\.tsx?$|\.d\.ts$)/;
 const SCENARIO = /^packages\/e2e\/src\/scenarios\/.*\.e2e\.ts$/;
 // An added line that calls the helper.

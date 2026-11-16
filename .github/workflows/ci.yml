@@ -78,7 +78,7 @@ jobs:
 
       - name: Get the Playwright version
         id: playwright
-        run: echo "version=$(pnpm --filter @discava/e2e exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(pnpm --filter @agentic-sdlc/e2e exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
 
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: playwright-cache
@@ -89,7 +89,7 @@ jobs:
 
       - name: Download Chromium
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter @discava/e2e exec playwright install chromium
+        run: pnpm --filter @agentic-sdlc/e2e exec playwright install chromium
 
   trivy:
     name: Trivy
