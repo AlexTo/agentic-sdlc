@@ -57,6 +57,6 @@ jobs:
           set-nx-shas: false
 
       - name: Post the status
-        run: pnpm nx run @discava/common-scripts:agent-ci-status
+        run: pnpm nx run @agentic-sdlc/common-scripts:agent-ci-status
         env:
           GH_TOKEN: ${{ github.token }}

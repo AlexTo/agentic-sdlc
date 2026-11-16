@@ -76,7 +76,7 @@ jobs:
 
       - name: Validate every tasks.md
         if: steps.changed.outputs.run == 'true'
-        run: pnpm nx run @discava/common-scripts:validate-tasks
+        run: pnpm nx run @agentic-sdlc/common-scripts:validate-tasks
 
   # End-to-end tests (#3): Playwright drives the portals in Chromium against
   # the whole local stack, which it starts with `pnpm dev` (DynamoDB local,

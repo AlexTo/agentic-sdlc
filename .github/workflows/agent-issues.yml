@@ -66,7 +66,7 @@ jobs:
           set-nx-shas: false
 
       - name: Create the issue
-        run: pnpm nx run @discava/common-scripts:agent-issue
+        run: pnpm nx run @agentic-sdlc/common-scripts:agent-issue
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
