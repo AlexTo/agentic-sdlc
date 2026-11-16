@@ -42,6 +42,6 @@ jobs:
           set-nx-shas: false
 
       - name: Check the pull request
-        run: pnpm nx run @discava/common-scripts:ui-screenshots
+        run: pnpm nx run @agentic-sdlc/common-scripts:ui-screenshots
         env:
           GH_TOKEN: ${{ github.token }}
