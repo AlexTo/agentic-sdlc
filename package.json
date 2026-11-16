@@ -2,6 +2,7 @@
   "name": "@agentic-sdlc/source",
   "version": "0.0.0",
   "license": "MIT",
+  "packageManager": "pnpm@12.14.0",
   "scripts": {
     "dev": "nx run-many --target dev",
     "build": "nx run-many --target build",
