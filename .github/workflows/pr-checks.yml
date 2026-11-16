@@ -35,8 +35,12 @@ jobs:
         with:
           setup-uv: ${{ matrix.target == 'build' }}
 
+      # Lint and test only what the PR touches. Build everything, as CI does on
+      # main, so a change in packages/ can't break the docs (or another
+      # package) without failing here first. Nothing is published from a PR:
+      # only CI's Deploy Docs job on main publishes to GitHub Pages.
       - name: Run ${{ matrix.target }}
-        run: pnpm nx affected --target ${{ matrix.target }}
+        run: ${{ matrix.target == 'build' && 'pnpm nx run-many --target build --all' || format('pnpm nx affected --target {0}', matrix.target) }}
 
       - name: Upload coverage reports to Codecov
         if: matrix.target == 'test'
