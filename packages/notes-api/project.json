@@ -1,0 +1,97 @@
+{
+  "name": "@agentic-sdlc/notes-api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/notes-api/src",
+  "projectType": "library",
+  "tags": [],
+  "metadata": {
+    "generator": "ts#trpc-api",
+    "ports": [2022],
+    "apiName": "notes-api",
+    "apiType": "trpc",
+    "auth": "custom",
+    "infra": "none",
+    "integrationPattern": "isolated",
+    "components": [
+      {
+        "generator": "ts#dynamodb#trpc-connection",
+        "path": "packages/notes-table",
+        "name": "@agentic-sdlc/notes-table"
+      }
+    ]
+  },
+  "targets": {
+    "assemble": {
+      "dependsOn": ["compile"]
+    },
+    "build": {
+      "dependsOn": ["lint", "compile", "test"]
+    },
+    "compile": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}/tsc"],
+      "options": {
+        "command": "tsc --build tsconfig.lib.json",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        {
+          "projects": ["@agentic-sdlc/notes-table"],
+          "target": "dev"
+        }
+      ],
+      "continuous": true,
+      "options": {
+        "commands": ["tsx --watch src/local-server.ts"],
+        "cwd": "{projectRoot}",
+        "env": {
+          "LOCAL_DEV": "true"
+        }
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["biome"],
+      "options": {
+        "command": "biome format {projectRoot}"
+      },
+      "configurations": {
+        "fix": {
+          "command": "biome format --write {projectRoot}"
+        },
+        "skip-lint": {
+          "command": "node -e \"\""
+        }
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["biome"],
+      "dependsOn": ["format"],
+      "options": {
+        "command": "biome lint {projectRoot}"
+      },
+      "configurations": {
+        "fix": {
+          "command": "biome check --write {projectRoot}"
+        },
+        "skip-lint": {
+          "command": "node -e \"\""
+        }
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "commands": ["tsx --watch src/local-server.ts"],
+        "cwd": "{projectRoot}"
+      }
+    }
+  }
+}

@@ -1,0 +1,134 @@
+name: CI
+
+concurrency:
+  group: ci-${{ github.ref }}
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  CI: "true"
+  NX_DAEMON: "true"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    outputs:
+      latest_commit: ${{ steps.git_remote.outputs.latest_commit }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # infra:checkov (part of the build target) invokes checkov via `uvx`, so
+      # this job needs uv (init-monorepo's default).
+      - uses: ./.github/actions/init-monorepo
+
+      - name: Lint
+        run: pnpm nx run-many --target lint --all
+
+      - name: Test
+        run: pnpm nx run-many --target test --all
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Build
+        run: pnpm nx run-many --target build --all
+
+      - name: Check for mutations
+        run: git diff --ignore-space-at-eol --exit-code
+
+      - name: Check for new commits
+        id: git_remote
+        run: echo "latest_commit=$(git ls-remote origin -h ${{ github.ref }} | cut -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload docs artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: docs-artifact
+          path: docs/dist
+
+  # Separate from `build` so a newly published CVE (Trivy's database changes
+  # daily) flags main without blocking the docs deploy. deploy.yml runs the same
+  # scan as a gate before deploying.
+  # A PR's run can only restore caches saved on its own ref or on main, and the
+  # PR Checks workflow never runs on main, so the e2e job's Chromium cache would
+  # miss on every new PR. Saves it here, under the same key (keep both in step).
+  playwright-cache:
+    name: Playwright cache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/init-monorepo
+        with:
+          setup-uv: "false"
+          set-nx-shas: "false"
+
+      - name: Get the Playwright version
+        id: playwright
+        run: echo "version=$(pnpm --filter @discava/e2e exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: playwright-cache
+        name: Cache Chromium for Playwright
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Download Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter @discava/e2e exec playwright install chromium
+
+  trivy:
+    name: Trivy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/init-monorepo
+        with:
+          # `pnpm trivy` pulls the Trivy image from ECR Public.
+          aws-docker-login-role-arn: ${{ vars.AWS_DOCKER_LOGIN_ROLE_ARN }}
+          setup-uv: "false"
+          set-nx-shas: "false"
+
+      - name: Scan for vulnerabilities and secrets
+        run: pnpm trivy
+
+  deploy_docs:
+    name: Deploy Docs
+    runs-on: ubuntu-latest
+    needs: [build]
+    # Guards against a race where a newer commit landed on main and started
+    # its own run while this one was still building.
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.build.outputs.latest_commit == github.sha }}
+    steps:
+      - name: Download docs artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: docs-artifact
+          path: docs-site
+
+      - name: Setup Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: "docs-site"
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

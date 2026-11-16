@@ -1,0 +1,55 @@
+/// <reference types='vitest' />
+import tailwindcss from '@tailwindcss/vite';
+import { tanstackRouter } from '@tanstack/router-plugin/vite';
+import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
+import { defineConfig } from 'vite';
+
+export default defineConfig(() => ({
+  root: import.meta.dirname,
+  cacheDir: '../../node_modules/.vite/packages/notes-website',
+  server: {
+    port: 4200,
+    host: 'localhost',
+  },
+  preview: {
+    port: 4300,
+    host: 'localhost',
+  },
+  plugins: [
+    tanstackRouter({
+      routesDirectory: resolve(import.meta.dirname, 'src/routes'),
+      generatedRouteTree: resolve(import.meta.dirname, 'src/routeTree.gen.ts'),
+    }),
+    react(),
+    tailwindcss(),
+  ],
+  // Uncomment this if you are using workers.
+  // worker: {
+  //  plugins: [],
+  // },
+  build: {
+    outDir: '../../dist/packages/notes-website/bundle',
+    emptyOutDir: true,
+    reportCompressedSize: true,
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
+  },
+  test: {
+    passWithNoTests: true,
+    name: '@agentic-sdlc/notes-website',
+    watch: false,
+    globals: true,
+    environment: 'jsdom',
+    include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    reporters: ['default'],
+    coverage: {
+      reportsDirectory:
+        '../../dist/packages/notes-website/test-output/vitest/coverage',
+      provider: 'v8' as const,
+    },
+  },
+  resolve: { tsconfigPaths: true, dedupe: ['react', 'react-dom'] },
+  define: { global: {} },
+}));

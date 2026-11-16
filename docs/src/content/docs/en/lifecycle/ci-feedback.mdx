@@ -1,0 +1,14 @@
+---
+title: CI feedback
+description: How failing checks send the agent back to fix its work.
+---
+
+When the PR Checks workflow fails on an agent's branch, the **Agent CI Status** workflow posts a
+failure commit status that the automation reads, sending the agent back to revise the same pull
+request in its original conversation.
+
+- At most **three** fix attempts per PR, tracked with `ci-fix-1` to `ci-fix-3` labels.
+- After that the workflow comments and stops (`ci-fix-exhausted`) and a human takes over.
+- A passing run posts nothing.
+
+Bounding retries keeps cost predictable and makes sure a stuck agent escalates to a person.

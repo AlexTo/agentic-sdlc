@@ -1,0 +1,39 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [
+    ".astro/types.d.ts",
+    "**/*"
+  ],
+  "exclude": [
+    "dist"
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@components/*": [
+        "src/components/*"
+      ],
+      "@assets/*": [
+        "src/content/docs/assets/*"
+      ],
+      "@agentic-sdlc/notes-table": [
+        "../packages/notes-table/src/index.ts"
+      ],
+      "@agentic-sdlc/common-scripts": [
+        "../packages/common/scripts/src/index.ts"
+      ],
+      "@agentic-sdlc/notes-api": [
+        "../packages/notes-api/src/index.ts"
+      ],
+      "@agentic-sdlc/notes-website": [
+        "../packages/notes-website/src/index.ts"
+      ],
+      "@agentic-sdlc/common-shadcn": [
+        "../packages/common/shadcn/src/index.ts"
+      ],
+      "@agentic-sdlc/common-constructs": [
+        "../packages/common/constructs/src/index.ts"
+      ]
+    }
+  }
+}

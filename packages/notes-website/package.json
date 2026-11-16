@@ -1,0 +1,23 @@
+{
+  "name": "@agentic-sdlc/notes-website",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@agentic-sdlc/common-shadcn": "workspace:*",
+    "@agentic-sdlc/notes-api": "workspace:*",
+    "@tanstack/react-query": "catalog:",
+    "@tanstack/react-query-devtools": "catalog:",
+    "@tanstack/react-router": "catalog:",
+    "@trpc/client": "catalog:",
+    "@trpc/tanstack-react-query": "catalog:",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwindcss": "catalog:"
+  },
+  "devDependencies": {
+    "@smithy/types": "catalog:",
+    "@types/node": "catalog:"
+  }
+}

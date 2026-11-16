@@ -1,0 +1,29 @@
+---
+title: Agentic SDLC
+description: A worked example of an AI-agent-driven software development lifecycle.
+template: splash
+hero:
+  title: Agentic SDLC
+  tagline: What a software lifecycle looks like when agents write the code and humans steer. Illustrated by Discava.
+  actions:
+    - text: Read the overview
+      link: /en/guides/overview
+      icon: right-arrow
+---
+
+import { CardGrid, Card } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <Card title="Spec first" icon="pencil">
+    Work starts as a written spec, plan and task list, reviewed by a human before any code exists.
+  </Card>
+  <Card title="Issue to PR" icon="rocket">
+    Merged specs open implementation issues; an agent picks each up and opens a pull request.
+  </Card>
+  <Card title="CI feedback loop" icon="approve-check">
+    Failing checks send the agent back to fix its own pull request, with bounded retries.
+  </Card>
+  <Card title="Human gates" icon="information">
+    People approve specs, review pull requests and decide when to deploy.
+  </Card>
+</CardGrid>

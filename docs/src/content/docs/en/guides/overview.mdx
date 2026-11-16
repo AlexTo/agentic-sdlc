@@ -1,0 +1,40 @@
+---
+title: Overview
+description: What this repository documents and how it relates to Discava.
+---
+
+This repository illustrates the **Agentic SDLC** adopted in
+[Discava](https://github.com/AlexTo/discava), a serverless, AWS-native Learning
+Management System built with AI agents from the start.
+
+It documents the practices, not the product: how work is specified, handed to agents,
+verified and shipped.
+
+## The loop at a glance
+
+```d2
+direction: right
+spec: Spec\n(spec, plan, tasks)
+review: Human review
+issue: Implementation issue
+agent: Agent opens PR
+ci: CI checks
+merge: Merge to main
+deploy: Deploy
+
+spec -> review: spec PR
+review -> issue: merged + labelled spec-ready
+issue -> agent
+agent -> ci
+ci -> agent: failure (max 3 retries)
+ci -> merge: pass + human review
+merge -> issue: next task
+merge -> deploy
+```
+
+## Where to go next
+
+- [Getting started](getting-started/) to run this site locally.
+- [Specs](../lifecycle/specs/) for how work is defined.
+- [Issue to PR](../lifecycle/issue-to-pr/) for how agents implement it.
+- [CI feedback](../lifecycle/ci-feedback/) for how failures are handled.

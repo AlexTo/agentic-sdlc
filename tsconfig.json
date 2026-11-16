@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/notes-table"
+    },
+    {
+      "path": "./packages/common/scripts"
+    },
+    {
+      "path": "./packages/notes-api"
+    },
+    {
+      "path": "./packages/notes-website"
+    },
+    {
+      "path": "./packages/common/shadcn"
+    },
+    {
+      "path": "./packages/common/constructs"
+    }
+  ]
+}
