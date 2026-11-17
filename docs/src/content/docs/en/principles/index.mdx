@@ -1,0 +1,59 @@
+---
+title: The principles
+description: The few ideas the whole workflow is built from.
+sidebar:
+  order: 1
+---
+
+Everything in this workflow follows from one move: **take the developer out of the loop and put
+them at its two ends.** Humans decide *what* to build and *whether it is good*. Agents do
+everything in between, through the normal GitHub process.
+
+## 1. The spec is the source of truth
+
+A feature starts as `spec.md`, `plan.md` and `tasks.md`, reviewed like code. The agent generates
+the code from them. To change behaviour you change the spec and regenerate; you don't patch the
+code by hand and let the spec go stale.
+
+## 2. Every step leaves an artifact
+
+Intent lives in the spec, scope in the issue, history in the pull request. Nothing lives in a chat
+window or someone's head, so a new teammate or a new agent can pick up where the last one stopped.
+
+## 3. Small, scoped units of work
+
+A spec splits into phases. Each phase is one issue and one pull request, with a task range the
+agent must not leave. Small PRs are cheap to review and cheap to throw away.
+
+## 4. Automated gates give the feedback, not you
+
+Lint, typecheck, unit tests, invariants, e2e tests, concurrency tests, screenshots and an agent
+reviewer all run on every PR. A red result goes straight back to the agent that wrote the change.
+Nobody pastes an error message.
+
+## 5. Bounded autonomy
+
+The agent can't merge, can't edit workflows, can't touch credentials and can't weaken a test to get
+green. Each fix-up loop is capped at three attempts; then it stops and asks a human.
+
+## 6. Humans keep the two decisions that matter
+
+1. **Approve the spec.** Merging the spec PR (labelled `spec-ready`) is the go signal.
+2. **Approve the result.** A person does the final review and merges each PR.
+
+## 7. Docs are part of the change, not an afterthought
+
+A feature isn't done until the docs describe it. Documentation is a task in `tasks.md`, done by the
+agent in the same chain of PRs, and checked by the same gates.
+
+## How the principles map to the loop
+
+| Principle | Where you see it |
+| --- | --- |
+| Spec as source of truth | [Write the spec](../tutorial/write-the-spec/), [Plan and tasks](../tutorial/plan-and-tasks/) |
+| Artifacts for every step | [Approve the spec](../tutorial/approve-the-spec/), [Agent implements](../tutorial/agent-implements/) |
+| Small units | [Agent implements](../tutorial/agent-implements/), [Merge and repeat](../tutorial/merge-and-repeat/) |
+| Automated gates | [CI and agent review](../tutorial/ci-and-agent-review/) |
+| Bounded autonomy | [CI and agent review](../tutorial/ci-and-agent-review/) |
+| Human decisions | [Approve the spec](../tutorial/approve-the-spec/), [Merge and repeat](../tutorial/merge-and-repeat/) |
+| Docs in the change | [Update the docs](../tutorial/update-the-docs/) |

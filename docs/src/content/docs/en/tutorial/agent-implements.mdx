@@ -1,0 +1,47 @@
+---
+title: 4. The agent implements
+description: OpenHands picks up the issue and opens a PR, tests first.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**You are here:** agent, unattended. **Output:** a pull request for phase 1 on an `openhands/...` branch.
+
+Within about 15 minutes OpenHands polls for issues labelled `openhands` and picks up the issue.
+You do nothing. This is what it does, and what you can check on the PR afterwards.
+
+## What the agent does
+
+1. Reads `CLAUDE.md`, the constitution, and the spec folder.
+2. Writes the tests for the phase first: the tag rules from the spec, as unit tests.
+3. Implements until they pass, ticking each task in `tasks.md` in the same commit that completes it.
+4. Runs lint, typecheck, build and unit tests on what it changed, once, not in watch mode.
+5. Opens a PR titled as a Conventional Commit, for example
+   `feat(notes): add tags to notes in the data and API layers`, with `Refs #<parent>` in the body.
+6. Lists the **(human)** tasks it skipped.
+
+## What it is told not to do
+
+The issue template spells the limits out, and the workflows enforce the important ones:
+
+- Never work outside the task range.
+- Never weaken a test to make it pass.
+- Never edit `.github/workflows/`, never merge, never touch credentials.
+- If it's blocked, comment on the issue and stop. It does not guess.
+
+## What you check
+
+Open the PR and read it from the top:
+
+- Does the title and body tell you what changed and which tasks are done?
+- Are the tests testing the *spec's* rules, or the implementation's quirks?
+- Is `tasks.md` ticked for exactly this phase and no more?
+
+<Aside type="tip">
+You don't have to review yet. CI and the agent reviewer go first, and the PR only reaches you once
+they are happy. See the next step.
+</Aside>
+
+Next: [CI and agent review](../ci-and-agent-review/).
