@@ -160,6 +160,9 @@ walkthrough of how to set each one up:
 | `tasks.md` is only a convention, so a malformed one stalls the pipeline silently | A PR check validates its format |
 | UI changes reach review without anyone seeing them | A check requires e2e screenshots, posted on the PR |
 | Merging the agent's PR doesn't start the next phase | The merge opens the next issue until the spec is done |
+| The agent can't run the real stack without cloud access | Local emulators for every service (database, queue, storage, search, login), so it runs the e2e tests before opening a PR, with no credentials |
+| Merging doesn't ship anything | A green build on `main` deploys by itself, skips a commit that is no longer the latest, and production waits for a human approval |
+| An agent can commit a leaked secret or a vulnerable dependency | A security scan runs on every build, and again before each deploy |
 
 Wire these together and you get the end-to-end loop above.
 
@@ -203,6 +206,7 @@ back to the agent to fix, with no human in between.
 | | Concurrency tests | Race conditions when requests hit at the same moment |
 | **Static analysis** | Lint, typecheck, build | Style, type and build errors |
 | | Tasks format check | A malformed `tasks.md` that would silently stall the pipeline |
+| | Generated files check | Lint or build output the agent forgot to commit |
 | **Verification** | End-to-end tests | Broken user flows, run in a real browser against the local stack |
 | | Screenshots | UI changes nobody has looked at, required on the PR |
 | **Prose** | Rules, skills, `AGENTS.md` | Guidance the agent reads before it writes code, so conventions are followed instead of caught later |
