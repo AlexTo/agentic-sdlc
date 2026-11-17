@@ -52,3 +52,5 @@ vitest.config.*.timestamp*
 
 vite.config.*.timestamp*
 runtime-config.json
+# Astro generated types and content cache (rebuilt by astro dev/build/sync)
+docs/.astro/
