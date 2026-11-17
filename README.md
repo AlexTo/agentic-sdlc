@@ -148,7 +148,8 @@ OpenHands and Speckit solve different problems, and neither knows about the othe
 - **Speckit** turns an idea into a spec, a plan and a task list.
 - **OpenHands** turns an issue into a pull request, and revises it when told something is wrong.
 
-Between them sit the steps nobody gives you. This repo is those steps, built and tested, with a walkthrough of how to set each one up:
+Between them sit the steps nobody gives you. This repo is those steps, built and tested, with a
+walkthrough of how to set each one up:
 
 | The gap | The glue here |
 | --- | --- |
@@ -167,12 +168,10 @@ Wire these together and you get the end-to-end loop above.
 - ⚡ **Parallel, not serial.** Developers no longer babysit a conversation each. Specs split into
   phases, phases run as a chain of small PRs, and several features can be in flight at once while
   people do other work.
-- 📜 **The spec is the source of truth, not a guideline.** The spec says what to build and why. The plan
-  and tasks derive from it, and the agent generates the code from them. To change behaviour, change the
-  spec and regenerate, don't patch the code by hand. A spec that is only a guideline goes stale; here it is
-  what everything else is built from.
-- 📝 **Specs replace prompts.** The spec is written once, reviewed like code, and every agent run reads
-  the same thing. Quality doesn't depend on who phrased the prompt.
+- 📜 **The spec is the source of truth, not a prompt.** It says what to build and why, is reviewed like
+  code, and every agent run reads the same thing, so quality doesn't depend on who phrased the prompt.
+  The plan, tasks and code all derive from it: to change behaviour, change the spec and regenerate
+  instead of patching the code by hand.
 - 🔍 **Review stays small and focused.** One phase per PR, a scoped task range, screenshots instead of
   "pull the branch and run it". Reviewers judge outcomes instead of hunting for them.
 - 🧠 **Nothing lives in someone's head.** Intent is in the spec, scope is in the issue, history is in
@@ -188,12 +187,10 @@ Wire these together and you get the end-to-end loop above.
 
 ## 🛡️ Automation you can trust
 
-We maximise automation, backed by a number of principles that make sure the agent does the right thing.
-Every change meets layers of tests that surface mistakes. When one fails, the failure goes straight back
-to the agent to fix, with no human in between.
-
-Each layer narrows what reaches the next one. Cheap, automatic checks run first and catch the
-most. Only what they can't judge reaches a person.
+Automation is only worth it if you can trust what comes out. Every change passes through layers of
+checks, and each layer narrows what reaches the next: cheap, automatic checks run first and catch the
+most, and only what they can't judge reaches a person. When a check fails, the failure goes straight
+back to the agent to fix, with no human in between.
 
 <p align="center">
   <img alt="Inverted triangle of five layers, widest to narrowest: Codebase, Static analysis, Verification, Prose, Human review" src="docs/public/diagrams/automation-trust.svg" width="720">
@@ -213,14 +210,12 @@ most. Only what they can't judge reaches a person.
 | **Human review** | Final review | Whatever the layers above can't judge; a person always merges |
 
 A red result sends the agent back to fix the same PR, up to **3 times**. After that it stops and
-asks a human. A person always makes the final review, and the agent can't merge, edit workflows or
-weaken a test to get green.
+asks a human.
 
 ## 🧰 What's in this repo
 
 This is a small, working notes app (DynamoDB, tRPC API, React website, Playwright e2e) wrapped in
-the complete pipeline, so you can see the workflow end to end rather than read about it. It is the
-workflow used in [Discava](https://github.com/AlexTo/discava), extracted as a reference.
+the complete pipeline, so you can see the workflow end to end rather than read about it.
 
 | Piece | Where |
 | --- | --- |
@@ -234,4 +229,6 @@ workflow used in [Discava](https://github.com/AlexTo/discava), extracted as a re
 
 ## 📚 Learn more
 
-See [`docs/`](docs): specs, issue to PR, CI feedback, and human gates.
+Read the full guide at **[alexto.github.io/agentic-sdlc](https://alexto.github.io/agentic-sdlc/)**:
+the principles behind the workflow, the lifecycle from spec to merge, and a step-by-step tutorial.
+Its source is in [`docs/`](docs).
