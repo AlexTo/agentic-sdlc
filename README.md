@@ -1,6 +1,6 @@
 <div align="center">
   <h1>🤖 Agentic SDLC</h1>
-  <h3>Stop babysitting the AI. Write the spec, review the PR, let agents do the loop in between.</h3>
+  <h3>Stop babysitting the AI. Build an environment you can trust, write the spec, review the PR, and let agents do the rest.</h3>
   <p>
     <img alt="OpenHands" src="https://img.shields.io/badge/agent-OpenHands-22c55e?style=for-the-badge&logo=robotframework&logoColor=white">
     <img alt="Speckit" src="https://img.shields.io/badge/specs-Speckit-6366f1?style=for-the-badge&logo=readthedocs&logoColor=white">
@@ -14,7 +14,8 @@
 
 This repo guides you step by step through setting up an agentic software lifecycle with
 [OpenHands](https://github.com/OpenHands/OpenHands), [Speckit](https://github.com/github/spec-kit) and
-opinionated GitHub Actions automation, with a working example you can run.
+opinionated GitHub Actions automation, with a working example you can run. It is the same workflow
+used in practice to build [Discava](https://github.com/AlexTo/discava).
 
 ## 🐌 The problem: the prompt-wait-fix loop
 
@@ -176,11 +177,14 @@ Wire these together and you get the end-to-end loop above.
   "pull the branch and run it". Reviewers judge outcomes instead of hunting for them.
 - 🧠 **Nothing lives in someone's head.** Intent is in the spec, scope is in the issue, history is in
   the PR. A new teammate or a new agent can pick up where the last one stopped.
+- ✅ **Trust is built into the environment.** Rules, tests and checks are layered
+  ([below](#️-automation-you-can-trust)), so mistakes surface and go back to the agent without a
+  person reading every line. Time spent on that environment pays off on every change after it.
 - 🛡️ **Humans stay in control where it matters.** Agents can't merge, can't edit workflows, can't touch
   credentials, and can't weaken a test to make it pass. Retries are capped, so a stuck agent
   escalates instead of looping.
-- 🎯 **Senior time goes to judgment.** Writing a good spec and reviewing a PR are the high-leverage
-  jobs. The typing and the waiting in between are delegated.
+- 🎯 **Senior time goes to judgment.** Writing a good spec, building the environment agents are checked
+  by, and reviewing a PR are the high-leverage jobs. The typing and the waiting in between are delegated.
 
 ## 🛡️ Automation you can trust
 
@@ -188,16 +192,25 @@ We maximise automation, backed by a number of principles that make sure the agen
 Every change meets layers of tests that surface mistakes. When one fails, the failure goes straight back
 to the agent to fix, with no human in between.
 
-| Layer | What it catches |
-| --- | --- |
-| **Lint, typecheck, build** | Style, type and build errors |
-| **Unit tests** | Wrong business logic and broken rules |
-| **Invariants** | Data that breaks a rule spanning records, checked after every e2e test |
-| **End-to-end tests** | Broken user flows, run in a real browser against the local stack |
-| **Concurrency tests** | Race conditions when requests hit at the same moment |
-| **Screenshots** | UI changes nobody has looked at, required on the PR |
-| **Tasks format check** | A malformed `tasks.md` that would silently stall the pipeline |
-| **Agent reviewer** | Problems the tests don't cover, read like a code review |
+Each layer narrows what reaches the next one. Cheap, automatic checks run first and catch the
+most. Only what they can't judge reaches a person.
+
+<p align="center">
+  <img alt="Inverted triangle of five layers, widest to narrowest: Codebase, Static analysis, Verification, Prose, Human review" src="docs/public/diagrams/automation-trust.svg" width="720">
+</p>
+
+| Level | Layer | What it catches |
+| --- | --- | --- |
+| **Codebase** | Unit tests | Wrong business logic and broken rules |
+| | Invariants | Data that breaks a rule spanning records, checked after every e2e test |
+| | Concurrency tests | Race conditions when requests hit at the same moment |
+| **Static analysis** | Lint, typecheck, build | Style, type and build errors |
+| | Tasks format check | A malformed `tasks.md` that would silently stall the pipeline |
+| **Verification** | End-to-end tests | Broken user flows, run in a real browser against the local stack |
+| | Screenshots | UI changes nobody has looked at, required on the PR |
+| **Prose** | Rules, skills, `AGENTS.md` | Guidance the agent reads before it writes code, so conventions are followed instead of caught later |
+| | Agent reviewer | Problems the tests don't cover, read like a code review |
+| **Human review** | Final review | Whatever the layers above can't judge; a person always merges |
 
 A red result sends the agent back to fix the same PR, up to **3 times**. After that it stops and
 asks a human. A person always makes the final review, and the agent can't merge, edit workflows or
