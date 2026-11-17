@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 444" font-family="Inter, system-ui, sans-serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<polygon points="20.0,20 740.0,20 694.9,96 65.1,96" fill="#e0e7ff" stroke="#6366f1" stroke-width="2" stroke-linejoin="round"/>
+<text x="380.0" y="52.0" text-anchor="middle" font-size="17" font-weight="700" fill="#312e81">Codebase</text>
+<text x="380.0" y="74.0" text-anchor="middle" font-size="13" fill="#312e81">Unit tests · Invariants · Concurrency tests</text>
+<polygon points="68.7,102 691.3,102 646.1,178 113.9,178" fill="#dbeafe" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>
+<text x="380.0" y="134.0" text-anchor="middle" font-size="17" font-weight="700" fill="#1e3a8a">Static analysis</text>
+<text x="380.0" y="156.0" text-anchor="middle" font-size="13" fill="#1e3a8a">Lint, typecheck, build · Tasks format check</text>
+<polygon points="117.4,184 642.6,184 597.4,260 162.6,260" fill="#dcfce7" stroke="#22c55e" stroke-width="2" stroke-linejoin="round"/>
+<text x="380.0" y="216.0" text-anchor="middle" font-size="17" font-weight="700" fill="#14532d">Verification</text>
+<text x="380.0" y="238.0" text-anchor="middle" font-size="13" fill="#14532d">End-to-end tests · Screenshots</text>
+<polygon points="166.1,266 593.9,266 548.7,342 211.3,342" fill="#fef3c7" stroke="#f59e0b" stroke-width="2" stroke-linejoin="round"/>
+<text x="380.0" y="298.0" text-anchor="middle" font-size="17" font-weight="700" fill="#78350f">Prose</text>
+<text x="380.0" y="320.0" text-anchor="middle" font-size="13" fill="#78350f">Rules · Skills · AGENTS.md · Agent reviewer</text>
+<polygon points="214.9,348 545.1,348 500.0,424 260.0,424" fill="#fee2e2" stroke="#ef4444" stroke-width="2" stroke-linejoin="round"/>
+<text x="380.0" y="380.0" text-anchor="middle" font-size="17" font-weight="700" fill="#7f1d1d">Human review</text>
+<text x="380.0" y="402.0" text-anchor="middle" font-size="13" fill="#7f1d1d">Final review of every PR</text>
+</svg>
