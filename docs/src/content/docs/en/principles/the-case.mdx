@@ -1,0 +1,43 @@
+---
+title: The case - note tags
+description: The feature every tutorial step builds, and why it was chosen.
+sidebar:
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The tutorial follows one feature from idea to merged code: **tags on notes**.
+
+> A user can add up to five tags to a note, and filter the note list by tag.
+
+It is small enough to finish in a few PRs, and it touches every layer of the example notes app, so
+each stage of the workflow has something real to do.
+
+| Layer | What changes | Which gate catches mistakes |
+| --- | --- | --- |
+| `notes-table` | `tags` attribute on the `note` entity | Unit tests |
+| `notes-api` | `tags` on create and update, `tag` filter on list | Unit tests, typecheck |
+| `notes-website` | Tag input on the note form, tag chips, tag filter | Screenshots, e2e |
+| Business rule | Max five tags, no duplicates, case-insensitive | Invariants, unit tests |
+| Concurrency | Two tabs adding tags at once must not lose either | Concurrency test |
+| `docs/` | The notes app page describes tags | Agent review, human review |
+
+## The phases
+
+The spec is split into three phases, so three issues and three PRs:
+
+1. **Data and API.** Entity, procedures, validation rules, unit tests.
+2. **Website.** Tag input, chips, filter, e2e scenario with screenshots, invariant and concurrency tests.
+3. **Docs.** Update the docs to describe tags.
+
+<Aside type="note">
+The phases in this case are an example. Your own specs will split differently. The rule is only that
+each phase is one reviewable PR that leaves `main` working.
+</Aside>
+
+## Before you start
+
+- The repo is set up as in [Getting started](../../guides/getting-started/).
+- OpenHands is polling for issues labelled `openhands`.
+- You are working on `main` with a clean tree.

@@ -1,0 +1,50 @@
+---
+title: 7. Update the docs
+description: Documentation is the last phase of the same chain, done by the agent and reviewed by you.
+sidebar:
+  order: 7
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**You are here:** agent, then human gate #2 again. **Output:** the docs describe tags.
+
+Phase 3 is not different in kind from the others. The docs are code (this site is MDX in
+`docs/`), so the same chain handles them.
+
+## What the agent does
+
+Given the issue for tasks `T007` to `T008`, the agent:
+
+1. Reads the spec and the merged code from phases 1 and 2. The spec says what the feature is for;
+   the code says what it does.
+2. Updates the notes app page: the `tags` attribute, the new API input and filter, and the rules
+   (five tags, unique, case-insensitive), phrased exactly as the spec states them.
+3. Reuses the screenshots from the e2e scenario instead of inventing new ones, so the docs show
+   what the app really does.
+4. Builds the docs site, so a broken link or malformed MDX fails the PR like any other build error.
+
+## What you check
+
+- Does every rule on the page match a requirement in `spec.md`?
+- If the docs and the spec disagree, **the spec wins.** Change the spec, not the docs by hand.
+- Is anything documented that the code doesn't do?
+
+## Why it's in the chain
+
+Docs written after the fact, by a different person, from memory, drift. Docs generated from the
+spec and the merged code, in the same workflow, and reviewed with the same gates, don't. The agent
+reviewer is also a cheap second reader: it flags a docs claim that no test or code backs up.
+
+<Aside type="tip">
+When you change behaviour later, start at the spec again. Update it, regenerate the plan and
+tasks, and the docs phase comes round with the rest.
+</Aside>
+
+## Done
+
+Merge the docs PR. With no tasks left, no new issue opens, and the feature has gone from one
+sentence to merged code and docs, with your hands on exactly two decisions per PR: approving the
+spec, and approving the result.
+
+Back to [the principles](../../principles/) to see how each step maps to them.

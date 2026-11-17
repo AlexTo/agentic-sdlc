@@ -1,0 +1,53 @@
+---
+title: 3. Approve the spec
+description: Review the spec PR like code, and label it spec-ready to start the agent.
+sidebar:
+  order: 3
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**You are here:** human gate #1. **Output:** a merged spec PR and the first implementation issue.
+
+<Steps>
+
+1. Open the spec PR.
+
+   ```bash
+   git add specs/ && git commit -m "docs(specs): add note tags spec"
+   git push -u origin spec/note-tags
+   gh pr create --fill
+   ```
+
+2. Review it as you would code. Read `spec.md` first, then `plan.md`, then skim `tasks.md`.
+   Ask yourself:
+
+   - Does the spec say what you actually want?
+   - Is each phase small enough to review in one sitting?
+   - Is anything in the plan something you would reject in a code review?
+
+   Comment on the PR to change anything. The agent reads comments too, so you can ask it to revise.
+
+3. Label the PR `spec-ready`, then merge.
+
+   ```bash
+   gh pr edit --add-label spec-ready
+   gh pr merge --squash
+   ```
+
+</Steps>
+
+## What happens next, with no one touching anything
+
+The **Agent Issues** workflow sees a merged PR carrying `spec-ready`. It reads `tasks.md`, takes
+the first unfinished phase and opens an issue from the
+[implementation template](https://github.com/AlexTo/agentic-sdlc/blob/main/.github/ISSUE_TEMPLATE/implement-phase.md):
+spec folder, task range `T001` to `T003`, and the rules the agent must follow. It adds the
+`openhands` label, which is the go signal.
+
+<Aside type="note">
+Forgot the label? Add `spec-ready` to the already merged PR, or run the workflow by hand with the
+spec folder name. Nothing else is needed.
+</Aside>
+
+Your attention is now free until there is something to review. Next: [Agent implements](../agent-implements/).

@@ -1,0 +1,49 @@
+---
+title: 6. Merge and repeat
+description: The human review, and how merging opens the next phase.
+sidebar:
+  order: 6
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+**You are here:** human gate #2. **Output:** phase 1 merged, phase 2's issue open.
+
+The PR reaches you green and approved by the agent reviewer. Your job is to judge the outcome,
+not to hunt for problems.
+
+<Steps>
+
+1. Read the PR description and the **E2E screenshots** comment. For the website phase, this is
+   how you see the feature without pulling the branch: the empty tag input, a note with three
+   tags, the filter applied, the error shown on a sixth tag.
+
+2. Check the **(human)** tasks the agent listed and do them.
+
+3. Approve and merge, or comment to request changes. A "changes requested" sends the agent back,
+   under the same three-attempt cap.
+
+   ```bash
+   gh pr merge --squash
+   ```
+
+</Steps>
+
+## What merging does
+
+The **Agent Issues** workflow sees a merged PR on an `openhands/` branch, reads the ticked
+`tasks.md`, and opens the issue for the next phase. Phase 2 (the website) now runs exactly as
+phase 1 did: tests first, PR, gates, fix-ups, review.
+
+Only the agent's own branches advance the chain. A PR you merge by hand is ignored, so the process
+can't loop on its own edits.
+
+```text
+spec PR merged ─► issue 1 ─► PR 1 merged ─► issue 2 ─► PR 2 merged ─► issue 3 ─► PR 3 merged ─► done
+   (you)                       (you)                      (you)                      (you)
+```
+
+Between each of your clicks, nothing needs you. When the last phase merges, no further issue opens
+and the feature is complete.
+
+Next: [Update the docs](../update-the-docs/).

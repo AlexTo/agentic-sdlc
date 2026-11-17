@@ -1,0 +1,67 @@
+---
+title: 2. Plan and tasks
+description: Derive the technical plan and an ordered task list, then check them against the spec.
+sidebar:
+  order: 2
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**You are here:** human + agent. **Output:** `plan.md`, `data-model.md`, `contracts/` and `tasks.md`.
+
+<Steps>
+
+1. Generate the plan.
+
+   ```text
+   /speckit-plan
+   ```
+
+   The plan reads the spec and the project constitution (`.specify/memory/constitution.md`) and
+   decides *how*: add `tags` to the ElectroDB entity, extend the tRPC input schemas, add a
+   `tag` filter to `notes.list`.
+
+2. Generate the tasks.
+
+   ```text
+   /speckit-tasks
+   ```
+
+   `tasks.md` is ordered, checkable and grouped by phase. For the docs and review steps to work,
+   the format matters: every task has an ID, and phases are separate headings.
+
+   ```markdown
+   ## Phase 1: Data and API
+   - [ ] T001 Add `tags` to the note entity in packages/notes-table/src/entities/note.ts
+   - [ ] T002 [P] Unit tests for tag rules (max five, unique, case-insensitive)
+   - [ ] T003 Extend create and update procedures in packages/notes-api/src/procedures/notes.ts
+
+   ## Phase 2: Website
+   - [ ] T004 Tag input on the note form
+   - [ ] T005 Tag filter on the list page
+   - [ ] T006 e2e scenario with screenshots, invariant and concurrency tests
+
+   ## Phase 3: Docs
+   - [ ] T007 Describe tags on the notes app page in docs/
+   - [ ] T008 **(human)** Confirm the screenshots match the docs wording
+   ```
+
+3. Cross-check everything before any code exists.
+
+   ```text
+   /speckit-analyze
+   ```
+
+   It reports requirements with no task, tasks with no requirement, and contradictions between
+   the three files. Fix them now; it costs a sentence. After implementation it costs a PR.
+
+</Steps>
+
+<Aside type="caution">
+A malformed `tasks.md` would stall the pipeline silently, so a PR check validates its format.
+You will see that check run in the next step.
+</Aside>
+
+Tasks marked **(human)** are skipped by the agent and listed in its PR description for you.
+
+Next: [Approve the spec](../approve-the-spec/).

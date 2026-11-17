@@ -1,0 +1,59 @@
+---
+title: 1. Write the spec
+description: Turn the idea into spec.md with Speckit, and have the agent challenge it.
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**You are here:** human + agent. **Output:** `specs/<timestamp>-note-tags/spec.md`.
+
+The spec says *what* and *why*, never *how*. It is the most important thing you write.
+
+<Steps>
+
+1. Start from a branch.
+
+   ```bash
+   git switch -c spec/note-tags
+   ```
+
+2. Describe the feature to Speckit.
+
+   ```text
+   /speckit-specify Users can add up to five tags to a note and filter the note list by tag.
+   Tags are case-insensitive and unique per note.
+   ```
+
+   Speckit creates `specs/<timestamp>-note-tags/spec.md` with user stories, functional
+   requirements and acceptance criteria.
+
+3. Let the agent find the gaps.
+
+   ```text
+   /speckit-clarify
+   ```
+
+   It asks up to five targeted questions and writes your answers back into the spec. For this
+   feature, expect questions such as:
+
+   - What happens when a sixth tag is added: reject, or drop the oldest?
+   - Is `Work` the same tag as `work`? (The spec says yes: lowercase on save.)
+   - Is there a maximum tag length?
+
+</Steps>
+
+## What good looks like
+
+- Each user story can be tested on its own, with acceptance scenarios written as Given/When/Then.
+- Every rule is stated as a requirement, for example *"A note MUST NOT have more than five tags."*
+  Those rules become the invariants and tests later.
+- No technology appears in the spec. No DynamoDB, no tRPC.
+
+<Aside type="tip">
+Answer the clarification questions yourself instead of letting the agent guess. Each answer you
+give is one fewer wrong assumption in the code.
+</Aside>
+
+Next: [Plan and tasks](../plan-and-tasks/).

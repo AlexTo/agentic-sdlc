@@ -1,0 +1,53 @@
+---
+title: 5. CI and agent review
+description: Automated gates and bounded fix-up loops, with no human in between.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**You are here:** automation, unattended. **Output:** a green PR with an approving agent review.
+
+Every push to the agent's PR runs the gates. Failures go back to the agent, never to you.
+
+## The gates
+
+| Gate | What it catches in the tags case |
+| --- | --- |
+| Lint, typecheck, build | An API type that no longer matches the entity |
+| Unit tests | A sixth tag accepted, or `Work` and `work` stored as two tags |
+| Invariants | Any note in the table with more than five tags, after every e2e test |
+| E2E tests | The tag input doesn't save, or the filter shows the wrong notes |
+| Concurrency test | Two simultaneous adds overwrite each other and one tag is lost |
+| Screenshots | The new UI was never looked at: the `UI Screenshots` check fails |
+| Tasks format check | A malformed `tasks.md` that would stall the chain |
+
+## When a gate fails
+
+1. The **Agent CI Status** workflow posts a failing commit status that the agent already watches.
+2. The agent revises the *same* PR in its original conversation, using the failure output.
+3. CI runs again.
+
+An example: the concurrency test fails because adding a tag reads the note, appends in memory and
+writes it back, so two requests race. The agent changes it to an atomic append with a condition on
+the count, and the test goes green. You never saw it.
+
+## Agent review
+
+Once CI is green, a second OpenHands agent reviews the PR as a person would: correctness, missed
+edge cases, rules from the spec that no test covers. It either approves, or requests changes, which
+sends the implementing agent back the same way a red CI does.
+
+## The cap
+
+Each loop is limited to **three** attempts, tracked with `ci-fix-1` to `ci-fix-3` labels. After
+the third, the workflow comments, adds `ci-fix-exhausted` and stops.
+
+<Aside type="caution">
+`ci-fix-exhausted` is the one time you are pulled in early. Read the last failure, then either
+comment with guidance, fix it yourself, or go back to the spec: repeated failure often means the
+spec was ambiguous. Fixing the spec and regenerating beats patching the code.
+</Aside>
+
+Next: [Merge and repeat](../merge-and-repeat/).

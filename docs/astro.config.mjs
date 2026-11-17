@@ -31,7 +31,9 @@ export default defineConfig({
       },
       sidebar: [
         { label: 'Start here', items: [{ autogenerate: { directory: 'guides' } }] },
-        { label: 'The lifecycle', items: [{ autogenerate: { directory: 'lifecycle' } }] },
+        { label: 'Principles', items: [{ autogenerate: { directory: 'principles' } }] },
+        { label: 'Tutorial: add a feature', items: [{ autogenerate: { directory: 'tutorial' } }] },
+        { label: 'Reference: the lifecycle', items: [{ autogenerate: { directory: 'lifecycle' } }] },
       ],
       customCss: ['./src/styles/custom.css'],
       plugins: [],
