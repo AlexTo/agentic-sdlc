@@ -1,6 +1,6 @@
 <div align="center">
   <h1>🤖 Agentic SDLC</h1>
-  <h3>Stop babysitting the AI. Build an environment where you can trust agents to do the right thing, write the spec, and let them do the rest.</h3>
+  <h3>Stop micromanaging a single agent. Climb the ladder of trust: the more you build into the environment, the more you can trust agents to do the right thing, and the more of them you can run at once.</h3>
   <p>
     <img alt="OpenHands" src="https://img.shields.io/badge/agent-OpenHands-22c55e?style=for-the-badge&logo=robotframework&logoColor=white">
     <img alt="Speckit" src="https://img.shields.io/badge/specs-Speckit-6366f1?style=for-the-badge&logo=readthedocs&logoColor=white">
