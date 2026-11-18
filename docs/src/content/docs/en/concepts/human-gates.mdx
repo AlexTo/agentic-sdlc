@@ -46,7 +46,9 @@ judge the outcome, not to hunt for problems:
 - Read the PR description: what changed, which tasks, which **(human)** tasks are left for you.
 - Look at the **E2E screenshots** comment instead of pulling the branch.
 - Do the **(human)** tasks: manual checks on a local stack or a deployed stage.
-- Merge, or request changes.
+- Merge, or request changes. To have the agent make them, add the `openhands-review` label after
+  your review: the reviewer agent re-reviews the PR, and its "changes requested" verdict sends the
+  implementing agent back through the review-fix loop, counted with the same `review-fix-*` labels.
 
 ## What agents may never do
 

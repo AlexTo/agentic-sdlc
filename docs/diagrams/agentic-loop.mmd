@@ -1,0 +1,43 @@
+%%{init: {"theme": "base", "flowchart": {"curve": "basis", "nodeSpacing": 40, "rankSpacing": 50}, "themeVariables": {"fontFamily": "Inter, system-ui, sans-serif", "fontSize": "15px", "lineColor": "#64748b", "background": "#ffffff", "textColor": "#0f172a", "titleColor": "#0f172a", "edgeLabelBackground": "#ffffff", "clusterBkg": "#f8fafc", "clusterBorder": "#e2e8f0"}}}%%
+flowchart TB
+    subgraph ALL[" "]
+    direction TB
+    subgraph PLAN["Plan"]
+        direction LR
+        S("`Write the spec
+_Human + Speckit_`") --> M1("Merge the spec PR")
+        M1 --> I("`Issue opens
+_Automation_`")
+        I --> IMPL("`Agent implements
+_OpenHands_`")
+    end
+
+    subgraph VERIFY["Verify"]
+        direction TB
+        CI{{"CI"}} -- "passes" --> AR{{"`Agent review
+_OpenHands_`"}}
+        AR -- "approves" --> HR{{"`Human review
+_Developer_`"}}
+        HR -- "approves" --> Done(["Merged"])
+        CI -- "fails" --> FIX("`Agent fixes
+_OpenHands, max 3×_`")
+        AR -- "changes requested" --> FIX
+        HR -. "changes requested<br/>+ openhands-review label" .-> FIX
+        FIX -. "CI runs again" .-> CI
+    end
+
+    PLAN -- "tests pass locally" --> PR("Agent raises a PR")
+    PR --> VERIFY
+
+    end
+    style ALL fill:#ffffff,stroke:#ffffff,color:#ffffff
+
+    classDef human fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#7f1d1d
+    classDef agent fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
+    classDef gate fill:#e0e7ff,stroke:#6366f1,stroke-width:2px,color:#312e81
+    classDef done fill:#dcfce7,stroke:#22c55e,stroke-width:2px,color:#14532d
+    class S,M1 human
+    class I,IMPL,PR,FIX agent
+    class CI,AR gate
+    class HR human
+    class Done done
