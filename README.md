@@ -51,7 +51,9 @@ anyone can read, review and re-run.
 
 Red is the developer, grey is the agent or automation working on its own, and indigo is an automated
 gate: CI, then an OpenHands reviewer. The developer is only at the two ends, writing the spec and giving the
-final human review before merge. When a merge lands, the next issue opens by itself, until the spec is done.
+final human review before merge, including any **(human)** tasks such as manual verification. When a merge
+lands, a workflow checks that the phase's agent tasks are ticked in `tasks.md`, then opens the next phase's
+issue by itself, until the spec is done.
 
 | Stage | Who | What happens |
 | --- | --- | --- |
@@ -61,7 +63,8 @@ final human review before merge. When a merge lands, the next issue opens by its
 | **Verify** | CI | Lint, build, unit and e2e tests run. UI changes must ship screenshots, posted on the PR. |
 | **Agent review** | OpenHands reviewer | A second agent reviews the PR once CI is green and either approves or requests changes. |
 | **Fix** | OpenHands, bounded | A red CI or a "changes requested" verdict from the agent reviewer sends the agent back by itself, at most **three times** per PR, then it stops and asks for a human. |
-| **Human review** | Developer | A person has the final say: they review and merge. To send it back instead, they request changes and add the `openhands-review` label, so the agent reviewer re-reviews and the review-fix loop picks it up. Merging opens the next issue, until the spec is done. |
+| **Human review** | Developer | A person has the final say: they review and merge. To send it back instead, they request changes and add the `openhands-review` label, so the agent reviewer re-reviews and the review-fix loop picks it up. The reviewer also does any **(human)** tasks the agent listed, such as manual verification. |
+| **Next phase** | Automation | Merging reads `tasks.md` from the merged PR. The agent ticks each task in the PR as it finishes it. If the phase's agent tasks are all ticked, the next phase's issue opens. If not, the PR gets a comment listing the unticked tasks. **(human)** tasks never hold up the chain. When no agent tasks are left, the spec is done. |
 
 The "fix it" prompts you used to type by hand are now automatic, in two loops:
 

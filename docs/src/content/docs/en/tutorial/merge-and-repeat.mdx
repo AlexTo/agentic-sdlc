@@ -34,9 +34,16 @@ not to hunt for problems.
 
 ## What merging does
 
-The **Agent Issues** workflow sees a merged PR on an `openhands/` branch, reads the ticked
-`tasks.md`, and opens the issue for the next phase. Phase 2 (the website) now runs exactly as
-phase 1 did: tests first, PR, gates, fix-ups, review.
+The **Agent Issues** workflow sees a merged PR on an `openhands/` branch and reads `tasks.md` as
+the merge left it:
+
+1. **Are this phase's agent tasks ticked?** The agent ticks each task in the PR, in the commit that
+   finishes it. **(human)** tasks don't count: you did them in step 2, and they never hold up the
+   chain.
+2. **Yes:** it opens the issue for the next phase. Phase 2 (the website) now runs exactly as phase 1
+   did: tests first, PR, gates, fix-ups, review.
+3. **No:** nothing opens, and the merged PR gets a comment listing the unticked task IDs. Tick or
+   finish them, then run **Agent Issues** by hand with the spec folder name.
 
 Only the agent's own branches advance the chain. A PR you merge by hand is ignored, so the process
 can't loop on its own edits.
