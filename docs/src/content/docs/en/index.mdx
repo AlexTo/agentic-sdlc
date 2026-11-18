@@ -18,17 +18,17 @@ hero:
 import { CardGrid, Card, LinkCard } from '@astrojs/starlight/components';
 
 <CardGrid>
-  <Card title="Spec first" icon="pencil">
+  <Card title="An environment you can trust" icon="approve-check">
+    Rules, tests and checks are layered so that a mistake surfaces and goes back to the agent, not to you.
+  </Card>
+  <Card title="Write the spec" icon="pencil">
     Every feature starts as a reviewed spec, plan and task list. The agent builds from them, not from a chat.
   </Card>
-  <Card title="Issue to pull request" icon="rocket">
-    A merged spec opens the first implementation issue. An agent picks it up and opens a pull request.
+  <Card title="Agents do the rest" icon="rocket">
+    A merged spec opens an issue per phase. An agent opens the PR and fixes red CI or review feedback by itself, up to three times per loop.
   </Card>
-  <Card title="Feedback without you" icon="approve-check">
-    A red CI run or a "changes requested" review sends the agent back to the same PR, at most three times.
-  </Card>
-  <Card title="Two human decisions" icon="information">
-    People approve the spec and approve the result. Everything in between runs on its own.
+  <Card title="You steer" icon="information">
+    People approve the spec and have the final say before merge. Everything in between runs on its own.
   </Card>
 </CardGrid>
 
