@@ -28,6 +28,12 @@ catalog:
   astro: 7.4.7
   cookie: 2.0.2
   '@astrojs/starlight': 0.42.10
+  '@strands-agents/sdk': 1.24.0
+  commander: 15.1.0
+  fast-glob: 3.3.3
+  fs-extra: 11.4.1
+  simple-git: 4.0.2
+  '@types/fs-extra': 11.0.4
   '@types/node': 26.6.6
   vite: 8.3.6
   vitest: 5.1.0

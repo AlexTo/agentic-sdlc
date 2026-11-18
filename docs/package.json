@@ -5,9 +5,16 @@
   "type": "module",
   "dependencies": {
     "@astrojs/starlight": "catalog:",
+    "@strands-agents/sdk": "catalog:",
     "astro": "catalog:",
     "astro-d2": "catalog:",
-    "cookie": "catalog:"
+    "commander": "catalog:",
+    "cookie": "catalog:",
+    "fast-glob": "catalog:",
+    "fs-extra": "catalog:",
+    "simple-git": "catalog:"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/fs-extra": "catalog:"
+  }
 }
