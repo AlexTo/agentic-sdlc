@@ -1,0 +1,50 @@
+---
+title: 0. Before you start
+description: What you need, and how forking this repository gives you Discava's setup.
+sidebar:
+  order: 0
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+This repository is a working copy of Discava's agentic setup, wrapped around a small notes app.
+**Fork it and you have the same setup Discava runs**: the Speckit templates and constitution, the
+issue template, the PR checks, the three agent workflows and the unit-tested glue behind them.
+
+What a fork doesn't have is the part outside the repository: your GitHub settings, and an OpenHands
+installation pointed at your fork. These steps add those. Then you write a spec for the notes app
+and watch it go through the exact workflow Discava uses, from spec PR to merged agent PRs.
+
+**Time:** about an hour, most of it waiting for the first agent run.
+
+## What you need
+
+| Need | Why |
+| --- | --- |
+| A GitHub account | To fork, and to own the token the agents use |
+| Node.js 24 and pnpm | To run the repository and Agent Canvas |
+| `uv` | Agent Canvas starts its backend with `uvx` |
+| Docker | Only to run the notes app and its e2e tests locally. CI runs them for the agent |
+| GitHub CLI (`gh`), signed in | Most steps use it |
+| A coding agent, installed and signed in | Writes specs with Speckit, and runs inside OpenHands. Discava uses Claude Code |
+
+<Aside type="note">
+Agent Canvas runs on your own machine and polls GitHub, so it needs no public address and no
+webhook. It does need to be running for the agents to work. Leave it running while you try the
+workflow.
+</Aside>
+
+## The steps
+
+| # | Step | You'll end with |
+| --- | --- | --- |
+| 1 | [Fork the repository](../fork/) | Your own copy, with Actions and Issues on |
+| 2 | [Configure the repository](../github-repository/) | Labels, and a protected `main` |
+| 3 | [Install OpenHands](../openhands/) | Agent Canvas running, a GitHub token, two agent profiles |
+| 4 | [Create the two automations](../automations/) | OpenHands implementing and reviewing in your fork |
+| 5 | [Run your first feature](../first-feature/) | A spec for the notes app, carried to merged code by agents |
+
+Want the setup in an existing repository instead? See
+[Adopt it in your own repository](../../adopt/overview/).
+
+Next: [1. Fork the repository](../fork/).

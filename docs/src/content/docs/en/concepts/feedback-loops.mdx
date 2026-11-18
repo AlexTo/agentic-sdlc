@@ -1,0 +1,87 @@
+---
+title: Feedback loops
+description: How a red CI run or a "changes requested" review sends the agent back, and why each loop stops after three tries.
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**The short version:** when something fails, a workflow marks the PR's head commit with a failing
+status. The OpenHands worker sees it on its next poll and asks the same agent conversation to fix
+the same PR. Each loop has a counter in a label, and stops at three.
+
+## The two loops
+
+```d2
+direction: right
+pr: "Agent pushes to PR"
+checks: "PR Checks"
+review: "Reviewer agent"
+ci_status: "Agent CI Status\n(ci-fix-N)"
+rv_status: "Agent Review Status\n(review-fix-N)"
+status: "software-factory/review\n= failure on head"
+worker: "Issue-to-PR worker\nnext poll"
+human: "Human review"
+
+pr -> checks
+checks -> ci_status: "failed"
+checks -> review: "all finished"
+review -> rv_status: "🔄 CHANGES REQUESTED"
+review -> human: "✅ APPROVED"
+ci_status -> status
+rv_status -> status
+status -> worker
+worker -> pr: "revise, same branch"
+```
+
+| | CI loop | Review loop |
+| --- | --- | --- |
+| Triggered by | The PR Checks workflow finishing with `failure` or `timed_out` | A review on the PR that the reviewer agent wrote, ending `🔄 CHANGES REQUESTED` |
+| Workflow | Agent CI Status | Agent Review Status |
+| Counter labels | `ci-fix-1`, `ci-fix-2`, `ci-fix-3` | `review-fix-1`, `review-fix-2`, `review-fix-3` |
+| When it gives up | `ci-fix-exhausted`, plus a comment | `review-fix-exhausted`, plus a comment |
+| Status description | `CI failed (fix attempt 2 of 3): E2E tests (3/4)` | `Review requested changes (fix attempt 1 of 3): see the review` |
+
+A passing run posts nothing. The next commit starts with no status, so the worker leaves the PR
+alone.
+
+## The checks before sending the agent back
+
+Each script refuses to act unless all of these hold:
+
+1. The branch is exactly `openhands/issue-<n>`. A second attempt branch, such as
+   `openhands/issue-308-2`, is never revised by the worker, so it isn't answered either.
+2. The PR is open.
+3. The run or review is for the PR's **current** head commit. An older run is stale.
+4. That commit hasn't already been sent back. A re-run of the same checks must not use another
+   attempt.
+5. For reviews: the review carries the reviewer's hidden run marker and comes from an account with
+   write access, so a person quoting the verdict doesn't trigger it.
+6. Fewer than three attempts have been used.
+
+The label goes on **before** the status is posted. If posting the status then fails, the next
+failure counts one more attempt instead of repeating this one forever.
+
+## Why three
+
+One retry fixes most mistakes: a flaky locator, a missed type, a lint rule. Two cover a fix that
+uncovered a second problem. By the third failure, the agent is usually stuck on something it can't
+see, and more attempts cost money without converging.
+
+In Discava, 67 agent PRs had merged by 18 November 2026. 42 carry no fix label (some predate the
+fix-up workflows), 17 needed exactly one round of CI or review fixes, and only one ran a loop to
+exhaustion.
+
+<Aside type="caution">
+When a loop is exhausted, read the last failure before you fix anything. Repeated failure often
+means the spec or plan was ambiguous, and the agent was trying to satisfy two readings at once. Fix
+the spec, then let the agent try again.
+</Aside>
+
+## Letting it try again
+
+To give the agent another round after you've added guidance, remove the counter labels and the
+`*-exhausted` label, then re-run the checks (CI loop) or re-request the review (review loop).
+
+Next: [Layers of trust](../layers-of-trust/).

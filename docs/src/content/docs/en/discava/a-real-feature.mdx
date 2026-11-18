@@ -1,0 +1,84 @@
+---
+title: "A real feature: course reviews"
+description: One Discava feature traced from tracking issue to spec to six agent pull requests, with timestamps.
+sidebar:
+  order: 10
+  label: A real feature
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+This page follows one feature through the real Discava repository: **course ratings and written
+reviews**. Every number and link is from GitHub. Times are UTC, on 18 November 2026 unless stated.
+
+## The idea
+
+[Issue #279](https://github.com/AlexTo/discava/issues/279), written by a person:
+
+> Enrolled students leave one 1-5 rating plus an optional text review per course (editable,
+> deletable). The course carries an aggregate rating and count, kept consistent through a
+> core-table helper. Shown on catalogue cards, the course page and as a search sort/boost. The
+> instructor can respond; an admin can remove abusive reviews. One review per student per course
+> under concurrency; an average/count invariant in `helpers/invariants.ts`.
+
+## The spec
+
+[PR #358](https://github.com/AlexTo/discava/pull/358), `docs(specs): course ratings and written
+reviews`, on branch `spec/reviews`: 14 commits, 923 lines, all under
+`specs/20261116-013307-course-reviews/`.
+
+- `/speckit-clarify` ran without a person to ask, so the agent recorded its answers under
+  "Clarifications". For example: *"Must a student have made progress before they may review? → No.
+  Any student whose enrolment is not dropped may review."* The reviewer of the spec PR could
+  disagree with any of them before code existed.
+- `tasks.md` came out as **eight phases and 36 tasks**. Phase 1 is the first user story (records,
+  the summary and the shared writer), and phases 2 to 8 each say which PR they are
+  ("core-api review procedures (PR 2)"). Two tasks are **(human)**: a manual run-through on a local
+  stack, and checks on the deployed stage.
+
+Opened 15 November, labelled `spec-ready`, merged 18 November at 06:47.
+
+## The chain
+
+| Phase | Issue opened | PR | Merged | Size | Fix-ups |
+| --- | --- | --- | --- | --- | --- |
+| 1. Review records, rating summary and the writer | [#453](https://github.com/AlexTo/discava/issues/453) 07:09 | [#456](https://github.com/AlexTo/discava/pull/456) | 07:40 | +1,923 | none |
+| 2. core-api review procedures | [#459](https://github.com/AlexTo/discava/issues/459) 07:41 | [#460](https://github.com/AlexTo/discava/pull/460) | 08:30 | +1,334 | none |
+| 3. Student portal ratings and reviews | [#461](https://github.com/AlexTo/discava/issues/461) 08:31 | [#464](https://github.com/AlexTo/discava/pull/464) | 09:55 | +1,357 | `review-fix-1` |
+| 4. Ratings in search | [#466](https://github.com/AlexTo/discava/issues/466) 09:56 | [#470](https://github.com/AlexTo/discava/pull/470) | 11:24 | +900 | `ci-fix-1` |
+| 5. Instructor responses | [#475](https://github.com/AlexTo/discava/issues/475) 11:25 | [#476](https://github.com/AlexTo/discava/pull/476) | 12:30 | +1,791 | `ci-fix-1` |
+| 6. Admin removal | [#481](https://github.com/AlexTo/discava/issues/481) 12:31 | [#483](https://github.com/AlexTo/discava/pull/483) | in review | +1,526 | |
+
+Five PRs, about 7,300 lines including tests, merged in under five hours. Each issue opened about a
+minute after the previous PR merged. **No person opened an issue, wrote a prompt or pasted an
+error** at any point in the chain.
+
+## What the person did
+
+1. Wrote the one-paragraph tracking issue.
+2. Reviewed and merged the spec PR.
+3. For each of five PRs: read the description and the screenshots comment, and merged.
+
+## What the loops caught
+
+- **PR #464**: the reviewer agent requested changes. Agent Review Status sent the agent back once,
+  and the PR merged after the next review.
+- **PR #470**: a new e2e scenario used a locator that matched two elements, so one shard failed.
+  Agent CI Status sent the agent back once. The agent fixed the locator and said why in a comment.
+  See [Feedback loops](../feedback-loops/) for the full timeline.
+- **PR #476**: one CI failure, fixed on the first attempt.
+
+<Aside type="note">
+Each PR's title starts `[#<issue>]`, the issue-to-PR automation's own format, even though the
+issue asks for a plain Conventional Commit title. It shows the two layers at work: the instruction
+in the issue is prose, and the automation's format is code. Code wins, so if you care about the
+title, enforce it with a check.
+</Aside>
+
+## What's left for a person
+
+Phases 7 and 8 (instructor notifications, then e2e, docs and manual checks) will open as issues
+when #483 merges. The two **(human)** tasks in phase 8 are done by the reviewer before that last PR
+merges. That PR also closes #279.
+
+Next: [Set it up: fork and run](../../setup/before-you-start/).

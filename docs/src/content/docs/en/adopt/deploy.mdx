@@ -1,0 +1,93 @@
+---
+title: 9. Deploy and security scans (optional)
+description: Deploy every green main to a development stage, keep production behind an approval, and scan before each deploy.
+sidebar:
+  order: 9
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**You'll end with:** a Trivy scan on every push to `main`, a Deploy workflow that ships each green
+`main` to a development stage, and production deploys that wait for a person.
+
+This step is Discava-specific in its details (AWS, CDK), but the shape works for any cloud. The
+example notes app in this repository has no deploy, so copy from
+[Discava's `deploy.yml`](https://github.com/AlexTo/discava/blob/main/.github/workflows/deploy.yml).
+
+<Steps>
+
+1. **Add a `trivy` target** to the projects you want scanned (the root `pnpm trivy` runs
+   `nx run-many --target trivy --all`). Add the `trivy` job to `ci.yml`, as in this repository. Keep
+   it a separate job from `build`, so a newly published CVE flags `main` without blocking anything
+   else. Record accepted findings, one ID per line, in `.trivyignore`.
+
+2. **Set up keyless cloud access.** On AWS, Discava's `scripts/setup-stage.sh` creates, per stage:
+   the GitHub OIDC provider, a deploy role trusted only for
+   `repo:owner/repo:environment:<stage>`, a CloudFormation execution role with a permissions
+   boundary, and the GitHub environment's variables (`AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`,
+   `AWS_EXECUTION_ROLE_ARN`). Use your cloud's OIDC federation for GitHub Actions the same way.
+   Don't store access keys.
+
+3. **Add the Deploy workflow**, triggered by CI completing on `main` and by hand:
+
+   ```yaml
+   on:
+     workflow_run: { workflows: [CI], types: [completed], branches: [main] }
+     workflow_dispatch:
+       inputs: { stage: { type: string, required: true } }
+
+   jobs:
+     deploy:
+       if: ${{ github.event_name == 'workflow_dispatch' ||
+               (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
+       environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
+       concurrency: { group: 'deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}', cancel-in-progress: false }
+       steps:
+         - uses: actions/checkout@<sha>
+           with: { ref: '${{ github.event.workflow_run.head_sha || github.sha }}' }
+         # init, then: pnpm trivy, configure credentials (OIDC), synth
+         - name: Check commit is still main's latest
+           id: freshness
+           if: ${{ github.event_name == 'workflow_run' }}
+           run: |
+             main_sha="$(git ls-remote --exit-code origin refs/heads/main | cut -f1)"
+             if [[ "$main_sha" == "$(git rev-parse HEAD)" ]]; then
+               echo "current=true" >> "$GITHUB_OUTPUT"
+             else
+               echo "::notice::Skipping deploy: no longer main's latest commit"
+               echo "current=false" >> "$GITHUB_OUTPUT"
+             fi
+         - name: Deploy
+           if: ${{ github.event_name != 'workflow_run' || steps.freshness.outputs.current == 'true' }}
+           run: pnpm nx run @your-scope/infra:deploy-ci "$STAGE/*" --role-arn "$AWS_EXECUTION_ROLE_ARN"
+   ```
+
+   The freshness check sits *inside* the concurrency slot, so it reflects `main` right before the
+   deploy, even if the run waited behind another one.
+
+4. **Turn on automatic deploys** for the development stage:
+
+   ```bash
+   gh variable set AUTO_DEPLOY_STAGE --body your-project-development
+   ```
+
+5. **Protect production.** Create its GitHub environment with **required reviewers** (Settings →
+   Environments → your production stage → Required reviewers). Deploy it with
+   `gh workflow run deploy.yml -f stage=your-project-production`. The job then waits for approval.
+
+</Steps>
+
+## Check it worked
+
+Merge any PR. CI runs, then **Deploy** starts by itself with the development stage. Run CI again
+by hand on an older commit: Deploy logs `Skipping deploy: no longer main's latest commit` and
+ships nothing.
+
+<Aside type="note">
+The agent never deploys and never sees these roles. Its conversation has only the GitHub token.
+The deploy role is assumed only by a workflow running from `main`, in the stage's environment.
+</Aside>
+
+Next: your repository now has everything a fork of this one has. Continue with the fork path from
+[2. Configure the repository](../../setup/github-repository/), pointing each step at your own
+repository instead of a fork.

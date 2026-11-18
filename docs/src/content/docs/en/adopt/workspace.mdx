@@ -1,0 +1,118 @@
+---
+title: 1. Workspace and commit hygiene
+description: An Nx monorepo with pnpm, and the commit hooks that keep agent commits clean.
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**You'll end with:** a pnpm workspace with Nx, Biome, Conventional Commits enforced on every
+commit, and a secret check before every commit.
+
+The glue doesn't need Nx. But `nx affected` is what keeps PR checks fast enough for an agent to
+iterate on, and every glue script runs as an Nx target. If you use another monorepo tool, keep the
+idea: run only what the PR affects, and expose every script as a named task.
+
+<Steps>
+
+1. **Create the workspace**, if you don't have one. Discava and this repository were both created
+   with the Nx Plugin for AWS:
+
+   ```bash
+   pnpm create @aws/nx-workspace your-project --iac=cdk --no-interactive
+   ```
+
+   This also installs the git-secrets pre-commit hook used in sub-step 4. An existing Nx workspace
+   works too. Pin pnpm in the root `package.json`, so CI and the agent
+   use the same version:
+
+   ```json
+   { "packageManager": "pnpm@<version>" }
+   ```
+
+2. **Add the root scripts** that `AGENTS.md`, CI and the agent will call:
+
+   ```json
+   "scripts": {
+     "dev": "nx run-many --target dev",
+     "build": "nx run-many --target build",
+     "lint": "nx run-many --target lint --configuration=fix",
+     "test": "nx run-many --target test --all",
+     "trivy": "nx run-many --target trivy --all",
+     "prepare": "husky"
+   }
+   ```
+
+3. **Add Conventional Commits with commitlint.** The issue titles the glue writes are Conventional
+   Commit headers, and the agent reuses them.
+
+   ```bash
+   pnpm add -Dw @commitlint/config-conventional commitlint husky lint-staged
+   echo "export default { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
+   ```
+
+   `.husky/commit-msg`:
+
+   ```bash
+   FORCE_COLOR=1 pnpm commitlint --edit "$1"
+   ```
+
+4. **Add the pre-commit hook.** It registers the AWS secret patterns once, refuses a commit with a
+   secret in it, runs Biome on staged files, and fails if that changed anything, so the agent
+   restages and commits again. `.husky/pre-commit`:
+
+   ```bash
+   if ! git config --get-all secrets.patterns >/dev/null 2>&1; then
+     bash .git-secrets/git-secrets --register-aws
+   fi
+   bash .git-secrets/git-secrets --pre_commit_hook
+
+   PRE_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
+   FORCE_COLOR=1 pnpm lint-staged
+   POST_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
+
+   if [ "$PRE_SHA" != "$POST_SHA" ]; then
+     echo "Pre-commit modified your working directory"
+     echo "Please verify and stage changed, then retry git commit"
+     exit 1
+   fi
+   ```
+
+   A workspace from the Nx Plugin for AWS already has `.git-secrets/git-secrets`, `.gitallowed`
+   and most of this hook. Otherwise, copy them from this repository. `lint-staged.config.js`:
+
+   ```js
+   export default {
+     'packages/**/*.{ts,tsx,js,jsx,json,css,scss}': ['biome check --write --no-errors-on-unmatched'],
+     '*.{js,json}': ['biome check --write --no-errors-on-unmatched'],
+   };
+   ```
+
+5. **Copy the shared CI setup action** from this repository: `.github/actions/init-monorepo/`. It
+   installs pnpm (with three tries, because a registry timeout would otherwise cost the agent a
+   fix-up attempt), Node 24 and optionally uv, restores the pnpm cache, installs dependencies, and
+   sets `NX_BASE`/`NX_HEAD` for `nx affected`.
+
+</Steps>
+
+## Check it worked
+
+```bash
+git commit --allow-empty -m "not conventional"
+```
+
+```text
+⧗   input: not conventional
+✖   subject may not be empty [subject-empty]
+✖   type may not be empty [type-empty]
+```
+
+Then `git commit --allow-empty -m "chore: check hooks"` succeeds.
+
+<Aside type="note">
+Discava also runs Commitizen from `prepare-commit-msg` for people who commit interactively. It
+skips itself when a message is given with `-m`, which is how agents commit, so it is optional.
+</Aside>
+
+Next: [2. Install Speckit](../speckit/).

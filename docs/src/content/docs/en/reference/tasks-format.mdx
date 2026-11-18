@@ -1,0 +1,73 @@
+---
+title: tasks.md format
+description: The exact format the Agent Issues workflow reads, how phases become issues, and every validator message.
+sidebar:
+  order: 4
+---
+
+## The format
+
+```markdown
+# Tasks: Course ratings and reviews
+
+Free text, legends and notes anywhere. Fenced code blocks are ignored.
+
+## Phase 1: Setup
+- [x] T001 Create the review entity
+- [ ] T002 [P] Add the rating summary entity
+
+## Phase 2: Foundational
+- [ ] T003 Shared review writer in core-table helpers
+
+## Phase 3: User Story 1 - Leave a rating (Priority: P1) 🎯 MVP
+### Tests for User Story 1
+- [ ] T004 [P] [US1] Unit tests for rating rules
+### Implementation for User Story 1
+- [ ] T005 [US1] review.upsert procedure
+- [ ] T006 (human) Check the layout on a phone-width window
+
+## Phase 4: User Story 2 - Instructor responds (Priority: P2)
+- [ ] T007 [US2] review.respond procedure
+- [ ] T037 [US2] Notify the student (added later: next unused id)
+```
+
+| Element | Pattern | Notes |
+| --- | --- | --- |
+| Phase | `^## Phase (\d+): (.+)$` | Numbers increase down the file. Each phase has at least one task |
+| User story phase | title starts `User Story` | At least one must exist |
+| Task | `^- \[([ xX])\] (T\d{3})\b` | In the first column, under a phase. IDs are unique, never renumbered |
+| Done | `[x]` or `[X]` | Ticked in place, never deleted |
+| Human task | `(human)` anywhere in the line, bold or not | Skipped by the agent, and not counted when deciding if a group is done |
+| Sub-headings | `### …` | Allowed, ignored |
+
+## How phases become issues
+
+1. **Group 0** is every phase up to and including the first `User Story` phase. Setup, foundations
+   and the MVP story ship as one PR, titled with ` (with setup and foundations)`.
+2. **Each later phase** is its own group, and its own issue.
+3. The **next group** is the first with an unticked task that isn't **(human)**.
+4. A group whose issue already exists, but whose agent tasks aren't all ticked, is **stalled**. No
+   new issue opens, and the merged PR gets a comment that lists the unticked IDs.
+
+The issue title is `feat(<feature>): <last phase's title, shortened>`. `<feature>` is the folder
+name without its timestamp. The shortened title drops the `User Story <n> - ` prefix and the
+`(Priority: Pn)` suffix. The title starts lower-case and is at most 100 characters.
+
+## Validator messages
+
+| Message | Fix |
+| --- | --- |
+| `A phase heading must be written "## Phase <number>: <title>"` | A heading mentions "Phase" but isn't in the format, e.g. `### Phase 2` or `## Phase 2 - Setup` |
+| `A task must be written "- [ ] T<3 digits> <description>", starting in the first column` | An indented task, `* [ ]`, `- []`, or an ID like `T12` |
+| `Phase <n> has no tasks` | Add a task, or remove the phase |
+| `Phase <n> comes after phase <m>; phase numbers must increase down the file` | Renumber the phases (not the tasks) |
+| `T0xx is above the first phase heading, so it belongs to no phase` | Move it under a phase |
+| `T0xx is used more than once` | Give the later one the next unused ID |
+| `No phase headings found; …` | The file isn't in the format at all |
+| `No phase is titled "User Story <n> - ..."; …` | Title at least one phase as a user story |
+
+Run it locally:
+
+```bash
+pnpm nx run @your-scope/common-scripts:validate-tasks
+```

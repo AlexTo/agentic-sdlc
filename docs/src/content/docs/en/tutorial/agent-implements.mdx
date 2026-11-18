@@ -9,12 +9,13 @@ import { Aside } from '@astrojs/starlight/components';
 
 **You are here:** agent, unattended. **Output:** a pull request for phase 1 on an `openhands/...` branch.
 
-Within about 15 minutes OpenHands polls for issues labelled `openhands` and picks up the issue.
+On its next poll (every 5 minutes in Discava, 15 by default), OpenHands finds the issue labelled
+`openhands` and starts a conversation for it.
 You do nothing. This is what it does, and what you can check on the PR afterwards.
 
 ## What the agent does
 
-1. Reads `CLAUDE.md`, the constitution, and the spec folder.
+1. Reads `AGENTS.md`, the constitution, and the spec folder.
 2. Writes the tests for the phase first: the tag rules from the spec, as unit tests.
 3. Implements until they pass, ticking each task in `tasks.md` in the same commit that completes it.
 4. Runs lint, typecheck, build and unit tests on what it changed, once, not in watch mode.

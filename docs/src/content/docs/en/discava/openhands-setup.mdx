@@ -1,0 +1,107 @@
+---
+title: OpenHands setup
+description: Agent Canvas, the agent profiles and the two automations exactly as Discava runs them.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Discava's agents run on one Linux workstation, under OpenHands Agent Canvas. There is no cloud
+deployment of OpenHands and no webhook. Everything is outbound polling to GitHub.
+
+## Agent Canvas
+
+Agent Canvas 1.41.0, installed from npm and started with one command:
+
+```bash
+npm install -g @openhands/agent-canvas
+agent-canvas
+```
+
+State lives in `~/.openhands/`: settings, agent profiles, secrets and the automations' SQLite
+database.
+
+## Conversation settings
+
+The parts of `~/.openhands/settings.json` that shape how the agents work:
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| `agent_kind` | `acp` | Use an external coding agent over the Agent Client Protocol |
+| `acp_server` | `claude-code` | The coding agent |
+| `acp_prompt_timeout` | `1800` | 30 minutes per turn: an implementation turn is long |
+| `max_iterations` | `500` | Room for a whole phase in one conversation |
+| `confirmation_mode` | `false` | Unattended. Nobody is there to confirm |
+| `security_analyzer` | `llm` | Commands are still screened for risk |
+| `default_runtime` | `local` | Runs on the host, where Node, pnpm and git already are |
+| `worktree_branch_prefix` | `openhands/` | Every branch an agent makes starts with this. The glue keys off it |
+
+## Agent profiles
+
+| Profile | Agent | Model | Used by |
+| --- | --- | --- | --- |
+| `default` | Claude Code (ACP) | Sonnet | GitHub issue to PR |
+| `reviewer` | Claude Code (ACP) | Opus | GitHub code review |
+
+## Secrets
+
+Stored in Agent Canvas (Settings → Secrets), by name:
+
+| Name | Used for |
+| --- | --- |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | The automations read GitHub with it. Conversations get it to clone, push and open PRs |
+| `OPENHANDS_AUTOMATION_API_KEY` | The automation backend's own key |
+
+The GitHub token is a personal access token on the maintainer's account, with repository contents,
+issues, pull requests and workflows write access.
+
+## The two automations
+
+Both were installed from the Agent Canvas automation catalog, not written by hand.
+
+### GitHub issue to PR
+
+| Field | Value |
+| --- | --- |
+| Template | `github-issue-to-pr` 1.2.4 |
+| Repository | `AlexTo/discava` |
+| Trigger label | `openhands` |
+| Branch prefix | `openhands/issue` → branches `openhands/issue-<n>` |
+| Pull request mode | Draft |
+| GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+| Schedule | `*/5 * * * *`, Australia/Sydney |
+| Agent profile | `default` |
+
+Each poll, it revises any `openhands/issue-<n>` PR whose head has a failing
+`software-factory/review` status, then starts work on labelled issues with no PR. A revise turn
+tells the agent to re-apply the `openhands-review` label afterwards, so the new head is reviewed.
+
+### GitHub code review
+
+| Field | Value |
+| --- | --- |
+| Template | `github-pr-reviewer` 1.11.2 |
+| Repository | `alexto/discava` |
+| Trigger label | `openhands-review` |
+| Requested reviewer | `all-hands-bot` (not used in practice: the label does the work) |
+| New reviews per scan | 2 |
+| Review tone | Concise |
+| Maintainers | none |
+| Schedule | `*/5 * * * *`, Australia/Sydney |
+| Agent profile | `reviewer` |
+
+While checks are still running, the reviewer posts a "⏳ Review waiting on checks" comment and
+tries again on a later scan. Its reviews start with "_This review was posted by an AI agent
+(OpenHands)._", carry a hidden `<!-- openhands-review-run: <id> -->` marker, and end with
+`✅ APPROVED` or `🔄 CHANGES REQUESTED`.
+
+<Aside type="caution" title="One account for everything">
+In Discava the implementing agent, the reviewer and the maintainer all use the same GitHub account.
+GitHub doesn't let an account approve its own PR, so the reviewer's verdict is posted as a
+`COMMENTED` review, and the glue reads the verdict line rather than the review state. For a team,
+give the automations a separate machine account. Then people can approve agent PRs normally, and
+branch protection can require it.
+</Aside>
+
+Next: [Spec to issue](../spec-to-issue/).

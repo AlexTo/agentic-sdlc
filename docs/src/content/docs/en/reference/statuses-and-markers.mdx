@@ -1,0 +1,52 @@
+---
+title: Statuses and markers
+description: The commit status and the hidden markers the pieces use to talk to each other.
+sidebar:
+  order: 2
+---
+
+The pieces never call each other. They leave signals on GitHub that the next piece looks for.
+
+## The commit status
+
+| Field | Value |
+| --- | --- |
+| Context | `software-factory/review` |
+| State | `failure`, only. A passing run or approval posts nothing |
+| Posted on | The PR's head commit at the time of the failure |
+| Posted by | Agent CI Status, Agent Review Status, or a person |
+| Description | `CI failed (fix attempt <n> of 3): <failed jobs>` or `Review requested changes (fix attempt <n> of 3): see the review`, at most 140 characters |
+| Target URL | The failed run, or the review |
+| Read by | The issue-to-PR worker, which revises the PR when its head has this status as `failure` or `error` |
+
+A new push starts without the status, so the worker stops revising once the agent has pushed.
+
+## Hidden markers
+
+| Marker | Where | Written by | Used for |
+| --- | --- | --- | --- |
+| `<!-- agent-issue spec:<folder> group:<n> -->` | First line of an implementation issue | Agent Issues | Finding the spec folder from a merged agent PR (through its `Closes #n`), and never opening a second issue for the same group |
+| `<!-- openhands-review-run: <id> -->` | Each reviewer agent review | Code review automation | Agent Review Status only acts on reviews that carry it |
+| `<!-- openhands-review-gate:waiting:<sha> -->` | "Review waiting on checks" comment | Code review automation | The reviewer's own record that it is waiting on that head |
+| `<!-- e2e-screenshots -->` | The E2E screenshots comment | PR Checks | Updating the one comment instead of adding a new one each run |
+
+## Verdict lines
+
+The reviewer ends each review with one of these on its own line:
+
+```text
+✅ APPROVED
+🔄 CHANGES REQUESTED
+```
+
+Agent Review Status matches `^🔄 CHANGES REQUESTED\s*$` on a line by itself. A review that only
+mentions the phrase in passing doesn't count.
+
+## Branch names
+
+| Pattern | Who | Matters because |
+| --- | --- | --- |
+| `openhands/issue-<n>` | Issue-to-PR automation | The only branch the worker revises, and the only one the fix-up workflows answer |
+| `openhands/issue-<n>-2`, … | Issue-to-PR automation, on a re-labelled issue | Never revised automatically |
+| anything starting `openhands/` | Agent branches | Merging one advances the chain |
+| `spec/<name>` (any other name) | People | Only advances the chain with `spec-ready` |

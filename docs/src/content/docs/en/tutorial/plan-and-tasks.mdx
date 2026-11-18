@@ -28,15 +28,17 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    ```
 
    `tasks.md` is ordered, checkable and grouped by phase. For the docs and review steps to work,
-   the format matters: every task has an ID, and phases are separate headings.
+   the format matters: every task has an ID, phases are `## Phase <n>: <title>` headings, and at
+   least one phase is a `User Story`. The first user story phase ends the first issue. See
+   [tasks.md format](../../reference/tasks-format/).
 
    ```markdown
-   ## Phase 1: Data and API
+   ## Phase 1: User Story 1 - Tags in the data and API (Priority: P1) 🎯 MVP
    - [ ] T001 Add `tags` to the note entity in packages/notes-table/src/entities/note.ts
    - [ ] T002 [P] Unit tests for tag rules (max five, unique, case-insensitive)
    - [ ] T003 Extend create and update procedures in packages/notes-api/src/procedures/notes.ts
 
-   ## Phase 2: Website
+   ## Phase 2: User Story 2 - Tags on the website (Priority: P2)
    - [ ] T004 Tag input on the note form
    - [ ] T005 Tag filter on the list page
    - [ ] T006 e2e scenario with screenshots, invariant and concurrency tests

@@ -1,0 +1,83 @@
+---
+title: 2. Configure the repository
+description: Create the labels and protect main. A fork doesn't copy either.
+sidebar:
+  order: 2
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**You'll end with:** every label the workflow uses, and a `main` branch that only takes pull
+requests with green checks and an approval.
+
+Run these from your clone. `gh` uses the default repository you set in
+[step 1](../fork/).
+
+<Steps>
+
+1. **Create the labels.** `--force` updates a label that already exists, so this is safe to re-run.
+
+   ```bash
+   gh label create spec-ready           --force --description "Merging this spec PR starts the agent"
+   gh label create openhands            --force --description "OpenHands implements this issue"
+   gh label create openhands-review     --force --description "OpenHands reviews this PR's head"
+   gh label create no-ui-screenshots    --force --description "Waives the UI Screenshots check: a UI change with nothing to look at"
+   for n in 1 2 3; do
+     gh label create ci-fix-$n          --force --description "CI fix-up attempt $n of 3"
+     gh label create review-fix-$n      --force --description "Review fix-up attempt $n of 3"
+   done
+   gh label create ci-fix-exhausted     --force --description "CI fix-ups used up; a person takes over"
+   gh label create review-fix-exhausted --force --description "Review fix-ups used up; a person takes over"
+   ```
+
+2. **Protect `main`.** Replace `<you>`:
+
+   ```bash
+   gh api -X PUT repos/<you>/agentic-sdlc/branches/main/protection --input - <<'EOF'
+   {
+     "required_pull_request_reviews": {
+       "required_approving_review_count": 1,
+       "dismiss_stale_reviews": true
+     },
+     "required_status_checks": {
+       "strict": false,
+       "contexts": [
+         "Checks (lint)", "Checks (test)", "Checks (build)",
+         "Tasks format", "E2E tests", "UI Screenshots"
+       ]
+     },
+     "enforce_admins": false,
+     "restrictions": null
+   }
+   EOF
+   ```
+
+   `enforce_admins: false` lets you, as the owner, merge PRs that the agents opened with your own
+   token (see the caution below). `E2E tests` is the job that gathers the e2e shards. `Tasks format`
+   passes when no `tasks.md` changed, so it is safe to require.
+
+   <Aside type="caution">
+   Don't require the `software-factory/review` status. It is a signal to the agent, only ever
+   posted as `failure`, and requiring it would block every PR.
+   </Aside>
+
+</Steps>
+
+<Aside type="caution" title="One account or two">
+For a first try, the agents can use a token from your own account, as Discava does. GitHub won't
+let an account approve its own PR, though. Your approval and the reviewer agent's then show as
+comments, and you merge as the repository admin. For a team, give the agents a separate GitHub
+account with write access, and make its token the one in [step 3](../openhands/). Then people can
+approve agent PRs normally.
+</Aside>
+
+## Check it worked
+
+```bash
+gh label list | grep -E 'openhands|spec-ready|fix|screenshots'
+gh api repos/<you>/agentic-sdlc/branches/main/protection --jq '.required_status_checks.contexts'
+```
+
+The first command lists 12 labels. The second prints the six check names.
+
+Next: [3. Install OpenHands](../openhands/).

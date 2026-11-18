@@ -1,0 +1,100 @@
+---
+title: One phase at a time
+description: How a spec's phases become a chain of issues and pull requests, where each merge opens the next issue.
+sidebar:
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**The short version:** a spec isn't handed to the agent all at once. `tasks.md` is split into
+phases, and the agent gets **one group of phases per issue**. Each issue becomes one pull request.
+When that pull request merges, the next issue opens by itself, until no agent tasks are left.
+
+```d2
+direction: right
+classes: {
+  human: { style: { fill: "#fee2e2"; stroke: "#ef4444" } }
+  auto: { style: { fill: "#f1f5f9"; stroke: "#64748b" } }
+}
+spec: "Spec PR\n(spec-ready)" { class: human }
+i1: "Issue 1\nsetup + foundations\n+ first story" { class: auto }
+p1: "PR 1" { class: auto }
+i2: "Issue 2\nnext phase" { class: auto }
+p2: "PR 2" { class: auto }
+i3: "Issue 3\nlast phase" { class: auto }
+p3: "PR 3" { class: auto }
+done: "Done:\nnothing opens" { class: human }
+
+spec -> i1: "merge"
+i1 -> p1
+p1 -> i2: "merge"
+i2 -> p2
+p2 -> i3: "merge"
+i3 -> p3
+p3 -> done: "merge"
+```
+
+## Why not the whole spec in one go?
+
+- **Review stays possible.** A whole feature as one PR is thousands of lines nobody reads properly.
+  One phase is a PR you can review in one sitting.
+- **Each step builds on merged code.** Phase 3 starts from `main` with phases 1 and 2 already in
+  it, reviewed and tested, not from the agent's own unreviewed work.
+- **Mistakes stay small.** If a phase goes wrong, you throw away one PR, not a feature.
+- **The agent's context stays focused.** One phase is a scope an agent can hold in mind from first
+  test to last commit.
+
+## How the phases are grouped
+
+`tasks.md` is written by `/speckit-tasks` in phases: usually setup, foundations, then one phase per
+user story, then polish. The Agent Issues workflow groups them like this:
+
+| Group | Phases | Why |
+| --- | --- | --- |
+| 0 | Everything up to and including the **first** `User Story` phase | Setup and foundations alone deliver nothing anyone can try. Shipped with the MVP story, the first PR is a working slice |
+| 1, 2, … | Each later phase, on its own | One phase, one issue, one PR |
+
+The issue names its task range ("Tasks `T015` to `T019` … Do not start tasks outside these
+phases"), and the agent ticks each task in `tasks.md` as it finishes it.
+
+## What opens the next issue
+
+Agent Issues runs when a pull request merges into `main`, and acts on only two kinds of merge:
+
+1. **A spec PR labelled `spec-ready`.** It opens group 0.
+2. **A PR from an agent branch (`openhands/…`).** It reads the `tasks.md` the merge just updated,
+   finds the first group with an unticked task that isn't **(human)**, and opens its issue.
+
+Every other merge is ignored, even one that edits `specs/`. This is deliberate. The agent's own PRs
+change `tasks.md`, so a rule like "run when `specs/**` changes" would trigger itself.
+
+## What stops the chain
+
+| Situation | What happens |
+| --- | --- |
+| Every agent task is ticked | Nothing opens. The feature is done. Any **(human)** tasks are left for the reviewer |
+| The merged PR didn't tick all its tasks | The next issue for that group already exists, so no duplicate opens. The merged PR gets a comment that lists the unticked task IDs |
+| `tasks.md` isn't in the expected format | The run fails instead of handing the agent the wrong tasks. The Tasks format PR check normally stops this earlier |
+| The spec PR merged without `spec-ready` | Nothing opens. Add the label to the merged PR, and it starts |
+
+To restart a stalled chain, fix `tasks.md` (tick or finish the tasks), then run **Agent Issues**
+by hand with the spec folder name.
+
+## Many features at once
+
+The chain is sequential **within** one spec. Different specs are independent: each has its own
+chain, and the agent works on all their open issues. That is where the throughput comes from. You
+write the next spec while the last one's phases go through review.
+
+<Aside type="tip">
+Changing a spec halfway through is normal. Update `spec.md` and `plan.md`, add the new tasks to
+`tasks.md` with the next unused IDs, and merge. The next merge of an agent PR picks them up like
+any other tasks.
+</Aside>
+
+A real example, six issues for one feature, is in
+[A real feature: course reviews](../../discava/a-real-feature/). The exact format rules are in
+[Reference: tasks.md format](../../reference/tasks-format/).
+
+Next: [The agent runtime](../the-agent-runtime/).

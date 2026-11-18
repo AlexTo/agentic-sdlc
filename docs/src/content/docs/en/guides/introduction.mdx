@@ -1,0 +1,78 @@
+---
+title: Introduction
+description: What this guide covers, who it is for, and how to read it.
+sidebar:
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+This guide shows you how to run a software lifecycle in which **agents write the code and people
+make two decisions**: approve the spec, and approve the result. Everything in between (opening
+issues, writing code and tests, reacting to CI, answering a review) runs on its own, through the
+normal GitHub process.
+
+It is not a thought experiment. The workflow was built and is used every day on
+[Discava](https://github.com/AlexTo/discava), a serverless, AWS-native learning management system.
+Between 29 October and 18 November 2026, Discava's two OpenHands automations ran more than 2,500
+scheduled sweeps. Twelve feature specs were written this way, and agents wrote, fixed and reviewed
+most of the pull requests that implement them.
+
+## The short version
+
+Three off-the-shelf tools do most of the work:
+
+| Tool | What it does here |
+| --- | --- |
+| [Speckit](https://github.com/github/spec-kit) | Turns an idea into `spec.md`, `plan.md` and `tasks.md`, checked against a project constitution |
+| [OpenHands](https://github.com/OpenHands/OpenHands) | Turns a labelled issue into a pull request, and revises the pull request when told something is wrong. A second OpenHands automation reviews it |
+| GitHub Actions | Runs the checks, and holds the glue between the other two |
+
+None of them knows about the others. **The glue is what this guide is mostly about**: ten small,
+tested pieces of automation that connect a finished spec to the agent, CI to the agent, and the
+reviewer to the agent, with limits so that nothing loops forever.
+
+## Who this is for
+
+- **Tech leads and staff engineers** deciding whether to adopt the workflow. Start with
+  [Concepts](../../concepts/principles/).
+- **Anyone who wants to try it.** [Fork this repository](../fork-this-repo/): a fork has Discava's
+  setup. Then follow [Set it up](../../setup/before-you-start/) to point OpenHands at it and run a
+  feature for the example notes app through the whole loop.
+- **The engineer bringing it to a product repository.** Read
+  [How Discava does it](../../discava/overview/), then
+  [Adopt it in your own repository](../../adopt/overview/).
+- **Developers who will use it day to day.** The [tutorial](../../tutorial/the-case/) follows one
+  feature from idea to merge.
+
+You should be comfortable with Git, GitHub pull requests and GitHub Actions. You don't need prior
+experience with Speckit or OpenHands.
+
+## How this guide is organised
+
+| Section | Answers |
+| --- | --- |
+| **Start here** | What is this, and how does a feature move through it? |
+| **Concepts** | Why it is built this way. The principles, and the five pieces |
+| **How Discava does it** | What exactly was built to fill each gap, with file paths |
+| **Set it up: fork and run** | Fork this repository, configure it, install OpenHands, and run your first feature |
+| **Adopt it in your own repository** | How to add each piece to an existing repository, in order |
+| **Tutorial** | What using it feels like, on a small worked feature |
+| **Reference** | Labels, statuses, workflows, the `tasks.md` format, troubleshooting, glossary |
+
+## Conventions
+
+- `AGENTS.md` means the agent guidance file at the root of the repository. Name it whatever your
+  coding agent reads.
+- `<you>/agentic-sdlc` is your fork, and `owner/repo` is any repository. `@your-scope` is your workspace's npm scope. This repository
+  uses `@agentic-sdlc`, and Discava uses `@discava`.
+- Commands run from the repository root unless a step says otherwise.
+- **(human)** marks a task an agent must not do. It is also the literal marker used in `tasks.md`.
+
+<Aside type="note">
+This repository is a working copy of Discava's setup. Its `.github/`, `packages/common/scripts/` and
+`.specify/` are the same glue Discava runs, around a small notes app instead of Discava's product,
+with Discava's AWS deployment left out. Fork it and you have the setup.
+</Aside>
+
+Next: [How it works](../how-it-works/).

@@ -234,5 +234,7 @@ the complete pipeline, so you can see the workflow end to end rather than read a
 ## 📚 Learn more
 
 Read the full guide at **[alexto.github.io/agentic-sdlc](https://alexto.github.io/agentic-sdlc/)**:
-the principles behind the workflow, the lifecycle from spec to merge, and a step-by-step tutorial.
+the concepts behind the workflow, how Discava fills each gap (with a real feature traced from spec
+to merge), how to fork this repository and run the same workflow yourself, how to adopt it in
+your own repository, a tutorial, and reference pages.
 Its source is in [`docs/`](docs).

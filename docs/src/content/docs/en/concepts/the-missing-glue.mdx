@@ -1,0 +1,80 @@
+---
+title: The missing glue
+description: The ten gaps between Speckit, OpenHands and CI, and the rules for filling them.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Speckit ends with a `tasks.md`. OpenHands starts from a labelled issue and stops at a pull request.
+CI reports a result and moves on. Each tool does its own job well, and none of them hands work to
+the next. Without glue, *you* do the handing over: you copy tasks into an issue, notice that CI went
+red, and tell the agent to fix it.
+
+These are the gaps, and what fills each one:
+
+| # | The gap | What fills it |
+| --- | --- | --- |
+| 1 | Nothing turns a finished spec into work for the agent | A workflow reads `tasks.md` and opens the next implementation issue, one group of phases at a time |
+| 2 | The agent doesn't know CI failed | A workflow reports a failing run back to the agent as the commit status it already watches |
+| 3 | A reviewer's "changes requested" goes unheard | A workflow does the same for the reviewer agent's verdict |
+| 4 | Nothing stops a stuck agent looping forever | Both fix-up loops are capped at three attempts, counted with labels, then a person takes over |
+| 5 | `tasks.md` is only a convention, so a malformed one silently stalls the chain | A PR check validates its format |
+| 6 | UI changes reach review without anyone looking at them | A check requires e2e screenshots, and CI posts them on the PR |
+| 7 | Merging the agent's PR doesn't start the next phase | The merge of an agent branch opens the next issue, until the spec is done |
+| 8 | The agent can't run the real stack without cloud access | Local stand-ins for every service, so the whole app and its e2e tests run with no credentials |
+| 9 | Merging doesn't ship anything | A green build on `main` deploys by itself, skips a commit that is no longer the latest, and production waits for a person |
+| 10 | An agent can commit a leaked secret or a vulnerable dependency | A secret and dependency scan on every build, and again before each deploy |
+
+[How Discava does it](../../discava/overview/) maps each row to its files.
+
+## Rules for writing glue
+
+These rules came out of building and fixing the glue on Discava. Follow them and the glue stays
+boring, which is the point.
+
+### Decide in code, not in a prompt
+
+Every "what happens next" decision is a pure function with unit tests: `decide()` in `gate.ts`
+for which merges count, `planCi()` for whether to send the agent back. The workflow file only wires
+the event to the script. You can test a decision without GitHub, and the agent can't talk its way
+around it.
+
+### Keep the state on GitHub
+
+There is no database. The attempt count is a label (`ci-fix-2`). The issue for a group of phases
+is found by a hidden marker in its body (`<!-- agent-issue spec:<folder> group:2 -->`). "Already
+sent back" is a commit status. Anyone can see the state, and a person can change it by hand, for
+example by removing a label to allow another attempt.
+
+### Speak the agent's existing language
+
+OpenHands already revises a PR whose head carries a failing `software-factory/review` status. So
+the glue posts that status instead of inventing a new trigger. No change to OpenHands is needed.
+
+### Run trusted code with the token
+
+The glue workflows hold a token that can write labels, statuses and comments. They check out the
+**default branch**, never the pull request, so nothing an agent or a contributor wrote runs with
+that token. Anything read from the PR (branch names, bodies) is checked against a strict pattern
+before it is used.
+
+### Be idempotent
+
+GitHub delivers events more than once, and people re-run jobs. Every script checks before it acts:
+no second issue for the same group, no second attempt for the same commit, no reaction to a run
+for a commit that is no longer the head.
+
+### Fail loudly, somewhere a person looks
+
+A workflow notice is read by nobody. When the chain stalls, say so on the pull request: "the next
+issue was not opened because these tasks aren't ticked: T014, T015".
+
+<Aside type="note">
+The glue in this repository is about 1,600 lines of TypeScript, and as many again in unit tests,
+across four folders in `packages/common/scripts/src/`. It is small enough to read in an afternoon, and you should read it
+before adopting it.
+</Aside>
+
+Next: [Feedback loops](../feedback-loops/).

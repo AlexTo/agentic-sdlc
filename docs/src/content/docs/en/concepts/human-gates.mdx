@@ -1,0 +1,59 @@
+---
+title: Human gates
+description: The two decisions people keep, what agents are never allowed to do, and when you are pulled in early.
+sidebar:
+  order: 8
+---
+
+People are not removed from the loop. They are moved to the two points where judgment matters most,
+and kept away from the waiting and the typing in between.
+
+## Gate 1: approve the spec
+
+The spec PR is reviewed like code. Merging it **with the `spec-ready` label** is the only thing
+that starts implementation. The label is deliberate. The automation never starts from a path filter
+on `specs/**`, because the agent's own PRs edit `tasks.md` and the chain would trigger itself.
+
+What to look for:
+
+- Does `spec.md` say what you actually want, with every rule stated as a requirement?
+- Is each phase small enough to review in one sitting?
+- Is anything in `plan.md` something you would reject in a code review?
+
+## Gate 2: approve the result
+
+Each agent PR reaches you after CI is green and the reviewer agent has approved. Your job is to
+judge the outcome, not to hunt for problems:
+
+- Read the PR description: what changed, which tasks, which **(human)** tasks are left for you.
+- Look at the **E2E screenshots** comment instead of pulling the branch.
+- Do the **(human)** tasks: manual checks on a local stack or a deployed stage.
+- Merge, or request changes.
+
+## What agents may never do
+
+| Never | Enforced by |
+| --- | --- |
+| Merge, or push to `main` | Branch protection requiring an approving review. The agent's token is used only for its own branch |
+| Edit `.github/workflows/` | Constitution and issue instructions. Reviewer and human review catch it. The glue workflows run the default branch's code, so an edited workflow in a PR can't change them |
+| Weaken a test to make it pass | Constitution ("tests are a specification"), issue instructions, reviewer agent |
+| Touch cloud credentials | The conversation is never given them. Deployment uses short-lived OIDC roles from a GitHub environment |
+| Work outside its task range | The issue names the range. The next issue doesn't open until every agent task is ticked |
+| Retry forever | Three attempts per loop, counted in labels |
+
+## When you are pulled in early
+
+| Signal | What happened | What to do |
+| --- | --- | --- |
+| `ci-fix-exhausted` | CI failed three times after automatic fixes | Read the last failure. Comment with guidance, fix it yourself, or fix the spec. Remove the labels to let the agent retry |
+| `review-fix-exhausted` | The reviewer still asks for changes after three rounds | Decide whether the reviewer is right. Often the spec is ambiguous |
+| A comment on the issue from the agent | It was blocked and stopped, as instructed | Answer it, then remove and re-apply the `openhands` label |
+| A comment on a merged PR: "the next implementation issue … was not opened" | The phase's tasks aren't all ticked | Tick or finish them, then run Agent Issues by hand for the spec folder |
+
+## Production is a third, optional gate
+
+Deploying to a development stage can be automatic on every green `main`. Deploying to production
+should wait for a person, using required reviewers on a GitHub environment. See
+[Deploy and security](../../discava/deploy-and-security/).
+
+Next: [How Discava does it](../../discava/overview/).

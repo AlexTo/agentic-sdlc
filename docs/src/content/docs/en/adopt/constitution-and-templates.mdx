@@ -1,0 +1,143 @@
+---
+title: 3. Constitution and templates
+description: Write the constitution with the clauses the workflow depends on, and change two Speckit templates so the automation can read their output.
+sidebar:
+  order: 3
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**You'll end with:** a ratified constitution, a `tasks-template.md` that produces files the Agent
+Issues workflow can read, and a `spec-template.md` with a parent issue line.
+
+<Steps>
+
+1. **Write your constitution.** In your coding agent:
+
+   ```text
+   /speckit-constitution
+   ```
+
+   Give it your project's own principles: architecture, data model, security defaults, code
+   conventions. [Discava's](../../discava/constitution-and-guidance/) is a full example. Then make
+   sure these clauses are in it, because the rest of the workflow depends on them. Adapt the
+   commands to your stack:
+
+   ```markdown
+   ### Layered tests
+   - **Unit tests.** New business logic MUST ship with unit tests covering its main behavior and
+     the rules it enforces.
+   - **End to end.** A change to a main user flow MUST add or extend an e2e scenario. Scenarios
+     MUST make their own users and uniquely named data.
+   - **Tests are a specification.** A failing test MUST be resolved by fixing the code, unless the
+     spec or plan changes the behavior it covers. Weakening an existing test (loosening an
+     assertion, deleting a case, adding `skip` or `only`, widening a mock or snapshot) is allowed
+     only when a task names the behavior change that justifies it, and the PR description says
+     so. Never edit a test just to turn it green.
+
+   ### Everything runs locally
+   A feature MUST work under `pnpm dev` with Docker and no cloud account. Any cloud service a
+   feature adds MUST get a local stand-in or a documented, justified exception.
+
+   ## Development Workflow
+   - Features are implemented by autonomous agents, each on its own branch and pull request, so a
+     task list MUST NOT require a local stack, Docker or `pnpm dev`. The agent runs unit tests,
+     lint, typecheck and build itself. It writes the e2e tests, but pull request CI runs them. A
+     task that needs a running local stack or people MUST be marked `(human)` in `tasks.md` and
+     is done by a reviewer before merge.
+   - Pull request CI is the gate. An agent MUST NOT merge, push to `main`, edit CI workflows, or
+     weaken a test to make CI pass.
+   - Plans MUST pass the Constitution Check, and any violation MUST be recorded in the plan's
+     Complexity Tracking with a justification.
+   ```
+
+2. **Make tests mandatory in `tasks-template.md`.** Replace the stock line that starts
+   `**Tests**: The examples below include test tasks. Tests are OPTIONAL` with:
+
+   ```markdown
+   **Tests**: The constitution requires tests, so include them. Unit tests cover new business
+   logic. A change to a main user flow needs an e2e scenario. Drop only the layers the feature
+   doesn't touch.
+
+   **Who runs what**: an automated agent implements these tasks without `pnpm dev` or Docker. It
+   runs unit and component tests, lint, typecheck and `build` locally. The e2e scenarios are
+   written by the agent but run on PR CI; a CI failure is the feedback for those. Mark a task
+   **(human)** when it needs a running local stack or people (manual checks, timing, screen
+   readers); a reviewer does those before merge.
+   ```
+
+   Remove `(OPTIONAL - only if tests requested)` from each `### Tests for User Story <n>` heading.
+
+3. **Add the format rules to `tasks-template.md`**, after the format legend (`[P]`, `[Story]`).
+   Add this line to the legend:
+
+   ```markdown
+   - **(human)**: needs a running local stack or people; not done by the agent. Not for
+     screenshots: a task that changes what a user sees adds `screenshot()` calls to its e2e
+     scenario, and CI posts them on the pull request (`UI Screenshots` fails without them)
+   ```
+
+   Then add this block:
+
+   ```markdown
+   **Read by automation**: the Agent Issues workflow reads this file to decide which tasks to hand
+   the implementing agent, so keep this structure (PR checks refuse a file that strays from it):
+
+   - every phase is a heading `## Phase <number>: <title>`, numbered upwards, with at least one
+     task;
+   - a user story's phase is titled `User Story <n> - <what it delivers>`; the first one ends the
+     first implementation issue (setup, foundations and that story);
+   - every task is a line `- [ ] T<3 digits> <description>` starting in the first column, under a
+     phase, with an id no other task has; a task added later takes the next unused id, wherever
+     it is placed;
+   - a finished task is ticked in place (`- [x]`), never deleted or renumbered.
+   ```
+
+4. **Add test tasks to each user story** in `tasks-template.md`, under `### Tests for User Story 1`
+   (and 2, 3), so `/speckit-tasks` always generates them:
+
+   ```markdown
+   - [ ] T01A [P] [US1] Unit tests for new procedures/access patterns in the API's `*.test.ts`
+   - [ ] T01C [US1] (If it changes a main user flow) E2E scenario in `packages/e2e/src/scenarios/[flow].e2e.ts`
+   ```
+
+   Discava adds a third, for its invariants: *"(If a rule spans records or writers) Invariant in
+   `helpers/invariants.ts` and a test that breaks it, written before the shared write helper"*.
+
+5. **Add one line to the notes at the end** of `tasks-template.md`:
+
+   ```markdown
+   - Do not edit existing tests to make them pass. If one looks wrong, stop and raise it. A task
+     that changes an existing test must cite the spec change behind it
+   ```
+
+6. **Add the parent issue line to `spec-template.md`**, under the header fields:
+
+   ```markdown
+   **Parent issue**: [#<number>, or "none" if there is no tracking issue]
+   ```
+
+</Steps>
+
+## Check it worked
+
+Generate a throwaway spec and tasks for a tiny feature. Then, once the glue scripts are in place
+([step 5](../glue-scripts/)):
+
+```bash
+pnpm nx run @your-scope/common-scripts:validate-tasks
+```
+
+```text
+1 tasks.md file(s) are in the expected format.
+```
+
+Delete the throwaway spec folder afterwards.
+
+<Aside type="caution">
+`/speckit-tasks` sometimes writes `### Phase 2` or indents a task. That is exactly what the
+validator catches, so don't relax the validator. Fix the template wording until the generated files
+pass.
+</Aside>
+
+Next: [4. Agent guidance and the issue template](../agent-guidance/).

@@ -1,0 +1,67 @@
+---
+title: Layers of trust
+description: The checks every change passes through, cheapest first, and what each one catches.
+sidebar:
+  order: 7
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Automation is only worth it if you can trust what comes out. Every change passes through layers of
+checks. Each layer narrows what reaches the next: cheap, automatic checks run first and catch the
+most, and only what they can't judge reaches a person.
+
+<p>
+  <img alt="Inverted triangle of five layers, widest to narrowest: Codebase, Static analysis, Verification, Prose, Human review" src="/agentic-sdlc/diagrams/automation-trust.svg" width="640" />
+</p>
+
+| Level | Layer | What it catches |
+| --- | --- | --- |
+| **Codebase** | Unit tests | Wrong business logic and broken rules |
+| | Invariants | Data that breaks a rule spanning records, checked after every e2e test |
+| | Concurrency tests | Race conditions when two requests hit at the same moment |
+| **Static analysis** | Lint, typecheck, build | Style, type and build errors |
+| | Tasks format check | A malformed `tasks.md` that would silently stall the chain |
+| | Generated files check | Lint or build output the agent forgot to commit |
+| **Verification** | End-to-end tests | Broken user flows, in a real browser against the local stack |
+| | Screenshots | UI changes nobody has looked at |
+| **Prose** | Constitution, `AGENTS.md`, skills | Guidance the agent reads *before* it writes, so conventions are followed instead of caught |
+| | Agent reviewer | Problems no test covers, read like a code review |
+| **Human review** | Final review | Whatever the layers above can't judge. A person always merges |
+
+## Prose guides, code enforces
+
+Prose (the constitution, `AGENTS.md`, the issue's instructions) is cheap to write and prevents
+most mistakes. But an agent can misread it or skip it. So every rule that matters also has a check
+that fails: "write e2e screenshots" is in the issue template *and* enforced by the UI Screenshots
+check. "Keep `tasks.md` in this format" is in the template *and* in a PR check.
+
+When you add a rule, ask: if the agent ignores this, what goes red?
+
+## Tests are a specification
+
+The most important rule in Discava's constitution:
+
+> A failing test MUST be resolved by fixing the code, unless the spec or plan changes the behavior
+> it covers. Weakening an existing test (loosening an assertion, deleting a case, adding `skip` or
+> `only`, widening a mock or snapshot) is allowed only when a task names the behavior change that
+> justifies it, and the PR description says so.
+
+An agent under pressure to turn CI green will, sooner or later, "fix" the test. This rule, repeated
+in the issue template and checked by the reviewer agent, is what keeps the test suite meaning
+something.
+
+## Invariants: tests for data
+
+Unit tests check one function. E2E tests check one flow. Neither notices when two features,
+written in different PRs by different agent runs, leave the database in a state that breaks a rule
+spanning both. Invariants close that gap. They are a list of checks over all the data, for example
+"a course's rating count equals its number of visible reviews", run after **every** e2e test. A
+violated invariant fails the test that caused it.
+
+<Aside type="tip">
+Invariants are the layer that pays off most as agents write more of the code. They catch the
+mistakes that come from two agents each being locally right.
+</Aside>
+
+Next: [Human gates](../human-gates/).

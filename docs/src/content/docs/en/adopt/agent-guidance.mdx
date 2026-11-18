@@ -1,0 +1,99 @@
+---
+title: 4. Agent guidance and the issue template
+description: Write AGENTS.md, and add the issue template whose instructions go into every implementation issue.
+sidebar:
+  order: 4
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**You'll end with:** an `AGENTS.md` every agent reads first, and
+`.github/ISSUE_TEMPLATE/implement-phase.md`, the source of the standing instructions in every
+implementation issue.
+
+<Steps>
+
+1. **Write `AGENTS.md`** at the repository root. Keep it to what an agent needs on every run, and
+   link to `CONTRIBUTING.md` for the rest. Use these sections:
+
+   ```markdown
+   # AGENTS.md
+
+   Read CONTRIBUTING.md before opening a PR.
+
+   ## What this is
+   One paragraph: the product, the stack, the monorepo tool.
+
+   ## Commands
+   Install; build, lint, test everything; one project's tests, once (not watch mode);
+   one test file; `nx affected`; e2e; local dev; resetting local data.
+
+   ## Architecture
+   One bullet per package: what it is, what it may import, where new code of each kind goes.
+
+   ## Conventions
+   - Conventional Commits for commit and PR titles (enforced by commitlint).
+   - The formatter and linter, by name, so the agent doesn't add another.
+   - Where helpers go. Where shared code goes.
+   - Every rule a reviewer has had to repeat twice.
+   ```
+
+   <Aside type="tip">
+   The commands section matters most. An agent that can't find "run one test file, once" will run
+   the whole suite in watch mode and hang.
+   </Aside>
+
+2. **Copy the issue template** from this repository to
+   `.github/ISSUE_TEMPLATE/implement-phase.md`. The Agent Issues script reads everything under
+   `## Instructions for the agent` from it at run time. The full template:
+
+   ```markdown
+   ---
+   name: Implement a spec phase
+   about: Hand one phase of a feature's tasks.md to the implementing agent
+   title: "feat(<scope>): <phase or story>"
+   labels: []
+   ---
+
+   ## Spec
+
+   - Spec folder: `specs/<timestamp>-<name>/` (read `spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `contracts/`)
+   - Parent issue: #<number>
+
+   ## Scope
+
+   Tasks `T0xx` to `T0yy` of `tasks.md` (<phase or story>). Do not start tasks outside this range.
+
+   ## Instructions for the agent
+
+   - Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
+   - Work through the scope in order, writing each story's tests first. Tick each task in `tasks.md` in the same commit that completes it.
+   - Do not use `pnpm dev`, Docker or the e2e runner locally. Run unit and component tests (once, not in watch mode), `pnpm lint`, typecheck and `pnpm build` on what you changed. E2E and concurrency tests run on PR CI: write them, then read CI's result.
+   - A change to what a user sees ships with `screenshot(page, 'name')` calls (`packages/e2e/src/helpers/screenshots.ts`) in the e2e scenario for that flow, at each state a reviewer would want to see: PR CI posts them as the `E2E screenshots` comment, and the `UI Screenshots` check fails without them. Don't leave screenshots to a **(human)** task.
+   - Skip tasks marked **(human)** and list them in the PR description for the reviewer.
+   - Use Conventional Commits for every commit. The PR title is a Conventional Commit too, for example `feat(assignments): submit work to an upload assignment`, not `[#n] ...`.
+   - In the PR description write `Refs #<parent>`. Never use `Closes` or `Fixes` against the parent issue; closing this issue is fine.
+   - Never weaken a test to make it pass, never edit `.github/workflows/`, never merge, and don't touch cloud credentials.
+   - If you are blocked, comment on this issue with what you tried and stop.
+   ```
+
+   Keep `#<parent>` literally. The script replaces it with the spec's parent issue, and drops the
+   bullet when the spec has none. Keep the heading `## Instructions for the agent` exactly, because
+   the script looks for it and fails without it.
+
+3. **Edit the instructions to match your stack**: the commands, the screenshot helper path, and
+   what "cloud credentials" means for you.
+
+</Steps>
+
+## Check it worked
+
+```bash
+grep -c '^## Instructions for the agent$' .github/ISSUE_TEMPLATE/implement-phase.md
+```
+
+```text
+1
+```
+
+Next: [5. The glue scripts](../glue-scripts/).
