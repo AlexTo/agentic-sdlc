@@ -49,7 +49,7 @@ There are two fix-up loops, and each is limited to **five** attempts per PR:
 | Review | **Agent Review Status**, on the reviewer agent's `🔄 CHANGES REQUESTED` | `review-fix-1` to `review-fix-5` | `review-fix-exhausted` |
 
 The counters are separate, so a PR can use up to five CI fixes and five review fixes. After the
-third attempt in a loop, its workflow comments, adds the `*-exhausted` label and stops.
+fifth attempt in a loop, its workflow comments, adds the `*-exhausted` label and stops.
 
 <Aside type="caution">
 An exhausted loop is the one time you are pulled in early. For `ci-fix-exhausted`, read the last
