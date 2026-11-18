@@ -20,6 +20,24 @@ What to look for:
 - Is each phase small enough to review in one sitting?
 - Is anything in `plan.md` something you would reject in a code review?
 
+### This is now the main bottleneck
+
+Once the loops run by themselves, code review is small: one green, agent-approved PR per phase.
+The slowest human step is this one. Every feature waits here until someone agrees the spec is right.
+
+It doesn't have to wait for a developer. `spec.md` is plain language (user stories, acceptance
+scenarios, functional requirements), so a **business analyst** or **product owner** can review it
+on the spec PR, comment, and approve. Split the review by file:
+
+| Reviewer | Reads | Asks |
+| --- | --- | --- |
+| Product owner, business analyst | `spec.md` | Is this the feature we want? Are the rules and edge cases right? Is anything missing? |
+| Engineer | `plan.md`, `data-model.md`, `contracts/`, `tasks.md` | Is the design sound? Are the phases small enough to review? |
+
+Anyone who can read the repository can comment. For their approval to count toward branch
+protection, they need write access. Make the spec PR the place where requirements are agreed,
+instead of a separate document that drifts.
+
 ## Gate 2: approve the result
 
 Each agent PR reaches you after CI is green and the reviewer agent has approved. Your job is to

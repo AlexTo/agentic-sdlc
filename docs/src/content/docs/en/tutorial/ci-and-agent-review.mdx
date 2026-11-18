@@ -41,13 +41,21 @@ sends the implementing agent back the same way a red CI does.
 
 ## The cap
 
-Each loop is limited to **three** attempts, tracked with `ci-fix-1` to `ci-fix-3` labels. After
-the third, the workflow comments, adds `ci-fix-exhausted` and stops.
+There are two fix-up loops, and each is limited to **three** attempts per PR:
+
+| Loop | Sent back by | Counted with | Gives up with |
+| --- | --- | --- | --- |
+| CI | **Agent CI Status**, on a red PR Checks run | `ci-fix-1` to `ci-fix-3` | `ci-fix-exhausted` |
+| Review | **Agent Review Status**, on the reviewer agent's `🔄 CHANGES REQUESTED` | `review-fix-1` to `review-fix-3` | `review-fix-exhausted` |
+
+The counters are separate, so a PR can use up to three CI fixes and three review fixes. After the
+third attempt in a loop, its workflow comments, adds the `*-exhausted` label and stops.
 
 <Aside type="caution">
-`ci-fix-exhausted` is the one time you are pulled in early. Read the last failure, then either
-comment with guidance, fix it yourself, or go back to the spec: repeated failure often means the
-spec was ambiguous. Fixing the spec and regenerating beats patching the code.
+An exhausted loop is the one time you are pulled in early. For `ci-fix-exhausted`, read the last
+failure. For `review-fix-exhausted`, decide whether the reviewer is right. Then either comment with
+guidance, fix it yourself, or go back to the spec: repeated failure often means the spec was
+ambiguous. Fixing the spec and regenerating beats patching the code.
 </Aside>
 
 Next: [Merge and repeat](../merge-and-repeat/).

@@ -138,8 +138,25 @@ final human review before merge. When a merge lands, the next issue opens by its
 | **Fix** | OpenHands, bounded | A red CI or a "changes requested" verdict from the agent reviewer sends the agent back by itself, at most **three times** per PR, then it stops and asks for a human. |
 | **Human review** | Developer | A person has the final say: they review and merge. Merging opens the next issue, until the spec is done. |
 
-The "fix it" prompts you used to type by hand are now automatic: CI failure → status posted → agent
-revises the same PR. Nobody pastes an error message.
+The "fix it" prompts you used to type by hand are now automatic, in two loops:
+
+- **CI fix:** CI fails → status posted → agent revises the same PR. Up to three times, counted with
+  `ci-fix-1` to `ci-fix-3`.
+- **Review fix:** the agent reviewer requests changes → status posted → agent revises the same PR.
+  Up to three times, counted with `review-fix-1` to `review-fix-3`.
+
+Nobody pastes an error message or relays a review comment.
+
+### 🧑‍💼 Where people still spend time
+
+With the loop running by itself, the main human bottleneck moves to the front: **reviewing the
+spec**. Code review shrinks to one small, green, agent-approved PR per phase, but every feature
+still needs someone to decide that `spec.md` says the right thing.
+
+That review no longer has to wait for a developer. A spec is plain language: user stories,
+acceptance scenarios and requirements. A business analyst or product owner can read it, comment on
+the spec PR and approve it, alongside an engineer who checks `plan.md`. The people who know *what*
+to build review the part that says what to build.
 
 ## 🧩 The missing glue
 
