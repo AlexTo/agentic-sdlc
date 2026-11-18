@@ -40,6 +40,25 @@ produce these, one step at a time:
 
 Each feature gets its own folder, for example `specs/20261116-013307-course-reviews/`.
 
+```d2
+direction: right
+
+idea: one-paragraph idea
+constitution: constitution.md {shape: document}
+
+folder: "specs/<timestamp>-<name>/" {
+  style.stroke-dash: 3
+  spec: spec.md {shape: document}
+  plan: "plan.md\ndata-model.md\ncontracts/" {shape: document}
+  tasks: tasks.md {shape: document}
+  spec -> plan: /speckit-plan
+  plan -> tasks: /speckit-tasks
+}
+
+idea -> folder.spec: "/speckit-specify\n/speckit-clarify"
+constitution -> folder.plan: Constitution Check
+```
+
 ## The constitution
 
 The constitution is the most underrated piece. It holds the project's non-negotiable rules,

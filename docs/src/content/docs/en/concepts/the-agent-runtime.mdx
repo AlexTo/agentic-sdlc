@@ -12,6 +12,31 @@ implements labelled issues and revises pull requests that have been marked as fa
 reviews pull requests once their checks finish. Both start an ordinary coding agent with a fixed
 prompt. Neither needs you to open a chat.
 
+```d2
+direction: right
+
+machine: Your machine {
+  style.stroke-dash: 3
+  canvas: Agent Canvas {
+    i2p: issue to PR
+    review: code review
+  }
+  agent: coding agent
+  canvas.i2p -> agent: implement or revise
+  canvas.review -> agent: review
+}
+
+github: GitHub {
+  style.stroke-dash: 3
+  issues: issues {shape: page}
+  prs: pull requests {shape: page}
+  statuses: commit statuses {shape: document}
+}
+
+machine.canvas -> github: polls every 5 minutes
+machine.agent -> github.prs: push, open, review
+```
+
 ## The parts
 
 | Part | What it is |

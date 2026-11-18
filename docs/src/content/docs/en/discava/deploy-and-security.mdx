@@ -35,6 +35,22 @@ jobs:
       cancel-in-progress: false
 ```
 
+```d2
+direction: right
+
+ci: CI green on main
+manual: manual run
+approve: "required reviewers\n(production only)" {shape: diamond}
+deploy: "Deploy workflow\nTrivy, OIDC role, synth,\nstill main's latest?, cdk deploy"
+dev: development stage {shape: cylinder}
+prod: production stage {shape: cylinder}
+
+ci -> deploy: AUTO_DEPLOY_STAGE
+manual -> approve -> deploy
+deploy -> dev
+deploy -> prod
+```
+
 The steps, in order:
 
 1. **Check out the commit CI verified** (`workflow_run.head_sha`), not whatever `main` is now.

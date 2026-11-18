@@ -13,26 +13,23 @@ When that pull request merges, the next issue opens by itself, until no agent ta
 
 ```d2
 direction: right
-classes: {
-  human: { style: { fill: "#fee2e2"; stroke: "#ef4444" } }
-  auto: { style: { fill: "#f1f5f9"; stroke: "#64748b" } }
-}
-spec: "Spec PR\n(spec-ready)" { class: human }
-i1: "Issue 1\nsetup + foundations\n+ first story" { class: auto }
-p1: "PR 1" { class: auto }
-i2: "Issue 2\nnext phase" { class: auto }
-p2: "PR 2" { class: auto }
-i3: "Issue 3\nlast phase" { class: auto }
-p3: "PR 3" { class: auto }
-done: "Done:\nnothing opens" { class: human }
 
-spec -> i1: "merge"
+spec: spec PR {shape: document}
+i1: "issue 1\nsetup to first story" {shape: page}
+p1: PR 1
+i2: "issue 2\nnext phase" {shape: page}
+p2: PR 2
+i3: "issue 3\nlast phase" {shape: page}
+p3: PR 3
+done: nothing opens
+
+spec -> i1: merge
 i1 -> p1
-p1 -> i2: "merge"
+p1 -> i2: merge
 i2 -> p2
-p2 -> i3: "merge"
+p2 -> i3: merge
 i3 -> p3
-p3 -> done: "merge"
+p3 -> done: merge
 ```
 
 ## Why not the whole spec in one go?

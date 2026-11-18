@@ -8,33 +8,26 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 
 This page follows one feature through the whole loop, so you have the full picture before the
-details. Each step names who acts, and what artifact the step leaves behind. Red is you, grey is
-automation and agents, and indigo is an automated gate.
+details. Each step names who acts, and what artifact the step leaves behind. The red paths, where CI or the
+reviewer sends the agent back, are on [Feedback loops](../../concepts/feedback-loops/).
 
 ```d2
-direction: down
-classes: {
-  human: { style: { fill: "#fee2e2"; stroke: "#ef4444" } }
-  auto: { style: { fill: "#f1f5f9"; stroke: "#64748b" } }
-  gate: { style: { fill: "#e0e7ff"; stroke: "#6366f1" } }
-}
+direction: right
 
-spec: "1-3. You write spec, plan, tasks\n(Speckit)" { class: human }
-approve: "4. You label spec-ready and merge" { class: human }
-issue: "5. Agent Issues opens the next issue" { class: auto }
-impl: "6. OpenHands implements, opens a PR" { class: auto }
-ci: "7. PR checks" { class: gate }
-review: "9. Reviewer agent" { class: gate }
-fix: "8. Agent revises the same PR\n(max 3 per loop)" { class: auto }
-final: "10. You review and merge" { class: human }
+spec: "spec PR\n(you)" {shape: document}
+issues: "Agent Issues\n(GitHub Actions)"
+issue: issue {shape: page}
+implement: "implement\n(OpenHands)"
+pr: pull request {shape: page}
+checks: "PR Checks\n(GitHub Actions)"
+review: "review\n(OpenHands)"
+merge: "merge\n(you)"
 
-spec -> approve -> issue -> impl -> ci
-ci -> review: green
-ci -> fix: red
-review -> fix: changes requested
-fix -> ci
-review -> final: approved
-final -> issue: "11. next phase, until tasks.md is done"
+spec -> issues: spec-ready
+issues -> issue -> implement -> pr -> checks
+checks -> review: green
+review -> merge: approved
+merge -> issues: next phase
 ```
 
 ## The steps

@@ -15,24 +15,30 @@ the same PR. Each loop has a counter in a label, and stops at three.
 
 ```d2
 direction: right
-pr: "Agent pushes to PR"
-checks: "PR Checks"
-review: "Reviewer agent"
-ci_status: "Agent CI Status\n(ci-fix-N)"
-rv_status: "Agent Review Status\n(review-fix-N)"
-status: "software-factory/review\n= failure on head"
-worker: "Issue-to-PR worker\nnext poll"
-human: "Human review"
+
+pr: agent pushes {shape: page}
+checks: PR Checks
+review: reviewer agent
+you: human review
+
+actions: GitHub Actions {
+  style.stroke-dash: 3
+  ci: Agent CI Status
+  rv: Agent Review Status
+}
+
+status: "software-factory/review\n= failure" {shape: document}
+worker: "issue-to-PR worker\n(next poll)"
 
 pr -> checks
-checks -> ci_status: "failed"
-checks -> review: "all finished"
-review -> rv_status: "🔄 CHANGES REQUESTED"
-review -> human: "✅ APPROVED"
-ci_status -> status
-rv_status -> status
+checks -> review: all finished
+checks -> actions.ci: failed
+review -> actions.rv: changes requested
+review -> you: approved
+actions.ci -> status: ci-fix-N
+actions.rv -> status: review-fix-N
 status -> worker
-worker -> pr: "revise, same branch"
+worker -> pr: revise the same PR
 ```
 
 | | CI loop | Review loop |

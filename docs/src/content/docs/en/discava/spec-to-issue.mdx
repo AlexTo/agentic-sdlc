@@ -32,6 +32,33 @@ close together would cancel each other.
 
 ## What the script does
 
+```d2
+direction: right
+
+merged: merged PR {shape: page}
+gate: "agent branch,\nor spec-ready?" {shape: diamond}
+ignore: ignore
+folder: find the spec folder
+valid: "tasks.md valid?" {shape: diamond}
+fail: fail the run
+next: "next group with\nagent tasks left?" {shape: diamond}
+done: done
+exists: "issue for it\nalready exists?" {shape: diamond}
+stalled: comment on the PR
+open: open the issue {shape: page}
+
+merged -> gate
+gate -> ignore: no
+gate -> folder: yes
+folder -> valid
+valid -> fail: no
+valid -> next: yes
+next -> done: no
+next -> exists: yes
+exists -> stalled: yes
+exists -> open: no
+```
+
 `pnpm nx run @discava/common-scripts:agent-issue`, in `src/agent-issues/`:
 
 1. **Gate** (`gate.ts`). `decide()` classifies the PR as `spec`, `implementation` or `ignore`.
