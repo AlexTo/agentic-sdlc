@@ -1,0 +1,101 @@
+---
+title: The agent runtime
+description: How OpenHands turns a labelled issue into a pull request, and how it knows when to revise one.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**The short version:** OpenHands runs two scheduled automations against your repository. One
+implements labelled issues and revises pull requests that have been marked as failing. The other
+reviews pull requests once their checks finish. Both start an ordinary coding agent with a fixed
+prompt. Neither needs you to open a chat.
+
+```d2
+direction: right
+
+machine: Your machine {
+  style.stroke-dash: 3
+  canvas: Agent Canvas {
+    i2p: issue to PR
+    review: code review
+  }
+  agent: coding agent
+  canvas.i2p -> agent: implement or revise
+  canvas.review -> agent: review
+}
+
+github: GitHub {
+  style.stroke-dash: 3
+  issues: issues {shape: page}
+  prs: pull requests {shape: page}
+  statuses: commit statuses {shape: document}
+}
+
+machine.canvas -> github: polls every 5 minutes
+machine.agent -> github.prs: push, open, review
+```
+
+## The parts
+
+| Part | What it is |
+| --- | --- |
+| **Agent Canvas** | The OpenHands app you run yourself (`npx @openhands/agent-canvas`). It bundles the agent server, the automation backend and a web UI |
+| **Agent profile** | Which agent runs, and with which model. A profile can be OpenHands' own agent with any LLM, or an external coding agent over ACP (the Agent Client Protocol) |
+| **Automation** | A small Python worker that runs on a cron schedule. It reads GitHub, decides what to do, and starts or resumes agent conversations. Installed from the Agent Canvas catalog |
+| **Secret** | A named credential, such as the GitHub token. A conversation is handed only the secrets on its allow-list |
+
+## The two automations
+
+### GitHub issue to PR
+
+On every poll, for each repository it watches, the worker:
+
+1. Finds open PRs on `openhands/issue-<n>` branches whose head commit carries a commit status named
+   `software-factory/review` in state `failure` or `error`. For each one it sends a **revise** turn
+   to that issue's conversation: read the reviews, comments and failing checks, fix them, and push
+   to the same branch.
+2. Finds open issues with the trigger label (`openhands`) that have no PR yet, and starts an
+   **implement** turn: clone, create `openhands/issue-<n>`, implement, test, push, open the PR, and
+   add the `openhands-review` label.
+
+Each issue is one *subject* with a stable conversation. A revise goes to the same conversation as
+the original implementation, so the agent keeps its context.
+
+### GitHub code review
+
+On every poll, it looks for PRs that carry the `openhands-review` label, have a pending review
+request for its account, or are open, non-draft, unrequested and unreviewed. For each, it waits
+until **every check on the head commit has finished**, then starts a review of that exact commit.
+The review ends with a verdict on its own line: `✅ APPROVED` or `🔄 CHANGES REQUESTED`.
+
+<Aside type="caution">
+The issue-to-PR worker only revises a PR when it sees the failing `software-factory/review` status.
+Neither a red CI run nor the reviewer's "changes requested" sets that status by itself. Closing
+that gap is two pieces of the [missing glue](../the-missing-glue/).
+</Aside>
+
+## Why polling, not webhooks
+
+The automations poll (every 5 minutes in Discava, every 15 by default). This means Agent Canvas can
+run on a laptop or a home server with no public URL and no webhook secret. The cost is latency: up
+to one poll interval between a status being posted and the agent starting. In practice that is
+small next to the time the agent takes to work.
+
+## What the agent can and can't reach
+
+The implementing conversation gets one secret, the GitHub token, so it can read the issue and push
+its branch. It does not get cloud credentials. The repository rules (constitution, `AGENTS.md`, the
+issue's instructions) forbid it from editing workflows, merging or weakening tests. GitHub then
+enforces what matters: branch protection stops a merge without approval, and the glue workflows run
+the default branch's code, never the PR's.
+
+## Choosing agents
+
+Discava runs both automations on **Claude Code over ACP**: Sonnet for implementing and Opus for
+reviewing. A stronger model for review is deliberate: the reviewer is the last check before a
+person, and it reads far less code than the implementer writes. Any ACP agent, or OpenHands' own
+agent with any LLM, plugs into the same profiles.
+
+Next: [The missing glue](../the-missing-glue/).

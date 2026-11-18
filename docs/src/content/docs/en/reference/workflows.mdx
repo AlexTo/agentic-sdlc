@@ -1,0 +1,50 @@
+---
+title: Workflows
+description: Every GitHub Actions workflow in the loop, its trigger, permissions and job names.
+sidebar:
+  order: 3
+---
+
+| Workflow | File | Trigger | Permissions | Checks out |
+| --- | --- | --- | --- | --- |
+| PR Checks | `pr-checks.yml` | `pull_request` to `main` | `contents: read`, plus `pull-requests: write` for the screenshots comment job | The PR |
+| UI Screenshots | `ui-screenshots.yml` | `pull_request` to `main`, including `labeled`/`unlabeled` | `contents: read`, `pull-requests: read` | The default branch (reads the diff from the API) |
+| CI | `ci.yml` | `push` to `main`, `workflow_dispatch` | `contents: read`, `pages: write`, `id-token: write` | `main` |
+| Agent Issues | `agent-issues.yml` | `pull_request: [closed, labeled]` to `main`, `workflow_dispatch(spec_folder)` | `contents: read`, `issues: write`, `pull-requests: write` | The merge commit |
+| Agent CI Status | `agent-ci.yml` | `workflow_run` of PR Checks, `completed` | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` | The default branch |
+| Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` | The default branch |
+| Deploy (Discava) | `deploy.yml` | `workflow_run` of CI on `main`, `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | The commit CI verified |
+
+## Job names to require in branch protection
+
+| Check | From |
+| --- | --- |
+| `Checks (lint)`, `Checks (test)`, `Checks (build)` | PR Checks |
+| `Tasks format` | PR Checks |
+| `E2E tests` | PR Checks (gathers the shards) |
+| `UI Screenshots` | UI Screenshots |
+
+## Concurrency groups
+
+| Workflow | Group | Cancel in progress |
+| --- | --- | --- |
+| PR Checks | `pr-checks-<ref>` | yes: a new push makes the old run pointless |
+| Agent Issues | `agent-issues-<PR number or folder>` | no |
+| Agent CI Status | `agent-ci-<head branch>` | no |
+| Agent Review Status | `agent-review-<PR number>` | no |
+| Deploy | `deploy-<stage>` | no |
+
+The agent workflows never cancel. Each run must count its attempt or open its issue exactly once,
+and per-PR groups mean unrelated PRs never wait on each other.
+
+## Nx targets they run
+
+All in `@your-scope/common-scripts`:
+
+| Target | Entry point | Env it reads |
+| --- | --- | --- |
+| `agent-issue` | `src/agent-issues/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH`, `SPEC_FOLDER`, `DRY_RUN` |
+| `agent-ci-status` | `src/agent-ci/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
+| `agent-review-status` | `src/agent-review/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
+| `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH` |
+| `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`, `GITHUB_ACTIONS` (for annotations) |

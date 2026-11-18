@@ -1,0 +1,52 @@
+---
+title: Adopt it in your own repository
+description: When you can't fork, how to add every piece to an existing repository, in order.
+sidebar:
+  order: 0
+  label: Overview
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The quickest way to get the workflow is to [fork this repository](../../setup/fork/). This section
+is for when you can't: you have an existing product repository and want the same setup in it.
+
+Each step adds one piece, copied from this repository, and says how to check it. When you've
+finished, your repository has what a fork has. From there, follow the fork path from
+[2. Configure the repository](../../setup/github-repository/) onwards.
+
+<Aside type="tip">
+Fork this repository anyway and run [your first feature](../../setup/first-feature/) on the notes
+app first. Seeing the whole loop work once makes each step here much easier to follow.
+</Aside>
+
+## The steps
+
+| # | Step | Gap it closes |
+| --- | --- | --- |
+| 1 | [Workspace and commit hygiene](../workspace/) | |
+| 2 | [Install Speckit](../speckit/) | |
+| 3 | [Constitution and templates](../constitution-and-templates/) | 5 (format, in prose) |
+| 4 | [Agent guidance and the issue template](../agent-guidance/) | |
+| 5 | [The glue scripts](../glue-scripts/) | 1 to 7 (logic) |
+| 6 | [PR checks and CI](../pr-checks-and-ci/) | 5, 6 (enforced) |
+| 7 | [The agent workflows](../agent-workflows/) | 1, 2, 3, 4, 7 (wired) |
+| 8 | [Local stack, e2e and screenshots](../local-stack-and-e2e/) | 6, 8 |
+| 9 | [Deploy and security scans (optional)](../deploy/) | 9, 10 |
+
+The gap numbers refer to [The missing glue](../../concepts/the-missing-glue/).
+
+## Decide these first
+
+| Decision | Default | Change it if |
+| --- | --- | --- |
+| Trigger label for implementation | `openhands` | You already use that label |
+| Branch prefix | `openhands/issue` | Rarely. The glue matches `openhands/issue-<n>` exactly. If you change it, change `AGENT_BRANCH` and the workflow conditions too |
+| Review label | `openhands-review` | Same as above |
+| Poll interval | every 5 minutes | You want lower cost and can wait longer (the catalog default is 15) |
+| Max fix-up attempts | 3 per loop | Rarely. It is `MAX_*_FIX_ATTEMPTS` in two `plan.ts` files |
+| Spec folder numbering | timestamp | Never, with more than one spec author |
+
+Replace `@your-scope` in the commands with your workspace's npm scope.
+
+Next: [1. Workspace and commit hygiene](../workspace/).

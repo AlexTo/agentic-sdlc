@@ -1,0 +1,45 @@
+---
+title: Troubleshooting
+description: Symptoms, what is happening, and what to do.
+sidebar:
+  order: 5
+---
+
+## The chain doesn't start or continue
+
+| Symptom | What's happening | What to do |
+| --- | --- | --- |
+| Spec PR merged, no issue | The PR had no `spec-ready` label when it merged | Add `spec-ready` to the merged PR. Agent Issues runs on `labeled` too |
+| Agent Issues ran: `No issue created: it is not an agent branch and has no "spec-ready" label` | Same, or the PR was a human PR, which is ignored by design | As above, or run Agent Issues by hand with the spec folder |
+| Agent Issues failed: `tasks.md is not in the format the workflow reads` | The format check was skipped or ignored on the spec PR | Fix `tasks.md` in a PR, then run Agent Issues by hand |
+| A comment: "the next implementation issue … was not opened: an issue for … already exists" | The phase's issue exists, but some agent tasks in it aren't ticked | Tick them if done, or finish them. Then run Agent Issues by hand |
+| Agent Issues logged `no spec folder with a tasks.md was found` | The merged agent PR's issue has no marker, and the PR changed no `specs/` file | Run Agent Issues by hand with the spec folder |
+| The last phase merged and nothing opened | Correct. The only tasks left are **(human)** or none | Done |
+
+## The agent doesn't pick up or revise
+
+| Symptom | What's happening | What to do |
+| --- | --- | --- |
+| Labelled issue never picked up | Agent Canvas is down, the automation is disabled, or the token can't read the repository | Check that `agent-canvas` is running and the automation is enabled. Check the automation's last run log |
+| PR is red, `ci-fix-1` added, agent never revises | The worker only revises `openhands/issue-<n>` exactly, or the issue was closed | Check the branch name. Reopen the issue |
+| No `ci-fix-*` label after a red run | Agent CI Status didn't run, or ignored it (see its notice) | Open the Agent CI Status run and read the notice, e.g. `the pull request has a newer commit than this run` |
+| Agent revises, then nothing reviews the new head | The agent didn't re-apply `openhands-review` | Re-apply it by hand |
+| Push rejected: `refusing to allow a Personal Access Token to create or update workflow` | The token lacks the workflows permission, and the branch touches `.github/workflows/` (often through a merge of `main`) | Add the permission. The next poll retries |
+| `ci-fix-exhausted` | Three fix-ups didn't converge | Read the last failure. Usually the spec or plan is ambiguous. Fix it, remove the labels, re-run |
+
+## Reviews
+
+| Symptom | What's happening | What to do |
+| --- | --- | --- |
+| "⏳ Review waiting on checks" and no review | A check on the head hasn't finished, or is stuck queued | Find the pending check. A required check that never runs blocks the review forever |
+| Review says `🔄 CHANGES REQUESTED`, no `review-fix-*` label | The review lacks the run marker, isn't from an account with write access, or the PR moved on | Read the Agent Review Status notice |
+| Reviews show as "Commented", not "Approved" | The reviewer posts as the same account that opened the PR, and GitHub doesn't allow self-approval | Expected with one account. Use a machine account for the agents |
+
+## Checks
+
+| Symptom | What's happening | What to do |
+| --- | --- | --- |
+| `UI Screenshots` fails on a refactor | The rule can't tell a visible change from an invisible one | A maintainer adds `no-ui-screenshots` and re-runs the check |
+| Every PR's e2e job downloads Chromium | The cache is only saved on `main` | Keep CI's `playwright-cache` job, with the same key as PR Checks |
+| `Check for mutations` fails on `main` | Something generated files the PR didn't commit | Run `pnpm build` locally and commit the diff |
+| `Resource not accessible by integration` when labelling | The workflow token can write issues but not pull requests | Add `pull-requests: write` to the workflow |

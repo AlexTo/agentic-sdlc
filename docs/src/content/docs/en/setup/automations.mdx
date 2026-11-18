@@ -1,0 +1,87 @@
+---
+title: 4. Create the two automations
+description: Install "GitHub issue to PR" and "GitHub code review" from the Agent Canvas catalog, with Discava's settings.
+sidebar:
+  order: 4
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**You'll end with:** OpenHands polling your fork every five minutes. It implements issues
+labelled `openhands`, revises PRs marked as failing, and reviews PRs labelled `openhands-review`.
+
+Both automations come from the Agent Canvas **automation catalog**. You fill in a form, and the
+catalog packages a tested worker with your settings. You don't write or upload any code.
+
+<Steps>
+
+1. **Add "GitHub issue to PR"** from the catalog, with these settings:
+
+   | Field | Value |
+   | --- | --- |
+   | Repositories | `<you>/agentic-sdlc` |
+   | Trigger label | `openhands` |
+   | Branch prefix | `openhands/issue` |
+   | Pull request mode | Draft |
+   | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+   | Agent profile | `default` |
+   | Check frequency | `*/5 * * * *` |
+   | Timezone | yours |
+
+   Discava runs template version 1.2.4. The worker prompt tells the agent to add the
+   `openhands-review` label after it opens a PR, so new PRs reach the reviewer even as drafts.
+
+2. **Add "GitHub code review"** from the catalog:
+
+   | Field | Value |
+   | --- | --- |
+   | Repositories | `<you>/agentic-sdlc` |
+   | Trigger label | `openhands-review` |
+   | Requested reviewer | the agents' GitHub login |
+   | New reviews per scan | `2` |
+   | Review tone | Concise |
+   | Maintainers | empty, or two or more logins (see below) |
+   | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+   | Agent profile | `reviewer` |
+   | Check frequency | `*/5 * * * *` |
+
+   Discava runs template version 1.11.2. **New reviews per scan** caps how many review
+   conversations one poll starts, so a backlog doesn't start ten agents at once.
+
+   **Maintainers** is optional. When set, an approved PR is handed to one of them as a requested
+   reviewer, chosen by who has changed those files before. This happens only when the PR's issue
+   carries `priority:medium` or `priority:high`. Discava leaves it empty.
+
+3. **Run each automation once by hand** from its page in Agent Canvas, and read the run log.
+
+</Steps>
+
+## Check it worked
+
+A first run with nothing to do logs a sweep of the repository and ends `COMPLETED`. Then:
+
+1. Create a test issue: "Add a line to README.md saying hello", and add the `openhands` label.
+2. Within one poll, a conversation for the issue appears in Agent Canvas.
+3. When the agent finishes, a draft PR appears on `openhands/issue-<n>`, titled `[#<n>] <issue
+   title>`, with `openhands-review` added.
+4. Once its checks finish, the reviewer posts a review that starts
+   "_This review was posted by an AI agent (OpenHands)._" and ends `✅ APPROVED` or
+   `🔄 CHANGES REQUESTED`.
+
+Close the PR and delete the branch afterwards.
+
+## What runs on each poll
+
+| Automation | On each poll |
+| --- | --- |
+| Issue to PR | 1. For each open `openhands/issue-<n>` PR whose head has `software-factory/review` = `failure` or `error`, send a revise turn to that issue's conversation. 2. For each open issue with `openhands` and no PR, start an implement turn. Issues labelled `priority:high` go first |
+| Code review | For each PR with `openhands-review`, a review request for its account, or open, non-draft and unreviewed: if every check on the head has finished, review that exact commit. Otherwise comment "⏳ Review waiting on checks" and try again on a later poll |
+
+<Aside type="note">
+To give the agent a second try at an issue from scratch, remove and re-apply the `openhands` label.
+A revise only happens through the `software-factory/review` status, which the glue workflows post.
+You can post it by hand too, to send the agent back with your own comment:
+`gh api repos/<you>/agentic-sdlc/statuses/<sha> -f state=failure -f context=software-factory/review -f description="See my comment"`.
+</Aside>
+
+Next: [5. Run your first feature](../first-feature/).

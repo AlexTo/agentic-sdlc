@@ -1,0 +1,112 @@
+---
+title: Deploy and security
+description: How a green main deploys by itself, and the scans that stop a leaked secret or a vulnerable dependency.
+sidebar:
+  order: 9
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Gaps 9 and 10: merging doesn't ship anything, and an agent can commit a secret or pull in a
+vulnerable package. Discava handles both in GitHub Actions, with no long-lived cloud credentials
+anywhere.
+
+## Deploy
+
+`.github/workflows/deploy.yml` runs when **CI** completes on `main`, or by hand for any stage.
+
+```yaml
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      stage: { type: string, required: true, default: discava-development }
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' ||
+            (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
+    environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
+    concurrency:
+      group: deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
+      cancel-in-progress: false
+```
+
+```d2
+direction: right
+
+ci: CI green on main
+manual: manual run
+approve: "required reviewers\n(production only)" {shape: diamond}
+deploy: "Deploy workflow\nTrivy, OIDC role, synth,\nstill main's latest?, cdk deploy"
+dev: development stage {shape: cylinder}
+prod: production stage {shape: cylinder}
+
+ci -> deploy: AUTO_DEPLOY_STAGE
+manual -> approve -> deploy
+deploy -> dev
+deploy -> prod
+```
+
+The steps, in order:
+
+1. **Check out the commit CI verified** (`workflow_run.head_sha`), not whatever `main` is now.
+2. **Check that the stage exists** in `stages.config.ts`, so a typo fails clearly instead of as a
+   confusing credentials error.
+3. **Forward stage overrides.** Variables on the GitHub environment named like
+   `DISCAVA_DEVELOPMENT_*` become environment variables for synth, for things such as custom
+   domains that shouldn't be committed.
+4. **Trivy scan.** The same scan as CI, as a gate.
+5. **Assume the deploy role** with GitHub OIDC (`aws-actions/configure-aws-credentials`). No access
+   keys are stored anywhere.
+6. **Synthesize** with the stage's permissions boundary applied.
+7. **Check the commit is still `main`'s latest.** This runs inside the concurrency slot. A rerun of
+   an old CI, or a run that waited behind a newer deploy, is skipped with a notice instead of
+   deploying stale code. Manual runs skip this check, so you can roll back.
+8. **Deploy** with CDK, handing CloudFormation a scoped execution role (`--role-arn`).
+
+`AUTO_DEPLOY_STAGE` is a repository variable. Discava sets it to `discava-development`, so every
+green `main` reaches the development stage. Leave it unset and nothing deploys without a person.
+
+### Setting up a stage
+
+`scripts/setup-stage.sh` is run once per stage, from a clone of the repository that runs the
+workflow. It prompts for everything and defaults what it can detect. It creates:
+
+- the GitHub OIDC provider in the AWS account
+- the **deploy role** the workflow assumes, trusted only for that repository and environment
+- the **CloudFormation execution role** and its managed policies, with a permissions boundary so
+  the stacks can only create roles that carry it
+- the GitHub environment's `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN` and `AWS_EXECUTION_ROLE_ARN`
+  variables, and optionally `AUTO_DEPLOY_STAGE`
+
+### Production waits for a person
+
+Each stage deploys from the GitHub environment of the same name. A production-like stage gets
+**required reviewers** on its environment: the job pauses until someone approves it in the Actions
+UI. Discava hasn't launched yet, so today only `discava-development` has an environment, and it
+deploys automatically.
+
+## Security scans
+
+| Scan | When | Blocks |
+| --- | --- | --- |
+| `git-secrets` (AWS patterns) | `pre-commit` hook, on every local commit | A commit containing an AWS key |
+| Trivy, vulnerabilities and secrets | `ci.yml`'s `trivy` job on every push to `main`, and `deploy.yml` before every deploy | A deploy with a fixable CRITICAL vulnerability or a committed HIGH/CRITICAL secret |
+| checkov | Part of the infrastructure project's `build` target, so in every PR's `Checks (build)` | Insecure CDK resource settings |
+| Dependabot | Weekly, npm and GitHub Actions, grouped | Stale dependencies and action pins |
+
+Trivy runs as its **own** CI job, not part of `build`. Its vulnerability database changes daily,
+and a newly published CVE should flag `main` without blocking the docs deploy. Accepted findings
+are listed one ID per line in `.trivyignore`.
+
+<Aside type="note">
+The pre-commit hook also runs `lint-staged` (Biome), and fails the commit if either tool changed the
+working tree, so the agent restages and commits again. `commit-msg` runs commitlint with the
+Conventional Commits config.
+</Aside>
+
+Next: [A real feature](../a-real-feature/).

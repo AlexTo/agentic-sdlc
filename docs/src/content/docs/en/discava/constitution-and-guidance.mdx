@@ -1,0 +1,124 @@
+---
+title: Constitution and guidance
+description: The rules Discava's agents read before every run, and why each one is there.
+sidebar:
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Discava's agents read three layers of prose before they write any code. Each layer has a different
+job, and a rule lives in exactly one of them.
+
+| Layer | Holds | Changes |
+| --- | --- | --- |
+| **Constitution** | Rules a plan must not break | Rarely, by PR, with a semantic version |
+| **`AGENTS.md`** | How to work here: commands, architecture, conventions | Whenever the codebase changes |
+| **Issue instructions** | How to behave on *this* run: scope, what to run, what never to do | When the workflow changes |
+
+## The constitution
+
+`.specify/memory/constitution.md`, version 1.2.1, ratified 7 November 2026. Eight principles, each
+with a short rationale. The ones that matter most for agents:
+
+### III. Everything runs locally
+
+> A feature MUST work under `pnpm dev` with Docker and no AWS account. Any AWS service a feature
+> adds MUST get a local stand-in or a documented, justified exception.
+
+This is what lets CI run the whole app for e2e tests, and what keeps cloud credentials away from
+the agent. See [Local stack](../local-stack/).
+
+### IV. Layered tests: unit, invariants, end to end
+
+Five sub-rules. Two are worth copying word for word:
+
+- **Impact check.** A plan MUST list the shared records the feature writes, or reads in a new way,
+  and for each one name the existing invariants and tests that already cover it. Where the feature
+  changes what a record means, the plan MUST extend those checks, and `tasks.md` MUST carry a task
+  for each.
+- **Tests are a specification.** A failing test MUST be resolved by fixing the code. Weakening a
+  test is allowed only when a task names the behaviour change, and the PR says so. Invariants count
+  as tests.
+
+The impact check exists because agents add new checks happily but rarely revisit old ones. A new
+feature that changes what "an active student" means silently breaks an older invariant's meaning.
+
+### V. Single-table data model
+
+Access patterns are designed in the plan, before code. A user-facing request MUST use a key or a
+declared index, never a scan. This is a good example of a rule that only works because it is
+checked at **plan** time: retrofitting keys later means migrating data.
+
+### VII. Change freely before launch
+
+> Until production is live, routes, APIs and data shapes MUST be changed outright: no redirects,
+> deprecated aliases or fallbacks for old data.
+
+Without this rule, agents add compatibility shims to every change, out of caution.
+
+### The development workflow section
+
+The part written specifically for agents:
+
+> Features are implemented by autonomous agents, each on its own branch and pull request, so a task
+> list MUST NOT require a local stack, Docker or `pnpm dev`. […] A task that needs a running local
+> stack or people MUST be marked `(human)` in `tasks.md`. […] An agent MUST NOT merge, push to
+> `main`, edit CI workflows, or weaken a test to make CI pass.
+
+The implementing agent runs without Docker. It writes e2e and concurrency tests, and **PR CI runs
+them**. A CI failure is how it finds out they don't pass.
+
+## `AGENTS.md`
+
+Discava's `AGENTS.md` is about 110 lines. It covers:
+
+- **Commands.** Install, build, lint, test one project or one file, e2e, local dev, deploy.
+- **Architecture.** One paragraph per package: what it is, what it may import, where new code
+  goes.
+- **Conventions.** The rules a reviewer would otherwise repeat on every PR: Conventional Commits,
+  Biome rather than ESLint, the `helpers/` folder rule, "buttons carry text labels only, no arrow
+  icons", where shared code goes, and how to test anything that imports the database package.
+
+<Aside type="tip">
+Discava's `AGENTS.md` grew one line at a time, each time a review caught the same mistake twice.
+That is the right way to grow yours.
+</Aside>
+
+## Skills
+
+Discava installs three community skills into `.agents/skills/` (pinned by commit in
+`skills-lock.json`), for React best practices, web interface guidelines and writing guidelines.
+The Speckit commands are installed as skills too. Skills are loaded when relevant, so they can hold
+far more detail than `AGENTS.md`.
+
+## The issue instructions
+
+Every implementation issue ends with the same bullets, copied from
+`.github/ISSUE_TEMPLATE/implement-phase.md` by the Agent Issues script:
+
+```markdown
+## Instructions for the agent
+
+- Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
+- Work through the scope in order, writing each story's tests first. Tick each task in `tasks.md`
+  in the same commit that completes it.
+- Do not use `pnpm dev`, Docker or the e2e runner locally. Run unit and component tests (once, not
+  in watch mode), `pnpm lint`, typecheck and `pnpm build` on what you changed. E2E and concurrency
+  tests run on PR CI: write them, then read CI's result.
+- A change to what a user sees ships with `screenshot(page, 'name')` calls in the e2e scenario for
+  that flow, at each state a reviewer would want to see. […] Don't leave screenshots to a
+  **(human)** task.
+- Skip tasks marked **(human)** and list them in the PR description for the reviewer.
+- Use Conventional Commits for every commit. The PR title is a Conventional Commit too.
+- In the PR description write `Refs #<parent>`. Never use `Closes` or `Fixes` against the parent
+  issue; closing this issue is fine.
+- Never weaken a test to make it pass, never edit `.github/workflows/`, never merge, and don't
+  touch AWS credentials.
+- If you are blocked, comment on this issue with what you tried and stop.
+```
+
+Each bullet is there because an early run did the opposite. The `Refs`/`Closes` rule, for
+example, stops the first phase's PR from closing the whole feature's parent issue.
+
+Next: [Speckit setup](../speckit-setup/).

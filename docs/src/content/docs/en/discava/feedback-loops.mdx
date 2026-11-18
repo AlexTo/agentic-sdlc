@@ -1,0 +1,112 @@
+---
+title: Feedback loops
+description: Agent CI Status and Agent Review Status, the two workflows that send the agent back.
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Gaps 2, 3 and 4: the agent doesn't hear about a red CI run or a "changes requested" review, and
+nothing would stop it if it did and kept failing. Both workflows turn an event into the one signal
+the OpenHands worker already acts on: a commit status named `software-factory/review` in state
+`failure` on the PR's head.
+
+## Agent CI Status
+
+`.github/workflows/agent-ci.yml`, abridged:
+
+```yaml
+on:
+  workflow_run:
+    workflows: ["PR Checks"]
+    types: [completed]
+
+concurrency:
+  group: agent-ci-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+  statuses: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  ci-status:
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
+      (github.event.workflow_run.conclusion == 'failure' ||
+      github.event.workflow_run.conclusion == 'timed_out')
+    steps:
+      - uses: actions/checkout@<sha> # the default branch, never the PR's code
+      - uses: ./.github/actions/init-monorepo
+      - run: pnpm nx run @discava/common-scripts:agent-ci-status
+        env:
+          GH_TOKEN: ${{ github.token }}
+```
+
+`workflow_run` matters. It runs in the context of the default branch, with a token that can write,
+even though PR Checks ran on the PR's code with a read-only token.
+
+The script (`src/agent-ci/`):
+
+1. Checks the branch name against `^openhands/issue-\d+$` **before** using it in any request. It
+   comes from the PR author.
+2. Finds the open PR, its labels and current head, and the statuses on the run's commit.
+3. Lists the jobs that failed, such as `E2E tests (3/4)` and `Checks (lint)`.
+4. Calls `planCi()`, which returns `ignore`, `send-back` or `give-up`.
+5. For `send-back`: adds `ci-fix-<n>`, then posts the status with the failed jobs in the
+   description and the run as its link.
+6. For `give-up`: adds `ci-fix-exhausted` and comments, for example:
+
+   > CI is still failing after 3 automatic fix attempts, so the agent will not be sent back again.
+   >
+   > Failing checks on `1a2b3c4`: E2E tests (2/4).
+   >
+   > A person needs to take over this pull request. To let the agent try again, remove the
+   > `ci-fix-*` and `ci-fix-exhausted` labels and re-run the checks.
+
+## Agent Review Status
+
+`.github/workflows/agent-review.yml` runs on `pull_request_review: submitted`, when the branch is
+an agent branch in the same repository and the review body contains `CHANGES REQUESTED`. It checks
+out the default branch explicitly, and runs `agent-review-status`.
+
+`planReview()` adds three checks of its own before it sends the agent back:
+
+| Check | Why |
+| --- | --- |
+| The author association is `OWNER`, `MEMBER` or `COLLABORATOR` | Only someone with write access can trigger it |
+| The body has `<!-- openhands-review-run: … -->` | It is the reviewer agent's review, not a person quoting it |
+| The body has a line that is exactly `🔄 CHANGES REQUESTED` | The verdict, not a mention of it |
+
+Then the same steps as CI: `review-fix-<n>`, the failing status linked to the review, and
+`review-fix-exhausted` after three.
+
+The reviewer re-reviews by itself after the agent pushes, because the revise prompt tells the agent
+to re-apply `openhands-review`, and a new head commit counts as a new review.
+
+## What it looks like on a PR
+
+From [#470](https://github.com/AlexTo/discava/pull/470), "ratings in search":
+
+1. The agent opens the PR. The `E2E tests (4/4)` shard fails.
+2. Agent CI Status adds `ci-fix-1` and posts the failing status.
+3. On the next poll, the agent revises, pushes `94b9ee3`, and comments: *"The only finding was the
+   failing `E2E tests (4/4)` shard: my new scenario […] hit a strict-mode violation, because
+   `getByText('4.5')` matched both the rating and the `4.5 and up` option […]. I fixed both
+   locators."*
+4. The reviewer sees checks still running on the new head and comments "⏳ Review waiting on
+   checks". On a later scan everything is green. It reviews `94b9ee3` and ends `✅ APPROVED`.
+5. `main` is merged into the branch. The reviewer reviews the new head again and approves it.
+6. A person merges.
+
+<Aside type="tip">
+Both scripts take `DRY_RUN=true`, which prints the plan as JSON and changes nothing. Point
+`GITHUB_EVENT_PATH` at a saved event payload to replay a real case.
+</Aside>
+
+Next: [PR checks](../pr-checks/).

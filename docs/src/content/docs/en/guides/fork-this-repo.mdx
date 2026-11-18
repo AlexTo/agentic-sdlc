@@ -1,0 +1,61 @@
+---
+title: Fork this repository
+description: Why a fork of this repository is Discava's setup, ready to try on a small example app.
+sidebar:
+  order: 3
+---
+
+import { FileTree, LinkCard } from '@astrojs/starlight/components';
+
+You don't have to build the workflow from scratch to try it. This repository *is* the workflow:
+the same Speckit setup, issue template, PR checks, agent workflows and unit-tested glue that
+Discava runs, wrapped around a small notes app instead of a learning management system.
+
+**Fork it, and you have Discava's setup.** Point your own OpenHands at the fork, write a spec for
+the notes app, and the spec goes through exactly the loop described in
+[How it works](../how-it-works/): spec PR, issue, agent PR, CI, agent review, your merge, next
+issue.
+
+## What you get
+
+<FileTree>
+- .specify/ Speckit templates, scripts and the constitution
+- .github/
+  - ISSUE_TEMPLATE/implement-phase.md the instructions every implementation issue carries
+  - actions/init-monorepo/ shared CI setup
+  - workflows/
+    - pr-checks.yml lint, test, build, tasks format, e2e, screenshots comment
+    - ui-screenshots.yml the screenshots rule
+    - ci.yml checks, Trivy and the docs deploy on main
+    - agent-issues.yml spec → issue, merge → next issue
+    - agent-ci.yml red CI → agent
+    - agent-review.yml "changes requested" → agent
+- packages/
+  - common/scripts/src/ the glue's rules, with 124 unit tests
+  - notes-table/ ElectroDB entity, DynamoDB local
+  - notes-api/ tRPC procedures
+  - notes-website/ React, Vite, TanStack Router, shadcn/ui
+  - e2e/ Playwright scenarios and the `screenshot()` helper
+- docs/ this site
+</FileTree>
+
+The notes app runs entirely locally (`pnpm dev`, with Docker for DynamoDB local), so CI can run
+its e2e tests and the agent never needs cloud credentials.
+
+## What you add
+
+Only what can't live in a repository:
+
+1. **GitHub settings**: Issues and Actions on, the labels, branch protection. A fork doesn't copy
+   them.
+2. **OpenHands**: Agent Canvas on your machine, a GitHub token, and the two automations pointed at
+   your fork.
+
+## What's left out
+
+Discava's AWS deployment and its stage setup script. The notes app has no cloud infrastructure, so
+merging ships nothing beyond the docs site. [Deploy and security](../../discava/deploy-and-security/)
+describes Discava's pipeline, and [Adopt: deploy](../../adopt/deploy/) shows how to add it to your
+own repository.
+
+<LinkCard title="Set it up: fork, configure, run your first feature" href="/agentic-sdlc/en/setup/before-you-start/" />

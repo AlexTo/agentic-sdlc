@@ -1,0 +1,93 @@
+---
+title: 7. The agent workflows
+description: Wire the glue scripts to GitHub events with Agent Issues, Agent CI Status and Agent Review Status.
+sidebar:
+  order: 7
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**You'll end with:** three workflows that open issues from specs and send the agent back on red
+CI or a "changes requested" review.
+
+<Steps>
+
+1. **Copy the three workflows** from this repository's `.github/workflows/`:
+
+   | File | Name | Trigger | Runs |
+   | --- | --- | --- | --- |
+   | `agent-issues.yml` | Agent Issues | `pull_request: [closed, labeled]` to `main`, and `workflow_dispatch` with `spec_folder` | `agent-issue` |
+   | `agent-ci.yml` | Agent CI Status | `workflow_run` of **PR Checks**, `completed` | `agent-ci-status` |
+   | `agent-review.yml` | Agent Review Status | `pull_request_review: submitted` | `agent-review-status` |
+
+   Replace `@agentic-sdlc/` with `@your-scope/`.
+
+2. **Check the `if:` conditions match your decisions.** If you changed the branch prefix or the
+   labels, change them here too:
+
+   ```yaml
+   # agent-issues.yml
+   if: >-
+     github.event_name == 'workflow_dispatch' ||
+     (github.event.pull_request.merged == true &&
+     ((github.event.action == 'closed' &&
+     (contains(github.event.pull_request.labels.*.name, 'spec-ready') ||
+     startsWith(github.event.pull_request.head.ref, 'openhands/'))) ||
+     (github.event.action == 'labeled' &&
+     github.event.label.name == 'spec-ready')))
+
+   # agent-ci.yml
+   if: >-
+     github.event.workflow_run.event == 'pull_request' &&
+     startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
+     (github.event.workflow_run.conclusion == 'failure' ||
+     github.event.workflow_run.conclusion == 'timed_out')
+
+   # agent-review.yml
+   if: >-
+     startsWith(github.event.pull_request.head.ref, 'openhands/issue-') &&
+     github.event.pull_request.head.repo.full_name == github.repository &&
+     contains(github.event.review.body, 'CHANGES REQUESTED')
+   ```
+
+3. **Keep the permissions and the checkout exactly as copied.** Each workflow asks only for what
+   it writes:
+
+   | Workflow | Permissions |
+   | --- | --- |
+   | Agent Issues | `contents: read`, `issues: write`, `pull-requests: write` |
+   | Agent CI Status | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` |
+   | Agent Review Status | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` |
+
+   Labels and comments on a PR go through the issues API, which refuses the workflow token with
+   "Resource not accessible by integration" unless it can also write pull requests.
+
+   The two status workflows check out the **default branch**. Agent Issues checks out the
+   **merge commit**, so it sees the ticks the merged PR made. Never change either to check out the
+   PR's head: these jobs hold a token that can write.
+
+4. **Keep the concurrency groups.** Each is per PR or per branch, with `cancel-in-progress: false`.
+   That way two events for one PR can't each count an attempt, and merges of different PRs never
+   cancel each other.
+
+</Steps>
+
+## Check it worked
+
+The workflows appear under the repository's **Actions** tab after they reach `main`. Run Agent
+Issues by hand against a folder with no `tasks.md`:
+
+```bash
+gh workflow run agent-issues.yml -f spec_folder=does-not-exist
+gh run watch
+```
+
+The run succeeds with a notice: `No issue created: no spec folder with a tasks.md was found`.
+
+<Aside type="note">
+`workflow_run` and `pull_request_review` workflows only run from the version on the default branch.
+Changes to them take effect once they are merged. That is also why an agent can't change them in its
+own PR.
+</Aside>
+
+Next: [8. Local stack, e2e and screenshots](../local-stack-and-e2e/).

@@ -1,29 +1,42 @@
 ---
 title: Agentic SDLC
-description: A worked example of an AI-agent-driven software development lifecycle.
+description: A software lifecycle where agents write the code and humans steer, built and run in practice on Discava.
 template: splash
 hero:
   title: Agentic SDLC
-  tagline: What a software lifecycle looks like when agents write the code and humans steer. Illustrated by Discava.
+  tagline: Write the spec, review the pull request, and let agents do everything in between. This guide explains the idea, shows how Discava runs it, and walks you through setting it up yourself.
   actions:
-    - text: Read the overview
-      link: /en/guides/overview
+    - text: Start here
+      link: /agentic-sdlc/en/guides/introduction/
       icon: right-arrow
+    - text: Set it up
+      link: /agentic-sdlc/en/setup/before-you-start/
+      icon: setting
+      variant: minimal
 ---
 
-import { CardGrid, Card } from '@astrojs/starlight/components';
+import { CardGrid, Card, LinkCard } from '@astrojs/starlight/components';
 
 <CardGrid>
   <Card title="Spec first" icon="pencil">
-    Work starts as a written spec, plan and task list, reviewed by a human before any code exists.
+    Every feature starts as a reviewed spec, plan and task list. The agent builds from them, not from a chat.
   </Card>
-  <Card title="Issue to PR" icon="rocket">
-    Merged specs open implementation issues; an agent picks each up and opens a pull request.
+  <Card title="Issue to pull request" icon="rocket">
+    A merged spec opens the first implementation issue. An agent picks it up and opens a pull request.
   </Card>
-  <Card title="CI feedback loop" icon="approve-check">
-    Failing checks send the agent back to fix its own pull request, with bounded retries.
+  <Card title="Feedback without you" icon="approve-check">
+    A red CI run or a "changes requested" review sends the agent back to the same PR, at most three times.
   </Card>
-  <Card title="Human gates" icon="information">
-    People approve specs, review pull requests and decide when to deploy.
+  <Card title="Two human decisions" icon="information">
+    People approve the spec and approve the result. Everything in between runs on its own.
   </Card>
+</CardGrid>
+
+## Pick your path
+
+<CardGrid>
+  <LinkCard title="Understand the concepts" href="/agentic-sdlc/en/concepts/principles/" description="The principles, and the five pieces the workflow is built from." />
+  <LinkCard title="See how Discava does it" href="/agentic-sdlc/en/discava/overview/" description="Every gap and the exact file that fills it, plus a real feature traced from spec to merge." />
+  <LinkCard title="Replicate the workflow" href="/agentic-sdlc/en/setup/before-you-start/" description="Fork this repository, point OpenHands at it, and run a feature through the whole loop." />
+  <LinkCard title="Try it on a feature" href="/agentic-sdlc/en/tutorial/the-case/" description="Follow one small feature, note tags, through every stage." />
 </CardGrid>

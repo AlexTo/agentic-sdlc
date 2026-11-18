@@ -1,0 +1,108 @@
+---
+title: 5. Run your first feature
+description: Write a spec for the notes app in your fork, and watch it go through the same workflow Discava uses, from spec PR to merged agent PRs.
+sidebar:
+  order: 5
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**You'll end with:** a feature for the notes app, carried from your one-line idea to merged code by
+agents, and proof that every handover in the loop works in your fork.
+
+The feature: **tags on notes**. *A user can add up to five tags to a note, and filter the note list
+by tag.* It is small, but it touches the table, the API and the website, so every stage has
+something real to do. The [tutorial](../../tutorial/the-case/) covers each stage in more detail.
+
+<Steps>
+
+1. **Write the spec** on a branch in your clone, with your coding agent:
+
+   ```bash
+   git switch -c spec/note-tags
+   ```
+
+   ```text
+   /speckit-specify Users can add up to five tags to a note and filter the note list by tag. Tags are case-insensitive and unique per note.
+   /speckit-clarify
+   /speckit-plan
+   /speckit-tasks
+   /speckit-analyze
+   ```
+
+   Check `tasks.md`: each phase is a `## Phase <n>: …` heading, and at least one is a
+   `User Story`. The first user story phase ends the first issue.
+
+2. **Open the spec PR, label it `spec-ready`, merge it.**
+
+   ```bash
+   git add specs/ && git commit -m "docs(specs): add note tags spec"
+   git push -u origin spec/note-tags
+   gh pr create --fill --label spec-ready
+   gh pr checks --watch
+   gh pr merge --squash --admin
+   ```
+
+   `--admin` is needed because you opened the PR, and GitHub won't let you approve your own.
+
+   ✅ **Tasks format** passes on the PR. After the merge, **Agent Issues** opens an issue titled
+   `feat(<feature>): … (with setup and foundations)`, labelled `openhands`, scoped to the first group of phases.
+
+3. **Wait for the agent.** You do nothing.
+
+   ✅ On the next poll a conversation for the issue starts in Agent Canvas. When it finishes, a
+   draft PR appears on `openhands/issue-<n>` with `openhands-review`, and `tasks.md` ticked for
+   exactly those phases.
+
+4. **Watch the gates.**
+
+   ✅ PR Checks run. If one fails, **Agent CI Status** adds `ci-fix-1` and the agent revises the
+   same PR on the next poll. Once every check has finished, the reviewer agent reviews the head
+   and ends `✅ APPROVED` or `🔄 CHANGES REQUESTED`. A request for changes sends the agent back
+   too, with `review-fix-1`.
+
+5. **Review and merge.** Read the PR description, any **(human)** tasks it lists, and, for the
+   website phase, the **E2E screenshots** comment. Mark the draft ready, then merge:
+
+   ```bash
+   gh pr ready <pr> && gh pr merge <pr> --squash --admin
+   ```
+
+   Use `--admin` when the agents push with your own token. With a separate agent account, approve
+   the PR and merge normally.
+
+   ✅ **Agent Issues** runs again and opens the next phase's issue. Steps 3 to 5 repeat.
+
+6. **Merge the last PR.**
+
+   ✅ Agent Issues logs `No issue created: … no tasks left for the agent`. The feature is done.
+
+</Steps>
+
+<Aside type="tip" title="Didn't see a fix-up loop?">
+If the agent got everything right first time, you haven't seen the CI loop yet. To test it, push
+a commit to an open agent PR that breaks one of its unit tests. PR Checks fails, `ci-fix-1`
+appears, and the agent pushes a fix on its next poll. It may simply revert your commit, which is the
+right fix here.
+</Aside>
+
+## Self-check
+
+You have the same workflow as Discava when you can say yes to all of these:
+
+- [ ] Merging a `spec-ready` spec PR opened an issue, with nobody opening it by hand.
+- [ ] The agent opened a PR on `openhands/issue-<n>` and ticked exactly its tasks.
+- [ ] A red CI run sent the agent back, and the PR carries `ci-fix-1`.
+- [ ] The reviewer agent reviewed the PR's head once its checks had finished.
+- [ ] Merging the agent's PR opened the next phase's issue.
+- [ ] The website change came with screenshots listed on the PR.
+- [ ] The last merge opened nothing.
+- [ ] At no point did you paste an error or write a prompt for the agent.
+
+Something didn't happen? See [Troubleshooting](../../reference/troubleshooting/).
+
+## Next
+
+- Try a feature of your own on the notes app, such as pinning a note or sorting the list.
+- Ready to bring this to a product repository? See
+  [Adopt it in your own repository](../../adopt/overview/).

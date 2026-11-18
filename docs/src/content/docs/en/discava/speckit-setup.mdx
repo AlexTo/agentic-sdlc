@@ -1,0 +1,112 @@
+---
+title: Speckit setup
+description: How Speckit is configured in Discava, and the template changes that make its output machine-readable.
+sidebar:
+  order: 3
+---
+
+import { FileTree } from '@astrojs/starlight/components';
+
+Discava uses Speckit 1.3.2 almost as shipped. The important changes are to two templates, so that
+what Speckit writes can be read by the automation.
+
+## Configuration
+
+`.specify/init-options.json`, written by `specify init`:
+
+```json
+{
+  "ai": "claude",
+  "ai_skills": true,
+  "feature_numbering": "timestamp",
+  "here": true,
+  "integration": "claude",
+  "script": "sh",
+  "speckit_version": "1.3.2"
+}
+```
+
+- **Integration as skills.** The commands are installed as skills (`/speckit-specify`,
+  `/speckit-plan`, …) for the team's coding agent.
+- **Timestamp numbering.** Spec folders are named `YYYYMMDD-HHMMSS-<name>`, not `001-<name>`. Two
+  people writing specs on two branches on the same day never collide on a number.
+
+## The git extension
+
+Speckit's bundled `git` extension is installed (`.specify/extensions.yml`). Its hooks create a
+feature branch before `/speckit-specify` and commit after each step, so every step of writing a
+spec is its own commit in the spec PR. `.specify/extensions/git/git-config.yml` sets:
+
+```yaml
+branch_numbering: timestamp
+commit_style: conventional
+```
+
+## Template changes
+
+### `spec-template.md`: a parent issue line
+
+```markdown
+**Parent issue**: [#<number>, or "none" if there is no tracking issue]
+```
+
+The Agent Issues script reads this line and writes `Refs #<parent>` into every implementation
+issue, so the feature's tracking issue links to every PR.
+
+### `tasks-template.md`: the format block and test tasks
+
+Three additions to the stock template:
+
+1. **Tests are not optional.** The stock template says tests are optional. Discava's says the
+   constitution requires them, and each user story phase carries three template tasks: unit tests,
+   an invariant and a test that breaks it (if a rule spans records), and an e2e scenario (if it
+   changes a main flow).
+2. **Who runs what.** A paragraph saying an agent implements these tasks without Docker, that e2e
+   and concurrency tests run on PR CI, and what **(human)** means. That includes "not for
+   screenshots": a UI change takes its screenshots in e2e.
+3. **Read by automation.** The format rules the validator enforces, stated in the template so the
+   agent writing `tasks.md` follows them:
+
+```markdown
+**Read by automation**: the Agent Issues workflow reads this file to decide which tasks to hand the
+implementing agent, so keep this structure (PR checks refuse a file that strays from it):
+
+- every phase is a heading `## Phase <number>: <title>`, numbered upwards, with at least one task;
+- a user story's phase is titled `User Story <n> - <what it delivers>`; the first one ends the first
+  implementation issue (setup, foundations and that story);
+- every task is a line `- [ ] T<3 digits> <description>` starting in the first column, under a
+  phase, with an id no other task has; a task added later takes the next unused id, wherever it is
+  placed;
+- a finished task is ticked in place (`- [x]`), never deleted or renumbered.
+```
+
+And one line added to the notes at the end: "Do not edit existing tests to make them pass. If one
+looks wrong, stop and raise it."
+
+## A spec folder
+
+<FileTree>
+- specs/20261116-013307-course-reviews/
+  - spec.md what and why, with clarifications and the parent issue
+  - plan.md how, with the Constitution Check
+  - research.md decisions and the alternatives rejected
+  - data-model.md entities, keys, indexes
+  - contracts/ API shapes
+  - quickstart.md how a reviewer tries it by hand
+  - tasks.md eight phases, 36 tasks, two of them (human)
+  - checklists/ requirement-quality checklists
+</FileTree>
+
+## How a spec is written
+
+1. A person opens a tracking issue for the feature, such as #279 "course ratings and written
+   reviews".
+2. A coding agent runs `/speckit-specify` with the issue's text, then `/speckit-clarify`. When
+   nobody is available to answer, the agent picks the recommended answer and records it under
+   "Clarifications" in the spec.
+3. `/speckit-plan`, `/speckit-tasks`, `/speckit-analyze`. Findings from analyze are fixed in the
+   same PR. You can see this in Discava's history as commits such as "resolve analysis findings
+   in the public pages spec".
+4. The spec PR is labelled `spec-ready` and merged.
+
+Next: [OpenHands setup](../openhands-setup/).

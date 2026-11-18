@@ -1,0 +1,82 @@
+---
+title: Local stack
+description: How Discava runs every AWS service locally, so CI can test the real app with no cloud account.
+sidebar:
+  order: 8
+---
+
+Gap 8: the agent can't run the real stack without cloud access, and you don't want to give it
+cloud access. Discava's answer is constitution principle III. Every AWS service has a local stand-in,
+and `pnpm dev` starts all of them with Docker.
+
+## What runs locally
+
+| Service | Port | Stands in for |
+| --- | --- | --- |
+| Student, instructor and admin portals | 4201, 4200, 4202 | CloudFront |
+| core-api, instructor-api | 2022, 2023 | API Gateway and Lambda |
+| DynamoDB local | 8001 | DynamoDB |
+| S3Mock | 9090 | S3 |
+| ElasticMQ | 9324 | SQS |
+| OpenSearch (Docker) | | OpenSearch Serverless |
+| Event runner | 2024 | DynamoDB streams and the stream router, MediaConvert (ffmpeg), Transcribe (a placeholder track), SES (an inbox page), EventBridge, Scheduler, Cognito triggers |
+| Local OIDC server | 9400 | Cognito |
+
+Backend code switches on `LOCAL_DEV=true`. The shared settings are in one package
+(`common-server-utils/local-dev`), so every Lambda resolves endpoints the same way. Each stand-in
+is an Nx target in `packages/common/scripts`, which pulls and starts its container.
+
+The local sign-in page offers fixed users (an instructor, two students, an admin) and a
+"Someone else" form for any claims. No passwords, no Cognito.
+
+## Who runs it
+
+The **implementing agent doesn't**. Its issue says not to use `pnpm dev`, Docker or the e2e runner.
+It writes the scenarios, and **PR CI** runs them: each e2e shard starts its own `pnpm dev` on a
+fresh runner. This keeps the agent's machine simple and its runs fast. It also means the e2e
+result the agent reads is always from a clean stack.
+
+People run it for **(human)** tasks, and to reproduce a failure.
+
+## E2E scenarios
+
+`packages/e2e` has one `src/scenarios/*.e2e.ts` per user flow, built from shared helpers.
+The rules that make them safe to run in any order, on a shared stack:
+
+- Each scenario makes its own users and uniquely named data.
+- No scenario resets local data.
+- One worker, one retry on CI, two-minute timeout. Flows wait on background work such as progress
+  recalculation.
+
+## Invariants after every test
+
+`packages/databases/core-table/src/helpers/invariants.ts` exports a list of checks over the whole
+table: "a course has an instructor", "a student's activity count matches the students who used the
+item", "sibling order is unique", and more than forty others.
+
+A Playwright fixture (`packages/e2e/src/helpers/table-invariants.ts`) runs them **after every e2e
+test**. It records the violations that already existed before the test and fails only on new ones,
+so old local data can't fail a run. The message names the invariant and the offending record. An
+agent that writes a counter wrongly finds out in the test that wrote it, not three features later.
+
+Every rule that spans writers is written through one shared helper that every writer calls (for
+example `studentActivityWrites`), and has an invariant and a test that breaks it.
+
+An **Invariant coverage** PR check is in progress on a branch, not yet on `main`. It maps each
+entity to the files that write it, and fails a PR that adds a new writer without touching
+`invariants.ts`, unless the `no-new-invariant` label waives it.
+
+## Concurrency tests
+
+`packages/e2e/src/concurrency/` fires API requests at the same moment, straight at the APIs, for
+writes two users could race on: issuing a certificate, attaching a caption, the analytics counters.
+They run in the same e2e job.
+
+## What still only runs on a deployed stage
+
+The stand-ins aren't perfect, and `CONTRIBUTING.md` lists exactly where they fall short: CloudFront signing,
+MediaConvert's exact output, real Transcribe, Cognito Managed Login, EventBridge retries and the
+failure queues. Tasks that depend on those are **(human)** tasks, checked on `discava-development`
+after deploy.
+
+Next: [Deploy and security](../deploy-and-security/).

@@ -1,0 +1,95 @@
+---
+title: PR checks
+description: Every check an agent PR must pass in Discava, including the two written for agents.
+sidebar:
+  order: 7
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`.github/workflows/pr-checks.yml` runs on every pull request to `main`. Its failure is what Agent
+CI Status turns into a fix-up attempt, so it is also the agent's main source of feedback.
+
+## The jobs
+
+| Job | Runs | Catches |
+| --- | --- | --- |
+| `Checks (lint)`, `Checks (test)`, `Checks (build)` | `pnpm nx affected --target <target>`, as a matrix with `fail-fast: false` | Style, unit tests, types, bundling, CDK synth and checkov on infrastructure |
+| `Tasks format` | `validate-tasks`, only when a `tasks.md` or its reader changed | A `tasks.md` the Agent Issues workflow would misread (gap 5) |
+| `UI Screenshots` | `ui-screenshots` | A UI change with no new screenshots (gap 6) |
+| `E2E tests (1/4)` … `(4/4)` | `pnpm nx affected --target e2e`, sharded | Broken user flows, broken invariants, races |
+| `E2E tests` | Gathers the four shards into one result | Gives branch protection one stable name, whatever the shard count |
+| `E2E screenshots` | `screenshots-comment` | Posts the pictures on the PR |
+
+`fail-fast: false` matters for agents. When lint *and* a test fail, the agent hears about both in
+one round, not one per attempt.
+
+## Tasks format
+
+`src/agent-issues/validate.ts` holds every `specs/*/tasks.md` to the format the reader expects.
+The reader doesn't fail on a malformed line. It skips it, so the agent would quietly get the wrong
+tasks. The validator catches what the reader would skip:
+
+- a heading that looks like a phase but isn't `## Phase <n>: <title>`
+- a checkbox line that isn't `- [ ] T<3 digits> …` in the first column
+- a phase with no tasks, phase numbers that don't increase, a task above the first phase
+- a task ID used twice
+- no `User Story` phase at all, so there is nowhere for the first issue to end
+
+In CI it prints GitHub annotations, so each problem shows on the line in the PR's diff:
+
+```text
+::error file=specs/…/tasks.md,line=42::A task must be written "- [ ] T<3 digits> <description>", starting in the first column
+```
+
+## UI Screenshots and the E2E screenshots comment
+
+The rule (`src/ui-screenshots/check.ts`): if a PR changes a portal's or the shared components'
+`.tsx` or `.css` source (not tests, not generated files), then some file in
+`packages/e2e/src/scenarios/` must **add** a line calling `screenshot(`. A maintainer can waive it
+with the `no-ui-screenshots` label and re-run the job, for a change with nothing to look at.
+
+The helper (`packages/e2e/src/helpers/screenshots.ts`) saves numbered PNGs per scenario, such as
+`search/01-search-results-with-ratings.png`, into a folder CI uploads as an artifact. After the
+shards finish, the `E2E screenshots` job keeps one comment on the PR up to date. It lists the
+pictures this PR added first, and folds away the ones from scenarios that already existed:
+
+```markdown
+### E2E screenshots
+
+Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifacts from the run.
+
+**Added by this pull request (3)**
+
+- `search/01-search-results-with-ratings.png`
+- `search/02-search-sorted-by-highest-rated.png`
+- `search/03-search-minimum-rating-4.png`
+```
+
+The reviewer agent reads the same list. A reviewer can see what changed without running anything.
+
+<Aside type="note">
+Artifacts have no public URL, so the comment can only name the images and link the run. That is
+still enough for the reviewer to download exactly the screenshots that matter.
+</Aside>
+
+## Safe by construction
+
+The jobs that can write to the PR (`E2E screenshots`, and the agent workflows) check out the
+**default branch** and only read the PR's diff through the API. Every action is pinned to a commit
+SHA, and Dependabot keeps those pins up to date weekly. The `pnpm/setup` step is retried up to
+three times, because a registry timeout before the job even starts would otherwise cost the agent
+an attempt.
+
+## On `main`
+
+`.github/workflows/ci.yml` runs the same lint, test and build on every push to `main`, plus:
+
+- **Check for mutations**: `git diff --exit-code` after the build. It fails if lint or a sync
+  generator changed files that weren't committed.
+- **Trivy**: the vulnerability and secret scan. See [Deploy and security](../deploy-and-security/).
+- **Playwright cache**: saves Chromium under the key PR runs look for. A PR can only restore caches
+  from its own ref or `main`.
+- **Deploy Docs** to GitHub Pages, only if no newer commit has landed on `main` meanwhile.
+
+Next: [Local stack](../local-stack/).

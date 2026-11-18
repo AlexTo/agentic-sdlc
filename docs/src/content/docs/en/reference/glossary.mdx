@@ -1,0 +1,30 @@
+---
+title: Glossary
+description: The terms used across this guide.
+sidebar:
+  order: 6
+---
+
+| Term | Meaning |
+| --- | --- |
+| **ACP** | Agent Client Protocol. How OpenHands drives an external coding agent such as Claude Code |
+| **Agent Canvas** | The self-hosted OpenHands app: agent server, automation backend and web UI |
+| **Agent profile** | An OpenHands setting that names the agent and model a conversation uses |
+| **`AGENTS.md`** | The agent guidance file at the repository root: commands, architecture, conventions |
+| **Automation** | A scheduled OpenHands worker that reads GitHub and starts agent conversations |
+| **Constitution** | `.specify/memory/constitution.md`. The project rules every plan is checked against |
+| **Constitution Check** | The section of `plan.md` where the plan is checked against the constitution |
+| **Fix-up attempt** | One automatic round of sending the agent back. Counted by `ci-fix-<n>` or `review-fix-<n>` |
+| **Glue** | The workflows and scripts that hand work between Speckit, OpenHands and CI |
+| **Group** | The phases one implementation issue covers. Group 0 runs to the first user story |
+| **Human gate** | A decision only a person makes: approving the spec, approving the PR, deploying to production |
+| **(human) task** | A task in `tasks.md` that needs people or a running stack. The agent skips it |
+| **Invariant** | A rule over all the data, checked after every e2e test |
+| **Marker** | A hidden HTML comment the glue uses to find its own issues and comments |
+| **Parent issue** | The tracking issue for a feature, named in `spec.md`, referenced by every PR |
+| **Phase** | A `## Phase <n>: <title>` section of `tasks.md` |
+| **Revise turn** | A message to an existing agent conversation, asking it to fix its PR |
+| **Spec folder** | `specs/<timestamp>-<name>/`, holding one feature's spec, plan and tasks |
+| **`software-factory/review`** | The commit status that, in state `failure`, makes OpenHands revise a PR |
+| **Speckit** | GitHub's spec-driven development toolkit (`specify-cli`) |
+| **Stalled** | A group whose issue exists but whose tasks aren't all ticked, so no new issue opens |

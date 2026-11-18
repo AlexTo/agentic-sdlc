@@ -1,0 +1,75 @@
+---
+title: 6. PR checks and CI
+description: Add the PR Checks workflow (lint, test, build, tasks format, e2e, screenshots) and CI on main.
+sidebar:
+  order: 6
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**You'll end with:** a **PR Checks** workflow whose failure feeds the CI loop, a **UI Screenshots**
+check, and **CI** on `main`.
+
+<Steps>
+
+1. **Copy `.github/workflows/pr-checks.yml`** from this repository. Keep its `name: PR Checks`
+   exactly: Agent CI Status listens for a workflow by that name. Its jobs:
+
+   | Job | Keep as is? |
+   | --- | --- |
+   | `checks`, a matrix of `lint`, `test`, `build` with `fail-fast: false` | Yes |
+   | `tasks-format` | Yes |
+   | `e2e`, four shards, plus `e2e-result` gathering them into one `E2E tests` check | Adjust the shard count to your suite |
+   | `e2e-screenshots` | Yes, once [step 8](../local-stack-and-e2e/) is done |
+
+   Replace every `@agentic-sdlc/` with `@your-scope/`.
+
+2. **Copy `.github/workflows/ui-screenshots.yml`.** In this repository the screenshots rule is its
+   own workflow, triggered on `opened, synchronize, reopened, labeled, unlabeled`. Adding or
+   removing the `no-ui-screenshots` label then re-runs only this check, not the whole e2e suite.
+   Discava runs the same rule as a PR Checks job instead. Either works.
+
+3. **Copy `.github/workflows/ci.yml`** for pushes to `main`. Keep the `Check for mutations` step
+   (`git diff --ignore-space-at-eol --exit-code` after the build). It catches generated files the
+   agent forgot to commit. Keep the `playwright-cache` job if you use Playwright: PR runs can only
+   restore caches saved on `main`.
+
+4. **Pin every action to a commit SHA**, as the copied files do, and add
+   `.github/dependabot.yml` so the pins stay current:
+
+   ```yaml
+   version: 2
+   updates:
+     - package-ecosystem: 'npm'
+       directory: '/'
+       schedule: { interval: 'weekly' }
+       groups: { all: { patterns: ['*'] } }
+     - package-ecosystem: 'github-actions'
+       directories: ['/', '/.github/actions/*']
+       schedule: { interval: 'weekly' }
+       groups: { github-actions: { applies-to: version-updates, patterns: ['*'] } }
+   ```
+
+</Steps>
+
+## Check it worked
+
+Open a throwaway PR that breaks one `tasks.md` line, for example by indenting a task. The
+**Tasks format** check fails with an annotation on that line:
+
+```text
+A task must be written "- [ ] T<3 digits> <description>", starting in the first column
+```
+
+Open another that changes a UI file without touching a scenario. **UI Screenshots** fails:
+
+```text
+This pull request changes UI source (…) but no e2e scenario gained a `screenshot(page, 'name')` call.
+```
+
+<Aside type="note">
+`codecov/codecov-action` in the copied files needs a `CODECOV_TOKEN` secret. Remove the step if
+you don't use Codecov.
+</Aside>
+
+Next: [7. The agent workflows](../agent-workflows/).

@@ -1,0 +1,129 @@
+---
+title: Spec to issue
+description: How a merged spec, and each merged agent PR after it, opens the next implementation issue.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Gaps 1 and 7: nothing turns a finished spec into work for the agent, and merging the agent's PR
+doesn't start the next phase. Discava fills both with one workflow, **Agent Issues**, and the
+script behind it.
+
+## When it runs
+
+`.github/workflows/agent-issues.yml` listens for pull requests to `main` being `closed` or
+`labeled`, plus a manual `workflow_dispatch` with a `spec_folder` input. The job runs only when:
+
+| Event | Condition | Meaning |
+| --- | --- | --- |
+| PR closed | merged, and labelled `spec-ready` | A spec was approved: open the first issue |
+| PR closed | merged, and the branch starts with `openhands/` | An agent PR landed: open the next issue |
+| PR labelled | merged already, and the label is `spec-ready` | Someone forgot the label before merging |
+| Manual run | a spec folder name | Restart a chain by hand |
+
+Any other merged PR is ignored, **even one that touches `specs/**`**. The agent's own PRs tick
+boxes in `tasks.md`, so a path filter would make the chain trigger itself.
+
+The job checks out the **merge commit**, so it sees the ticks the PR just made. Its concurrency
+group is per PR, never global: a global group keeps only the newest pending run, so two merges
+close together would cancel each other.
+
+## What the script does
+
+```d2
+direction: right
+
+merged: merged PR {shape: page}
+gate: "agent branch,\nor spec-ready?" {shape: diamond}
+ignore: ignore
+folder: find the spec folder
+valid: "tasks.md valid?" {shape: diamond}
+fail: fail the run
+next: "next group with\nagent tasks left?" {shape: diamond}
+done: done
+exists: "issue for it\nalready exists?" {shape: diamond}
+stalled: comment on the PR
+open: open the issue {shape: page}
+
+merged -> gate
+gate -> ignore: no
+gate -> folder: yes
+folder -> valid
+valid -> fail: no
+valid -> next: yes
+next -> done: no
+next -> exists: yes
+exists -> stalled: yes
+exists -> open: no
+```
+
+`pnpm nx run @discava/common-scripts:agent-issue`, in `src/agent-issues/`:
+
+1. **Gate** (`gate.ts`). `decide()` classifies the PR as `spec`, `implementation` or `ignore`.
+2. **Find the spec folder** (`discover.ts`). For an agent PR, it reads the issue that the PR closes
+   and takes the folder from that issue's hidden marker. Otherwise, it uses the `specs/<folder>/`
+   paths the PR changed.
+3. **Validate** (`validate.ts`). A `tasks.md` that fails the format check fails the run, rather
+   than handing the agent the wrong tasks.
+4. **Group the phases** (`tasks.ts`). Everything up to and including the first `User Story` phase
+   is group 0 (setup, foundations and the MVP story ship together). Each later phase is its own
+   group.
+5. **Pick the next group**: the first one with an unticked task that isn't **(human)**.
+6. **Check for an existing issue.** Every issue body starts with a marker such as
+   `<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->`. If an issue for this group
+   already exists (open or closed), the script doesn't open another. It comments on the PR
+   instead, for example:
+
+   > The next implementation issue for `specs/…/` was not opened: an issue for "Ratings in search"
+   > already exists, and these tasks in its `tasks.md` are not ticked: T017, T018.
+
+7. **Render and create the issue** (`issue.ts`), labelled `openhands`.
+
+## The issue it opens
+
+A real one, [#466](https://github.com/AlexTo/discava/issues/466):
+
+```markdown
+<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->
+
+## Spec
+
+- Spec folder: `specs/20261116-013307-course-reviews/` (read `spec.md`, `plan.md`, `tasks.md`,
+  `data-model.md` and `contracts/`)
+- Parent issue: #279
+
+## Scope
+
+Tasks `T015` to `T019` of `tasks.md`: every task under Phase 4: Ratings in search (PR 4). Do not
+start tasks outside these phases.
+
+## Instructions for the agent
+
+- Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
+- …the rest of the template's bullets, with `#<parent>` filled in as `#279`
+```
+
+The title is a Conventional Commit header built from the folder and the phase:
+`feat(course-reviews): ratings in search (PR 4)`. It has a lower-case subject and at most 100
+characters, so the agent can reuse it for its PR without failing commitlint. The first group adds
+` (with setup and foundations)`.
+
+<Aside type="note">
+The standing instructions are read from the issue template at run time, so there is one place to
+change them. Editing `.github/ISSUE_TEMPLATE/implement-phase.md` changes every future issue.
+</Aside>
+
+## Dry run
+
+```bash
+DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=workflow_dispatch \
+  SPEC_FOLDER=20261116-013307-course-reviews \
+  pnpm nx run @discava/common-scripts:agent-issue
+```
+
+This prints the title and body of the issue it would open. It still reads existing issues through
+`gh`, so you need to be signed in.
+
+Next: [Feedback loops](../feedback-loops/).
