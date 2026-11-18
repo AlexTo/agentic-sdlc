@@ -28,7 +28,33 @@ Author English only, under `src/content/docs/en/`. The other locales (`jp`, `ko`
 Claude Code. Until a page is translated, its locale shows the English page with a "not
 translated yet" notice.
 
-To translate, ask Claude Code, for example: "translate the pages under `docs/src/content/docs/en/`
-changed since the last `docs: update translations` commit into every locale". Keep frontmatter
-keys, code, commands, label and file names, and links as they are; translate titles, descriptions
-and prose. Commit the result with the message `docs: update translations`.
+Translated so far: `vi`.
+
+### Finding pages that are out of date
+
+Git is the record. A translated page is stale when its English page was committed after it. This
+lists them for one locale (here `vi`), including pages not translated yet:
+
+```bash
+cd docs/src/content/docs
+for f in $(cd en && git ls-files '*.md' '*.mdx'); do
+  en=$(git log -1 --format=%ct -- "en/$f"); tr=$(git log -1 --format=%ct -- "vi/$f")
+  { [ -z "$tr" ] || [ "$en" -gt "$tr" ]; } && echo "$f"
+done
+```
+
+To see what changed in one English page since its translation:
+
+```bash
+git diff "$(git log -1 --format=%H -- vi/<page>)" -- en/<page>
+```
+
+Because it works per page and per locale, locales can be translated at different times.
+
+### Translating
+
+Ask Claude Code, for example: "translate the stale `vi` pages, using the check in `docs/README.md`".
+Keep frontmatter keys, code blocks, commands, label, file and UI names, and quotes from real GitHub
+artifacts as they are. Translate titles, descriptions, prose, table text and diagram labels. Change
+`/agentic-sdlc/en/` links to the locale, and update `#anchor` links to the translated heading's
+slug. Build the docs to check links, then commit with `docs: update <locale> translations`.

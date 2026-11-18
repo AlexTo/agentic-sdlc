@@ -1,0 +1,45 @@
+---
+title: Xử lý sự cố
+description: Triệu chứng, chuyện gì đang xảy ra, và cần làm gì.
+sidebar:
+  order: 5
+---
+
+## Chuỗi không bắt đầu hoặc không tiếp tục
+
+| Triệu chứng | Chuyện gì đang xảy ra | Cần làm gì |
+| --- | --- | --- |
+| Spec PR đã merge, không có issue | PR không có label `spec-ready` khi được merge | Thêm `spec-ready` vào PR đã merge. Agent Issues cũng chạy khi `labeled` |
+| Agent Issues đã chạy: `No issue created: it is not an agent branch and has no "spec-ready" label` | Như trên, hoặc PR là PR của người, vốn bị bỏ qua theo thiết kế | Như trên, hoặc chạy Agent Issues thủ công với thư mục spec |
+| Agent Issues thất bại: `tasks.md is not in the format the workflow reads` | Kiểm tra định dạng đã bị bỏ qua hoặc phớt lờ trên spec PR | Sửa `tasks.md` trong một PR, rồi chạy Agent Issues thủ công |
+| Một comment: "the next implementation issue … was not opened: an issue for … already exists" | Issue của giai đoạn đã tồn tại, nhưng một số task agent trong đó chưa được đánh dấu | Đánh dấu nếu đã xong, hoặc hoàn thành chúng. Rồi chạy Agent Issues thủ công |
+| Agent Issues log `no spec folder with a tasks.md was found` | Issue của agent PR đã merge không có marker, và PR không thay đổi file `specs/` nào | Chạy Agent Issues thủ công với thư mục spec |
+| Giai đoạn cuối đã merge và không có gì mở | Đúng. Các task còn lại chỉ là **(human)** hoặc không còn task nào | Xong |
+
+## Agent không nhận việc hoặc không sửa lại
+
+| Triệu chứng | Chuyện gì đang xảy ra | Cần làm gì |
+| --- | --- | --- |
+| Issue có label không bao giờ được nhận | Agent Canvas đang tắt, automation bị vô hiệu, hoặc token không đọc được repository | Kiểm tra `agent-canvas` đang chạy và automation đã bật. Xem log lần chạy cuối của automation |
+| PR đỏ, đã thêm `ci-fix-1`, agent không bao giờ sửa lại | Worker chỉ sửa lại đúng `openhands/issue-<n>`, hoặc issue đã bị đóng | Kiểm tra tên nhánh. Mở lại issue |
+| Không có label `ci-fix-*` sau một lần chạy đỏ | Agent CI Status không chạy, hoặc đã bỏ qua nó (xem notice) | Mở lần chạy Agent CI Status và đọc notice, ví dụ `the pull request has a newer commit than this run` |
+| Agent sửa lại, rồi không có gì review head mới | Agent không gắn lại `openhands-review` | Gắn lại thủ công |
+| Push bị từ chối: `refusing to allow a Personal Access Token to create or update workflow` | Token thiếu quyền workflows, và nhánh chạm vào `.github/workflows/` (thường qua một lần merge `main`) | Thêm quyền. Lần poll kế sẽ thử lại |
+| `ci-fix-exhausted` | Năm lượt fix-up không hội tụ | Đọc lần thất bại cuối. Thường là spec hoặc kế hoạch mơ hồ. Sửa nó, gỡ các label, chạy lại |
+
+## Review
+
+| Triệu chứng | Chuyện gì đang xảy ra | Cần làm gì |
+| --- | --- | --- |
+| "⏳ Review waiting on checks" và không có review | Một check trên head chưa xong, hoặc bị kẹt trong hàng đợi | Tìm check đang chờ. Một required check không bao giờ chạy sẽ chặn review mãi mãi |
+| Review nói `🔄 CHANGES REQUESTED`, không có label `review-fix-*` | Review thiếu marker lần chạy, không đến từ tài khoản có quyền ghi, hoặc PR đã đi tiếp | Đọc notice của Agent Review Status |
+| Review hiện là "Commented", không phải "Approved" | Reviewer đăng bằng cùng tài khoản đã mở PR, và GitHub không cho tự duyệt | Bình thường khi dùng một tài khoản. Dùng một tài khoản máy cho agent |
+
+## Check
+
+| Triệu chứng | Chuyện gì đang xảy ra | Cần làm gì |
+| --- | --- | --- |
+| `UI Screenshots` thất bại khi refactor | Quy tắc không phân biệt được thay đổi nhìn thấy với thay đổi không nhìn thấy | Một maintainer thêm `no-ui-screenshots` và chạy lại check |
+| Job e2e của mọi PR đều tải Chromium | Cache chỉ được lưu trên `main` | Giữ job `playwright-cache` của CI, với cùng key như PR Checks |
+| `Check for mutations` thất bại trên `main` | Có thứ đã sinh ra file mà PR không commit | Chạy `pnpm build` ở local và commit phần diff |
+| `Resource not accessible by integration` khi gắn label | Token của workflow ghi được issue nhưng không ghi được pull request | Thêm `pull-requests: write` vào workflow |

@@ -1,0 +1,101 @@
+---
+title: Runtime của agent
+description: OpenHands biến một issue có label thành pull request như thế nào, và làm sao nó biết khi nào cần sửa lại.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Phiên bản ngắn gọn:** OpenHands chạy hai automation theo lịch trên repository của bạn. Một cái
+triển khai các issue có label và sửa lại các pull request đã bị đánh dấu thất bại. Cái kia review pull
+request khi các check của chúng đã xong. Cả hai khởi động một coding agent bình thường với một prompt
+cố định. Không cái nào cần bạn mở chat.
+
+```d2
+direction: right
+
+machine: Máy của bạn {
+  style.stroke-dash: 3
+  canvas: Agent Canvas {
+    i2p: issue sang PR
+    review: code review
+  }
+  agent: coding agent
+  canvas.i2p -> agent: triển khai hoặc sửa lại
+  canvas.review -> agent: review
+}
+
+github: GitHub {
+  style.stroke-dash: 3
+  issues: issue {shape: page}
+  prs: pull request {shape: page}
+  statuses: commit status {shape: document}
+}
+
+machine.canvas -> github: poll mỗi 5 phút
+machine.agent -> github.prs: push, mở, review
+```
+
+## Các phần
+
+| Phần | Nó là gì |
+| --- | --- |
+| **Agent Canvas** | Ứng dụng OpenHands bạn tự chạy (`npx @openhands/agent-canvas`). Nó gói agent server, backend automation và một web UI |
+| **Agent profile** | Agent nào chạy, và với model nào. Một profile có thể là agent riêng của OpenHands với bất kỳ LLM nào, hoặc một coding agent bên ngoài qua ACP (Agent Client Protocol) |
+| **Automation** | Một worker Python nhỏ chạy theo lịch cron. Nó đọc GitHub, quyết định cần làm gì, và bắt đầu hoặc tiếp tục các cuộc hội thoại agent. Được cài từ catalog của Agent Canvas |
+| **Secret** | Một thông tin đăng nhập có tên, như GitHub token. Một cuộc hội thoại chỉ được cấp các secret trong danh sách cho phép của nó |
+
+## Hai automation
+
+### GitHub issue to PR
+
+Ở mỗi lần poll, với mỗi repository nó theo dõi, worker:
+
+1. Tìm các PR đang mở trên nhánh `openhands/issue-<n>` có commit head mang một commit status tên
+   `software-factory/review` ở trạng thái `failure` hoặc `error`. Với mỗi PR, nó gửi một lượt
+   **revise** đến cuộc hội thoại của issue đó: đọc các review, comment và check thất bại, sửa chúng,
+   và push lên cùng nhánh.
+2. Tìm các issue đang mở có label kích hoạt (`openhands`) chưa có PR, và bắt đầu một lượt
+   **implement**: clone, tạo `openhands/issue-<n>`, triển khai, test, push, mở PR, và thêm label
+   `openhands-review`.
+
+Mỗi issue là một *subject* với một cuộc hội thoại ổn định. Lượt revise đi vào cùng cuộc hội thoại với
+lần triển khai ban đầu, nên agent giữ được context của nó.
+
+### GitHub code review
+
+Ở mỗi lần poll, nó tìm các PR mang label `openhands-review`, có một yêu cầu review đang chờ cho tài
+khoản của nó, hoặc đang mở, không phải draft, chưa được yêu cầu và chưa được review. Với mỗi PR, nó
+chờ đến khi **mọi check trên commit head đã xong**, rồi bắt đầu review đúng commit đó. Review kết thúc
+bằng một verdict trên dòng riêng: `✅ APPROVED` hoặc `🔄 CHANGES REQUESTED`.
+
+<Aside type="caution">
+Worker issue-to-PR chỉ sửa lại một PR khi nó thấy status `software-factory/review` thất bại. Cả một
+lần chạy CI đỏ lẫn "changes requested" của reviewer đều không tự đặt status đó. Lấp khoảng trống đó
+là hai mảnh của [phần glue còn thiếu](../the-missing-glue/).
+</Aside>
+
+## Vì sao poll, không phải webhook
+
+Các automation poll (mỗi 5 phút ở Discava, mỗi 15 phút theo mặc định). Điều này có nghĩa Agent Canvas
+có thể chạy trên laptop hoặc một server ở nhà mà không cần URL công khai hay webhook secret. Cái giá là
+độ trễ: tối đa một chu kỳ poll giữa lúc một status được đăng và lúc agent bắt đầu. Trên thực tế, con
+số đó nhỏ so với thời gian agent cần để làm việc.
+
+## Agent có thể và không thể chạm tới gì
+
+Cuộc hội thoại triển khai nhận một secret, GitHub token, để nó có thể đọc issue và push nhánh của nó.
+Nó không nhận thông tin đăng nhập cloud. Các quy tắc của repository (constitution, `AGENTS.md`, hướng
+dẫn trong issue) cấm nó sửa workflow, merge hoặc làm yếu test. Sau đó GitHub thực thi những gì quan
+trọng: branch protection chặn merge khi chưa được duyệt, và các workflow glue chạy code của nhánh mặc
+định, không bao giờ là code của PR.
+
+## Chọn agent
+
+Discava chạy cả hai automation trên **Claude Code qua ACP**: Sonnet để triển khai và Opus để review.
+Dùng một model mạnh hơn để review là có chủ ý: reviewer là bước kiểm tra cuối trước một người, và nó
+đọc ít code hơn nhiều so với lượng code người triển khai viết. Bất kỳ ACP agent nào, hoặc agent riêng
+của OpenHands với bất kỳ LLM nào, đều cắm được vào cùng các profile.
+
+Tiếp theo: [Phần glue còn thiếu](../the-missing-glue/).

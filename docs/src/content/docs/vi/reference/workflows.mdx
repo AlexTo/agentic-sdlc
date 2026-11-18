@@ -1,0 +1,50 @@
+---
+title: Workflow
+description: Mọi workflow GitHub Actions trong vòng lặp, trigger, permission và tên job của chúng.
+sidebar:
+  order: 3
+---
+
+| Workflow | File | Trigger | Permission | Checkout |
+| --- | --- | --- | --- | --- |
+| PR Checks | `pr-checks.yml` | `pull_request` vào `main` | `contents: read`, cộng `pull-requests: write` cho job comment ảnh chụp màn hình | PR |
+| UI Screenshots | `ui-screenshots.yml` | `pull_request` vào `main`, kể cả `labeled`/`unlabeled` | `contents: read`, `pull-requests: read` | Nhánh mặc định (đọc diff từ API) |
+| CI | `ci.yml` | `push` lên `main`, `workflow_dispatch` | `contents: read`, `pages: write`, `id-token: write` | `main` |
+| Agent Issues | `agent-issues.yml` | `pull_request: [closed, labeled]` vào `main`, `workflow_dispatch(spec_folder)` | `contents: read`, `issues: write`, `pull-requests: write` | Merge commit |
+| Agent CI Status | `agent-ci.yml` | `workflow_run` của PR Checks, `completed` | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` | Nhánh mặc định |
+| Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` | Nhánh mặc định |
+| Deploy (Discava) | `deploy.yml` | `workflow_run` của CI trên `main`, `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | Commit mà CI đã xác minh |
+
+## Tên job cần yêu cầu trong branch protection
+
+| Check | Từ |
+| --- | --- |
+| `Checks (lint)`, `Checks (test)`, `Checks (build)` | PR Checks |
+| `Tasks format` | PR Checks |
+| `E2E tests` | PR Checks (gom các shard) |
+| `UI Screenshots` | UI Screenshots |
+
+## Nhóm concurrency
+
+| Workflow | Nhóm | Hủy lần đang chạy |
+| --- | --- | --- |
+| PR Checks | `pr-checks-<ref>` | có: một lần push mới khiến lần chạy cũ vô nghĩa |
+| Agent Issues | `agent-issues-<PR number or folder>` | không |
+| Agent CI Status | `agent-ci-<head branch>` | không |
+| Agent Review Status | `agent-review-<PR number>` | không |
+| Deploy | `deploy-<stage>` | không |
+
+Các agent workflow không bao giờ hủy. Mỗi lần chạy phải tính lượt thử của nó hoặc mở issue của nó đúng
+một lần, và nhóm theo từng PR nghĩa là các PR không liên quan không bao giờ phải chờ nhau.
+
+## Các Nx target chúng chạy
+
+Tất cả trong `@your-scope/common-scripts`:
+
+| Target | Entry point | Biến môi trường nó đọc |
+| --- | --- | --- |
+| `agent-issue` | `src/agent-issues/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH`, `SPEC_FOLDER`, `DRY_RUN` |
+| `agent-ci-status` | `src/agent-ci/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
+| `agent-review-status` | `src/agent-review/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
+| `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH` |
+| `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`, `GITHUB_ACTIONS` (cho annotation) |

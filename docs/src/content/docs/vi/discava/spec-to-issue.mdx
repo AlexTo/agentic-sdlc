@@ -1,0 +1,126 @@
+---
+title: Spec sang issue
+description: Một spec đã merge, và mỗi agent PR đã merge sau nó, mở issue triển khai tiếp theo như thế nào.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Khoảng trống 1 và 7: không có gì biến một spec đã xong thành việc cho agent, và merge PR của agent không
+khởi động giai đoạn tiếp theo. Discava lấp cả hai bằng một workflow, **Agent Issues**, và script đứng
+sau nó.
+
+## Khi nào nó chạy
+
+`.github/workflows/agent-issues.yml` lắng nghe các pull request vào `main` khi `closed` hoặc
+`labeled`, cộng thêm một `workflow_dispatch` thủ công với input `spec_folder`. Job chỉ chạy khi:
+
+| Sự kiện | Điều kiện | Ý nghĩa |
+| --- | --- | --- |
+| PR closed | đã merge, và có label `spec-ready` | Một spec đã được duyệt: mở issue đầu tiên |
+| PR closed | đã merge, và nhánh bắt đầu bằng `openhands/` | Một agent PR đã vào: mở issue tiếp theo |
+| PR labelled | đã merge từ trước, và label là `spec-ready` | Ai đó quên gắn label trước khi merge |
+| Chạy thủ công | một tên thư mục spec | Khởi động lại chuỗi thủ công |
+
+Mọi PR đã merge khác đều bị bỏ qua, **kể cả PR chạm vào `specs/**`**. PR của chính agent đánh dấu các
+ô trong `tasks.md`, nên một bộ lọc đường dẫn sẽ khiến chuỗi tự kích hoạt chính nó.
+
+Job checkout **merge commit**, nên nó thấy các dấu tích mà PR vừa tạo. Nhóm concurrency của nó là theo
+từng PR, không bao giờ toàn cục: một nhóm toàn cục chỉ giữ lần chạy đang chờ mới nhất, nên hai lần
+merge sát nhau sẽ hủy lẫn nhau.
+
+## Script làm gì
+
+```d2
+direction: right
+
+merged: PR đã merge {shape: page}
+gate: "nhánh agent,\nhoặc spec-ready?" {shape: diamond}
+ignore: bỏ qua
+folder: tìm thư mục spec
+valid: "tasks.md hợp lệ?" {shape: diamond}
+fail: làm thất bại lần chạy
+next: "nhóm tiếp theo còn\ntask agent?" {shape: diamond}
+done: xong
+exists: "issue cho nhóm đó\nđã tồn tại?" {shape: diamond}
+stalled: comment trên PR
+open: mở issue {shape: page}
+
+merged -> gate
+gate -> ignore: không
+gate -> folder: có
+folder -> valid
+valid -> fail: không
+valid -> next: có
+next -> done: không
+next -> exists: có
+exists -> stalled: có
+exists -> open: không
+```
+
+`pnpm nx run @discava/common-scripts:agent-issue`, trong `src/agent-issues/`:
+
+1. **Gate** (`gate.ts`). `decide()` phân loại PR thành `spec`, `implementation` hoặc `ignore`.
+2. **Tìm thư mục spec** (`discover.ts`). Với một agent PR, nó đọc issue mà PR đóng và lấy thư mục từ
+   marker ẩn của issue đó. Ngược lại, nó dùng các đường dẫn `specs/<folder>/` mà PR đã thay đổi.
+3. **Validate** (`validate.ts`). Một `tasks.md` không qua được kiểm tra định dạng làm thất bại lần
+   chạy, thay vì giao cho agent sai task.
+4. **Nhóm các giai đoạn** (`tasks.ts`). Mọi thứ đến và bao gồm giai đoạn `User Story` đầu tiên là
+   nhóm 0 (setup, nền tảng và story MVP được ship cùng nhau). Mỗi giai đoạn sau là một nhóm riêng.
+5. **Chọn nhóm tiếp theo**: nhóm đầu tiên có một task chưa đánh dấu không phải **(human)**.
+6. **Kiểm tra issue đã tồn tại.** Nội dung mọi issue bắt đầu bằng một marker như
+   `<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->`. Nếu một issue cho nhóm này đã
+   tồn tại (mở hoặc đóng), script không mở thêm. Thay vào đó nó comment trên PR, ví dụ:
+
+   > The next implementation issue for `specs/…/` was not opened: an issue for "Ratings in search"
+   > already exists, and these tasks in its `tasks.md` are not ticked: T017, T018.
+
+7. **Render và tạo issue** (`issue.ts`), với label `openhands`.
+
+## Issue mà nó mở
+
+Một issue thật, [#466](https://github.com/AlexTo/discava/issues/466):
+
+```markdown
+<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->
+
+## Spec
+
+- Spec folder: `specs/20261116-013307-course-reviews/` (read `spec.md`, `plan.md`, `tasks.md`,
+  `data-model.md` and `contracts/`)
+- Parent issue: #279
+
+## Scope
+
+Tasks `T015` to `T019` of `tasks.md`: every task under Phase 4: Ratings in search (PR 4). Do not
+start tasks outside these phases.
+
+## Instructions for the agent
+
+- Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
+- …the rest of the template's bullets, with `#<parent>` filled in as `#279`
+```
+
+Tiêu đề là một header Conventional Commit được dựng từ thư mục và giai đoạn:
+`feat(course-reviews): ratings in search (PR 4)`. Nó có subject viết thường và tối đa 100 ký tự, để
+agent có thể dùng lại cho PR của nó mà không làm commitlint thất bại. Nhóm đầu tiên thêm
+` (with setup and foundations)`.
+
+<Aside type="note">
+Các hướng dẫn cố định được đọc từ issue template lúc chạy, nên chỉ có một nơi để thay đổi chúng. Sửa
+`.github/ISSUE_TEMPLATE/implement-phase.md` sẽ thay đổi mọi issue trong tương lai.
+</Aside>
+
+## Chạy thử (dry run)
+
+```bash
+DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=workflow_dispatch \
+  SPEC_FOLDER=20261116-013307-course-reviews \
+  pnpm nx run @discava/common-scripts:agent-issue
+```
+
+Lệnh này in tiêu đề và nội dung của issue mà nó sẽ mở. Nó vẫn đọc các issue có sẵn qua `gh`, nên bạn
+cần đăng nhập.
+
+Tiếp theo: [Vòng phản hồi](../feedback-loops/).

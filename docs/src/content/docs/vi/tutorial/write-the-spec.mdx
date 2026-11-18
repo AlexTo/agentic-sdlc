@@ -1,0 +1,59 @@
+---
+title: 1. Viết spec
+description: Biến ý tưởng thành spec.md bằng Speckit, và để agent chất vấn nó.
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Bạn đang ở:** người + agent. **Output:** `specs/<timestamp>-note-tags/spec.md`.
+
+Spec nói *cái gì* và *vì sao*, không bao giờ nói *thế nào*. Đó là thứ quan trọng nhất bạn viết.
+
+<Steps>
+
+1. Bắt đầu từ một nhánh.
+
+   ```bash
+   git switch -c spec/note-tags
+   ```
+
+2. Mô tả tính năng cho Speckit.
+
+   ```text
+   /speckit-specify Users can add up to five tags to a note and filter the note list by tag.
+   Tags are case-insensitive and unique per note.
+   ```
+
+   Speckit tạo `specs/<timestamp>-note-tags/spec.md` với user story, yêu cầu chức năng và tiêu chí
+   chấp nhận.
+
+3. Để agent tìm các lỗ hổng.
+
+   ```text
+   /speckit-clarify
+   ```
+
+   Nó hỏi tối đa năm câu hỏi nhắm đích và ghi câu trả lời của bạn lại vào spec. Với tính năng này, hãy
+   chờ những câu hỏi như:
+
+   - Điều gì xảy ra khi thêm tag thứ sáu: từ chối, hay bỏ tag cũ nhất?
+   - `Work` có phải cùng tag với `work` không? (Spec nói có: chuyển thành chữ thường khi lưu.)
+   - Có độ dài tối đa cho tag không?
+
+</Steps>
+
+## Thế nào là tốt
+
+- Mỗi user story có thể được test riêng, với kịch bản chấp nhận viết dạng Given/When/Then.
+- Mọi quy tắc được nêu thành một yêu cầu, ví dụ *"A note MUST NOT have more than five tags."* (Một ghi
+  chú KHÔNG ĐƯỢC có quá năm tag.) Những quy tắc đó sau này trở thành invariant và test.
+- Không có công nghệ nào xuất hiện trong spec. Không DynamoDB, không tRPC.
+
+<Aside type="tip">
+Hãy tự trả lời các câu hỏi làm rõ thay vì để agent đoán. Mỗi câu trả lời bạn đưa ra là bớt một giả
+định sai trong code.
+</Aside>
+
+Tiếp theo: [Kế hoạch và task](../plan-and-tasks/).

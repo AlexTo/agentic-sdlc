@@ -1,0 +1,81 @@
+---
+title: 1. Fork repository
+description: Fork repository này, bật những gì GitHub tắt cho bản fork, và kiểm tra nó chạy được.
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Kết quả:** bản fork của riêng bạn, đã bật Issues và Actions, đã clone về máy, với các check đều pass.
+
+<Steps>
+
+1. **Fork và clone.**
+
+   ```bash
+   gh repo fork AlexTo/agentic-sdlc --clone
+   cd agentic-sdlc
+   ```
+
+2. **Đặt bản fork làm mặc định cho `gh`.** Nếu không, `gh pr create` và `gh issue create` sẽ nhắm vào
+   repository gốc, không phải của bạn.
+
+   ```bash
+   gh repo set-default <you>/agentic-sdlc
+   ```
+
+3. **Bật Issues.** GitHub tắt chúng cho bản fork, mà toàn bộ quy trình chạy trên issue.
+
+   ```bash
+   gh repo edit --enable-issues
+   ```
+
+4. **Bật Actions.** Mở tab **Actions** của bản fork và bấm **I understand my workflows, go ahead and
+   enable them**. GitHub không chạy workflow trong bản fork cho đến khi bạn làm vậy.
+
+5. **Cài đặt và chạy các check ở local**, đúng những check mà CI chạy:
+
+   ```bash
+   pnpm install
+   pnpm nx run-many --target lint --all
+   pnpm nx run-many --target test --all
+   pnpm nx run-many --target build --all
+   ```
+
+   Để chạy ứng dụng ghi chú (cần Docker): `pnpm dev`, rồi mở URL mà website in ra.
+
+</Steps>
+
+## Kiểm tra kết quả
+
+```bash
+gh repo view --json isFork,hasIssuesEnabled --jq .
+pnpm nx run @agentic-sdlc/common-scripts:validate-tasks
+```
+
+```text
+{"hasIssuesEnabled":true,"isFork":true}
+0 tasks.md file(s) are in the expected format.
+```
+
+## Bản fork của bạn đã có gì
+
+| Thành phần | Ở đâu |
+| --- | --- |
+| Template, script Speckit và constitution | `.specify/`, và các skill `speckit-*` |
+| Hướng dẫn mà mọi issue triển khai mang theo | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| PR check: lint, test, build, tasks format, e2e, ảnh chụp màn hình | `.github/workflows/pr-checks.yml`, `ui-screenshots.yml` |
+| CI trên `main`, gồm quét Trivy và deploy docs | `.github/workflows/ci.yml` |
+| Spec → issue, CI → agent, review → agent | `.github/workflows/agent-issues.yml`, `agent-ci.yml`, `agent-review.yml` |
+| Các quy tắc đứng sau chúng, với 124 unit test | `packages/common/scripts/src/agent-*`, `ui-screenshots/` |
+| Ứng dụng ghi chú mà agent sẽ thay đổi | `packages/notes-table`, `notes-api`, `notes-website`, `e2e` |
+
+<Aside type="note">
+Có hai thứ hoạt động khác trong bản fork, và không cái nào chặn quy trình. Không có secret
+`CODECOV_TOKEN`, bước upload coverage log một lỗi rồi tiếp tục. Job **Deploy Docs** trong CI thất bại
+cho đến khi bạn bật GitHub Pages (Settings → Pages → Source: GitHub Actions). Bạn cũng có thể bỏ qua
+nó.
+</Aside>
+
+Tiếp theo: [2. Cấu hình repository](../github-repository/).

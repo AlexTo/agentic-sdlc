@@ -1,0 +1,75 @@
+---
+title: 6. PR check và CI
+description: Thêm workflow PR Checks (lint, test, build, tasks format, e2e, ảnh chụp màn hình) và CI trên main.
+sidebar:
+  order: 6
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Kết quả:** một workflow **PR Checks** mà thất bại của nó cấp dữ liệu cho vòng CI, một check **UI
+Screenshots**, và **CI** trên `main`.
+
+<Steps>
+
+1. **Chép `.github/workflows/pr-checks.yml`** từ repository này. Giữ chính xác `name: PR Checks`
+   của nó: Agent CI Status lắng nghe một workflow có tên đó. Các job của nó:
+
+   | Job | Giữ nguyên? |
+   | --- | --- |
+   | `checks`, một matrix gồm `lint`, `test`, `build` với `fail-fast: false` | Có |
+   | `tasks-format` | Có |
+   | `e2e`, bốn shard, cộng `e2e-result` gom chúng thành một check `E2E tests` | Điều chỉnh số shard theo bộ test của bạn |
+   | `e2e-screenshots` | Có, khi [bước 8](../local-stack-and-e2e/) đã xong |
+
+   Thay mọi `@agentic-sdlc/` bằng `@your-scope/`.
+
+2. **Chép `.github/workflows/ui-screenshots.yml`.** Trong repository này, quy tắc ảnh chụp màn hình
+   là một workflow riêng, kích hoạt khi `opened, synchronize, reopened, labeled, unlabeled`. Khi đó
+   thêm hoặc gỡ label `no-ui-screenshots` chỉ chạy lại check này, không phải cả bộ e2e. Discava thì
+   chạy cùng quy tắc như một job của PR Checks. Cách nào cũng được.
+
+3. **Chép `.github/workflows/ci.yml`** cho các lần push lên `main`. Giữ bước `Check for mutations`
+   (`git diff --ignore-space-at-eol --exit-code` sau khi build). Nó bắt các file sinh ra mà agent
+   quên commit. Giữ job `playwright-cache` nếu bạn dùng Playwright: các lần chạy PR chỉ có thể khôi
+   phục cache được lưu trên `main`.
+
+4. **Ghim mọi action vào một commit SHA**, như các file đã chép, và thêm `.github/dependabot.yml` để
+   các pin luôn cập nhật:
+
+   ```yaml
+   version: 2
+   updates:
+     - package-ecosystem: 'npm'
+       directory: '/'
+       schedule: { interval: 'weekly' }
+       groups: { all: { patterns: ['*'] } }
+     - package-ecosystem: 'github-actions'
+       directories: ['/', '/.github/actions/*']
+       schedule: { interval: 'weekly' }
+       groups: { github-actions: { applies-to: version-updates, patterns: ['*'] } }
+   ```
+
+</Steps>
+
+## Kiểm tra kết quả
+
+Mở một PR dùng thử làm hỏng một dòng `tasks.md`, ví dụ bằng cách thụt lề một task. Check **Tasks
+format** thất bại với một annotation trên dòng đó:
+
+```text
+A task must be written "- [ ] T<3 digits> <description>", starting in the first column
+```
+
+Mở một PR khác thay đổi một file UI mà không chạm vào kịch bản nào. **UI Screenshots** thất bại:
+
+```text
+This pull request changes UI source (…) but no e2e scenario gained a `screenshot(page, 'name')` call.
+```
+
+<Aside type="note">
+`codecov/codecov-action` trong các file đã chép cần một secret `CODECOV_TOKEN`. Gỡ bước đó nếu bạn
+không dùng Codecov.
+</Aside>
+
+Tiếp theo: [7. Các agent workflow](../agent-workflows/).

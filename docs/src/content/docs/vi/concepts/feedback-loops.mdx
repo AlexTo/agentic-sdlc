@@ -1,0 +1,94 @@
+---
+title: Vòng phản hồi
+description: Một lần CI đỏ hoặc một review "changes requested" gửi agent quay lại như thế nào, và vì sao mỗi vòng dừng sau năm lần thử.
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Phiên bản ngắn gọn:** khi có gì đó thất bại, một workflow đánh dấu commit head của PR bằng một
+status thất bại. Worker OpenHands thấy nó ở lần poll kế tiếp và yêu cầu chính cuộc hội thoại agent đó
+sửa chính PR đó. Mỗi vòng có một bộ đếm nằm trong label, và dừng ở năm.
+
+## Hai vòng lặp
+
+```d2
+direction: right
+
+pr: agent push {shape: page}
+checks: PR Checks
+review: agent reviewer
+you: người review
+
+actions: GitHub Actions {
+  style.stroke-dash: 3
+  ci: Agent CI Status
+  rv: Agent Review Status
+}
+
+status: "software-factory/review\n= failure" {shape: document}
+worker: "worker issue-to-PR\n(lần poll kế)"
+
+pr -> checks
+checks -> review: tất cả đã xong
+checks -> actions.ci: thất bại
+review -> actions.rv: changes requested
+review -> you: được duyệt
+actions.ci -> status: ci-fix-N
+actions.rv -> status: review-fix-N
+status -> worker
+worker -> pr: sửa lại chính PR đó
+```
+
+| | Vòng CI | Vòng review |
+| --- | --- | --- |
+| Kích hoạt bởi | Workflow PR Checks kết thúc với `failure` hoặc `timed_out` | Một review trên PR do agent reviewer viết, kết thúc bằng `🔄 CHANGES REQUESTED` |
+| Workflow | Agent CI Status | Agent Review Status |
+| Label bộ đếm | `ci-fix-1` … `ci-fix-5` | `review-fix-1` … `review-fix-5` |
+| Khi nào bỏ cuộc | `ci-fix-exhausted`, kèm một comment | `review-fix-exhausted`, kèm một comment |
+| Mô tả status | `CI failed (fix attempt 2 of 5): E2E tests (3/4)` | `Review requested changes (fix attempt 1 of 5): see the review` |
+
+Một lần chạy thành công không đăng gì. Commit tiếp theo bắt đầu mà không có status, nên worker để
+yên PR.
+
+## Các kiểm tra trước khi gửi agent quay lại
+
+Mỗi script từ chối hành động trừ khi tất cả các điều sau đều đúng:
+
+1. Nhánh chính xác là `openhands/issue-<n>`. Một nhánh thử lần hai, như
+   `openhands/issue-308-2`, không bao giờ được worker sửa, nên cũng không được phản hồi.
+2. PR đang mở.
+3. Lần chạy hoặc review là cho commit head **hiện tại** của PR. Một lần chạy cũ hơn là lỗi thời.
+4. Commit đó chưa được gửi quay lại. Chạy lại cùng các check không được dùng thêm một lượt thử.
+5. Với review: review mang marker lần chạy ẩn của reviewer và đến từ một tài khoản có quyền ghi,
+   để một người trích dẫn verdict không kích hoạt nó.
+6. Đã dùng ít hơn năm lượt thử.
+
+Label được gắn **trước** khi status được đăng. Nếu sau đó đăng status thất bại, lần thất bại tiếp
+theo sẽ tính thêm một lượt thay vì lặp lại lượt này mãi mãi.
+
+## Vì sao là năm
+
+Một lần thử lại sửa được phần lớn lỗi: một locator chập chờn, một kiểu bị sót, một quy tắc lint.
+Vài lần tiếp theo xử lý trường hợp bản sửa làm lộ ra vấn đề thứ hai, hoặc một lần chạy CI và một
+review mỗi bên đòi một thứ khác nhau. Đến lần thất bại thứ năm, agent thường đã bị kẹt ở thứ gì đó
+nó không thấy được, và thêm lượt thử chỉ tốn tiền mà không hội tụ. Discava bắt đầu với giới hạn ba
+và nâng lên năm.
+
+Ở Discava, 67 agent PR đã được merge tính đến ngày 18 tháng 11 năm 2026. 42 PR không mang label
+fix nào (một số có trước các workflow fix-up), 17 PR cần đúng một vòng sửa CI hoặc review, và chỉ
+một PR chạy một vòng đến cạn kiệt.
+
+<Aside type="caution">
+Khi một vòng đã cạn, hãy đọc lần thất bại cuối trước khi sửa bất cứ gì. Thất bại lặp lại thường có
+nghĩa là spec hoặc kế hoạch mơ hồ, và agent đang cố thỏa mãn hai cách hiểu cùng lúc. Sửa spec, rồi
+để agent thử lại.
+</Aside>
+
+## Cho nó thử lại
+
+Để cho agent thêm một vòng sau khi bạn đã bổ sung hướng dẫn, hãy gỡ các label bộ đếm và label
+`*-exhausted`, rồi chạy lại các check (vòng CI) hoặc yêu cầu review lại (vòng review).
+
+Tiếp theo: [Các lớp niềm tin](../layers-of-trust/).

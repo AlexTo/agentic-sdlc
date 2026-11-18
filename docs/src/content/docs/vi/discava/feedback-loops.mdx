@@ -1,0 +1,112 @@
+---
+title: Vòng phản hồi
+description: Agent CI Status và Agent Review Status, hai workflow gửi agent quay lại.
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Khoảng trống 2, 3 và 4: agent không nghe được về một lần CI đỏ hay một review "changes requested", và
+không có gì ngăn nó nếu nó nghe được rồi cứ thất bại mãi. Cả hai workflow biến một sự kiện thành tín
+hiệu duy nhất mà worker OpenHands vốn đã hành động theo: một commit status tên
+`software-factory/review` ở trạng thái `failure` trên head của PR.
+
+## Agent CI Status
+
+`.github/workflows/agent-ci.yml`, rút gọn:
+
+```yaml
+on:
+  workflow_run:
+    workflows: ["PR Checks"]
+    types: [completed]
+
+concurrency:
+  group: agent-ci-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+  statuses: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  ci-status:
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
+      (github.event.workflow_run.conclusion == 'failure' ||
+      github.event.workflow_run.conclusion == 'timed_out')
+    steps:
+      - uses: actions/checkout@<sha> # the default branch, never the PR's code
+      - uses: ./.github/actions/init-monorepo
+      - run: pnpm nx run @discava/common-scripts:agent-ci-status
+        env:
+          GH_TOKEN: ${{ github.token }}
+```
+
+`workflow_run` là điểm mấu chốt. Nó chạy trong context của nhánh mặc định, với một token có quyền
+ghi, dù PR Checks đã chạy trên code của PR với một token chỉ đọc.
+
+Script (`src/agent-ci/`):
+
+1. Kiểm tra tên nhánh với `^openhands/issue-\d+$` **trước khi** dùng nó trong bất kỳ request nào. Nó
+   đến từ tác giả PR.
+2. Tìm PR đang mở, các label và head hiện tại của nó, và các status trên commit của lần chạy.
+3. Liệt kê các job thất bại, như `E2E tests (3/4)` và `Checks (lint)`.
+4. Gọi `planCi()`, trả về `ignore`, `send-back` hoặc `give-up`.
+5. Với `send-back`: thêm `ci-fix-<n>`, rồi đăng status với các job thất bại trong phần mô tả và lần
+   chạy làm liên kết.
+6. Với `give-up`: thêm `ci-fix-exhausted` và comment, ví dụ:
+
+   > CI is still failing after 5 automatic fix attempts, so the agent will not be sent back again.
+   >
+   > Failing checks on `1a2b3c4`: E2E tests (2/4).
+   >
+   > A person needs to take over this pull request. To let the agent try again, remove the
+   > `ci-fix-*` and `ci-fix-exhausted` labels and re-run the checks.
+
+## Agent Review Status
+
+`.github/workflows/agent-review.yml` chạy khi có `pull_request_review: submitted`, khi nhánh là một
+nhánh agent trong cùng repository và nội dung review chứa `CHANGES REQUESTED`. Nó checkout nhánh mặc
+định một cách tường minh, và chạy `agent-review-status`.
+
+`planReview()` thêm ba kiểm tra riêng trước khi gửi agent quay lại:
+
+| Kiểm tra | Vì sao |
+| --- | --- |
+| Author association là `OWNER`, `MEMBER` hoặc `COLLABORATOR` | Chỉ người có quyền ghi mới kích hoạt được |
+| Nội dung có `<!-- openhands-review-run: … -->` | Đó là review của agent reviewer, không phải một người trích dẫn nó |
+| Nội dung có một dòng đúng bằng `🔄 CHANGES REQUESTED` | Là verdict, không phải một lần nhắc đến nó |
+
+Sau đó là cùng các bước như CI: `review-fix-<n>`, status thất bại liên kết đến review, và
+`review-fix-exhausted` sau năm lần.
+
+Reviewer tự review lại sau khi agent push, vì prompt revise bảo agent gắn lại `openhands-review`, và
+một commit head mới được tính là một lần review mới.
+
+## Trông như thế nào trên một PR
+
+Từ [#470](https://github.com/AlexTo/discava/pull/470), "ratings in search":
+
+1. Agent mở PR. Shard `E2E tests (4/4)` thất bại.
+2. Agent CI Status thêm `ci-fix-1` và đăng status thất bại.
+3. Ở lần poll kế, agent sửa lại, push `94b9ee3`, và comment: *"The only finding was the
+   failing `E2E tests (4/4)` shard: my new scenario […] hit a strict-mode violation, because
+   `getByText('4.5')` matched both the rating and the `4.5 and up` option […]. I fixed both
+   locators."*
+4. Reviewer thấy các check vẫn đang chạy trên head mới và comment "⏳ Review waiting on checks". Ở
+   một lần quét sau, mọi thứ đều xanh. Nó review `94b9ee3` và kết thúc bằng `✅ APPROVED`.
+5. `main` được merge vào nhánh. Reviewer review lại head mới và duyệt nó.
+6. Một người merge.
+
+<Aside type="tip">
+Cả hai script nhận `DRY_RUN=true`, in kế hoạch dưới dạng JSON và không thay đổi gì. Trỏ
+`GITHUB_EVENT_PATH` vào một event payload đã lưu để phát lại một trường hợp thật.
+</Aside>
+
+Tiếp theo: [PR check](../pr-checks/).

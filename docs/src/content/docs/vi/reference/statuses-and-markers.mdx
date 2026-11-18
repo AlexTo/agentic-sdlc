@@ -1,0 +1,52 @@
+---
+title: Status và marker
+description: Commit status và các marker ẩn mà các thành phần dùng để nói chuyện với nhau.
+sidebar:
+  order: 2
+---
+
+Các thành phần không bao giờ gọi nhau. Chúng để lại tín hiệu trên GitHub mà thành phần kế tiếp tìm.
+
+## Commit status
+
+| Trường | Giá trị |
+| --- | --- |
+| Context | `software-factory/review` |
+| State | Chỉ `failure`. Một lần chạy thành công hay một lượt duyệt không đăng gì |
+| Đăng trên | Commit head của PR tại thời điểm thất bại |
+| Đăng bởi | Agent CI Status, Agent Review Status, hoặc một người |
+| Mô tả | `CI failed (fix attempt <n> of 5): <failed jobs>` hoặc `Review requested changes (fix attempt <n> of 5): see the review`, tối đa 140 ký tự |
+| Target URL | Lần chạy thất bại, hoặc review |
+| Đọc bởi | Worker issue-to-PR, sửa lại PR khi head của nó có status này ở `failure` hoặc `error` |
+
+Một lần push mới bắt đầu mà không có status, nên worker ngừng sửa lại khi agent đã push.
+
+## Marker ẩn
+
+| Marker | Ở đâu | Viết bởi | Dùng để |
+| --- | --- | --- | --- |
+| `<!-- agent-issue spec:<folder> group:<n> -->` | Dòng đầu của một issue triển khai | Agent Issues | Tìm thư mục spec từ một agent PR đã merge (qua `Closes #n` của nó), và không bao giờ mở issue thứ hai cho cùng một nhóm |
+| `<!-- openhands-review-run: <id> -->` | Mỗi review của agent reviewer | Automation code review | Agent Review Status chỉ hành động với review mang marker này |
+| `<!-- openhands-review-gate:waiting:<sha> -->` | Comment "Review waiting on checks" | Automation code review | Ghi chép riêng của reviewer rằng nó đang chờ head đó |
+| `<!-- e2e-screenshots -->` | Comment E2E screenshots | PR Checks | Cập nhật một comment duy nhất thay vì thêm comment mới mỗi lần chạy |
+
+## Dòng verdict
+
+Reviewer kết thúc mỗi review bằng một trong hai dòng sau trên dòng riêng:
+
+```text
+✅ APPROVED
+🔄 CHANGES REQUESTED
+```
+
+Agent Review Status khớp `^🔄 CHANGES REQUESTED\s*$` trên một dòng riêng. Một review chỉ nhắc đến
+cụm từ này thoáng qua không được tính.
+
+## Tên nhánh
+
+| Pattern | Ai | Quan trọng vì |
+| --- | --- | --- |
+| `openhands/issue-<n>` | Automation issue-to-PR | Nhánh duy nhất mà worker sửa lại, và nhánh duy nhất các workflow fix-up phản hồi |
+| `openhands/issue-<n>-2`, … | Automation issue-to-PR, trên một issue được gắn lại label | Không bao giờ được sửa lại tự động |
+| bất cứ thứ gì bắt đầu bằng `openhands/` | Nhánh của agent | Merge một nhánh như vậy đẩy chuỗi tiến lên |
+| `spec/<name>` (bất kỳ tên nào khác) | Con người | Chỉ đẩy chuỗi tiến lên khi có `spec-ready` |

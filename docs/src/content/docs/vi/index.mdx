@@ -1,0 +1,42 @@
+---
+title: Agentic SDLC
+description: Một vòng đời phần mềm trong đó agent viết code và con người định hướng, được xây dựng và vận hành thực tế trên Discava.
+template: splash
+hero:
+  title: Agentic SDLC
+  tagline: "Đừng quản lý vi mô từng agent nữa. Hãy leo lên nấc thang niềm tin: càng xây nhiều vào môi trường, bạn càng có thể tin agent làm đúng, và càng chạy được nhiều agent cùng lúc. Hướng dẫn này giải thích ý tưởng, cho thấy Discava vận hành nó ra sao, và dẫn bạn từng bước tự thiết lập."
+  actions:
+    - text: Bắt đầu tại đây
+      link: /agentic-sdlc/vi/guides/introduction/
+      icon: right-arrow
+    - text: Thiết lập
+      link: /agentic-sdlc/vi/setup/before-you-start/
+      icon: setting
+      variant: minimal
+---
+
+import { CardGrid, Card, LinkCard } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <Card title="Một môi trường bạn có thể tin cậy" icon="approve-check">
+    Quy tắc, test và các bước kiểm tra được xếp thành nhiều lớp, để lỗi lộ ra và quay về với agent, không phải với bạn.
+  </Card>
+  <Card title="Viết spec" icon="pencil">
+    Mỗi tính năng bắt đầu bằng một spec, một kế hoạch và một danh sách task đã được review. Agent xây dựng từ đó, không phải từ một cuộc chat.
+  </Card>
+  <Card title="Agent lo phần còn lại" icon="rocket">
+    Một spec được merge sẽ mở một issue cho mỗi giai đoạn. Agent mở PR và tự sửa CI đỏ hoặc góp ý review, tối đa năm lần cho mỗi vòng lặp.
+  </Card>
+  <Card title="Bạn định hướng" icon="information">
+    Con người duyệt spec và có tiếng nói cuối cùng trước khi merge. Mọi thứ ở giữa tự chạy.
+  </Card>
+</CardGrid>
+
+## Chọn lộ trình của bạn
+
+<CardGrid>
+  <LinkCard title="Hiểu các khái niệm" href="/agentic-sdlc/vi/concepts/principles/" description="Các nguyên tắc, và năm thành phần tạo nên quy trình." />
+  <LinkCard title="Xem Discava làm thế nào" href="/agentic-sdlc/vi/discava/overview/" description="Mọi khoảng trống và chính xác file lấp đầy nó, cùng một tính năng thật được lần theo từ spec đến merge." />
+  <LinkCard title="Tái hiện quy trình" href="/agentic-sdlc/vi/setup/before-you-start/" description="Fork repository này, trỏ OpenHands vào đó, và chạy một tính năng qua trọn vòng lặp." />
+  <LinkCard title="Thử trên một tính năng" href="/agentic-sdlc/vi/tutorial/the-case/" description="Theo chân một tính năng nhỏ, gắn tag cho ghi chú, qua mọi giai đoạn." />
+</CardGrid>

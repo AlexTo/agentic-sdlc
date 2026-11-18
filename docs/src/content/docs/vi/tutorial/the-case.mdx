@@ -1,0 +1,44 @@
+---
+title: Bài toán - tag cho ghi chú
+description: Tính năng mà mọi bước của tutorial xây dựng, và vì sao nó được chọn.
+sidebar:
+  order: 0
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Tutorial theo chân một tính năng từ ý tưởng đến code đã merge: **tag cho ghi chú**.
+
+> Người dùng có thể thêm tối đa năm tag vào một ghi chú, và lọc danh sách ghi chú theo tag.
+
+Nó đủ nhỏ để hoàn thành trong vài PR, và chạm vào mọi lớp của ứng dụng ghi chú ví dụ, nên mỗi giai
+đoạn của quy trình đều có việc thật để làm.
+
+| Lớp | Thay đổi gì | Cổng nào bắt lỗi |
+| --- | --- | --- |
+| `notes-table` | Thuộc tính `tags` trên entity `note` | Unit test |
+| `notes-api` | `tags` khi tạo và cập nhật, bộ lọc `tag` khi liệt kê | Unit test, typecheck |
+| `notes-website` | Ô nhập tag trên form ghi chú, chip tag, bộ lọc tag | Ảnh chụp màn hình, e2e |
+| Quy tắc nghiệp vụ | Tối đa năm tag, không trùng, không phân biệt hoa thường | Invariant, unit test |
+| Đồng thời | Hai tab cùng thêm tag một lúc không được làm mất tag nào | Test đồng thời |
+| `docs/` | Trang ứng dụng ghi chú mô tả tag | Agent review, người review |
+
+## Các giai đoạn
+
+Spec được chia thành ba giai đoạn, tức là ba issue và ba PR:
+
+1. **Dữ liệu và API.** Entity, procedure, quy tắc validate, unit test.
+2. **Website.** Ô nhập tag, chip, bộ lọc, kịch bản e2e có ảnh chụp màn hình, invariant và test đồng thời.
+3. **Docs.** Cập nhật docs để mô tả tag.
+
+<Aside type="note">
+Các giai đoạn trong bài toán này chỉ là ví dụ. Spec của bạn sẽ được chia khác. Quy tắc duy nhất là mỗi
+giai đoạn là một PR có thể review và để `main` vẫn hoạt động.
+</Aside>
+
+## Trước khi bắt đầu
+
+- Bạn có một bản fork của repository này, được thiết lập như trong
+  [Thiết lập: fork và chạy](../../setup/before-you-start/).
+- OpenHands đang poll các issue có label `openhands`.
+- Bạn đang làm việc trên `main` với working tree sạch.

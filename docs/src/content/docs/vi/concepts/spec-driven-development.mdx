@@ -1,0 +1,108 @@
+---
+title: Phát triển hướng spec
+description: Spec, kế hoạch và danh sách task, constitution chi phối chúng, và vì sao agent xây dựng từ chúng thay vì từ một prompt.
+sidebar:
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Phiên bản ngắn gọn:** một người và một agent viết ra xây gì, xây thế nào, và theo thứ tự nào,
+trước khi có bất kỳ dòng code nào. Kết quả viết ra được review như code và được merge. Từ đó trở đi,
+mọi lần chạy agent đọc cùng các file, nên kết quả không phụ thuộc vào ai đã viết prompt.
+
+## Vì sao không chỉ dùng prompt?
+
+Một prompt biến mất khi cuộc chat kết thúc. Nó không thể được review, nó khác nhau mỗi lần ai đó gõ,
+và agent quên nó giữa chừng một task dài. Một spec trong repository giải quyết cả bốn vấn đề:
+
+| Một prompt | Một spec |
+| --- | --- |
+| Nằm trong lịch sử chat của một người | Nằm trong `specs/`, dưới quản lý phiên bản |
+| Không ai review trước khi bắt đầu làm | Đi qua một pull request |
+| Gõ lại cho mỗi lần chạy, mỗi lần hơi khác | Được mọi lần chạy đọc, nguyên văn từng chữ |
+| Nói xây gì, hiếm khi nói vì sao | Nêu user story, yêu cầu và tiêu chí chấp nhận |
+
+## Bốn tài liệu
+
+[Speckit](https://github.com/github/spec-kit) là một bộ lệnh agent và template tạo ra những tài liệu
+này, từng bước một:
+
+| Lệnh | Viết | Trả lời |
+| --- | --- | --- |
+| `/speckit-constitution` | `.specify/memory/constitution.md` | Các quy tắc mà mọi kế hoạch phải tuân theo, cho toàn dự án. Viết một lần, sửa đổi qua PR |
+| `/speckit-specify` | `spec.md` | **Cái gì và vì sao.** User story, yêu cầu chức năng, kịch bản chấp nhận. Không có công nghệ |
+| `/speckit-clarify` | cập nhật `spec.md` | Tối đa năm câu hỏi nhắm đích, với câu trả lời được ghi lại vào spec |
+| `/speckit-plan` | `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md` | **Thế nào.** Cách tiếp cận kỹ thuật, được đối chiếu với constitution |
+| `/speckit-tasks` | `tasks.md` | **Theo thứ tự nào.** Các task có thể đánh dấu, nhóm theo giai đoạn |
+| `/speckit-analyze` | một báo cáo | Yêu cầu không có task, task không có yêu cầu, mâu thuẫn giữa các file |
+
+Mỗi tính năng có thư mục riêng, ví dụ `specs/20261116-013307-course-reviews/`.
+
+```d2
+direction: right
+
+idea: ý tưởng dài một đoạn
+constitution: constitution.md {shape: document}
+
+folder: "specs/<timestamp>-<name>/" {
+  style.stroke-dash: 3
+  spec: spec.md {shape: document}
+  plan: "plan.md\ndata-model.md\ncontracts/" {shape: document}
+  tasks: tasks.md {shape: document}
+  spec -> plan: /speckit-plan
+  plan -> tasks: /speckit-tasks
+}
+
+idea -> folder.spec: "/speckit-specify\n/speckit-clarify"
+constitution -> folder.plan: Constitution Check
+```
+
+## Constitution
+
+Constitution là thành phần bị đánh giá thấp nhất. Nó chứa các quy tắc không thể thương lượng của dự
+án, được viết để một kế hoạch có thể được đối chiếu với chúng: "a feature MUST work under `pnpm dev`
+with no cloud account" (một tính năng PHẢI chạy được dưới `pnpm dev` mà không cần tài khoản cloud),
+"a failing test MUST be fixed in the code, not by weakening the test" (một test thất bại PHẢI được sửa
+trong code, không phải bằng cách làm yếu test). Mỗi lần chạy `/speckit-plan` điền vào phần
+**Constitution Check** và phải biện minh cho mọi vi phạm.
+
+Vì mọi agent đọc nó trước khi viết code, constitution là nơi bạn đặt các quy tắc khiến output của
+agent đáng tin. Xem [constitution của Discava](../../discava/constitution-and-guidance/) để có một ví
+dụ đầy đủ.
+
+<Aside type="tip">
+Khi một người review liên tục đưa ra cùng một comment trên các agent PR, comment đó thuộc về
+constitution hoặc `AGENTS.md`. Khi đó agent tiếp theo tuân theo nó thay vì bị bắt lỗi vì nó.
+</Aside>
+
+## `tasks.md` là một hợp đồng với automation
+
+Speckit coi `tasks.md` là tài liệu cho con người. Trong quy trình này, một script cũng đọc nó, để
+quyết định agent nhận task nào tiếp theo. Nên định dạng của nó cố định và được kiểm tra trên mọi PR:
+
+```markdown
+## Phase 1: Setup
+- [ ] T001 Create the review entity in packages/databases/core-table/src/entities/review.ts
+
+## Phase 3: User Story 1 - Leave a rating (Priority: P1) 🎯 MVP
+- [ ] T010 [P] [US1] Unit tests for rating rules
+- [ ] T011 [US1] review.upsert procedure
+- [ ] T012 (human) Check the layout on a phone-width window
+```
+
+- Giai đoạn có dạng `## Phase <n>: <title>`, đánh số tăng dần.
+- Giai đoạn `User Story` đầu tiên kết thúc issue đầu tiên. Setup, nền tảng và story MVP được ship
+  cùng nhau. Mỗi giai đoạn sau là một issue riêng.
+- Task có dạng `- [ ] T<3 chữ số> ...`, được đánh dấu tại chỗ, không bao giờ đánh số lại.
+- **(human)** đánh dấu một task mà agent bỏ qua và liệt kê trong PR cho người review.
+
+Các quy tắc đầy đủ nằm ở [Tham khảo: định dạng tasks.md](../../reference/tasks-format/).
+
+## Thay đổi spec, không phải code
+
+Khi hành vi cần thay đổi, quay lại spec, cập nhật nó, và sinh lại kế hoạch và task. Task mới lấy ID
+chưa dùng tiếp theo, nên automation mở issue cho chúng như mọi task khác. Nếu thay vào đó bạn sửa code
+thủ công, spec không còn mô tả sản phẩm nữa, và agent tiếp theo đọc nó sẽ xây lại hành vi cũ.
+
+Tiếp theo: [Mỗi lần một giai đoạn](../one-phase-at-a-time/).

@@ -1,0 +1,64 @@
+---
+title: Tổng quan về Discava
+description: Discava là gì, các công cụ nó chạy, và file lấp đầy mỗi khoảng trống.
+sidebar:
+  order: 1
+  label: Tổng quan
+---
+
+[Discava](https://github.com/AlexTo/discava) là một hệ thống quản lý học tập serverless trên AWS: ba
+cổng React, ba tRPC API trên Lambda, một bảng DynamoDB duy nhất, một pipeline media và tìm kiếm, được
+deploy bằng CDK từ một Nx monorepo. Nó đủ lớn để không ai nắm hết trong đầu, và đó chính là lúc quy
+trình phát huy giá trị.
+
+Phần này mô tả những gì Discava thực sự chạy, tính đến tháng 11 năm 2026. Mỗi trang liên kết đến các
+file, để bạn có thể đọc mã nguồn bên cạnh phần giải thích.
+
+## Công cụ và phiên bản
+
+| Công cụ | Phiên bản | Vai trò |
+| --- | --- | --- |
+| Speckit (`specify-cli`) | 1.3.2 | Sinh spec, kế hoạch và task, với extension `git` |
+| OpenHands Agent Canvas | 1.41.0 | Runtime của agent và hai automation, như một user service trên một máy Linux |
+| Automation `github-issue-to-pr` | 1.2.4 | Triển khai issue có label, sửa lại PR thất bại |
+| Automation `github-pr-reviewer` | 1.11.2 | Review PR khi các check đã xong |
+| Agent triển khai | Claude Code qua ACP, Sonnet | Agent profile `default` |
+| Agent review | Claude Code qua ACP, Opus | Agent profile `reviewer` |
+| Nx + pnpm | Nx 23 | Monorepo, `nx affected` trong CI |
+| Playwright | | E2E test trên local stack, bốn shard trong CI |
+| Trivy, git-secrets, commitlint | | Quét bảo mật, kiểm tra secret trước commit, định dạng commit message |
+
+## Từ khoảng trống đến file
+
+| Khoảng trống | Câu trả lời của Discava | File |
+| --- | --- | --- |
+| Spec sang issue | Workflow Agent Issues và các script của nó | `.github/workflows/agent-issues.yml`, `packages/common/scripts/src/agent-issues/` |
+| CI thất bại sang agent | Agent CI Status | `.github/workflows/agent-ci.yml`, `src/agent-ci/` |
+| Review sang agent | Agent Review Status | `.github/workflows/agent-review.yml`, `src/agent-review/` |
+| Vòng lặp vô tận | Giới hạn năm lượt thử với label | `MAX_CI_FIX_ATTEMPTS` và `MAX_REVIEW_FIX_ATTEMPTS` trong `plan.ts` |
+| `tasks.md` sai định dạng | Job Tasks format | `pr-checks.yml` `tasks-format`, `src/agent-issues/validate.ts` |
+| Thay đổi UI chưa ai xem | Job UI Screenshots, comment E2E screenshots | `pr-checks.yml`, `src/ui-screenshots/`, `packages/e2e/src/helpers/screenshots.ts` |
+| Merge không tiếp tục chuỗi | Agent Issues trên các nhánh `openhands/` đã merge | `src/agent-issues/gate.ts` |
+| Agent không có cloud | Bản thay thế local cho mọi dịch vụ AWS | `pnpm dev`, `packages/common/scripts/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
+| Merge không ship | CI trên `main`, rồi Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
+| Secret và dependency có lỗ hổng | Trivy trong CI và trước deploy, git-secrets khi commit | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
+
+Và văn bản hướng dẫn mà mọi agent đọc:
+
+| Hướng dẫn | File |
+| --- | --- |
+| Quy tắc dự án, được mọi kế hoạch kiểm tra | `.specify/memory/constitution.md` (phiên bản 1.2.1) |
+| Lệnh, kiến trúc, quy ước | `AGENTS.md` |
+| Quy trình PR, local stack, testing | `CONTRIBUTING.md` |
+| Hướng dẫn trên mọi issue triển khai | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| Template Speckit, tùy biến cho automation | `.specify/templates/tasks-template.md`, `spec-template.md` |
+
+## Qua các con số
+
+Từ ngày 29 tháng 10 đến 18 tháng 11 năm 2026:
+
+- 12 spec tính năng được viết bằng Speckit, trong `specs/`.
+- 2.576 lượt quét automation: 1.670 lần poll issue-to-PR và 906 lần poll review.
+- 67 agent PR được merge. 42 không cần sửa tự động, 17 cần một vòng, một PR làm cạn một vòng lặp.
+
+Tiếp theo: [Constitution và hướng dẫn](../constitution-and-guidance/).

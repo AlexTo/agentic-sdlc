@@ -1,0 +1,83 @@
+---
+title: 2. Cấu hình repository
+description: Tạo các label và bảo vệ main. Bản fork không sao chép cả hai thứ này.
+sidebar:
+  order: 2
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Kết quả:** mọi label mà quy trình dùng, và một nhánh `main` chỉ nhận pull request có check xanh và
+một lượt duyệt.
+
+Chạy các lệnh này từ bản clone của bạn. `gh` dùng repository mặc định bạn đã đặt ở
+[bước 1](../fork/).
+
+<Steps>
+
+1. **Tạo các label.** `--force` cập nhật label đã tồn tại, nên chạy lại cũng an toàn.
+
+   ```bash
+   gh label create spec-ready           --force --description "Merging this spec PR starts the agent"
+   gh label create openhands            --force --description "OpenHands implements this issue"
+   gh label create openhands-review     --force --description "OpenHands reviews this PR's head"
+   gh label create no-ui-screenshots    --force --description "Waives the UI Screenshots check: a UI change with nothing to look at"
+   for n in 1 2 3 4 5; do
+     gh label create ci-fix-$n          --force --description "CI fix-up attempt $n of 5"
+     gh label create review-fix-$n      --force --description "Review fix-up attempt $n of 5"
+   done
+   gh label create ci-fix-exhausted     --force --description "CI fix-ups used up; a person takes over"
+   gh label create review-fix-exhausted --force --description "Review fix-ups used up; a person takes over"
+   ```
+
+2. **Bảo vệ `main`.** Thay `<you>`:
+
+   ```bash
+   gh api -X PUT repos/<you>/agentic-sdlc/branches/main/protection --input - <<'EOF'
+   {
+     "required_pull_request_reviews": {
+       "required_approving_review_count": 1,
+       "dismiss_stale_reviews": true
+     },
+     "required_status_checks": {
+       "strict": false,
+       "contexts": [
+         "Checks (lint)", "Checks (test)", "Checks (build)",
+         "Tasks format", "E2E tests", "UI Screenshots"
+       ]
+     },
+     "enforce_admins": false,
+     "restrictions": null
+   }
+   EOF
+   ```
+
+   `enforce_admins: false` cho phép bạn, với tư cách chủ sở hữu, merge các PR mà agent mở bằng token
+   của chính bạn (xem lưu ý bên dưới). `E2E tests` là job gom các shard e2e. `Tasks format` pass khi
+   không có `tasks.md` nào thay đổi, nên yêu cầu nó là an toàn.
+
+   <Aside type="caution">
+   Đừng yêu cầu status `software-factory/review`. Nó là một tín hiệu cho agent, chỉ bao giờ được đăng
+   dưới dạng `failure`, và yêu cầu nó sẽ chặn mọi PR.
+   </Aside>
+
+</Steps>
+
+<Aside type="caution" title="Một tài khoản hay hai">
+Lần thử đầu, agent có thể dùng token từ tài khoản của chính bạn, như Discava làm. Tuy nhiên, GitHub
+không cho một tài khoản duyệt PR của chính nó. Khi đó lượt duyệt của bạn và của agent reviewer hiện
+dưới dạng comment, và bạn merge với tư cách admin của repository. Với một team, hãy cho agent một tài
+khoản GitHub riêng có quyền ghi, và dùng token của nó ở [bước 3](../openhands/). Khi đó mọi người có
+thể duyệt agent PR bình thường.
+</Aside>
+
+## Kiểm tra kết quả
+
+```bash
+gh label list | grep -E 'openhands|spec-ready|fix|screenshots'
+gh api repos/<you>/agentic-sdlc/branches/main/protection --jq '.required_status_checks.contexts'
+```
+
+Lệnh đầu liệt kê 16 label. Lệnh thứ hai in ra sáu tên check.
+
+Tiếp theo: [3. Cài OpenHands](../openhands/).

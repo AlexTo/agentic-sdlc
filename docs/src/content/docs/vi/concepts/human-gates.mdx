@@ -1,0 +1,82 @@
+---
+title: Cổng người duyệt
+description: Hai quyết định con người giữ lại, những gì agent không bao giờ được làm, và khi nào bạn bị kéo vào sớm.
+sidebar:
+  order: 8
+---
+
+Con người không bị loại khỏi vòng lặp. Họ được chuyển đến hai điểm mà sự phán đoán quan trọng nhất,
+và tránh xa phần chờ đợi và gõ phím ở giữa.
+
+## Cổng 1: duyệt spec
+
+Spec PR được review như code. Merge nó **với label `spec-ready`** là điều duy nhất khởi động việc
+triển khai. Label này là có chủ ý. Automation không bao giờ khởi động từ một bộ lọc đường dẫn trên
+`specs/**`, vì PR của chính agent sửa `tasks.md` và chuỗi sẽ tự kích hoạt chính nó.
+
+Cần xem gì:
+
+- `spec.md` có nói đúng điều bạn thực sự muốn, với mọi quy tắc được nêu thành yêu cầu không?
+- Mỗi giai đoạn có đủ nhỏ để review trong một lần ngồi không?
+- Có điều gì trong `plan.md` mà bạn sẽ bác bỏ trong một lần review code không?
+
+### Đây giờ là nút thắt chính
+
+Khi các vòng lặp tự chạy, việc review code trở nên nhỏ: mỗi giai đoạn một PR xanh, đã được agent
+duyệt. Bước chậm nhất của con người là bước này. Mọi tính năng chờ ở đây cho đến khi có người đồng ý
+rằng spec là đúng.
+
+Nó không nhất thiết phải chờ một lập trình viên. `spec.md` là ngôn ngữ thông thường (user story,
+kịch bản chấp nhận, yêu cầu chức năng), nên một **business analyst** hoặc **product owner** có thể
+review nó trên spec PR, comment, và duyệt. Chia việc review theo file:
+
+| Người review | Đọc | Hỏi |
+| --- | --- | --- |
+| Product owner, business analyst | `spec.md` | Đây có phải tính năng chúng ta muốn không? Các quy tắc và edge case có đúng không? Có thiếu gì không? |
+| Kỹ sư | `plan.md`, `data-model.md`, `contracts/`, `tasks.md` | Thiết kế có chắc chắn không? Các giai đoạn có đủ nhỏ để review không? |
+
+Bất kỳ ai đọc được repository đều có thể comment. Để lượt duyệt của họ được tính cho branch
+protection, họ cần quyền ghi. Hãy biến spec PR thành nơi thống nhất yêu cầu, thay vì một tài liệu
+riêng dần lệch đi.
+
+## Cổng 2: duyệt kết quả
+
+Mỗi agent PR đến tay bạn sau khi CI xanh và agent reviewer đã duyệt. Việc của bạn là đánh giá kết
+quả, không phải đi săn lỗi:
+
+- Đọc mô tả PR: những gì đã thay đổi, những task nào, những task **(human)** nào để lại cho bạn.
+- Xem comment **E2E screenshots** thay vì pull nhánh về. Đây là phần quan trọng nhất của việc review:
+  nó cho thấy tính năng đang hoạt động. Xem
+  [Kiểm chứng là quan trọng nhất](../layers-of-trust/#kiểm-chứng-là-quan-trọng-nhất) để có ví dụ.
+- Làm các task **(human)**: kiểm tra thủ công trên một local stack hoặc một stage đã deploy.
+- Merge, hoặc yêu cầu thay đổi. Để agent thực hiện chúng, thêm label `openhands-review` sau khi
+  bạn review: agent reviewer review lại PR, và verdict "changes requested" của nó gửi agent triển
+  khai quay lại qua vòng review-fix, được đếm bằng cùng các label `review-fix-*`.
+
+## Những gì agent không bao giờ được làm
+
+| Không bao giờ | Được thực thi bởi |
+| --- | --- |
+| Merge, hoặc push lên `main` | Branch protection yêu cầu một review duyệt. Token của agent chỉ được dùng cho nhánh của chính nó |
+| Sửa `.github/workflows/` | Constitution và hướng dẫn trong issue. Reviewer và người review bắt được nó. Các workflow glue chạy code của nhánh mặc định, nên một workflow bị sửa trong PR không thể thay đổi chúng |
+| Làm yếu một test để nó pass | Constitution ("test là một đặc tả"), hướng dẫn trong issue, agent reviewer |
+| Chạm vào thông tin đăng nhập cloud | Cuộc hội thoại không bao giờ được cấp chúng. Việc deploy dùng role OIDC ngắn hạn từ một GitHub environment |
+| Làm việc ngoài phạm vi task của nó | Issue nêu tên phạm vi. Issue tiếp theo không mở cho đến khi mọi task agent được đánh dấu |
+| Thử lại mãi mãi | Năm lượt thử mỗi vòng, đếm bằng label |
+
+## Khi nào bạn bị kéo vào sớm
+
+| Tín hiệu | Chuyện gì đã xảy ra | Cần làm gì |
+| --- | --- | --- |
+| `ci-fix-exhausted` | CI thất bại năm lần sau các lần sửa tự động | Đọc lần thất bại cuối. Comment hướng dẫn, tự sửa, hoặc sửa spec. Gỡ các label để agent thử lại |
+| `review-fix-exhausted` | Reviewer vẫn yêu cầu thay đổi sau năm vòng | Quyết định reviewer có đúng không. Thường là spec mơ hồ |
+| Một comment trên issue từ agent | Nó bị chặn và dừng lại, như được hướng dẫn | Trả lời nó, rồi gỡ và gắn lại label `openhands` |
+| Một comment trên PR đã merge: "the next implementation issue … was not opened" | Các task của giai đoạn chưa được đánh dấu hết | Đánh dấu hoặc hoàn thành chúng, rồi chạy Agent Issues thủ công cho thư mục spec |
+
+## Production là cổng thứ ba, tùy chọn
+
+Deploy lên một stage phát triển có thể tự động trên mỗi `main` xanh. Deploy lên production nên chờ
+một người, dùng required reviewers trên một GitHub environment. Xem
+[Deploy và bảo mật](../../discava/deploy-and-security/).
+
+Tiếp theo: [Discava làm thế nào](../../discava/overview/).

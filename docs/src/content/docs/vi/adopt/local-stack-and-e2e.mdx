@@ -1,0 +1,111 @@
+---
+title: 8. Local stack, e2e và ảnh chụp màn hình
+description: Cho toàn bộ ứng dụng chạy mà không cần tài khoản cloud, thêm e2e test có ảnh chụp màn hình, và kiểm tra invariant dữ liệu sau mỗi test.
+sidebar:
+  order: 8
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Kết quả:** `pnpm dev` khởi động toàn bộ ứng dụng với các bản thay thế local, một bộ Playwright mà CI
+chạy trên mọi PR, ảnh chụp màn hình được đăng lên PR, và invariant được kiểm tra sau mỗi test.
+
+Đây là bước phụ thuộc nhiều nhất vào stack của bạn. Nó cũng là thứ cho phép CI đưa cho agent phản hồi
+thật mà không cần thông tin đăng nhập cloud.
+
+<Steps>
+
+1. **Cho mọi dịch vụ cloud một bản thay thế local**, được khởi động bởi một target `dev`, để
+   `pnpm dev` chạy mọi thứ. Những gì Discava dùng:
+
+   | Dịch vụ | Bản thay thế |
+   | --- | --- |
+   | DynamoDB | DynamoDB local (Docker) |
+   | S3 | S3Mock |
+   | SQS | ElasticMQ |
+   | OpenSearch | OpenSearch trong Docker |
+   | Cognito | Một OIDC server local nhỏ với người dùng cố định và form đăng nhập tự do |
+   | Lambda trigger, stream, EventBridge, MediaConvert, Transcribe, SES | Một tiến trình "event runner" gọi cùng các handler |
+
+   Chuyển chế độ code backend bằng một cờ (`LOCAL_DEV=true`), với các endpoint trong một module dùng
+   chung. Liệt kê những gì vẫn chỉ chạy trên cloud trong `CONTRIBUTING.md`, và đánh dấu các task cần
+   chúng là **(human)**.
+
+2. **Thêm một project Playwright** với mỗi luồng người dùng một file kịch bản. `packages/e2e` của
+   repository này là một ví dụ tối giản. Trong `playwright.config.ts`, đọc shard từ biến môi trường để
+   matrix CI có thể chia bộ test:
+
+   ```ts
+   const [shardCurrent, shardTotal] = (process.env.E2E_SHARD ?? '').split('/').map(Number);
+
+   export default defineConfig({
+     testDir: './src',
+     testMatch: ['scenarios/**/*.e2e.ts'],
+     workers: 1,
+     forbidOnly: !!process.env.CI,
+     retries: process.env.CI ? 1 : 0,
+     shard: shardCurrent && shardTotal ? { current: shardCurrent, total: shardTotal } : null,
+     webServer: { command: 'pnpm dev', reuseExistingServer: !process.env.CI /* … */ },
+   });
+   ```
+
+   Quy tắc cho kịch bản: mỗi kịch bản tự tạo người dùng và dữ liệu có tên duy nhất, và không kịch bản
+   nào reset dữ liệu local.
+
+3. **Chép helper ảnh chụp màn hình** từ repository này: `packages/e2e/src/helpers/screenshots.ts`. Nó
+   lưu `dist/packages/e2e/screenshots/<scenario>/<nn>-<name>.png`, thư mục mà job `e2e` của PR Checks
+   upload. Gọi nó ở chỗ một người sẽ nhìn, sau một `expect` trên những gì hiển thị:
+
+   ```ts
+   await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible();
+   await screenshot(page, 'reviews section with three reviews');
+   ```
+
+4. **Kiểm tra invariant sau mỗi test.** Với mỗi quy tắc trải trên các bản ghi được ghi bởi code khác
+   nhau (bộ đếm, tổng hợp, thứ tự), viết một hàm quét dữ liệu và trả về các vi phạm. Sau đó cho các
+   kịch bản một `test` tự động kiểm tra chúng. Đây là pattern của Discava, đã rút gọn:
+
+   ```ts
+   export const test = base.extend<{ tableInvariants: void }>({
+     tableInvariants: [
+       async ({}, use, testInfo) => {
+         const before = new Set((await findViolations()).map(violationId));
+         await use();
+         if (testInfo.status !== testInfo.expectedStatus) return;
+         await expect
+           .poll(async () => (await findViolations()).filter((v) => !before.has(violationId(v))), {
+             message: 'The scenario left the table breaking invariants',
+             timeout: 30_000,
+           })
+           .toEqual([]);
+       },
+       { auto: true },
+     ],
+   });
+   ```
+
+   Chỉ vi phạm *mới* làm thất bại test, nên dữ liệu local cũ không bao giờ gây thất bại. `expect.poll`
+   cho công việc nền (stream handler, tính toán lại) thời gian để bắt kịp.
+
+5. **Thêm test đồng thời** cho các thao tác ghi mà hai người dùng có thể tranh nhau: bắn cùng các
+   request API cùng một lúc bằng `Promise.all`, rồi assert trên kết quả và các invariant.
+
+</Steps>
+
+## Kiểm tra kết quả
+
+```bash
+pnpm nx e2e @your-scope/e2e
+ls dist/packages/e2e/screenshots/*/
+```
+
+Sau đó mở một PR thay đổi một trang và thêm một lời gọi `screenshot(`. Khi PR Checks xong, PR có một
+comment với tiêu đề **E2E screenshots** liệt kê ảnh mới dưới "Added by this pull request".
+
+<Aside type="tip">
+Nếu ứng dụng của bạn chưa chạy được hoàn toàn ở local, hãy bắt đầu với phần chạy được. Ngay cả một bộ
+test chỉ bao phủ API và database cũng bắt được phần lớn lỗi của agent. Thêm bản thay thế từng dịch vụ
+một, và giữ phần còn lại là task **(human)** cho đến lúc đó.
+</Aside>
+
+Tiếp theo: [9. Deploy và quét bảo mật](../deploy/).

@@ -1,0 +1,82 @@
+---
+title: Local stack
+description: Discava chạy mọi dịch vụ AWS ở local như thế nào, để CI có thể test ứng dụng thật mà không cần tài khoản cloud.
+sidebar:
+  order: 8
+---
+
+Khoảng trống 8: agent không thể chạy stack thật khi không có quyền truy cập cloud, và bạn không muốn
+cấp cho nó quyền đó. Câu trả lời của Discava là nguyên tắc III của constitution. Mọi dịch vụ AWS đều có
+một bản thay thế local, và `pnpm dev` khởi động tất cả chúng bằng Docker.
+
+## Những gì chạy local
+
+| Dịch vụ | Cổng | Thay thế cho |
+| --- | --- | --- |
+| Cổng học viên, giảng viên và admin | 4201, 4200, 4202 | CloudFront |
+| core-api, instructor-api | 2022, 2023 | API Gateway và Lambda |
+| DynamoDB local | 8001 | DynamoDB |
+| S3Mock | 9090 | S3 |
+| ElasticMQ | 9324 | SQS |
+| OpenSearch (Docker) | | OpenSearch Serverless |
+| Event runner | 2024 | DynamoDB stream và stream router, MediaConvert (ffmpeg), Transcribe (một track giữ chỗ), SES (một trang hộp thư), EventBridge, Scheduler, Cognito trigger |
+| Local OIDC server | 9400 | Cognito |
+
+Code backend chuyển chế độ theo `LOCAL_DEV=true`. Các cài đặt dùng chung nằm trong một package
+(`common-server-utils/local-dev`), nên mọi Lambda phân giải endpoint theo cùng một cách. Mỗi bản thay
+thế là một Nx target trong `packages/common/scripts`, kéo về và khởi động container của nó.
+
+Trang đăng nhập local cung cấp các người dùng cố định (một giảng viên, hai học viên, một admin) và một
+form "Someone else" cho claim bất kỳ. Không mật khẩu, không Cognito.
+
+## Ai chạy nó
+
+**Agent triển khai thì không.** Issue của nó nói không dùng `pnpm dev`, Docker hay e2e runner. Nó viết
+các kịch bản, và **PR CI** chạy chúng: mỗi shard e2e khởi động `pnpm dev` riêng trên một runner mới.
+Điều này giữ cho máy của agent đơn giản và các lần chạy nhanh. Nó cũng có nghĩa kết quả e2e mà agent
+đọc luôn đến từ một stack sạch.
+
+Con người chạy nó cho các task **(human)**, và để tái hiện một lỗi.
+
+## Kịch bản E2E
+
+`packages/e2e` có một `src/scenarios/*.e2e.ts` cho mỗi luồng người dùng, xây từ các helper dùng
+chung. Các quy tắc giúp chúng an toàn khi chạy theo bất kỳ thứ tự nào, trên một stack dùng chung:
+
+- Mỗi kịch bản tự tạo người dùng và dữ liệu có tên duy nhất.
+- Không kịch bản nào reset dữ liệu local.
+- Một worker, một lần retry trên CI, timeout hai phút. Các luồng chờ công việc nền như tính lại
+  tiến độ.
+
+## Invariant sau mỗi test
+
+`packages/databases/core-table/src/helpers/invariants.ts` export một danh sách kiểm tra trên toàn bộ
+bảng: "một khóa học có giảng viên", "số lượt hoạt động của học viên khớp với số học viên đã dùng mục
+đó", "thứ tự giữa các mục anh em là duy nhất", và hơn bốn mươi kiểm tra khác.
+
+Một fixture Playwright (`packages/e2e/src/helpers/table-invariants.ts`) chạy chúng **sau mỗi e2e
+test**. Nó ghi lại các vi phạm đã tồn tại trước test và chỉ thất bại với vi phạm mới, nên dữ liệu
+local cũ không thể làm thất bại một lần chạy. Thông báo nêu tên invariant và bản ghi vi phạm. Một
+agent viết sai một bộ đếm sẽ phát hiện ra ngay trong test đã ghi nó, không phải ba tính năng sau.
+
+Mọi quy tắc trải trên nhiều writer đều được ghi qua một helper dùng chung mà mọi writer gọi (ví dụ
+`studentActivityWrites`), và có một invariant cùng một test phá vỡ nó.
+
+Một PR check **Invariant coverage** đang được làm trên một nhánh, chưa có trên `main`. Nó ánh xạ mỗi
+entity với các file ghi vào nó, và làm thất bại một PR thêm writer mới mà không chạm vào
+`invariants.ts`, trừ khi label `no-new-invariant` miễn trừ.
+
+## Test đồng thời
+
+`packages/e2e/src/concurrency/` bắn các request API cùng một lúc, thẳng vào API, cho những thao tác
+ghi mà hai người dùng có thể tranh nhau: cấp chứng chỉ, gắn phụ đề, các bộ đếm analytics. Chúng chạy
+trong cùng job e2e.
+
+## Những gì vẫn chỉ chạy trên stage đã deploy
+
+Các bản thay thế không hoàn hảo, và `CONTRIBUTING.md` liệt kê chính xác chỗ chúng còn thiếu: ký
+CloudFront, output chính xác của MediaConvert, Transcribe thật, Cognito Managed Login, retry của
+EventBridge và các hàng đợi lỗi. Task phụ thuộc vào những thứ đó là task **(human)**, được kiểm tra
+trên `discava-development` sau khi deploy.
+
+Tiếp theo: [Deploy và bảo mật](../deploy-and-security/).

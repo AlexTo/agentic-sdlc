@@ -1,0 +1,113 @@
+---
+title: Deploy và bảo mật
+description: Một main xanh tự deploy như thế nào, và các lần quét chặn một secret bị lộ hoặc một dependency có lỗ hổng.
+sidebar:
+  order: 9
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Khoảng trống 9 và 10: merge không ship được gì, và agent có thể commit một secret hoặc kéo vào một
+package có lỗ hổng. Discava xử lý cả hai trong GitHub Actions, không có thông tin đăng nhập cloud dài
+hạn ở bất kỳ đâu.
+
+## Deploy
+
+`.github/workflows/deploy.yml` chạy khi **CI** hoàn tất trên `main`, hoặc chạy thủ công cho bất kỳ
+stage nào.
+
+```yaml
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      stage: { type: string, required: true, default: discava-development }
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' ||
+            (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
+    environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
+    concurrency:
+      group: deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
+      cancel-in-progress: false
+```
+
+```d2
+direction: right
+
+ci: CI xanh trên main
+manual: chạy thủ công
+approve: "required reviewers\n(chỉ production)" {shape: diamond}
+deploy: "Workflow Deploy\nTrivy, OIDC role, synth,\nvẫn là bản mới nhất của main?, cdk deploy"
+dev: stage development {shape: cylinder}
+prod: stage production {shape: cylinder}
+
+ci -> deploy: AUTO_DEPLOY_STAGE
+manual -> approve -> deploy
+deploy -> dev
+deploy -> prod
+```
+
+Các bước, theo thứ tự:
+
+1. **Checkout commit mà CI đã xác minh** (`workflow_run.head_sha`), không phải `main` ở thời điểm
+   hiện tại.
+2. **Kiểm tra stage tồn tại** trong `stages.config.ts`, để một lỗi gõ thất bại rõ ràng thay vì thành
+   một lỗi thông tin đăng nhập khó hiểu.
+3. **Chuyển tiếp các giá trị ghi đè của stage.** Các biến trên GitHub environment có tên dạng
+   `DISCAVA_DEVELOPMENT_*` trở thành biến môi trường cho synth, cho những thứ như custom domain
+   không nên commit.
+4. **Quét Trivy.** Cùng lần quét như CI, như một cổng chặn.
+5. **Assume deploy role** với GitHub OIDC (`aws-actions/configure-aws-credentials`). Không có access
+   key nào được lưu ở đâu cả.
+6. **Synthesize** với permissions boundary của stage được áp dụng.
+7. **Kiểm tra commit vẫn là bản mới nhất của `main`.** Bước này chạy bên trong slot concurrency. Chạy
+   lại một CI cũ, hoặc một lần chạy phải chờ sau một lần deploy mới hơn, sẽ bị bỏ qua kèm notice thay
+   vì deploy code cũ. Chạy thủ công bỏ qua kiểm tra này, để bạn có thể rollback.
+8. **Deploy** với CDK, giao cho CloudFormation một execution role có phạm vi hẹp (`--role-arn`).
+
+`AUTO_DEPLOY_STAGE` là một biến của repository. Discava đặt nó là `discava-development`, nên mọi
+`main` xanh đều đến được stage development. Để trống thì không có gì deploy mà không có một người.
+
+### Thiết lập một stage
+
+`scripts/setup-stage.sh` được chạy một lần cho mỗi stage, từ một bản clone của repository chạy
+workflow. Nó hỏi mọi thứ và đặt mặc định cho những gì nó dò được. Nó tạo:
+
+- GitHub OIDC provider trong tài khoản AWS
+- **deploy role** mà workflow assume, chỉ được tin cậy cho repository và environment đó
+- **CloudFormation execution role** và các managed policy của nó, với một permissions boundary để
+  các stack chỉ có thể tạo role mang boundary đó
+- các biến `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN` và `AWS_EXECUTION_ROLE_ARN` của GitHub environment, và
+  tùy chọn `AUTO_DEPLOY_STAGE`
+
+### Production chờ một người
+
+Mỗi stage deploy từ GitHub environment cùng tên. Một stage kiểu production có **required reviewers**
+trên environment của nó: job tạm dừng cho đến khi có người duyệt trong giao diện Actions. Discava
+chưa ra mắt, nên hiện tại chỉ `discava-development` có environment, và nó deploy tự động.
+
+## Quét bảo mật
+
+| Quét | Khi nào | Chặn |
+| --- | --- | --- |
+| `git-secrets` (pattern AWS) | Hook `pre-commit`, trên mọi commit local | Một commit chứa AWS key |
+| Trivy, lỗ hổng và secret | Job `trivy` của `ci.yml` trên mọi lần push lên `main`, và `deploy.yml` trước mỗi lần deploy | Một lần deploy có lỗ hổng CRITICAL sửa được hoặc một secret HIGH/CRITICAL đã commit |
+| checkov | Một phần của target `build` của project hạ tầng, nên có trong `Checks (build)` của mọi PR | Cấu hình tài nguyên CDK không an toàn |
+| Dependabot | Hằng tuần, npm và GitHub Actions, theo nhóm | Dependency và pin action lỗi thời |
+
+Trivy chạy như một CI job **riêng**, không thuộc `build`. Cơ sở dữ liệu lỗ hổng của nó thay đổi hằng
+ngày, và một CVE mới công bố nên gắn cờ `main` mà không chặn việc deploy docs. Các phát hiện được chấp
+nhận được liệt kê mỗi dòng một ID trong `.trivyignore`.
+
+<Aside type="note">
+Hook pre-commit cũng chạy `lint-staged` (Biome), và làm thất bại commit nếu một trong hai công cụ thay
+đổi working tree, để agent stage lại và commit lần nữa. `commit-msg` chạy commitlint với cấu hình
+Conventional Commits.
+</Aside>
+
+Tiếp theo: [Một tính năng thật](../a-real-feature/).

@@ -1,0 +1,92 @@
+---
+title: 7. Các agent workflow
+description: Nối các script glue với sự kiện GitHub bằng Agent Issues, Agent CI Status và Agent Review Status.
+sidebar:
+  order: 7
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Kết quả:** ba workflow mở issue từ spec và gửi agent quay lại khi CI đỏ hoặc có review "changes
+requested".
+
+<Steps>
+
+1. **Chép ba workflow** từ `.github/workflows/` của repository này:
+
+   | File | Tên | Kích hoạt | Chạy |
+   | --- | --- | --- | --- |
+   | `agent-issues.yml` | Agent Issues | `pull_request: [closed, labeled]` vào `main`, và `workflow_dispatch` với `spec_folder` | `agent-issue` |
+   | `agent-ci.yml` | Agent CI Status | `workflow_run` của **PR Checks**, `completed` | `agent-ci-status` |
+   | `agent-review.yml` | Agent Review Status | `pull_request_review: submitted` | `agent-review-status` |
+
+   Thay `@agentic-sdlc/` bằng `@your-scope/`.
+
+2. **Kiểm tra các điều kiện `if:` khớp với quyết định của bạn.** Nếu bạn đã đổi tiền tố nhánh hoặc
+   label, hãy đổi chúng ở đây nữa:
+
+   ```yaml
+   # agent-issues.yml
+   if: >-
+     github.event_name == 'workflow_dispatch' ||
+     (github.event.pull_request.merged == true &&
+     ((github.event.action == 'closed' &&
+     (contains(github.event.pull_request.labels.*.name, 'spec-ready') ||
+     startsWith(github.event.pull_request.head.ref, 'openhands/'))) ||
+     (github.event.action == 'labeled' &&
+     github.event.label.name == 'spec-ready')))
+
+   # agent-ci.yml
+   if: >-
+     github.event.workflow_run.event == 'pull_request' &&
+     startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
+     (github.event.workflow_run.conclusion == 'failure' ||
+     github.event.workflow_run.conclusion == 'timed_out')
+
+   # agent-review.yml
+   if: >-
+     startsWith(github.event.pull_request.head.ref, 'openhands/issue-') &&
+     github.event.pull_request.head.repo.full_name == github.repository &&
+     contains(github.event.review.body, 'CHANGES REQUESTED')
+   ```
+
+3. **Giữ nguyên permission và checkout như khi chép.** Mỗi workflow chỉ xin những gì nó ghi:
+
+   | Workflow | Permission |
+   | --- | --- |
+   | Agent Issues | `contents: read`, `issues: write`, `pull-requests: write` |
+   | Agent CI Status | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` |
+   | Agent Review Status | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` |
+
+   Label và comment trên một PR đi qua issues API, vốn từ chối token của workflow với lỗi
+   "Resource not accessible by integration" trừ khi nó cũng có quyền ghi pull request.
+
+   Hai workflow status checkout **nhánh mặc định**. Agent Issues checkout **merge commit**, để nó
+   thấy các dấu tích mà PR đã merge tạo ra. Không bao giờ đổi cái nào sang checkout head của PR: các
+   job này giữ một token có quyền ghi.
+
+4. **Giữ các nhóm concurrency.** Mỗi nhóm là theo PR hoặc theo nhánh, với `cancel-in-progress: false`.
+   Như vậy hai sự kiện cho một PR không thể mỗi cái tính một lượt thử, và merge của các PR khác nhau
+   không bao giờ hủy lẫn nhau.
+
+</Steps>
+
+## Kiểm tra kết quả
+
+Các workflow xuất hiện dưới tab **Actions** của repository sau khi chúng vào `main`. Chạy Agent
+Issues thủ công với một thư mục không có `tasks.md`:
+
+```bash
+gh workflow run agent-issues.yml -f spec_folder=does-not-exist
+gh run watch
+```
+
+Lần chạy thành công kèm một notice: `No issue created: no spec folder with a tasks.md was found`.
+
+<Aside type="note">
+Workflow `workflow_run` và `pull_request_review` chỉ chạy từ phiên bản trên nhánh mặc định. Thay đổi
+với chúng chỉ có hiệu lực khi được merge. Đó cũng là lý do agent không thể thay đổi chúng trong PR của
+chính nó.
+</Aside>
+
+Tiếp theo: [8. Local stack, e2e và ảnh chụp màn hình](../local-stack-and-e2e/).

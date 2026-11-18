@@ -1,0 +1,91 @@
+---
+title: 9. Deploy và quét bảo mật (tùy chọn)
+description: Deploy mọi main xanh lên một stage development, giữ production sau một lượt duyệt, và quét trước mỗi lần deploy.
+sidebar:
+  order: 9
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Kết quả:** một lần quét Trivy trên mọi lần push lên `main`, một workflow Deploy ship mỗi `main` xanh
+lên một stage development, và các lần deploy production chờ một người.
+
+Chi tiết của bước này là riêng cho Discava (AWS, CDK), nhưng cấu trúc thì dùng được cho mọi cloud. Ứng
+dụng ghi chú ví dụ trong repository này không có deploy, nên hãy chép từ
+[`deploy.yml` của Discava](https://github.com/AlexTo/discava/blob/main/.github/workflows/deploy.yml).
+
+<Steps>
+
+1. **Thêm target `trivy`** vào các project bạn muốn quét (`pnpm trivy` ở gốc chạy
+   `nx run-many --target trivy --all`). Thêm job `trivy` vào `ci.yml`, như trong repository này. Giữ
+   nó là một job tách khỏi `build`, để một CVE mới công bố gắn cờ `main` mà không chặn thứ gì khác. Ghi
+   các phát hiện được chấp nhận, mỗi dòng một ID, trong `.trivyignore`.
+
+2. **Thiết lập truy cập cloud không cần key.** Trên AWS, `scripts/setup-stage.sh` của Discava tạo,
+   cho mỗi stage: GitHub OIDC provider, một deploy role chỉ được tin cậy cho
+   `repo:owner/repo:environment:<stage>`, một CloudFormation execution role với permissions boundary,
+   và các biến của GitHub environment (`AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `AWS_EXECUTION_ROLE_ARN`).
+   Dùng OIDC federation của cloud bạn cho GitHub Actions theo cùng cách. Đừng lưu access key.
+
+3. **Thêm workflow Deploy**, kích hoạt khi CI hoàn tất trên `main` và chạy thủ công:
+
+   ```yaml
+   on:
+     workflow_run: { workflows: [CI], types: [completed], branches: [main] }
+     workflow_dispatch:
+       inputs: { stage: { type: string, required: true } }
+
+   jobs:
+     deploy:
+       if: ${{ github.event_name == 'workflow_dispatch' ||
+               (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
+       environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
+       concurrency: { group: 'deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}', cancel-in-progress: false }
+       steps:
+         - uses: actions/checkout@<sha>
+           with: { ref: '${{ github.event.workflow_run.head_sha || github.sha }}' }
+         # init, then: pnpm trivy, configure credentials (OIDC), synth
+         - name: Check commit is still main's latest
+           id: freshness
+           if: ${{ github.event_name == 'workflow_run' }}
+           run: |
+             main_sha="$(git ls-remote --exit-code origin refs/heads/main | cut -f1)"
+             if [[ "$main_sha" == "$(git rev-parse HEAD)" ]]; then
+               echo "current=true" >> "$GITHUB_OUTPUT"
+             else
+               echo "::notice::Skipping deploy: no longer main's latest commit"
+               echo "current=false" >> "$GITHUB_OUTPUT"
+             fi
+         - name: Deploy
+           if: ${{ github.event_name != 'workflow_run' || steps.freshness.outputs.current == 'true' }}
+           run: pnpm nx run @your-scope/infra:deploy-ci "$STAGE/*" --role-arn "$AWS_EXECUTION_ROLE_ARN"
+   ```
+
+   Kiểm tra độ mới nằm *bên trong* slot concurrency, nên nó phản ánh `main` ngay trước khi deploy, kể
+   cả khi lần chạy phải chờ sau một lần chạy khác.
+
+4. **Bật deploy tự động** cho stage development:
+
+   ```bash
+   gh variable set AUTO_DEPLOY_STAGE --body your-project-development
+   ```
+
+5. **Bảo vệ production.** Tạo GitHub environment của nó với **required reviewers** (Settings →
+   Environments → stage production của bạn → Required reviewers). Deploy nó bằng
+   `gh workflow run deploy.yml -f stage=your-project-production`. Job khi đó chờ được duyệt.
+
+</Steps>
+
+## Kiểm tra kết quả
+
+Merge một PR bất kỳ. CI chạy, rồi **Deploy** tự khởi động với stage development. Chạy lại CI thủ công
+trên một commit cũ hơn: Deploy log `Skipping deploy: no longer main's latest commit` và không ship gì.
+
+<Aside type="note">
+Agent không bao giờ deploy và không bao giờ thấy các role này. Cuộc hội thoại của nó chỉ có GitHub
+token. Deploy role chỉ được assume bởi một workflow chạy từ `main`, trong environment của stage.
+</Aside>
+
+Tiếp theo: repository của bạn giờ đã có mọi thứ mà một bản fork của repository này có. Tiếp tục với
+lộ trình fork từ [2. Cấu hình repository](../../setup/github-repository/), trỏ mỗi bước vào repository
+của chính bạn thay vì một bản fork.

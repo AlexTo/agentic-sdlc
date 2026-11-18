@@ -1,0 +1,69 @@
+---
+title: 2. Kế hoạch và task
+description: Rút ra kế hoạch kỹ thuật và một danh sách task có thứ tự, rồi đối chiếu chúng với spec.
+sidebar:
+  order: 2
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Bạn đang ở:** người + agent. **Output:** `plan.md`, `data-model.md`, `contracts/` và `tasks.md`.
+
+<Steps>
+
+1. Sinh kế hoạch.
+
+   ```text
+   /speckit-plan
+   ```
+
+   Kế hoạch đọc spec và constitution của dự án (`.specify/memory/constitution.md`) và quyết định
+   *thế nào*: thêm `tags` vào entity ElectroDB, mở rộng các input schema của tRPC, thêm bộ lọc `tag`
+   vào `notes.list`.
+
+2. Sinh task.
+
+   ```text
+   /speckit-tasks
+   ```
+
+   `tasks.md` có thứ tự, có thể đánh dấu và được nhóm theo giai đoạn. Để các bước docs và review hoạt
+   động, định dạng là quan trọng: mỗi task có một ID, giai đoạn là heading `## Phase <n>: <title>`, và
+   ít nhất một giai đoạn là `User Story`. Giai đoạn user story đầu tiên kết thúc issue đầu tiên. Xem
+   [định dạng tasks.md](../../reference/tasks-format/).
+
+   ```markdown
+   ## Phase 1: User Story 1 - Tags in the data and API (Priority: P1) 🎯 MVP
+   - [ ] T001 Add `tags` to the note entity in packages/notes-table/src/entities/note.ts
+   - [ ] T002 [P] Unit tests for tag rules (max five, unique, case-insensitive)
+   - [ ] T003 Extend create and update procedures in packages/notes-api/src/procedures/notes.ts
+
+   ## Phase 2: User Story 2 - Tags on the website (Priority: P2)
+   - [ ] T004 Tag input on the note form
+   - [ ] T005 Tag filter on the list page
+   - [ ] T006 e2e scenario with screenshots, invariant and concurrency tests
+
+   ## Phase 3: Docs
+   - [ ] T007 Describe tags on the notes app page in docs/
+   - [ ] T008 **(human)** Confirm the screenshots match the docs wording
+   ```
+
+3. Kiểm tra chéo mọi thứ trước khi có bất kỳ dòng code nào.
+
+   ```text
+   /speckit-analyze
+   ```
+
+   Nó báo cáo các yêu cầu không có task, task không có yêu cầu, và mâu thuẫn giữa ba file. Sửa chúng
+   ngay bây giờ; cái giá chỉ là một câu. Sau khi triển khai, cái giá là một PR.
+
+</Steps>
+
+<Aside type="caution">
+Một `tasks.md` sai định dạng sẽ âm thầm làm pipeline đứng lại, nên một PR check xác thực định dạng
+của nó. Bạn sẽ thấy check đó chạy ở bước tiếp theo.
+</Aside>
+
+Các task được đánh dấu **(human)** bị agent bỏ qua và được liệt kê trong mô tả PR cho bạn.
+
+Tiếp theo: [Duyệt spec](../approve-the-spec/).

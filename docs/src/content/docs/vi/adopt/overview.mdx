@@ -1,0 +1,52 @@
+---
+title: Áp dụng vào repository của bạn
+description: Khi bạn không thể fork, cách thêm từng thành phần vào một repository có sẵn, theo thứ tự.
+sidebar:
+  order: 0
+  label: Tổng quan
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Cách nhanh nhất để có quy trình là [fork repository này](../../setup/fork/). Phần này dành cho khi
+bạn không thể: bạn có một repository sản phẩm có sẵn và muốn cùng thiết lập trong đó.
+
+Mỗi bước thêm một thành phần, chép từ repository này, và nói cách kiểm tra nó. Khi xong, repository
+của bạn có những gì một bản fork có. Từ đó, đi theo lộ trình fork từ
+[2. Cấu hình repository](../../setup/github-repository/) trở đi.
+
+<Aside type="tip">
+Dù sao cũng hãy fork repository này và chạy [tính năng đầu tiên](../../setup/first-feature/) trên ứng
+dụng ghi chú trước. Thấy toàn bộ vòng lặp hoạt động một lần giúp mỗi bước ở đây dễ theo dõi hơn nhiều.
+</Aside>
+
+## Các bước
+
+| # | Bước | Khoảng trống được lấp |
+| --- | --- | --- |
+| 1 | [Workspace và vệ sinh commit](../workspace/) | |
+| 2 | [Cài Speckit](../speckit/) | |
+| 3 | [Constitution và template](../constitution-and-templates/) | 5 (định dạng, bằng văn bản) |
+| 4 | [Hướng dẫn cho agent và issue template](../agent-guidance/) | |
+| 5 | [Các script glue](../glue-scripts/) | 1 đến 7 (logic) |
+| 6 | [PR check và CI](../pr-checks-and-ci/) | 5, 6 (thực thi) |
+| 7 | [Các agent workflow](../agent-workflows/) | 1, 2, 3, 4, 7 (nối dây) |
+| 8 | [Local stack, e2e và ảnh chụp màn hình](../local-stack-and-e2e/) | 6, 8 |
+| 9 | [Deploy và quét bảo mật (tùy chọn)](../deploy/) | 9, 10 |
+
+Số khoảng trống tham chiếu đến [Phần glue còn thiếu](../../concepts/the-missing-glue/).
+
+## Quyết định những điều này trước
+
+| Quyết định | Mặc định | Đổi nó nếu |
+| --- | --- | --- |
+| Label kích hoạt triển khai | `openhands` | Bạn đã dùng label đó |
+| Tiền tố nhánh | `openhands/issue` | Hiếm khi. Glue khớp chính xác `openhands/issue-<n>`. Nếu đổi, hãy đổi cả `AGENT_BRANCH` và các điều kiện workflow |
+| Label review | `openhands-review` | Như trên |
+| Chu kỳ poll | mỗi 5 phút | Bạn muốn chi phí thấp hơn và có thể chờ lâu hơn (mặc định của catalog là 15) |
+| Số lượt fix-up tối đa | 5 mỗi vòng | Hiếm khi. Đó là `MAX_*_FIX_ATTEMPTS` trong hai file `plan.ts` |
+| Đánh số thư mục spec | timestamp | Không bao giờ, khi có hơn một người viết spec |
+
+Thay `@your-scope` trong các lệnh bằng npm scope của workspace của bạn.
+
+Tiếp theo: [1. Workspace và vệ sinh commit](../workspace/).

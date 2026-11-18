@@ -1,0 +1,107 @@
+---
+title: Thiết lập OpenHands
+description: Agent Canvas, các agent profile và hai automation, đúng như Discava chạy chúng.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Agent của Discava chạy trên một máy trạm Linux, dưới OpenHands Agent Canvas. Không có bản deploy
+OpenHands trên cloud và không có webhook. Mọi thứ là poll ra ngoài tới GitHub.
+
+## Agent Canvas
+
+Agent Canvas 1.41.0, cài từ npm và khởi động bằng một lệnh:
+
+```bash
+npm install -g @openhands/agent-canvas
+agent-canvas
+```
+
+Trạng thái nằm trong `~/.openhands/`: cài đặt, agent profile, secret và database SQLite của các
+automation.
+
+## Cài đặt cuộc hội thoại
+
+Các phần của `~/.openhands/settings.json` định hình cách agent làm việc:
+
+| Cài đặt | Giá trị | Vì sao |
+| --- | --- | --- |
+| `agent_kind` | `acp` | Dùng một coding agent bên ngoài qua Agent Client Protocol |
+| `acp_server` | `claude-code` | Coding agent |
+| `acp_prompt_timeout` | `1800` | 30 phút mỗi lượt: một lượt triển khai thì dài |
+| `max_iterations` | `500` | Đủ chỗ cho cả một giai đoạn trong một cuộc hội thoại |
+| `confirmation_mode` | `false` | Không người giám sát. Không có ai ở đó để xác nhận |
+| `security_analyzer` | `llm` | Các lệnh vẫn được sàng lọc rủi ro |
+| `default_runtime` | `local` | Chạy trên host, nơi Node, pnpm và git đã có sẵn |
+| `worktree_branch_prefix` | `openhands/` | Mọi nhánh agent tạo đều bắt đầu bằng tiền tố này. Glue dựa vào nó |
+
+## Agent profile
+
+| Profile | Agent | Model | Dùng bởi |
+| --- | --- | --- | --- |
+| `default` | Claude Code (ACP) | Sonnet | GitHub issue to PR |
+| `reviewer` | Claude Code (ACP) | Opus | GitHub code review |
+
+## Secret
+
+Lưu trong Agent Canvas (Settings → Secrets), theo tên:
+
+| Tên | Dùng cho |
+| --- | --- |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | Các automation đọc GitHub bằng nó. Các cuộc hội thoại nhận nó để clone, push và mở PR |
+| `OPENHANDS_AUTOMATION_API_KEY` | Key riêng của backend automation |
+
+GitHub token là một personal access token trên tài khoản của maintainer, với quyền ghi vào nội dung
+repository, issue, pull request và workflow.
+
+## Hai automation
+
+Cả hai được cài từ catalog automation của Agent Canvas, không phải viết tay.
+
+### GitHub issue to PR
+
+| Trường | Giá trị |
+| --- | --- |
+| Template | `github-issue-to-pr` 1.2.4 |
+| Repository | `AlexTo/discava` |
+| Label kích hoạt | `openhands` |
+| Tiền tố nhánh | `openhands/issue` → nhánh `openhands/issue-<n>` |
+| Chế độ pull request | Draft |
+| Secret GitHub token | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+| Lịch | `*/5 * * * *`, Australia/Sydney |
+| Agent profile | `default` |
+
+Mỗi lần poll, nó sửa lại mọi PR `openhands/issue-<n>` có head mang status `software-factory/review`
+thất bại, rồi bắt đầu làm các issue có label chưa có PR. Một lượt revise bảo agent gắn lại label
+`openhands-review` sau đó, để head mới được review.
+
+### GitHub code review
+
+| Trường | Giá trị |
+| --- | --- |
+| Template | `github-pr-reviewer` 1.11.2 |
+| Repository | `alexto/discava` |
+| Label kích hoạt | `openhands-review` |
+| Requested reviewer | `all-hands-bot` (không dùng trên thực tế: label làm việc này) |
+| Review mới mỗi lần quét | 2 |
+| Giọng review | Concise |
+| Maintainer | không có |
+| Lịch | `*/5 * * * *`, Australia/Sydney |
+| Agent profile | `reviewer` |
+
+Trong khi các check vẫn đang chạy, reviewer đăng một comment "⏳ Review waiting on checks" và thử lại
+ở một lần quét sau. Các review của nó bắt đầu bằng "_This review was posted by an AI agent
+(OpenHands)._", mang một marker ẩn `<!-- openhands-review-run: <id> -->`, và kết thúc bằng
+`✅ APPROVED` hoặc `🔄 CHANGES REQUESTED`.
+
+<Aside type="caution" title="Một tài khoản cho mọi thứ">
+Ở Discava, agent triển khai, reviewer và maintainer đều dùng cùng một tài khoản GitHub. GitHub không
+cho một tài khoản duyệt PR của chính nó, nên verdict của reviewer được đăng dưới dạng review
+`COMMENTED`, và glue đọc dòng verdict thay vì trạng thái review. Với một team, hãy cho các automation
+một tài khoản máy riêng. Khi đó mọi người có thể duyệt agent PR bình thường, và branch protection có
+thể yêu cầu điều đó.
+</Aside>
+
+Tiếp theo: [Spec sang issue](../spec-to-issue/).

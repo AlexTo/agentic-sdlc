@@ -1,0 +1,77 @@
+---
+title: Giới thiệu
+description: Hướng dẫn này bao gồm những gì, dành cho ai, và cách đọc nó.
+sidebar:
+  order: 1
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Hướng dẫn này cho bạn thấy cách vận hành một vòng đời phần mềm trong đó **agent viết code và con
+người đưa ra hai quyết định**: duyệt spec, và duyệt kết quả. Mọi thứ ở giữa (mở issue, viết code và
+test, phản ứng với CI, trả lời review) tự chạy, thông qua quy trình GitHub bình thường.
+
+Đây không phải là một thí nghiệm tư duy. Quy trình được xây dựng và sử dụng hằng ngày trên
+[Discava](https://github.com/AlexTo/discava), một hệ thống quản lý học tập serverless, thuần AWS.
+Từ ngày 29 tháng 10 đến 18 tháng 11 năm 2026, hai automation OpenHands của Discava đã chạy hơn 2.500
+lượt quét theo lịch. Mười hai spec tính năng được viết theo cách này, và agent đã viết, sửa và review
+phần lớn các pull request triển khai chúng.
+
+## Phiên bản ngắn gọn
+
+Ba công cụ có sẵn làm phần lớn công việc:
+
+| Công cụ | Vai trò ở đây |
+| --- | --- |
+| [Speckit](https://github.com/github/spec-kit) | Biến một ý tưởng thành `spec.md`, `plan.md` và `tasks.md`, được đối chiếu với constitution của dự án |
+| [OpenHands](https://github.com/OpenHands/OpenHands) | Biến một issue có label thành pull request, và sửa lại pull request khi được báo có gì sai. Một automation OpenHands thứ hai review nó |
+| GitHub Actions | Chạy các check, và chứa phần glue giữa hai công cụ kia |
+
+Không công cụ nào biết về các công cụ khác. **Phần glue là chủ đề chính của hướng dẫn này**: mười
+mảnh automation nhỏ, có test, nối một spec đã xong với agent, CI với agent, và reviewer với agent,
+có giới hạn để không có gì lặp mãi.
+
+## Dành cho ai
+
+- **Tech lead và staff engineer** đang cân nhắc có áp dụng quy trình hay không. Bắt đầu với
+  [Khái niệm](../../concepts/principles/).
+- **Bất kỳ ai muốn thử.** [Fork repository này](../fork-this-repo/): bản fork có thiết lập của
+  Discava. Sau đó làm theo [Thiết lập](../../setup/before-you-start/) để trỏ OpenHands vào nó và
+  chạy một tính năng cho ứng dụng ghi chú ví dụ qua trọn vòng lặp.
+- **Kỹ sư đưa quy trình vào một repository sản phẩm.** Đọc
+  [Discava làm thế nào](../../discava/overview/), rồi
+  [Áp dụng vào repository của bạn](../../adopt/overview/).
+- **Lập trình viên sẽ dùng nó hằng ngày.** [Tutorial](../../tutorial/the-case/) theo chân một
+  tính năng từ ý tưởng đến merge.
+
+Bạn nên quen thuộc với Git, pull request trên GitHub và GitHub Actions. Bạn không cần kinh nghiệm
+trước với Speckit hay OpenHands.
+
+## Hướng dẫn được tổ chức thế nào
+
+| Phần | Trả lời |
+| --- | --- |
+| **Bắt đầu tại đây** | Đây là gì, và một tính năng đi qua nó ra sao? |
+| **Khái niệm** | Vì sao nó được xây theo cách này. Các nguyên tắc, và năm thành phần |
+| **Discava làm thế nào** | Chính xác những gì đã được xây để lấp mỗi khoảng trống, kèm đường dẫn file |
+| **Thiết lập: fork và chạy** | Fork repository này, cấu hình, cài OpenHands, và chạy tính năng đầu tiên |
+| **Áp dụng vào repository của bạn** | Cách thêm từng thành phần vào một repository có sẵn, theo thứ tự |
+| **Tutorial** | Cảm giác khi dùng nó, trên một tính năng nhỏ làm mẫu |
+| **Tham khảo** | Label, status, workflow, định dạng `tasks.md`, xử lý sự cố, thuật ngữ |
+
+## Quy ước
+
+- `AGENTS.md` là file hướng dẫn agent ở thư mục gốc của repository. Đặt tên theo file mà coding
+  agent của bạn đọc.
+- `<you>/agentic-sdlc` là bản fork của bạn, và `owner/repo` là bất kỳ repository nào. `@your-scope` là npm scope của workspace của bạn. Repository này
+  dùng `@agentic-sdlc`, và Discava dùng `@discava`.
+- Lệnh được chạy từ thư mục gốc của repository trừ khi bước đó nói khác.
+- **(human)** đánh dấu một task mà agent không được làm. Đó cũng là marker nguyên văn dùng trong `tasks.md`.
+
+<Aside type="note">
+Repository này là một bản sao hoạt động của thiết lập Discava. `.github/`, `packages/common/scripts/` và
+`.specify/` của nó là cùng phần glue mà Discava chạy, bao quanh một ứng dụng ghi chú nhỏ thay vì sản
+phẩm của Discava, và bỏ đi phần deploy AWS của Discava. Fork nó và bạn có thiết lập đó.
+</Aside>
+
+Tiếp theo: [Cách hoạt động](../how-it-works/).

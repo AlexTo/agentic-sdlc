@@ -1,0 +1,73 @@
+---
+title: Định dạng tasks.md
+description: Định dạng chính xác mà workflow Agent Issues đọc, cách các giai đoạn trở thành issue, và mọi thông báo của bộ validate.
+sidebar:
+  order: 4
+---
+
+## Định dạng
+
+```markdown
+# Tasks: Course ratings and reviews
+
+Free text, legends and notes anywhere. Fenced code blocks are ignored.
+
+## Phase 1: Setup
+- [x] T001 Create the review entity
+- [ ] T002 [P] Add the rating summary entity
+
+## Phase 2: Foundational
+- [ ] T003 Shared review writer in core-table helpers
+
+## Phase 3: User Story 1 - Leave a rating (Priority: P1) 🎯 MVP
+### Tests for User Story 1
+- [ ] T004 [P] [US1] Unit tests for rating rules
+### Implementation for User Story 1
+- [ ] T005 [US1] review.upsert procedure
+- [ ] T006 (human) Check the layout on a phone-width window
+
+## Phase 4: User Story 2 - Instructor responds (Priority: P2)
+- [ ] T007 [US2] review.respond procedure
+- [ ] T037 [US2] Notify the student (added later: next unused id)
+```
+
+| Thành phần | Pattern | Ghi chú |
+| --- | --- | --- |
+| Giai đoạn | `^## Phase (\d+): (.+)$` | Số tăng dần xuống cuối file. Mỗi giai đoạn có ít nhất một task |
+| Giai đoạn user story | tiêu đề bắt đầu bằng `User Story` | Phải có ít nhất một |
+| Task | `^- \[([ xX])\] (T\d{3})\b` | Ở cột đầu tiên, dưới một giai đoạn. ID là duy nhất, không bao giờ đánh số lại |
+| Đã xong | `[x]` hoặc `[X]` | Đánh dấu tại chỗ, không bao giờ xóa |
+| Task của con người | `(human)` ở bất kỳ đâu trong dòng, in đậm hay không | Agent bỏ qua, và không được tính khi quyết định một nhóm đã xong chưa |
+| Heading con | `### …` | Được phép, bị bỏ qua |
+
+## Các giai đoạn trở thành issue thế nào
+
+1. **Nhóm 0** là mọi giai đoạn đến và bao gồm giai đoạn `User Story` đầu tiên. Setup, nền tảng và
+   story MVP được ship trong một PR, với tiêu đề có ` (with setup and foundations)`.
+2. **Mỗi giai đoạn sau** là một nhóm riêng, và một issue riêng.
+3. **Nhóm tiếp theo** là nhóm đầu tiên có một task chưa đánh dấu không phải **(human)**.
+4. Một nhóm đã có issue, nhưng chưa đánh dấu hết task agent, là **bị đứng**. Không có issue mới nào
+   mở, và PR đã merge nhận một comment liệt kê các ID chưa đánh dấu.
+
+Tiêu đề issue là `feat(<feature>): <tiêu đề giai đoạn cuối, rút gọn>`. `<feature>` là tên thư mục bỏ
+phần timestamp. Tiêu đề rút gọn bỏ tiền tố `User Story <n> - ` và hậu tố `(Priority: Pn)`. Tiêu đề bắt
+đầu bằng chữ thường và tối đa 100 ký tự.
+
+## Thông báo của bộ validate
+
+| Thông báo | Cách sửa |
+| --- | --- |
+| `A phase heading must be written "## Phase <number>: <title>"` | Một heading nhắc đến "Phase" nhưng không đúng định dạng, ví dụ `### Phase 2` hoặc `## Phase 2 - Setup` |
+| `A task must be written "- [ ] T<3 digits> <description>", starting in the first column` | Một task bị thụt lề, `* [ ]`, `- []`, hoặc một ID như `T12` |
+| `Phase <n> has no tasks` | Thêm một task, hoặc gỡ giai đoạn đó |
+| `Phase <n> comes after phase <m>; phase numbers must increase down the file` | Đánh số lại các giai đoạn (không phải các task) |
+| `T0xx is above the first phase heading, so it belongs to no phase` | Chuyển nó xuống dưới một giai đoạn |
+| `T0xx is used more than once` | Cho task sau ID chưa dùng tiếp theo |
+| `No phase headings found; …` | File hoàn toàn không đúng định dạng |
+| `No phase is titled "User Story <n> - ..."; …` | Đặt tiêu đề ít nhất một giai đoạn là user story |
+
+Chạy nó ở local:
+
+```bash
+pnpm nx run @your-scope/common-scripts:validate-tasks
+```

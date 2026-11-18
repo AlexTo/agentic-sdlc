@@ -1,0 +1,79 @@
+---
+title: Phần glue còn thiếu
+description: Mười khoảng trống giữa Speckit, OpenHands và CI, và các quy tắc để lấp chúng.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Speckit kết thúc bằng một `tasks.md`. OpenHands bắt đầu từ một issue có label và dừng ở một pull
+request. CI báo một kết quả rồi đi tiếp. Mỗi công cụ làm tốt việc của mình, và không công cụ nào
+chuyển việc cho công cụ kế tiếp. Không có glue, *bạn* là người chuyển giao: bạn chép task vào một
+issue, để ý thấy CI chuyển đỏ, và bảo agent sửa nó.
+
+Đây là các khoảng trống, và thứ lấp từng khoảng trống:
+
+| # | Khoảng trống | Thứ lấp nó |
+| --- | --- | --- |
+| 1 | Không có gì biến một spec đã xong thành việc cho agent | Một workflow đọc `tasks.md` và mở issue triển khai tiếp theo, mỗi lần một nhóm giai đoạn |
+| 2 | Agent không biết CI đã thất bại | Một workflow báo lần chạy thất bại về cho agent dưới dạng commit status mà nó vốn đã theo dõi |
+| 3 | "Changes requested" của reviewer không được nghe thấy | Một workflow làm điều tương tự với verdict của agent reviewer |
+| 4 | Không có gì ngăn một agent bị kẹt lặp mãi | Cả hai vòng fix-up bị giới hạn ở năm lượt thử, đếm bằng label, sau đó một người tiếp quản |
+| 5 | `tasks.md` chỉ là một quy ước, nên một file sai định dạng âm thầm làm chuỗi đứng lại | Một PR check xác thực định dạng của nó |
+| 6 | Thay đổi UI đến lúc review mà chưa ai nhìn qua | Một check yêu cầu e2e screenshot, và CI đăng chúng lên PR |
+| 7 | Merge PR của agent không khởi động giai đoạn tiếp theo | Lần merge một nhánh agent mở issue tiếp theo, cho đến khi spec xong |
+| 8 | Agent không thể chạy stack thật khi không có quyền truy cập cloud | Bản thay thế local cho mọi dịch vụ, để toàn bộ ứng dụng và e2e test của nó chạy mà không cần thông tin đăng nhập |
+| 9 | Merge không ship được gì | Một build xanh trên `main` tự deploy, bỏ qua commit không còn là mới nhất, và production chờ một người |
+| 10 | Agent có thể commit một secret bị lộ hoặc một dependency có lỗ hổng | Quét secret và dependency trên mọi build, và lần nữa trước mỗi lần deploy |
+
+[Discava làm thế nào](../../discava/overview/) ánh xạ mỗi dòng với các file của nó.
+
+## Quy tắc viết glue
+
+Các quy tắc này đến từ việc xây và sửa glue trên Discava. Tuân theo chúng thì glue vẫn nhàm chán, và
+đó chính là mục đích.
+
+### Quyết định trong code, không trong prompt
+
+Mọi quyết định "điều gì xảy ra tiếp theo" là một hàm thuần có unit test: `decide()` trong `gate.ts`
+cho việc lần merge nào được tính, `planCi()` cho việc có gửi agent quay lại không. File workflow chỉ
+nối sự kiện với script. Bạn có thể test một quyết định mà không cần GitHub, và agent không thể lý sự
+để lách qua nó.
+
+### Giữ trạng thái trên GitHub
+
+Không có database. Số lượt thử là một label (`ci-fix-2`). Issue cho một nhóm giai đoạn được tìm bằng
+một marker ẩn trong nội dung của nó (`<!-- agent-issue spec:<folder> group:2 -->`). "Đã gửi quay lại"
+là một commit status. Ai cũng thấy được trạng thái, và một người có thể thay đổi nó thủ công, ví dụ gỡ
+một label để cho phép thêm một lượt thử.
+
+### Nói ngôn ngữ mà agent vốn hiểu
+
+OpenHands vốn đã sửa lại một PR có head mang status `software-factory/review` thất bại. Nên glue đăng
+status đó thay vì phát minh một trigger mới. Không cần thay đổi gì ở OpenHands.
+
+### Chạy code đáng tin với token
+
+Các workflow glue giữ một token có thể ghi label, status và comment. Chúng checkout **nhánh mặc
+định**, không bao giờ là pull request, nên không có gì do agent hay contributor viết được chạy với token
+đó. Mọi thứ đọc từ PR (tên nhánh, nội dung) đều được kiểm tra với một pattern chặt chẽ trước khi dùng.
+
+### Idempotent
+
+GitHub gửi sự kiện nhiều hơn một lần, và người ta chạy lại job. Mọi script kiểm tra trước khi hành
+động: không có issue thứ hai cho cùng một nhóm, không có lượt thử thứ hai cho cùng một commit, không
+phản ứng với một lần chạy cho commit không còn là head.
+
+### Thất bại thật to, ở nơi có người nhìn
+
+Một notice của workflow chẳng ai đọc. Khi chuỗi bị đứng, hãy nói điều đó trên pull request: "the next
+issue was not opened because these tasks aren't ticked: T014, T015".
+
+<Aside type="note">
+Phần glue trong repository này khoảng 1.600 dòng TypeScript, và chừng ấy dòng nữa cho unit test, trải
+trên bốn thư mục trong `packages/common/scripts/src/`. Nó đủ nhỏ để đọc trong một buổi chiều, và bạn
+nên đọc nó trước khi áp dụng.
+</Aside>
+
+Tiếp theo: [Vòng phản hồi](../feedback-loops/).

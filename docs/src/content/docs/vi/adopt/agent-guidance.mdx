@@ -1,0 +1,99 @@
+---
+title: 4. Hướng dẫn cho agent và issue template
+description: Viết AGENTS.md, và thêm issue template có hướng dẫn được đưa vào mọi issue triển khai.
+sidebar:
+  order: 4
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Kết quả:** một `AGENTS.md` mà mọi agent đọc đầu tiên, và
+`.github/ISSUE_TEMPLATE/implement-phase.md`, nguồn của các hướng dẫn cố định trong mọi issue triển
+khai.
+
+<Steps>
+
+1. **Viết `AGENTS.md`** ở thư mục gốc của repository. Chỉ giữ những gì agent cần trong mọi lần chạy,
+   và liên kết đến `CONTRIBUTING.md` cho phần còn lại. Dùng các mục sau:
+
+   ```markdown
+   # AGENTS.md
+
+   Read CONTRIBUTING.md before opening a PR.
+
+   ## What this is
+   One paragraph: the product, the stack, the monorepo tool.
+
+   ## Commands
+   Install; build, lint, test everything; one project's tests, once (not watch mode);
+   one test file; `nx affected`; e2e; local dev; resetting local data.
+
+   ## Architecture
+   One bullet per package: what it is, what it may import, where new code of each kind goes.
+
+   ## Conventions
+   - Conventional Commits for commit and PR titles (enforced by commitlint).
+   - The formatter and linter, by name, so the agent doesn't add another.
+   - Where helpers go. Where shared code goes.
+   - Every rule a reviewer has had to repeat twice.
+   ```
+
+   <Aside type="tip">
+   Mục lệnh là quan trọng nhất. Một agent không tìm thấy cách "chạy một file test, một lần" sẽ chạy
+   cả bộ test ở chế độ watch và bị treo.
+   </Aside>
+
+2. **Chép issue template** từ repository này sang `.github/ISSUE_TEMPLATE/implement-phase.md`.
+   Script Agent Issues đọc mọi thứ dưới `## Instructions for the agent` từ đó lúc chạy. Template đầy
+   đủ:
+
+   ```markdown
+   ---
+   name: Implement a spec phase
+   about: Hand one phase of a feature's tasks.md to the implementing agent
+   title: "feat(<scope>): <phase or story>"
+   labels: []
+   ---
+
+   ## Spec
+
+   - Spec folder: `specs/<timestamp>-<name>/` (read `spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `contracts/`)
+   - Parent issue: #<number>
+
+   ## Scope
+
+   Tasks `T0xx` to `T0yy` of `tasks.md` (<phase or story>). Do not start tasks outside this range.
+
+   ## Instructions for the agent
+
+   - Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
+   - Work through the scope in order, writing each story's tests first. Tick each task in `tasks.md` in the same commit that completes it.
+   - Do not use `pnpm dev`, Docker or the e2e runner locally. Run unit and component tests (once, not in watch mode), `pnpm lint`, typecheck and `pnpm build` on what you changed. E2E and concurrency tests run on PR CI: write them, then read CI's result.
+   - A change to what a user sees ships with `screenshot(page, 'name')` calls (`packages/e2e/src/helpers/screenshots.ts`) in the e2e scenario for that flow, at each state a reviewer would want to see: PR CI posts them as the `E2E screenshots` comment, and the `UI Screenshots` check fails without them. Don't leave screenshots to a **(human)** task.
+   - Skip tasks marked **(human)** and list them in the PR description for the reviewer.
+   - Use Conventional Commits for every commit. The PR title is a Conventional Commit too, for example `feat(assignments): submit work to an upload assignment`, not `[#n] ...`.
+   - In the PR description write `Refs #<parent>`. Never use `Closes` or `Fixes` against the parent issue; closing this issue is fine.
+   - Never weaken a test to make it pass, never edit `.github/workflows/`, never merge, and don't touch cloud credentials.
+   - If you are blocked, comment on this issue with what you tried and stop.
+   ```
+
+   Giữ nguyên văn `#<parent>`. Script thay nó bằng parent issue của spec, và bỏ gạch đầu dòng đó khi
+   spec không có parent issue. Giữ chính xác heading `## Instructions for the agent`, vì script tìm
+   nó và sẽ thất bại nếu không có.
+
+3. **Sửa các hướng dẫn cho khớp với stack của bạn**: các lệnh, đường dẫn helper ảnh chụp màn hình, và
+   "thông tin đăng nhập cloud" có nghĩa là gì với bạn.
+
+</Steps>
+
+## Kiểm tra kết quả
+
+```bash
+grep -c '^## Instructions for the agent$' .github/ISSUE_TEMPLATE/implement-phase.md
+```
+
+```text
+1
+```
+
+Tiếp theo: [5. Các script glue](../glue-scripts/).

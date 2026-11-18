@@ -1,0 +1,109 @@
+---
+title: 5. Chạy tính năng đầu tiên
+description: Viết một spec cho ứng dụng ghi chú trong bản fork của bạn, và xem nó đi qua cùng quy trình Discava dùng, từ spec PR đến các agent PR đã merge.
+sidebar:
+  order: 5
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Kết quả:** một tính năng cho ứng dụng ghi chú, được agent đưa từ ý tưởng một dòng của bạn đến code
+đã merge, và bằng chứng rằng mọi bước chuyển giao trong vòng lặp đều hoạt động trong bản fork của bạn.
+
+Tính năng: **tag cho ghi chú**. *Người dùng có thể thêm tối đa năm tag vào một ghi chú, và lọc danh
+sách ghi chú theo tag.* Nó nhỏ, nhưng chạm vào bảng, API và website, nên mọi giai đoạn đều có việc thật
+để làm. [Tutorial](../../tutorial/the-case/) đi sâu hơn vào từng giai đoạn.
+
+<Steps>
+
+1. **Viết spec** trên một nhánh trong bản clone của bạn, cùng coding agent:
+
+   ```bash
+   git switch -c spec/note-tags
+   ```
+
+   ```text
+   /speckit-specify Users can add up to five tags to a note and filter the note list by tag. Tags are case-insensitive and unique per note.
+   /speckit-clarify
+   /speckit-plan
+   /speckit-tasks
+   /speckit-analyze
+   ```
+
+   Kiểm tra `tasks.md`: mỗi giai đoạn là một heading `## Phase <n>: …`, và ít nhất một giai đoạn là
+   `User Story`. Giai đoạn user story đầu tiên kết thúc issue đầu tiên.
+
+2. **Mở spec PR, gắn label `spec-ready`, merge nó.**
+
+   ```bash
+   git add specs/ && git commit -m "docs(specs): add note tags spec"
+   git push -u origin spec/note-tags
+   gh pr create --fill --label spec-ready
+   gh pr checks --watch
+   gh pr merge --squash --admin
+   ```
+
+   Cần `--admin` vì bạn là người mở PR, và GitHub không cho bạn tự duyệt PR của mình.
+
+   ✅ **Tasks format** pass trên PR. Sau khi merge, **Agent Issues** mở một issue có tiêu đề
+   `feat(<feature>): … (with setup and foundations)`, với label `openhands`, có phạm vi là nhóm giai
+   đoạn đầu tiên.
+
+3. **Chờ agent.** Bạn không làm gì cả.
+
+   ✅ Ở lần poll kế, một cuộc hội thoại cho issue bắt đầu trong Agent Canvas. Khi nó xong, một draft PR
+   xuất hiện trên `openhands/issue-<n>` với `openhands-review`, và `tasks.md` được đánh dấu cho đúng
+   các giai đoạn đó.
+
+4. **Theo dõi các cổng.**
+
+   ✅ PR Checks chạy. Nếu một check thất bại, **Agent CI Status** thêm `ci-fix-1` và agent sửa lại
+   chính PR đó ở lần poll kế. Khi mọi check đã xong, agent reviewer review head và kết thúc bằng
+   `✅ APPROVED` hoặc `🔄 CHANGES REQUESTED`. Một yêu cầu thay đổi cũng gửi agent quay lại, với
+   `review-fix-1`.
+
+5. **Review và merge.** Đọc mô tả PR, các task **(human)** nó liệt kê, và, với giai đoạn website,
+   comment **E2E screenshots**. Đánh dấu draft là ready, rồi merge:
+
+   ```bash
+   gh pr ready <pr> && gh pr merge <pr> --squash --admin
+   ```
+
+   Dùng `--admin` khi agent push bằng token của chính bạn. Với một tài khoản agent riêng, hãy duyệt PR
+   và merge bình thường.
+
+   ✅ **Agent Issues** chạy lại và mở issue của giai đoạn tiếp theo. Bước 3 đến 5 lặp lại.
+
+6. **Merge PR cuối cùng.**
+
+   ✅ Agent Issues log `No issue created: … no tasks left for the agent`. Tính năng đã xong.
+
+</Steps>
+
+<Aside type="tip" title="Chưa thấy vòng fix-up?">
+Nếu agent làm đúng mọi thứ ngay lần đầu, bạn chưa thấy vòng CI. Để thử nó, hãy push một commit lên
+một agent PR đang mở làm hỏng một unit test của nó. PR Checks thất bại, `ci-fix-1` xuất hiện, và
+agent push một bản sửa ở lần poll kế. Nó có thể chỉ đơn giản revert commit của bạn, và đó là cách sửa
+đúng trong trường hợp này.
+</Aside>
+
+## Tự kiểm tra
+
+Bạn có cùng quy trình với Discava khi trả lời "có" cho tất cả các câu sau:
+
+- [ ] Merge một spec PR có `spec-ready` đã mở một issue, mà không ai mở thủ công.
+- [ ] Agent đã mở một PR trên `openhands/issue-<n>` và đánh dấu đúng các task của nó.
+- [ ] Một lần CI đỏ đã gửi agent quay lại, và PR mang `ci-fix-1`.
+- [ ] Agent reviewer đã review head của PR khi các check của nó xong.
+- [ ] Merge PR của agent đã mở issue của giai đoạn tiếp theo.
+- [ ] Thay đổi website đi kèm ảnh chụp màn hình được liệt kê trên PR.
+- [ ] Lần merge cuối không mở gì.
+- [ ] Không lúc nào bạn phải dán thông báo lỗi hay viết prompt cho agent.
+
+Có gì đó không xảy ra? Xem [Xử lý sự cố](../../reference/troubleshooting/).
+
+## Tiếp theo
+
+- Thử một tính năng của riêng bạn trên ứng dụng ghi chú, như ghim một ghi chú hoặc sắp xếp danh sách.
+- Sẵn sàng đưa điều này vào một repository sản phẩm? Xem
+  [Áp dụng vào repository của bạn](../../adopt/overview/).

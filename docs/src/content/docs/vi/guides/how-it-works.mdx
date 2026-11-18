@@ -1,0 +1,76 @@
+---
+title: Cách hoạt động
+description: Hành trình của một tính năng từ ý tưởng đến code được merge, trong mười một bước.
+sidebar:
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Trang này theo chân một tính năng qua trọn vòng lặp, để bạn có bức tranh toàn cảnh trước khi đi vào
+chi tiết. Mỗi bước nêu rõ ai hành động, và bước đó để lại artifact gì. Các nhánh đỏ, nơi CI hoặc
+reviewer gửi agent quay lại, nằm ở [Vòng phản hồi](../../concepts/feedback-loops/).
+
+```d2
+direction: right
+
+spec: "spec PR\n(bạn)" {shape: document}
+issues: "Agent Issues\n(GitHub Actions)"
+issue: issue {shape: page}
+implement: "triển khai\n(OpenHands)"
+pr: pull request {shape: page}
+checks: "PR Checks\n(GitHub Actions)"
+review: "review\n(OpenHands)"
+merge: "merge\n(bạn)"
+
+spec -> issues: spec-ready
+issues -> issue -> implement -> pr -> checks
+checks -> review: xanh
+review -> merge: được duyệt
+merge -> issues: giai đoạn tiếp
+```
+
+## Các bước
+
+| # | Ai | Điều gì xảy ra | Artifact |
+| --- | --- | --- | --- |
+| 1 | Bạn + agent | `/speckit-specify` biến một ý tưởng dài một đoạn thành spec. `/speckit-clarify` hỏi tối đa năm câu và ghi lại câu trả lời của bạn | `specs/<timestamp>-<name>/spec.md` |
+| 2 | Bạn + agent | `/speckit-plan` quyết định *làm thế nào*, và đối chiếu kế hoạch với constitution | `plan.md`, `data-model.md`, `contracts/` |
+| 3 | Bạn + agent | `/speckit-tasks` viết danh sách task có thứ tự, nhóm theo giai đoạn. `/speckit-analyze` kiểm tra chéo cả ba file | `tasks.md` |
+| 4 | **Bạn** | Mở spec PR, review nó như review code, thêm label `spec-ready`, merge | Một spec PR đã merge. **Cổng người duyệt 1** |
+| 5 | Automation | Workflow **Agent Issues** đọc `tasks.md` và mở một issue cho nhóm giai đoạn đầu tiên, với label `openhands` | Một issue triển khai |
+| 6 | OpenHands | Automation Issue-to-PR nhận issue ở lần poll kế tiếp. Agent viết test trước, triển khai, đánh dấu task và mở PR trên `openhands/issue-<n>`, rồi thêm `openhands-review` | Một pull request |
+| 7 | CI | PR check chạy lint, unit test, build, kiểm tra định dạng `tasks.md`, e2e test và kiểm tra ảnh chụp màn hình | Kết quả check |
+| 8 | Automation + OpenHands | Khi chạy đỏ, **Agent CI Status** đăng status `software-factory/review` thất bại. Agent thấy nó ở lần poll kế và sửa lại chính PR đó | Label `ci-fix-1` đến `ci-fix-5` |
+| 9 | OpenHands | Khi mọi check đã xong, agent reviewer review đúng commit head và kết thúc bằng `✅ APPROVED` hoặc `🔄 CHANGES REQUESTED`. **Agent Review Status** biến kết quả thứ hai thành cùng status thất bại đó | Một review, và có thể có label `review-fix-N` |
+| 10 | **Bạn** | Bạn đọc mô tả PR và comment **E2E screenshots**, làm các task **(human)**, và merge | Một PR đã merge. **Cổng người duyệt 2** |
+| 11 | Automation | Việc merge một nhánh `openhands/` chạy lại **Agent Issues** trên `tasks.md` đã merge. Agent đã đánh dấu task của nó trong PR, nên workflow chuyển sang giai đoạn đầu tiên còn task agent chưa đánh dấu và mở issue cho nó. Task **(human)** không được tính. Nếu giai đoạn vừa merge vẫn còn task agent chưa đánh dấu, không có gì được mở và PR nhận một comment liệt kê chúng. Khi không còn task agent nào, không có gì được mở | Issue tiếp theo, một comment "không mở", hoặc hoàn tất |
+
+## Việc bạn thực sự làm
+
+Với mỗi tính năng, bạn viết và duyệt spec một lần. Với mỗi pull request, bạn review một lần và
+bấm merge. Bạn chỉ bị kéo vào sớm hơn khi một vòng lặp hết lượt thử (`ci-fix-exhausted` hoặc
+`review-fix-exhausted`), hoặc khi agent comment rằng nó bị chặn.
+
+<Aside type="tip">
+Thời gian chờ vẫn còn đó. Chỉ là nó không còn là của bạn nữa. Một agent PR thường mất vài lần poll
+để triển khai, check và review. Trong lúc nó chạy, bạn có thể viết spec tiếp theo.
+</Aside>
+
+## Mỗi thành phần nằm ở đâu
+
+| Thành phần | File |
+| --- | --- |
+| Công cụ spec | `.specify/`, các skill `speckit-*`, `specs/` |
+| Quy tắc dự án cho mọi lần chạy agent | `.specify/memory/constitution.md`, `AGENTS.md` |
+| Issue mà agent nhận được | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| Spec sang issue | `.github/workflows/agent-issues.yml` |
+| CI sang agent | `.github/workflows/agent-ci.yml` |
+| Reviewer sang agent | `.github/workflows/agent-review.yml` |
+| Check | `.github/workflows/pr-checks.yml`, `ui-screenshots.yml`, `ci.yml` |
+| Các quy tắc đằng sau glue, có unit test | `packages/common/scripts/src/agent-*`, `ui-screenshots/` |
+| Runtime của agent | OpenHands Agent Canvas, bên ngoài repository |
+
+Các giai đoạn được nhóm thế nào, và điều gì dừng chuỗi: [Mỗi lần một giai đoạn](../../concepts/one-phase-at-a-time/).
+
+Tiếp theo: [Fork repository này](../fork-this-repo/), hoặc đến [Khái niệm](../../concepts/principles/).

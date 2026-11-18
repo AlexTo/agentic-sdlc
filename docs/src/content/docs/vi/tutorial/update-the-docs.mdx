@@ -1,0 +1,49 @@
+---
+title: 7. Cập nhật docs
+description: Tài liệu là giai đoạn cuối của cùng chuỗi, do agent làm và bạn review.
+sidebar:
+  order: 7
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Bạn đang ở:** agent, rồi lại cổng người duyệt #2. **Output:** docs mô tả tag.
+
+Giai đoạn 3 không khác về bản chất so với các giai đoạn khác. Docs là code (trang này là MDX trong
+`docs/`), nên cùng chuỗi đó xử lý chúng.
+
+## Agent làm gì
+
+Với issue cho task `T007` đến `T008`, agent:
+
+1. Đọc spec và code đã merge từ giai đoạn 1 và 2. Spec nói tính năng để làm gì; code nói nó làm gì.
+2. Cập nhật trang ứng dụng ghi chú: thuộc tính `tags`, input và bộ lọc API mới, và các quy tắc (năm
+   tag, không trùng, không phân biệt hoa thường), diễn đạt đúng như spec nêu.
+3. Dùng lại ảnh chụp màn hình từ kịch bản e2e thay vì tự tạo ảnh mới, để docs cho thấy những gì ứng
+   dụng thực sự làm.
+4. Build trang docs, để một liên kết hỏng hoặc MDX sai định dạng làm thất bại PR như mọi lỗi build khác.
+
+## Bạn kiểm tra gì
+
+- Mọi quy tắc trên trang có khớp với một yêu cầu trong `spec.md` không?
+- Nếu docs và spec không khớp, **spec thắng.** Sửa spec, không sửa docs thủ công.
+- Có điều gì được ghi trong docs mà code không làm không?
+
+## Vì sao nó nằm trong chuỗi
+
+Docs được viết sau đó, bởi một người khác, từ trí nhớ, sẽ lệch dần. Docs được sinh từ spec và code đã
+merge, trong cùng quy trình, và được review với cùng các cổng, thì không. Agent reviewer cũng là một
+người đọc thứ hai rẻ: nó gắn cờ một khẳng định trong docs mà không test hay code nào chống lưng.
+
+<Aside type="tip">
+Khi bạn thay đổi hành vi sau này, hãy bắt đầu lại từ spec. Cập nhật nó, sinh lại kế hoạch và task, và
+giai đoạn docs sẽ đến cùng với phần còn lại.
+</Aside>
+
+## Xong
+
+Merge PR docs. Không còn task nào, không có issue mới nào mở, và tính năng đã đi từ một câu đến code và
+docs đã merge, với bàn tay của bạn chỉ đặt vào đúng hai quyết định cho mỗi PR: duyệt spec, và duyệt
+kết quả.
+
+Quay lại [các nguyên tắc](../../concepts/principles/) để xem mỗi bước ứng với chúng thế nào.

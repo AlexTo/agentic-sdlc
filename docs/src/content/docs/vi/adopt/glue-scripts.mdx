@@ -1,0 +1,109 @@
+---
+title: 5. Các script glue
+description: Thêm các script có unit test quyết định issue nào mở, khi nào agent quay lại, và khi nào nó dừng.
+sidebar:
+  order: 5
+---
+
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
+
+**Kết quả:** một project `common-scripts` với năm Nx target và 124 unit test pass. Các workflow ở bước
+6 và 7 chỉ gọi những target này.
+
+<Steps>
+
+1. **Tạo project.** Chép `packages/common/scripts/` từ repository này (`package.json`, `project.json`,
+   `tsconfig*.json` và `vitest.config.mts` của nó), và xóa `src/dynamodb/`, thứ thuộc về ứng dụng ví
+   dụ. Đổi tên nó thành `@your-scope/common-scripts` trong `package.json` và `project.json`, và trong
+   `name` ở `vitest.config.mts`. Một project TypeScript được sinh bởi Nx Plugin for AWS có cùng cấu
+   trúc, nếu bạn muốn sinh một cái.
+
+2. **Chép bốn thư mục glue** từ `packages/common/scripts/src/` của repository này:
+
+   <FileTree>
+   - packages/common/scripts/src/
+     - agent-issues/ spec → issue: gate, discover, tasks, validate, issue, plan-issue, create-next-issue, main, validate-main
+     - agent-ci/ CI → agent: plan, run, main
+     - agent-review/ review → agent: plan, run, main
+     - ui-screenshots/ quy tắc ảnh chụp màn hình: check, main
+   </FileTree>
+
+   Chúng chỉ phụ thuộc vào built-in của Node và CLI `gh`. `tsx` chạy chúng.
+
+3. **Thêm các target** vào `project.json` của project, dưới `targets`:
+
+   ```json
+   "agent-issue":         { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/main.ts",    "cwd": "{projectRoot}" } },
+   "agent-ci-status":     { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-ci/main.ts",        "cwd": "{projectRoot}" } },
+   "agent-review-status": { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-review/main.ts",    "cwd": "{projectRoot}" } },
+   "ui-screenshots":      { "executor": "nx:run-commands", "options": { "command": "tsx src/ui-screenshots/main.ts",  "cwd": "{projectRoot}" } },
+   "validate-tasks":      { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/validate-main.ts", "cwd": "{projectRoot}" } }
+   ```
+
+4. **Đổi các hằng số cho thiết lập của bạn**, nếu bạn đã thay đổi bất kỳ quyết định nào trong
+   [phần tổng quan](../overview/):
+
+   | Hằng số | File | Mặc định |
+   | --- | --- | --- |
+   | `SPEC_READY_LABEL`, `AGENT_BRANCH_PREFIX` | `agent-issues/gate.ts` | `spec-ready`, `openhands/` |
+   | `AGENT_LABEL` | `agent-issues/issue.ts` | `openhands` |
+   | `AGENT_BRANCH`, `REVIEW_STATUS_CONTEXT`, `MAX_CI_FIX_ATTEMPTS` | `agent-ci/plan.ts` | `^openhands\/issue-\d+$`, `software-factory/review`, `5` |
+   | `MAX_REVIEW_FIX_ATTEMPTS`, `CHANGES_REQUESTED` | `agent-review/plan.ts` | `5`, `🔄 CHANGES REQUESTED` |
+   | `UI_SOURCE`, `SCENARIO`, `WAIVER_LABEL` | `ui-screenshots/check.ts` | `.tsx`/`.css` của portal và UI dùng chung, `packages/e2e/src/scenarios/*.e2e.ts`, `no-ui-screenshots` |
+
+   `UI_SOURCE` là hằng số bạn gần như chắc chắn sẽ đổi. Trỏ nó vào mã nguồn frontend của bạn.
+
+   <Aside type="caution">
+   Đừng đổi `REVIEW_STATUS_CONTEXT`. `software-factory/review` là status mà worker issue-to-PR của
+   OpenHands tìm. Bất kỳ tên nào khác thì agent sẽ không bao giờ được gửi quay lại.
+   </Aside>
+
+5. **Chạy test.**
+
+   ```bash
+   pnpm nx run @your-scope/common-scripts:test
+   ```
+
+</Steps>
+
+## Kiểm tra kết quả
+
+```text
+ Test Files  10 passed (10)
+      Tests  124 passed (124)
+```
+
+Và bộ validate chạy được:
+
+```bash
+pnpm nx run @your-scope/common-scripts:validate-tasks
+```
+
+```text
+0 tasks.md file(s) are in the expected format.
+```
+
+## Thử chạy dry run
+
+Mỗi script trong ba script agent đọc sự kiện GitHub từ `GITHUB_EVENT_PATH`, và với `DRY_RUN=true` in
+ra quyết định của nó thay vì thực hiện. Để phát lại một trường hợp thật, lưu một payload từ một lần
+chạy workflow trước đây và trỏ script vào đó:
+
+```bash
+DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_PATH=./event.json \
+  pnpm nx run @your-scope/common-scripts:agent-ci-status
+```
+
+```json
+{
+  "pullRequest": 470,
+  "plan": {
+    "action": "send-back",
+    "attempt": 1,
+    "label": "ci-fix-1",
+    "description": "CI failed (fix attempt 1 of 5): E2E tests (4/4)"
+  }
+}
+```
+
+Tiếp theo: [6. PR check và CI](../pr-checks-and-ci/).

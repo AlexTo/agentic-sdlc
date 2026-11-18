@@ -1,0 +1,49 @@
+---
+title: 4. Agent triển khai
+description: OpenHands nhận issue và mở PR, viết test trước.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Bạn đang ở:** agent, không người giám sát. **Output:** một pull request cho giai đoạn 1 trên một nhánh `openhands/...`.
+
+Ở lần poll kế tiếp (mỗi 5 phút ở Discava, mặc định là 15), OpenHands tìm thấy issue có label
+`openhands` và bắt đầu một cuộc hội thoại cho nó. Bạn không làm gì cả. Đây là những gì nó làm, và
+những gì bạn có thể kiểm tra trên PR sau đó.
+
+## Agent làm gì
+
+1. Đọc `AGENTS.md`, constitution, và thư mục spec.
+2. Viết test cho giai đoạn trước tiên: các quy tắc về tag từ spec, dưới dạng unit test.
+3. Triển khai cho đến khi chúng pass, đánh dấu mỗi task trong `tasks.md` trong cùng commit hoàn thành
+   nó.
+4. Chạy lint, typecheck, build và unit test trên những gì nó đã thay đổi, một lần, không ở chế độ watch.
+5. Mở một PR có tiêu đề dạng Conventional Commit, ví dụ
+   `feat(notes): add tags to notes in the data and API layers`, với `Refs #<parent>` trong nội dung.
+6. Liệt kê các task **(human)** mà nó đã bỏ qua.
+
+## Những gì nó được dặn không làm
+
+Issue template nêu rõ các giới hạn, và các workflow thực thi những giới hạn quan trọng:
+
+- Không bao giờ làm việc ngoài phạm vi task.
+- Không bao giờ làm yếu một test để nó pass.
+- Không bao giờ sửa `.github/workflows/`, không bao giờ merge, không bao giờ chạm vào thông tin đăng nhập.
+- Nếu bị chặn, comment trên issue và dừng lại. Nó không đoán.
+
+## Bạn kiểm tra gì
+
+Mở PR và đọc từ trên xuống:
+
+- Tiêu đề và nội dung có cho bạn biết những gì đã thay đổi và task nào đã xong không?
+- Các test đang test quy tắc *của spec*, hay những điểm kỳ quặc của phần triển khai?
+- `tasks.md` có được đánh dấu cho đúng giai đoạn này và không hơn không?
+
+<Aside type="tip">
+Bạn chưa cần review ngay. CI và agent reviewer đi trước, và PR chỉ đến tay bạn khi chúng đã hài lòng.
+Xem bước tiếp theo.
+</Aside>
+
+Tiếp theo: [CI và agent review](../ci-and-agent-review/).

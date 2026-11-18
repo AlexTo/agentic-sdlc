@@ -1,0 +1,60 @@
+---
+title: 3. Duyệt spec
+description: Review spec PR như review code, và gắn label spec-ready để khởi động agent.
+sidebar:
+  order: 3
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Bạn đang ở:** cổng người duyệt #1. **Output:** một spec PR đã merge và issue triển khai đầu tiên.
+
+<Steps>
+
+1. Mở spec PR.
+
+   ```bash
+   git add specs/ && git commit -m "docs(specs): add note tags spec"
+   git push -u origin spec/note-tags
+   gh pr create --fill
+   ```
+
+2. Review nó như bạn review code. Đọc `spec.md` trước, rồi `plan.md`, rồi lướt qua `tasks.md`. Tự hỏi:
+
+   - Spec có nói đúng điều bạn thực sự muốn không?
+   - Mỗi giai đoạn có đủ nhỏ để review trong một lần ngồi không?
+   - Có điều gì trong kế hoạch mà bạn sẽ bác bỏ trong một lần review code không?
+
+   Comment trên PR để thay đổi bất cứ điều gì. Agent cũng đọc comment, nên bạn có thể yêu cầu nó sửa.
+
+   Hãy mời business analyst hoặc product owner của bạn vào đây. `spec.md` là ngôn ngữ thông thường, nên
+   họ có thể review và duyệt nó trên PR trong khi bạn kiểm tra kế hoạch. Việc review này giờ là bước
+   chậm nhất của con người, và chia sẻ nó là cách bạn tăng tốc. Xem
+   [Cổng người duyệt](../../concepts/human-gates/#đây-giờ-là-nút-thắt-chính).
+
+3. Gắn label `spec-ready` cho PR, rồi merge.
+
+   ```bash
+   gh pr edit --add-label spec-ready
+   gh pr merge --squash
+   ```
+
+   Bạn là người mở PR này, nên GitHub không cho bạn duyệt nó. Khi branch protection được bật, hãy
+   merge nó với tư cách admin của repository bằng `gh pr merge --squash --admin`.
+
+</Steps>
+
+## Điều gì xảy ra tiếp theo, mà không ai phải động tay
+
+Workflow **Agent Issues** thấy một PR đã merge mang `spec-ready`. Nó đọc `tasks.md`, lấy giai đoạn
+chưa hoàn thành đầu tiên và mở một issue từ
+[template triển khai](https://github.com/AlexTo/agentic-sdlc/blob/main/.github/ISSUE_TEMPLATE/implement-phase.md):
+thư mục spec, phạm vi task `T001` đến `T003`, và các quy tắc agent phải tuân theo. Nó thêm label
+`openhands`, tín hiệu bắt đầu.
+
+<Aside type="note">
+Quên gắn label? Thêm `spec-ready` vào PR đã merge, hoặc chạy workflow thủ công với tên thư mục spec.
+Không cần gì khác.
+</Aside>
+
+Giờ bạn rảnh tay cho đến khi có thứ cần review. Tiếp theo: [Agent triển khai](../agent-implements/).

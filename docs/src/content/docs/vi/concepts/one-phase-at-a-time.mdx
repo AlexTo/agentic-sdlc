@@ -1,0 +1,97 @@
+---
+title: Mỗi lần một giai đoạn
+description: Các giai đoạn của một spec trở thành một chuỗi issue và pull request như thế nào, trong đó mỗi lần merge mở issue tiếp theo.
+sidebar:
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Phiên bản ngắn gọn:** một spec không được giao cho agent một lần. `tasks.md` được chia thành các
+giai đoạn, và agent nhận **một nhóm giai đoạn cho mỗi issue**. Mỗi issue trở thành một pull request.
+Khi pull request đó được merge, issue tiếp theo tự mở, cho đến khi không còn task agent nào.
+
+```d2
+direction: right
+
+spec: spec PR {shape: document}
+i1: "issue 1\nsetup đến story đầu tiên" {shape: page}
+p1: PR 1
+i2: "issue 2\ngiai đoạn tiếp" {shape: page}
+p2: PR 2
+i3: "issue 3\ngiai đoạn cuối" {shape: page}
+p3: PR 3
+done: không có gì mở
+
+spec -> i1: merge
+i1 -> p1
+p1 -> i2: merge
+i2 -> p2
+p2 -> i3: merge
+i3 -> p3
+p3 -> done: merge
+```
+
+## Vì sao không làm cả spec một lần?
+
+- **Việc review vẫn khả thi.** Cả một tính năng trong một PR là hàng nghìn dòng mà không ai đọc kỹ.
+  Một giai đoạn là một PR bạn có thể review trong một lần ngồi.
+- **Mỗi bước xây trên code đã merge.** Giai đoạn 3 bắt đầu từ `main` với giai đoạn 1 và 2 đã nằm
+  trong đó, đã được review và test, không phải từ công việc chưa review của chính agent.
+- **Lỗi được giữ nhỏ.** Nếu một giai đoạn hỏng, bạn bỏ một PR, không phải cả một tính năng.
+- **Context của agent được giữ tập trung.** Một giai đoạn là phạm vi mà agent có thể nắm trong đầu
+  từ test đầu tiên đến commit cuối cùng.
+
+## Các giai đoạn được nhóm thế nào
+
+`tasks.md` được `/speckit-tasks` viết theo các giai đoạn: thường là setup, nền tảng, rồi mỗi user
+story một giai đoạn, rồi hoàn thiện. Workflow Agent Issues nhóm chúng như sau:
+
+| Nhóm | Giai đoạn | Vì sao |
+| --- | --- | --- |
+| 0 | Mọi thứ đến và bao gồm giai đoạn `User Story` **đầu tiên** | Riêng setup và nền tảng không mang lại gì để ai thử được. Ship cùng story MVP, PR đầu tiên là một lát cắt hoạt động được |
+| 1, 2, … | Mỗi giai đoạn sau, riêng lẻ | Một giai đoạn, một issue, một PR |
+
+Issue nêu tên phạm vi task của nó ("Tasks `T015` to `T019` … Do not start tasks outside these
+phases"), và agent đánh dấu từng task trong `tasks.md` khi hoàn thành.
+
+## Điều gì mở issue tiếp theo
+
+Agent Issues chạy khi một pull request được merge vào `main`, và chỉ hành động với hai loại merge:
+
+1. **Một spec PR có label `spec-ready`.** Nó mở nhóm 0.
+2. **Một PR từ nhánh agent (`openhands/…`).** Nó đọc `tasks.md` mà lần merge vừa cập nhật, tìm
+   nhóm đầu tiên có một task chưa đánh dấu không phải **(human)**, và mở issue cho nhóm đó.
+
+Mọi lần merge khác đều bị bỏ qua, kể cả lần sửa `specs/`. Điều này là có chủ ý. PR của chính agent
+thay đổi `tasks.md`, nên một quy tắc như "chạy khi `specs/**` thay đổi" sẽ tự kích hoạt chính nó.
+
+## Điều gì dừng chuỗi
+
+| Tình huống | Điều gì xảy ra |
+| --- | --- |
+| Mọi task agent đã được đánh dấu | Không có gì mở. Tính năng đã xong. Các task **(human)** còn lại được để cho người review |
+| PR đã merge không đánh dấu hết task của nó | Issue tiếp theo cho nhóm đó đã tồn tại, nên không mở bản trùng. PR đã merge nhận một comment liệt kê ID các task chưa đánh dấu |
+| `tasks.md` không đúng định dạng mong đợi | Lần chạy thất bại thay vì giao cho agent sai task. PR check Tasks format thường chặn việc này sớm hơn |
+| Spec PR được merge mà không có `spec-ready` | Không có gì mở. Thêm label vào PR đã merge, và nó bắt đầu |
+
+Để khởi động lại một chuỗi bị đứng, sửa `tasks.md` (đánh dấu hoặc hoàn thành các task), rồi chạy
+**Agent Issues** thủ công với tên thư mục spec.
+
+## Nhiều tính năng cùng lúc
+
+Chuỗi là tuần tự **bên trong** một spec. Các spec khác nhau thì độc lập: mỗi spec có chuỗi riêng, và
+agent làm việc trên tất cả các issue đang mở của chúng. Đó là nơi thông lượng đến từ. Bạn viết spec
+tiếp theo trong khi các giai đoạn của spec trước đi qua review.
+
+<Aside type="tip">
+Thay đổi spec giữa chừng là bình thường. Cập nhật `spec.md` và `plan.md`, thêm task mới vào
+`tasks.md` với các ID chưa dùng tiếp theo, và merge. Lần merge agent PR kế tiếp nhận chúng như mọi
+task khác.
+</Aside>
+
+Một ví dụ thật, sáu issue cho một tính năng, nằm ở
+[Một tính năng thật: đánh giá khóa học](../../discava/a-real-feature/). Các quy tắc định dạng chính
+xác nằm ở [Tham khảo: định dạng tasks.md](../../reference/tasks-format/).
+
+Tiếp theo: [Runtime của agent](../the-agent-runtime/).
