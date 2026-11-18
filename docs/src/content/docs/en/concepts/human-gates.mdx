@@ -61,14 +61,14 @@ judge the outcome, not to hunt for problems:
 | Weaken a test to make it pass | Constitution ("tests are a specification"), issue instructions, reviewer agent |
 | Touch cloud credentials | The conversation is never given them. Deployment uses short-lived OIDC roles from a GitHub environment |
 | Work outside its task range | The issue names the range. The next issue doesn't open until every agent task is ticked |
-| Retry forever | Three attempts per loop, counted in labels |
+| Retry forever | Five attempts per loop, counted in labels |
 
 ## When you are pulled in early
 
 | Signal | What happened | What to do |
 | --- | --- | --- |
-| `ci-fix-exhausted` | CI failed three times after automatic fixes | Read the last failure. Comment with guidance, fix it yourself, or fix the spec. Remove the labels to let the agent retry |
-| `review-fix-exhausted` | The reviewer still asks for changes after three rounds | Decide whether the reviewer is right. Often the spec is ambiguous |
+| `ci-fix-exhausted` | CI failed five times after automatic fixes | Read the last failure. Comment with guidance, fix it yourself, or fix the spec. Remove the labels to let the agent retry |
+| `review-fix-exhausted` | The reviewer still asks for changes after five rounds | Decide whether the reviewer is right. Often the spec is ambiguous |
 | A comment on the issue from the agent | It was blocked and stopped, as instructed | Answer it, then remove and re-apply the `openhands` label |
 | A comment on a merged PR: "the next implementation issue … was not opened" | The phase's tasks aren't all ticked | Tick or finish them, then run Agent Issues by hand for the spec folder |
 

@@ -15,7 +15,7 @@ The pieces never call each other. They leave signals on GitHub that the next pie
 | State | `failure`, only. A passing run or approval posts nothing |
 | Posted on | The PR's head commit at the time of the failure |
 | Posted by | Agent CI Status, Agent Review Status, or a person |
-| Description | `CI failed (fix attempt <n> of 3): <failed jobs>` or `Review requested changes (fix attempt <n> of 3): see the review`, at most 140 characters |
+| Description | `CI failed (fix attempt <n> of 5): <failed jobs>` or `Review requested changes (fix attempt <n> of 5): see the review`, at most 140 characters |
 | Target URL | The failed run, or the review |
 | Read by | The issue-to-PR worker, which revises the PR when its head has this status as `failure` or `error` |
 

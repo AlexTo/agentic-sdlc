@@ -47,8 +47,8 @@ The workflows in steps 6 and 7 only call these targets.
    | --- | --- | --- |
    | `SPEC_READY_LABEL`, `AGENT_BRANCH_PREFIX` | `agent-issues/gate.ts` | `spec-ready`, `openhands/` |
    | `AGENT_LABEL` | `agent-issues/issue.ts` | `openhands` |
-   | `AGENT_BRANCH`, `REVIEW_STATUS_CONTEXT`, `MAX_CI_FIX_ATTEMPTS` | `agent-ci/plan.ts` | `^openhands\/issue-\d+$`, `software-factory/review`, `3` |
-   | `MAX_REVIEW_FIX_ATTEMPTS`, `CHANGES_REQUESTED` | `agent-review/plan.ts` | `3`, `🔄 CHANGES REQUESTED` |
+   | `AGENT_BRANCH`, `REVIEW_STATUS_CONTEXT`, `MAX_CI_FIX_ATTEMPTS` | `agent-ci/plan.ts` | `^openhands\/issue-\d+$`, `software-factory/review`, `5` |
+   | `MAX_REVIEW_FIX_ATTEMPTS`, `CHANGES_REQUESTED` | `agent-review/plan.ts` | `5`, `🔄 CHANGES REQUESTED` |
    | `UI_SOURCE`, `SCENARIO`, `WAIVER_LABEL` | `ui-screenshots/check.ts` | portal and shared UI `.tsx`/`.css`, `packages/e2e/src/scenarios/*.e2e.ts`, `no-ui-screenshots` |
 
    `UI_SOURCE` is the one you will almost certainly change. Point it at your frontends' source.
@@ -101,7 +101,7 @@ DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_PATH=./event.json \
     "action": "send-back",
     "attempt": 1,
     "label": "ci-fix-1",
-    "description": "CI failed (fix attempt 1 of 3): E2E tests (4/4)"
+    "description": "CI failed (fix attempt 1 of 5): E2E tests (4/4)"
   }
 }
 ```

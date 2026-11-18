@@ -22,9 +22,9 @@ Run these from your clone. `gh` uses the default repository you set in
    gh label create openhands            --force --description "OpenHands implements this issue"
    gh label create openhands-review     --force --description "OpenHands reviews this PR's head"
    gh label create no-ui-screenshots    --force --description "Waives the UI Screenshots check: a UI change with nothing to look at"
-   for n in 1 2 3; do
-     gh label create ci-fix-$n          --force --description "CI fix-up attempt $n of 3"
-     gh label create review-fix-$n      --force --description "Review fix-up attempt $n of 3"
+   for n in 1 2 3 4 5; do
+     gh label create ci-fix-$n          --force --description "CI fix-up attempt $n of 5"
+     gh label create review-fix-$n      --force --description "Review fix-up attempt $n of 5"
    done
    gh label create ci-fix-exhausted     --force --description "CI fix-ups used up; a person takes over"
    gh label create review-fix-exhausted --force --description "Review fix-ups used up; a person takes over"

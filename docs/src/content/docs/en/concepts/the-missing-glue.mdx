@@ -19,7 +19,7 @@ These are the gaps, and what fills each one:
 | 1 | Nothing turns a finished spec into work for the agent | A workflow reads `tasks.md` and opens the next implementation issue, one group of phases at a time |
 | 2 | The agent doesn't know CI failed | A workflow reports a failing run back to the agent as the commit status it already watches |
 | 3 | A reviewer's "changes requested" goes unheard | A workflow does the same for the reviewer agent's verdict |
-| 4 | Nothing stops a stuck agent looping forever | Both fix-up loops are capped at three attempts, counted with labels, then a person takes over |
+| 4 | Nothing stops a stuck agent looping forever | Both fix-up loops are capped at five attempts, counted with labels, then a person takes over |
 | 5 | `tasks.md` is only a convention, so a malformed one silently stalls the chain | A PR check validates its format |
 | 6 | UI changes reach review without anyone looking at them | A check requires e2e screenshots, and CI posts them on the PR |
 | 7 | Merging the agent's PR doesn't start the next phase | The merge of an agent branch opens the next issue, until the spec is done |

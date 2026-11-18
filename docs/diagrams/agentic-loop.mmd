@@ -17,7 +17,7 @@ _OpenHands_`")
         CI{{"CI"}} -- "passes" --> AR{{"`Agent review
 _OpenHands_`"}}
         CI -- "fails" --> FIX("`Agent fixes
-_OpenHands, max 3× per loop_`")
+_OpenHands, max 5× per loop_`")
         AR -- "changes requested" --> FIX
         FIX -. "CI runs again" .-> CI
     end

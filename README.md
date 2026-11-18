@@ -46,7 +46,7 @@ GitHub process: specs, issues, pull requests, CI and review. Every step leaves a
 anyone can read, review and re-run.
 
 <p align="center">
-  <img alt="The agentic loop: a person writes and merges the spec, automation opens an issue, the agent implements and raises a PR, then CI and an agent reviewer send it back to fix up to three times each, before a human reviews and merges" src="docs/public/diagrams/agentic-loop.svg" width="720">
+  <img alt="The agentic loop: a person writes and merges the spec, automation opens an issue, the agent implements and raises a PR, then CI and an agent reviewer send it back to fix up to five times each, before a human reviews and merges" src="docs/public/diagrams/agentic-loop.svg" width="720">
 </p>
 
 Red is the developer, grey is the agent or automation working on its own, and indigo is an automated
@@ -62,16 +62,16 @@ issue by itself, until the spec is done.
 | **Implement** | [OpenHands](https://github.com/OpenHands/OpenHands), an open source platform for software engineering agents | The agent picks the issue up and opens a pull request, tests first, ticking tasks as it goes. |
 | **Verify** | CI | Lint, build, unit and e2e tests run. UI changes must ship screenshots, posted on the PR. |
 | **Agent review** | OpenHands reviewer | A second agent reviews the PR once CI is green and either approves or requests changes. |
-| **Fix** | OpenHands, bounded | A red CI or a "changes requested" verdict from the agent reviewer sends the agent back by itself, at most **three times** per PR, then it stops and asks for a human. |
+| **Fix** | OpenHands, bounded | A red CI or a "changes requested" verdict from the agent reviewer sends the agent back by itself, at most **five times** per PR, then it stops and asks for a human. |
 | **Human review** | Developer | A person has the final say: they review and merge. To send it back instead, they request changes and add the `openhands-review` label, so the agent reviewer re-reviews and the review-fix loop picks it up. The reviewer also does any **(human)** tasks the agent listed, such as manual verification. |
 | **Next phase** | Automation | Merging reads `tasks.md` from the merged PR. The agent ticks each task in the PR as it finishes it. If the phase's agent tasks are all ticked, the next phase's issue opens. If not, the PR gets a comment listing the unticked tasks. **(human)** tasks never hold up the chain. When no agent tasks are left, the spec is done. |
 
 The "fix it" prompts you used to type by hand are now automatic, in two loops:
 
-- **CI fix:** CI fails → status posted → agent revises the same PR. Up to three times, counted with
-  `ci-fix-1` to `ci-fix-3`.
+- **CI fix:** CI fails → status posted → agent revises the same PR. Up to five times, counted with
+  `ci-fix-1` to `ci-fix-5`.
 - **Review fix:** the agent reviewer requests changes → status posted → agent revises the same PR.
-  Up to three times, counted with `review-fix-1` to `review-fix-3`.
+  Up to five times, counted with `review-fix-1` to `review-fix-5`.
 
 Nobody pastes an error message or relays a review comment.
 
@@ -101,7 +101,7 @@ walkthrough of how to set each one up:
 | Nothing turns a finished spec into work for the agent | A workflow reads `tasks.md` and opens the next implementation issue, one phase at a time |
 | The agent doesn't know CI failed | A workflow reports a failing run back to the agent as a status it already watches |
 | A reviewer's "changes requested" goes unheard | A workflow does the same for the agent reviewer's verdict |
-| Nothing stops a stuck agent looping forever | Both fix-up loops are capped at three tries, then a human takes over |
+| Nothing stops a stuck agent looping forever | Both fix-up loops are capped at five tries, then a human takes over |
 | `tasks.md` is only a convention, so a malformed one stalls the pipeline silently | A PR check validates its format |
 | UI changes reach review without anyone seeing them | A check requires e2e screenshots, posted on the PR |
 | Merging the agent's PR doesn't start the next phase | The merge opens the next issue until the spec is done |
@@ -158,7 +158,7 @@ back to the agent to fix, with no human in between.
 | | Agent reviewer | Problems the tests don't cover, read like a code review |
 | **Human review** | Final review | Whatever the layers above can't judge; a person always merges |
 
-A red result sends the agent back to fix the same PR, up to **3 times**. After that it stops and
+A red result sends the agent back to fix the same PR, up to **5 times**. After that it stops and
 asks a human.
 
 ### 👀 Verification matters most

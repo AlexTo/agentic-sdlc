@@ -35,7 +35,7 @@ files, so you can read the source next to the explanation.
 | Spec to issue | Agent Issues workflow and its scripts | `.github/workflows/agent-issues.yml`, `packages/common/scripts/src/agent-issues/` |
 | CI failure to agent | Agent CI Status | `.github/workflows/agent-ci.yml`, `src/agent-ci/` |
 | Review to agent | Agent Review Status | `.github/workflows/agent-review.yml`, `src/agent-review/` |
-| Endless loops | Three-attempt caps with labels | `MAX_CI_FIX_ATTEMPTS` and `MAX_REVIEW_FIX_ATTEMPTS` in `plan.ts` |
+| Endless loops | Five-attempt caps with labels | `MAX_CI_FIX_ATTEMPTS` and `MAX_REVIEW_FIX_ATTEMPTS` in `plan.ts` |
 | Malformed `tasks.md` | Tasks format job | `pr-checks.yml` `tasks-format`, `src/agent-issues/validate.ts` |
 | Unseen UI changes | UI Screenshots job, E2E screenshots comment | `pr-checks.yml`, `src/ui-screenshots/`, `packages/e2e/src/helpers/screenshots.ts` |
 | Merge doesn't continue | Agent Issues on merged `openhands/` branches | `src/agent-issues/gate.ts` |

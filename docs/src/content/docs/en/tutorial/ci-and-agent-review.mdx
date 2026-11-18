@@ -41,14 +41,14 @@ sends the implementing agent back the same way a red CI does.
 
 ## The cap
 
-There are two fix-up loops, and each is limited to **three** attempts per PR:
+There are two fix-up loops, and each is limited to **five** attempts per PR:
 
 | Loop | Sent back by | Counted with | Gives up with |
 | --- | --- | --- | --- |
-| CI | **Agent CI Status**, on a red PR Checks run | `ci-fix-1` to `ci-fix-3` | `ci-fix-exhausted` |
-| Review | **Agent Review Status**, on the reviewer agent's `🔄 CHANGES REQUESTED` | `review-fix-1` to `review-fix-3` | `review-fix-exhausted` |
+| CI | **Agent CI Status**, on a red PR Checks run | `ci-fix-1` to `ci-fix-5` | `ci-fix-exhausted` |
+| Review | **Agent Review Status**, on the reviewer agent's `🔄 CHANGES REQUESTED` | `review-fix-1` to `review-fix-5` | `review-fix-exhausted` |
 
-The counters are separate, so a PR can use up to three CI fixes and three review fixes. After the
+The counters are separate, so a PR can use up to five CI fixes and five review fixes. After the
 third attempt in a loop, its workflow comments, adds the `*-exhausted` label and stops.
 
 <Aside type="caution">

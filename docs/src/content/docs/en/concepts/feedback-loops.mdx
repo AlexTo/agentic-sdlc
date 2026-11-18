@@ -1,6 +1,6 @@
 ---
 title: Feedback loops
-description: How a red CI run or a "changes requested" review sends the agent back, and why each loop stops after three tries.
+description: How a red CI run or a "changes requested" review sends the agent back, and why each loop stops after five tries.
 sidebar:
   order: 6
 ---
@@ -9,7 +9,7 @@ import { Aside } from '@astrojs/starlight/components';
 
 **The short version:** when something fails, a workflow marks the PR's head commit with a failing
 status. The OpenHands worker sees it on its next poll and asks the same agent conversation to fix
-the same PR. Each loop has a counter in a label, and stops at three.
+the same PR. Each loop has a counter in a label, and stops at five.
 
 ## The two loops
 
@@ -45,9 +45,9 @@ worker -> pr: revise the same PR
 | --- | --- | --- |
 | Triggered by | The PR Checks workflow finishing with `failure` or `timed_out` | A review on the PR that the reviewer agent wrote, ending `🔄 CHANGES REQUESTED` |
 | Workflow | Agent CI Status | Agent Review Status |
-| Counter labels | `ci-fix-1`, `ci-fix-2`, `ci-fix-3` | `review-fix-1`, `review-fix-2`, `review-fix-3` |
+| Counter labels | `ci-fix-1` … `ci-fix-5` | `review-fix-1` … `review-fix-5` |
 | When it gives up | `ci-fix-exhausted`, plus a comment | `review-fix-exhausted`, plus a comment |
-| Status description | `CI failed (fix attempt 2 of 3): E2E tests (3/4)` | `Review requested changes (fix attempt 1 of 3): see the review` |
+| Status description | `CI failed (fix attempt 2 of 5): E2E tests (3/4)` | `Review requested changes (fix attempt 1 of 5): see the review` |
 
 A passing run posts nothing. The next commit starts with no status, so the worker leaves the PR
 alone.
@@ -64,16 +64,17 @@ Each script refuses to act unless all of these hold:
    attempt.
 5. For reviews: the review carries the reviewer's hidden run marker and comes from an account with
    write access, so a person quoting the verdict doesn't trigger it.
-6. Fewer than three attempts have been used.
+6. Fewer than five attempts have been used.
 
 The label goes on **before** the status is posted. If posting the status then fails, the next
 failure counts one more attempt instead of repeating this one forever.
 
-## Why three
+## Why five
 
-One retry fixes most mistakes: a flaky locator, a missed type, a lint rule. Two cover a fix that
-uncovered a second problem. By the third failure, the agent is usually stuck on something it can't
-see, and more attempts cost money without converging.
+One retry fixes most mistakes: a flaky locator, a missed type, a lint rule. The next few cover a fix
+that uncovered a second problem, or a CI run and a review that each ask for something different. By
+the fifth failure, the agent is usually stuck on something it can't see, and more attempts cost
+money without converging. Discava started with a cap of three and raised it to five.
 
 In Discava, 67 agent PRs had merged by 18 November 2026. 42 carry no fix label (some predate the
 fix-up workflows), 17 needed exactly one round of CI or review fixes, and only one ran a loop to

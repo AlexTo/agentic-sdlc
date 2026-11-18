@@ -62,7 +62,7 @@ The script (`src/agent-ci/`):
    description and the run as its link.
 6. For `give-up`: adds `ci-fix-exhausted` and comments, for example:
 
-   > CI is still failing after 3 automatic fix attempts, so the agent will not be sent back again.
+   > CI is still failing after 5 automatic fix attempts, so the agent will not be sent back again.
    >
    > Failing checks on `1a2b3c4`: E2E tests (2/4).
    >
@@ -84,7 +84,7 @@ out the default branch explicitly, and runs `agent-review-status`.
 | The body has a line that is exactly `🔄 CHANGES REQUESTED` | The verdict, not a mention of it |
 
 Then the same steps as CI: `review-fix-<n>`, the failing status linked to the review, and
-`review-fix-exhausted` after three.
+`review-fix-exhausted` after five.
 
 The reviewer re-reviews by itself after the agent pushes, because the revise prompt tells the agent
 to re-apply `openhands-review`, and a new head commit counts as a new review.
