@@ -161,6 +161,26 @@ back to the agent to fix, with no human in between.
 A red result sends the agent back to fix the same PR, up to **3 times**. After that it stops and
 asks a human.
 
+### 👀 Verification matters most
+
+Of all the layers, verification is the one that earns your trust. Unit tests and lint show that the
+code is consistent with itself. Only e2e tests and screenshots show that the feature *works*, the
+way a user sees it. A developer who looks at the screenshots can judge the result in a few minutes,
+without pulling the branch or running the stack.
+
+CI makes this the default. Every e2e scenario for a UI flow calls `screenshot()` at the states a reviewer would
+want to see. CI then posts a comment listing the screenshots the PR added, linked to the run's
+artifacts, and the `UI Screenshots` check fails if a UI change ships without any. From Discava
+[#486](https://github.com/AlexTo/discava/pull/486#issuecomment-6980411897), notification settings:
+
+<p align="center">
+  <img alt="A github-actions comment titled E2E screenshots, listing the nine screenshots added by the pull request, such as notification-settings/02-emails-stopped.png, and linking to the run's artifacts" src="docs/public/screenshots/e2e-screenshots-comment.png" width="620">
+</p>
+
+The reviewer opens these and checks each state: settings listed, a switch saved, emails stopped and
+turned back on, a valid and an invalid unsubscribe link. That is the final review: judging the
+outcome, not reading every line.
+
 ## 🧰 What's in this repo
 
 This is a small, working notes app (DynamoDB, tRPC API, React website, Playwright e2e) wrapped in

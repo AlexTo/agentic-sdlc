@@ -29,6 +29,34 @@ most, and only what they can't judge reaches a person.
 | | Agent reviewer | Problems no test covers, read like a code review |
 | **Human review** | Final review | Whatever the layers above can't judge. A person always merges |
 
+## Verification matters most
+
+Of all the layers, verification is the one that earns your trust. Unit tests, lint and types show
+that the code is consistent with itself. Only e2e tests and screenshots show that the feature
+*works*, the way a user sees it, against the real stack. It's also the layer a person can check
+fastest: a developer who looks at the screenshots can judge a PR in minutes, without pulling the
+branch.
+
+So CI makes it the default:
+
+1. Every e2e scenario for a UI flow calls `screenshot(page, 'name')` at each state a reviewer would
+   want to see.
+2. CI posts an **E2E screenshots** comment on the PR, listing the screenshots the PR added
+   (separately from the ones that were already there) and linking to the run's artifacts.
+3. The `UI Screenshots` check fails if a UI change ships with no screenshots.
+
+From Discava [#486](https://github.com/AlexTo/discava/pull/486#issuecomment-6980411897),
+notification settings:
+
+<p>
+  <img alt="A github-actions comment titled E2E screenshots, listing the nine screenshots added by the pull request, such as notification-settings/02-emails-stopped.png, and linking to the run's artifacts" src="/agentic-sdlc/screenshots/e2e-screenshots-comment.png" width="620" />
+</p>
+
+The reviewer opens the nine new screenshots and checks each state: settings with every type listed,
+a switch saved, emails stopped and turned back on, a valid and an invalid unsubscribe link, an error
+and "try again". Each of those is a requirement from the spec, seen working. That is what the final
+review is for: judging the outcome, not reading every line.
+
 ## Prose guides, code enforces
 
 Prose (the constitution, `AGENTS.md`, the issue's instructions) is cheap to write and prevents
