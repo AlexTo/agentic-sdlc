@@ -12,19 +12,26 @@ details. Each step names who acts, and what artifact the step leaves behind. The
 reviewer sends the agent back, are on [Feedback loops](../../concepts/feedback-loops/).
 
 ```d2
-direction: right
+grid-rows: 2
+grid-columns: 4
+horizontal-gap: 140
+vertical-gap: 90
 
+# Top row runs left to right, bottom row right to left, so the loop wraps.
 spec: "spec PR\n(you)" {shape: document}
 issues: "Agent Issues\n(GitHub Actions)"
 issue: issue {shape: page}
 implement: "implement\n(OpenHands)"
-pr: pull request {shape: page}
-checks: "PR Checks\n(GitHub Actions)"
-review: "review\n(OpenHands)"
 merge: "merge\n(you)"
+review: "review\n(OpenHands)"
+checks: "PR Checks\n(GitHub Actions)"
+pr: pull request {shape: page}
 
 spec -> issues: spec-ready
-issues -> issue -> implement -> pr -> checks
+issues -> issue
+issue -> implement
+implement -> pr
+pr -> checks
 checks -> review: green
 review -> merge: approved
 merge -> issues: next phase

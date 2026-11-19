@@ -12,19 +12,26 @@ chi tiết. Mỗi bước nêu rõ ai hành động, và bước đó để lạ
 reviewer gửi agent quay lại, nằm ở [Vòng phản hồi](../../concepts/feedback-loops/).
 
 ```d2
-direction: right
+grid-rows: 2
+grid-columns: 4
+horizontal-gap: 140
+vertical-gap: 90
 
+# Top row runs left to right, bottom row right to left, so the loop wraps.
 spec: "spec PR\n(bạn)" {shape: document}
 issues: "Agent Issues\n(GitHub Actions)"
 issue: issue {shape: page}
 implement: "triển khai\n(OpenHands)"
-pr: pull request {shape: page}
-checks: "PR Checks\n(GitHub Actions)"
-review: "review\n(OpenHands)"
 merge: "merge\n(bạn)"
+review: "review\n(OpenHands)"
+checks: "PR Checks\n(GitHub Actions)"
+pr: pull request {shape: page}
 
 spec -> issues: spec-ready
-issues -> issue -> implement -> pr -> checks
+issues -> issue
+issue -> implement
+implement -> pr
+pr -> checks
 checks -> review: xanh
 review -> merge: được duyệt
 merge -> issues: giai đoạn tiếp
