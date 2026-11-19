@@ -50,8 +50,8 @@ chung. Các quy tắc giúp chúng an toàn khi chạy theo bất kỳ thứ t�
 
 ## Invariant sau mỗi test
 
-`packages/databases/core-table/src/helpers/invariants.ts` export một danh sách kiểm tra trên toàn bộ
-bảng: "một khóa học có giảng viên", "số lượt hoạt động của học viên khớp với số học viên đã dùng mục
+`packages/databases/core-table/src/helpers/invariants/` chứa các kiểm tra trên toàn bộ bảng, mỗi
+chủ đề một file (curriculum, student activity, media, analytics, v.v.): "một khóa học có giảng viên", "số lượt hoạt động của học viên khớp với số học viên đã dùng mục
 đó", "thứ tự giữa các mục anh em là duy nhất", và hơn bốn mươi kiểm tra khác.
 
 Một fixture Playwright (`packages/e2e/src/helpers/table-invariants.ts`) chạy chúng **sau mỗi e2e
@@ -62,9 +62,33 @@ agent viết sai một bộ đếm sẽ phát hiện ra ngay trong test đã ghi
 Mọi quy tắc trải trên nhiều writer đều được ghi qua một helper dùng chung mà mọi writer gọi (ví dụ
 `studentActivityWrites`), và có một invariant cùng một test phá vỡ nó.
 
-Một PR check **Invariant coverage** đang được làm trên một nhánh, chưa có trên `main`. Nó ánh xạ mỗi
-entity với các file ghi vào nó, và làm thất bại một PR thêm writer mới mà không chạm vào
-`invariants.ts`, trừ khi label `no-new-invariant` miễn trừ.
+PR check **Invariant coverage** giữ cho điều này đúng. File `entity-writers.json` của `core-table`
+ánh xạ mỗi entity với các file trong từng package ghi vào nó, được sinh từ code bằng TypeScript
+compiler. So với `main`, check làm thất bại một PR khi:
+
+- một entity có thêm một package ghi mới bên cạnh các package đã có,
+- một file nằm ngoài package `core-table` bắt đầu ghi một entity mà nhiều package cùng ghi, hoặc
+- xuất hiện một entity mới.
+
+Check sẽ qua khi các dòng PR thêm vào `helpers/invariants/` (không tính test và fixture) nêu tên
+từng entity đó hoặc khóa `TableSnapshot` của nó, ví dụ `snapshot.enrolments`. Check cũng thất bại
+khi `entity-writers.json` đã cũ. Một pre-push hook sinh lại file này và dừng lần push nếu nó thay
+đổi, nên agent phát hiện ra trước CI.
+
+### Miễn trừ check
+
+Check chỉ thấy tập writer đã thay đổi. Nó không biết liệu có quy tắc nào giờ trải trên các writer
+đó hay không, nên maintainer có thể miễn trừ: gắn label `no-new-invariant` vào PR và chạy lại job.
+
+Dùng label khi các lệnh ghi được chuyển chỗ hoặc tách ra, nhưng không có quy tắc mới nào bị ảnh
+hưởng. Trường hợp thường gặp là refactor. Khi Discava chuyển các helper ra khỏi các procedure API
+sang file riêng, những lệnh ghi đã có xuất hiện ở file mới và làm check thất bại, nhưng các quy tắc
+chúng giữ đã được kiểm tra từ trước.
+
+Đừng dùng nó để cho một tính năng qua cửa. Nếu một writer mới khiến API hay handler khác giờ phụ
+thuộc vào việc một bản ghi đúng, quy tắc đó phải nằm trong một helper của `core-table` mà mọi writer
+gọi, với một check trong `helpers/invariants/`. Label là để con người gắn, không phải agent: quyết
+định rằng không có quy tắc nào bị ảnh hưởng chính là phán đoán mà check buộc phải có.
 
 ## Test đồng thời
 

@@ -50,8 +50,8 @@ The rules that make them safe to run in any order, on a shared stack:
 
 ## Invariants after every test
 
-`packages/databases/core-table/src/helpers/invariants.ts` exports a list of checks over the whole
-table: "a course has an instructor", "a student's activity count matches the students who used the
+`packages/databases/core-table/src/helpers/invariants/` holds checks over the whole table, one file
+per topic (curriculum, student activity, media, analytics and so on): "a course has an instructor", "a student's activity count matches the students who used the
 item", "sibling order is unique", and more than forty others.
 
 A Playwright fixture (`packages/e2e/src/helpers/table-invariants.ts`) runs them **after every e2e
@@ -62,10 +62,32 @@ agent that writes a counter wrongly finds out in the test that wrote it, not thr
 Every rule that spans writers is written through one shared helper that every writer calls (for
 example `studentActivityWrites`), and has an invariant and a test that breaks it.
 
-The **Invariant coverage** PR check keeps this honest. It keeps a map of which packages write each
-entity (`entity-writers.json`), and fails a PR that changes who writes the core table without
-touching `invariants.ts`, unless a maintainer waives it with the `no-new-invariant` label. A
-pre-push hook regenerates the map, so the agent finds out before CI does.
+The **Invariant coverage** PR check keeps this honest. `core-table`'s `entity-writers.json` maps
+each entity to the files in each package that write it, generated from the code with the
+TypeScript compiler. Compared with `main`, the check fails a PR when:
+
+- an entity gains a writing package beside the ones it had,
+- a file outside the `core-table` package starts writing an entity that several packages write, or
+- a new entity appears.
+
+It passes again once the lines the PR adds under `helpers/invariants/` (tests and fixtures don't
+count) name each of those entities or its `TableSnapshot` key, such as `snapshot.enrolments`. The
+check also fails while `entity-writers.json` is out of date. A pre-push hook regenerates it and
+stops the push if it changed, so the agent finds out before CI does.
+
+### Waiving the check
+
+The check only sees that the set of writers changed. It can't tell whether a rule now spans them,
+so a maintainer can waive it: add the `no-new-invariant` label to the PR and re-run the job.
+
+Use the label when the writes moved or were split, but no new rule is at stake. The usual case is a
+refactor. When Discava moved helpers out of its API procedures into their own files, existing
+writes showed up in new files and tripped the check, but the rules they keep were already covered.
+
+Don't use it to get a feature through. If a new writer means another API or handler now depends on
+a record being right, the rule belongs in a `core-table` helper every writer calls, with a check in
+`helpers/invariants/`. The label is for a human to apply, not the agent: deciding that no rule is at
+stake is the judgment the check exists to force.
 
 ## Concurrency tests
 
