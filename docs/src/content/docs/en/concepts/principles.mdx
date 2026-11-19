@@ -1,15 +1,22 @@
 ---
 title: The principles
-description: The seven ideas the workflow is built from. Later pages refer back to them by number.
+description: The eight ideas the workflow is built from, and the one that matters most. Later pages refer back to them by number.
 sidebar:
   order: 1
 ---
+
+import { Aside } from '@astrojs/starlight/components';
 
 Everything in this workflow follows from one move: **take the developer out of the loop and put
 them at its two ends.** Humans decide *what* to build and *whether it is good*. Agents do
 everything in between, through the normal GitHub process.
 
 The rest of this guide refers back to these principles by number.
+
+<Aside type="tip" title="If you keep one principle, keep 4">
+Verification is the most important step. An agent that can't run the app and see what it built
+is guessing, and every other principle only organises the guesses.
+</Aside>
 
 ## 1. The spec is the source of truth
 
@@ -28,23 +35,39 @@ teammate or a new agent can pick up where the last one stopped.
 A spec splits into phases. Each group of phases is one issue and one pull request, with a task
 range the agent must not leave. Small PRs are cheap to review and cheap to throw away.
 
-## 4. Automated gates give the feedback, not you
+## 4. Verification is the most important step: give the agent hands and eyes
+
+Code that compiles and passes its unit tests can still fail the user. The agent has to **run what
+it built and interact with it, from the back end to the front end**, the way a person would:
+
+- **Hands:** start the whole app on a local stack with no cloud account, call the API, sign in as a
+  user, click through the flow in a real browser, and trigger the background work behind it.
+- **Eyes:** read what comes back: responses, logs, the data left in the database, and screenshots
+  of every state a reviewer would want to see.
+
+Without hands and eyes the agent writes code it has never seen work, and a person has to pull the
+branch to find out. With them, the agent catches its own mistakes and every PR arrives with
+evidence. Build for this from day one: every cloud service needs a local stand-in, every user flow
+an e2e scenario, and every UI state a screenshot. Anything the agent can't run locally is a task a
+person has to verify.
+
+## 5. Automated gates give the feedback, not you
 
 Lint, typecheck, unit tests, invariants, e2e tests, concurrency tests, screenshots and an agent
 reviewer run on every PR. A red result goes straight back to the agent that wrote the change.
 Nobody pastes an error message.
 
-## 5. Bounded autonomy
+## 6. Bounded autonomy
 
 The agent can't merge, can't edit workflows, can't touch cloud credentials, and can't weaken a test
 to get green. Each fix-up loop is capped at five attempts. Then it stops and asks a person.
 
-## 6. Humans keep the two decisions that matter
+## 7. Humans keep the two decisions that matter
 
 1. **Approve the spec.** Merging the spec PR with the `spec-ready` label is the go signal.
 2. **Approve the result.** A person does the final review and merges each PR.
 
-## 7. The glue is code, not prompts
+## 8. The glue is code, not prompts
 
 Anything that decides *what happens next* (which issue opens, whether the agent goes back, when to
 stop) is a deterministic script with unit tests, run by a workflow. The agent is only asked to do
@@ -57,7 +80,8 @@ what needs judgment: write the code, and review it. A prompt can be ignored. A w
 | 1. Spec as source of truth | [Spec-driven development](../spec-driven-development/) |
 | 2. Artifacts | [The missing glue](../the-missing-glue/), [Reference: labels](../../reference/labels/) |
 | 3. Small units | [One phase at a time](../one-phase-at-a-time/) |
-| 4. Automated gates | [Layers of trust](../layers-of-trust/), [PR checks in Discava](../../discava/pr-checks/) |
-| 5. Bounded autonomy | [Feedback loops](../feedback-loops/) |
-| 6. Human decisions | [Human gates](../human-gates/) |
-| 7. Glue is code | [The missing glue](../the-missing-glue/) |
+| **4. Verification** | [Layers of trust](../layers-of-trust/#verification-matters-most), [Local stack, e2e and screenshots](../../adopt/local-stack-and-e2e/) |
+| 5. Automated gates | [Layers of trust](../layers-of-trust/), [PR checks in Discava](../../discava/pr-checks/) |
+| 6. Bounded autonomy | [Feedback loops](../feedback-loops/) |
+| 7. Human decisions | [Human gates](../human-gates/) |
+| 8. Glue is code | [The missing glue](../the-missing-glue/) |

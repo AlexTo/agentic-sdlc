@@ -36,6 +36,10 @@ thấy code nhất quán với chính nó. Chỉ e2e test và ảnh chụp màn 
 theo cách người dùng thấy, trên stack thật. Đó cũng là lớp một người có thể kiểm tra nhanh nhất: một
 lập trình viên nhìn ảnh chụp màn hình có thể đánh giá một PR trong vài phút, không cần pull nhánh.
 
+Đây là [nguyên tắc 4](../principles/): cho agent tay và mắt. Các kịch bản e2e agent viết là tay của
+nó: chúng khởi động toàn bộ stack, đăng nhập, gọi API và bấm qua UI. Kết quả, lỗi invariant và ảnh
+chụp màn hình là mắt của nó: chúng cho agent, rồi đến bạn, thấy thay đổi thực sự làm gì.
+
 Vì vậy CI biến nó thành mặc định:
 
 1. Mọi kịch bản e2e cho một luồng UI gọi `screenshot(page, 'name')` ở mỗi trạng thái mà người review

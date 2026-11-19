@@ -1,15 +1,22 @@
 ---
 title: Các nguyên tắc
-description: Bảy ý tưởng tạo nên quy trình. Các trang sau tham chiếu lại chúng theo số.
+description: Tám ý tưởng tạo nên quy trình, và ý tưởng quan trọng nhất. Các trang sau tham chiếu lại chúng theo số.
 sidebar:
   order: 1
 ---
+
+import { Aside } from '@astrojs/starlight/components';
 
 Mọi thứ trong quy trình này bắt nguồn từ một bước đi: **đưa lập trình viên ra khỏi vòng lặp và đặt
 họ ở hai đầu của nó.** Con người quyết định *xây gì* và *nó có tốt không*. Agent làm mọi thứ ở giữa,
 thông qua quy trình GitHub bình thường.
 
 Phần còn lại của hướng dẫn tham chiếu lại các nguyên tắc này theo số.
+
+<Aside type="tip" title="Nếu chỉ giữ một nguyên tắc, hãy giữ nguyên tắc 4">
+Kiểm chứng là bước quan trọng nhất. Một agent không thể chạy ứng dụng và nhìn thấy thứ nó đã xây thì
+chỉ đang đoán, và mọi nguyên tắc khác chỉ sắp xếp những phỏng đoán đó.
+</Aside>
 
 ## 1. Spec là nguồn sự thật
 
@@ -28,24 +35,40 @@ nên một đồng đội mới hay một agent mới có thể tiếp tục t�
 Một spec được chia thành các giai đoạn. Mỗi nhóm giai đoạn là một issue và một pull request, với một
 phạm vi task mà agent không được rời khỏi. PR nhỏ thì rẻ để review và rẻ để bỏ đi.
 
-## 4. Các cổng tự động đưa ra phản hồi, không phải bạn
+## 4. Kiểm chứng là bước quan trọng nhất: cho agent tay và mắt
+
+Code biên dịch được và qua unit test vẫn có thể làm hỏng trải nghiệm người dùng. Agent phải **chạy thứ
+nó đã xây và tương tác với nó, từ back end đến front end**, như một người sẽ làm:
+
+- **Tay:** khởi động toàn bộ ứng dụng trên local stack không cần tài khoản cloud, gọi API, đăng nhập
+  như một người dùng, bấm qua luồng trong một trình duyệt thật, và kích hoạt các tác vụ nền phía sau.
+- **Mắt:** đọc những gì trả về: response, log, dữ liệu để lại trong cơ sở dữ liệu, và ảnh chụp màn
+  hình của mọi trạng thái mà người review muốn xem.
+
+Không có tay và mắt, agent viết code mà nó chưa từng thấy chạy, và một người phải pull nhánh về để
+biết. Có chúng, agent tự bắt lỗi của mình và mỗi PR đến kèm bằng chứng. Hãy xây cho điều này ngay từ
+ngày đầu: mọi dịch vụ cloud cần một bản thay thế local, mọi luồng người dùng cần một kịch bản e2e, và
+mọi trạng thái UI cần một ảnh chụp màn hình. Bất cứ thứ gì agent không chạy được ở local là một task
+mà một người phải kiểm chứng.
+
+## 5. Các cổng tự động đưa ra phản hồi, không phải bạn
 
 Lint, typecheck, unit test, invariant, e2e test, test đồng thời, ảnh chụp màn hình và một agent
 reviewer chạy trên mọi PR. Một kết quả đỏ quay thẳng về agent đã viết thay đổi đó. Không ai phải dán
 thông báo lỗi.
 
-## 5. Tự chủ có giới hạn
+## 6. Tự chủ có giới hạn
 
 Agent không thể merge, không thể sửa workflow, không thể chạm vào thông tin đăng nhập cloud, và không
 thể làm yếu test để có màu xanh. Mỗi vòng fix-up bị giới hạn ở năm lượt thử. Sau đó nó dừng và hỏi
 một người.
 
-## 6. Con người giữ hai quyết định quan trọng
+## 7. Con người giữ hai quyết định quan trọng
 
 1. **Duyệt spec.** Merge spec PR với label `spec-ready` là tín hiệu bắt đầu.
 2. **Duyệt kết quả.** Một người thực hiện lần review cuối và merge mỗi PR.
 
-## 7. Glue là code, không phải prompt
+## 8. Glue là code, không phải prompt
 
 Bất cứ thứ gì quyết định *điều gì xảy ra tiếp theo* (issue nào mở, agent có quay lại không, khi nào
 dừng) là một script tất định có unit test, được chạy bởi một workflow. Agent chỉ được yêu cầu làm
@@ -58,7 +81,8 @@ những việc cần phán đoán: viết code, và review nó. Một prompt có
 | 1. Spec là nguồn sự thật | [Phát triển hướng spec](../spec-driven-development/) |
 | 2. Artifact | [Phần glue còn thiếu](../the-missing-glue/), [Tham khảo: label](../../reference/labels/) |
 | 3. Đơn vị nhỏ | [Mỗi lần một giai đoạn](../one-phase-at-a-time/) |
-| 4. Cổng tự động | [Các lớp niềm tin](../layers-of-trust/), [PR check ở Discava](../../discava/pr-checks/) |
-| 5. Tự chủ có giới hạn | [Vòng phản hồi](../feedback-loops/) |
-| 6. Quyết định của con người | [Cổng người duyệt](../human-gates/) |
-| 7. Glue là code | [Phần glue còn thiếu](../the-missing-glue/) |
+| **4. Kiểm chứng** | [Các lớp niềm tin](../layers-of-trust/), [Local stack, e2e và ảnh chụp màn hình](../../adopt/local-stack-and-e2e/) |
+| 5. Cổng tự động | [Các lớp niềm tin](../layers-of-trust/), [PR check ở Discava](../../discava/pr-checks/) |
+| 6. Tự chủ có giới hạn | [Vòng phản hồi](../feedback-loops/) |
+| 7. Quyết định của con người | [Cổng người duyệt](../human-gates/) |
+| 8. Glue là code | [Phần glue còn thiếu](../the-missing-glue/) |

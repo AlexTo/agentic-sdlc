@@ -37,6 +37,11 @@ that the code is consistent with itself. Only e2e tests and screenshots show tha
 fastest: a developer who looks at the screenshots can judge a PR in minutes, without pulling the
 branch.
 
+This is [principle 4](../principles/#4-verification-is-the-most-important-step-give-the-agent-hands-and-eyes):
+give the agent hands and eyes. The e2e scenarios it writes are its hands: they start the whole
+stack, sign in, call the API and click through the UI. The results, invariant failures and
+screenshots are its eyes: they show the agent, and then you, what the change actually does.
+
 So CI makes it the default:
 
 1. Every e2e scenario for a UI flow calls `screenshot(page, 'name')` at each state a reviewer would
