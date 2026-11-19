@@ -14,6 +14,7 @@ sidebar:
 | Archive Specs | `archive-specs.yml` | `push` to `main` changing `specs/*/tasks.md`, `workflow_dispatch` | `contents: write`, `issues: read`, `pull-requests: write` | `main` |
 | Agent CI Status | `agent-ci.yml` | `workflow_run` of PR Checks, `completed` | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` | The default branch |
 | Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` | The default branch |
+| Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | Nothing (passes the PR number to `gh`) |
 | Deploy (Discava) | `deploy.yml` | `workflow_run` of CI on `main`, `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | The commit CI verified |
 
 ## Job names to require in branch protection

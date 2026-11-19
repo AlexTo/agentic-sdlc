@@ -32,14 +32,18 @@ check, and **CI** on `main`.
    agent forgot to commit. Keep the `playwright-cache` job if you use Playwright: PR runs can only
    restore caches saved on `main`.
 
-   <Aside type="tip">
-   Once your checks take more than a few minutes, keep Nx's task cache between runs, so the agent
-   waits less on every fix-up round. Cap its size and delete a PR's caches when it closes, or the
-   repository's 10 GB of Actions cache fills up. See how Discava does it in
-   [Keeping it fast](../../discava/pr-checks/#keeping-it-fast).
-   </Aside>
+   The `build` job passes `nx-cache-scope: main` to `init-monorepo`, which saves Nx's task cache.
+   A PR's first run starts from it, so tasks whose inputs `main` already built are replayed, not
+   run again, and the agent waits less on every fix-up round. Each `checks` leg in PR Checks keeps
+   its own cache the same way, except `lint`, which only restores, since linting is faster than
+   saving a cache. `init-monorepo` caps the cache at 1 GB.
 
-4. **Pin every action to a commit SHA**, as the copied files do, and add
+4. **Copy `.github/workflows/cache-cleanup.yml`.** It deletes a PR's caches when the PR closes.
+   Nothing else can read them, and without it they count toward the repository's 10 GB of Actions
+   cache until GitHub evicts them, starting with those of PRs still open. See
+   [Keeping it fast](../../discava/pr-checks/#keeping-it-fast) for what this saved Discava.
+
+5. **Pin every action to a commit SHA**, as the copied files do, and add
    `.github/dependabot.yml` so the pins stay current:
 
    ```yaml
