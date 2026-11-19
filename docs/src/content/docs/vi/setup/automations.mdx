@@ -10,8 +10,8 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 **Kết quả:** OpenHands poll bản fork của bạn mỗi năm phút. Nó triển khai các issue có label
 `openhands`, sửa lại các PR bị đánh dấu thất bại, và review các PR có label `openhands-review`.
 
-Cả hai automation đến từ **automation catalog** của Agent Canvas. Bạn điền một form, và catalog đóng
-gói một worker đã được test với các cài đặt của bạn. Bạn không phải viết hay upload code nào.
+Cả hai automation đến từ **automation catalog** của Agent Canvas. Bạn điền một form, và catalog
+đóng gói một worker đã được test với các cài đặt của bạn. Bạn không phải viết hay upload code nào.
 
 <Steps>
 
@@ -28,8 +28,8 @@ gói một worker đã được test với các cài đặt của bạn. Bạn k
    | Check frequency | `*/5 * * * *` |
    | Timezone | múi giờ của bạn |
 
-   Discava chạy template phiên bản 1.2.4. Prompt của worker bảo agent thêm label `openhands-review`
-   sau khi mở PR, để PR mới đến được reviewer kể cả khi là draft.
+   Discava chạy template phiên bản 1.2.4. Prompt của worker bảo agent thêm label
+   `openhands-review` sau khi mở PR, để PR mới đến được reviewer kể cả khi là draft.
 
 2. **Thêm "GitHub code review"** từ catalog:
 
@@ -45,12 +45,12 @@ gói một worker đã được test với các cài đặt của bạn. Bạn k
    | Agent profile | `reviewer` |
    | Check frequency | `*/5 * * * *` |
 
-   Discava chạy template phiên bản 1.11.2. **New reviews per scan** giới hạn số cuộc hội thoại review
-   mà một lần poll khởi động, để một đống việc tồn đọng không khởi động mười agent cùng lúc.
+   Discava chạy template phiên bản 1.11.2. **New reviews per scan** giới hạn số cuộc hội thoại
+   review mà một lần poll khởi động, để một đống việc tồn đọng không khởi động mười agent cùng lúc.
 
    **Maintainers** là tùy chọn. Khi được đặt, một PR đã duyệt được giao cho một trong số họ làm
-   requested reviewer, chọn theo người đã từng thay đổi các file đó. Điều này chỉ xảy ra khi issue của
-   PR mang `priority:medium` hoặc `priority:high`. Discava để trống.
+   requested reviewer, chọn theo người đã từng thay đổi các file đó. Điều này chỉ xảy ra khi issue
+   của PR mang `priority:medium` hoặc `priority:high`. Discava để trống.
 
 3. **Chạy mỗi automation một lần thủ công** từ trang của nó trong Agent Canvas, và đọc log lần chạy.
 
@@ -71,17 +71,11 @@ Sau đó:
 
 Sau đó đóng PR và xóa nhánh.
 
-## Những gì chạy ở mỗi lần poll
-
-| Automation | Ở mỗi lần poll |
-| --- | --- |
-| Issue to PR | 1. Với mỗi PR `openhands/issue-<n>` đang mở có head mang `software-factory/review` = `failure` hoặc `error`, gửi một lượt revise đến cuộc hội thoại của issue đó. 2. Với mỗi issue đang mở có `openhands` và chưa có PR, bắt đầu một lượt implement. Issue có label `priority:high` được làm trước |
-| Code review | Với mỗi PR có `openhands-review`, có yêu cầu review cho tài khoản của nó, hoặc đang mở, không phải draft và chưa được review: nếu mọi check trên head đã xong, review đúng commit đó. Nếu không, comment "⏳ Review waiting on checks" và thử lại ở lần poll sau |
+Mỗi automation làm gì ở một lần poll được mô tả ở [Runtime của agent](../../concepts/the-agent-runtime/).
 
 <Aside type="note">
-Để cho agent thử lại một issue từ đầu, gỡ rồi gắn lại label `openhands`. Việc revise chỉ xảy ra qua
-status `software-factory/review`, do các workflow glue đăng. Bạn cũng có thể đăng nó thủ công, để gửi
-agent quay lại với comment của riêng bạn:
+Để cho agent thử lại một issue từ đầu, gỡ rồi gắn lại label `openhands`. Để gửi agent quay lại một
+PR đang mở với comment của riêng bạn, hãy đăng status mà các workflow glue đăng:
 `gh api repos/<you>/agentic-sdlc/statuses/<sha> -f state=failure -f context=software-factory/review -f description="See my comment"`.
 </Aside>
 

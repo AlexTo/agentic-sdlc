@@ -5,19 +5,16 @@ sidebar:
   order: 1
 ---
 
-import { Aside } from '@astrojs/starlight/components';
-
 Hướng dẫn này cho bạn thấy cách vận hành một vòng đời phần mềm trong đó **agent viết code và con
 người đưa ra hai quyết định**: duyệt spec, và duyệt kết quả. Mọi thứ ở giữa (mở issue, viết code và
 test, phản ứng với CI, trả lời review) tự chạy, thông qua quy trình GitHub bình thường.
 
-Đây không phải là một thí nghiệm tư duy. Quy trình được xây dựng và sử dụng hằng ngày trên
-[Discava](https://github.com/AlexTo/discava), một hệ thống quản lý học tập serverless, thuần AWS.
-Quy trình bắt đầu chạy trên Discava từ ngày 14 tháng 11 năm 2026. Chỉ trong sáu ngày đầu, mười sáu
-spec tính năng được viết theo cách này, và 105 pull request của agent đã được merge để triển khai
-chúng, mỗi pull request đều do agent viết, sửa và review. Trong cùng khoảng thời gian, nhánh main
-nhận 173 commit. Tất cả chỉ với một người duy trì duy nhất, một ông bố đang đi làm toàn thời gian
-và chỉ làm Discava một cách thong thả trong thời gian rảnh. 😅
+Quy trình chạy hằng ngày trên [Discava](https://github.com/AlexTo/discava), một hệ thống quản lý
+học tập serverless trên AWS. Trong sáu ngày sau khi đi vào hoạt động vào ngày 14 tháng 11 năm 2026,
+mười sáu spec tính năng được viết theo cách này và 105 pull request của agent đã được merge để
+triển khai chúng, mỗi pull request đều do agent viết, sửa và review. Trong cùng khoảng thời gian,
+nhánh main nhận 173 commit. Tất cả chỉ với một người duy trì duy nhất, một ông bố đang đi làm toàn
+thời gian và chỉ làm Discava một cách thong thả trong thời gian rảnh. 😅
 
 ## Phiên bản ngắn gọn
 
@@ -37,9 +34,8 @@ có giới hạn để không có gì lặp mãi.
 
 - **Tech lead và staff engineer** đang cân nhắc có áp dụng quy trình hay không. Bắt đầu với
   [Khái niệm](../../concepts/principles/).
-- **Bất kỳ ai muốn thử.** [Fork repository này](../fork-this-repo/): bản fork có thiết lập của
-  Discava. Sau đó làm theo [Thiết lập](../../setup/before-you-start/) để trỏ OpenHands vào nó và
-  chạy một tính năng cho ứng dụng ghi chú ví dụ qua trọn vòng lặp.
+- **Bất kỳ ai muốn thử.** [Fork repository này](../fork-this-repo/), rồi làm theo
+  [Thiết lập](../../setup/before-you-start/) để chạy một tính năng qua trọn vòng lặp.
 - **Kỹ sư đưa quy trình vào một repository sản phẩm.** Đọc
   [Discava làm thế nào](../../discava/overview/), rồi
   [Áp dụng vào repository của bạn](../../adopt/overview/).
@@ -54,26 +50,22 @@ trước với Speckit hay OpenHands.
 | Phần | Trả lời |
 | --- | --- |
 | **Bắt đầu tại đây** | Đây là gì, và một tính năng đi qua nó ra sao? |
-| **Khái niệm** | Vì sao nó được xây theo cách này. Các nguyên tắc, và năm thành phần |
-| **Discava làm thế nào** | Chính xác những gì đã được xây để lấp mỗi khoảng trống, kèm đường dẫn file |
-| **Thiết lập: fork và chạy** | Fork repository này, cấu hình, cài OpenHands, và chạy tính năng đầu tiên |
-| **Áp dụng vào repository của bạn** | Cách thêm từng thành phần vào một repository có sẵn, theo thứ tự |
-| **Tutorial** | Cảm giác khi dùng nó, trên một tính năng nhỏ làm mẫu |
+| **Khái niệm** | Vì sao nó được xây theo cách này? |
+| **Discava làm thế nào** | Chính xác thứ gì lấp mỗi khoảng trống, và nằm trong file nào? |
+| **Thiết lập: fork và chạy** | Làm sao để chạy nó trên ứng dụng ví dụ? |
+| **Áp dụng vào repository của bạn** | Làm sao thêm từng thành phần vào một repository có sẵn? |
+| **Tutorial** | Dùng nó cảm giác ra sao, trên một tính năng nhỏ? |
 | **Tham khảo** | Label, status, workflow, định dạng `tasks.md`, xử lý sự cố, thuật ngữ |
 
 ## Quy ước
 
 - `AGENTS.md` là file hướng dẫn agent ở thư mục gốc của repository. Đặt tên theo file mà coding
   agent của bạn đọc.
-- `<you>/agentic-sdlc` là bản fork của bạn, và `owner/repo` là bất kỳ repository nào. `@your-scope` là npm scope của workspace của bạn. Repository này
-  dùng `@agentic-sdlc`, và Discava dùng `@discava`.
+- `<you>/agentic-sdlc` là bản fork của bạn, và `owner/repo` là bất kỳ repository nào.
+- `@your-scope` là npm scope của workspace của bạn. Repository này dùng `@agentic-sdlc`, và Discava
+  dùng `@discava`.
 - Lệnh được chạy từ thư mục gốc của repository trừ khi bước đó nói khác.
-- **(human)** đánh dấu một task mà agent không được làm. Đó cũng là marker nguyên văn dùng trong `tasks.md`.
-
-<Aside type="note">
-Repository này là một bản sao hoạt động của thiết lập Discava. `.github/`, `packages/common/scripts/` và
-`.specify/` của nó là cùng phần glue mà Discava chạy, bao quanh một ứng dụng ghi chú nhỏ thay vì sản
-phẩm của Discava, và bỏ đi phần deploy AWS của Discava. Fork nó và bạn có thiết lập đó.
-</Aside>
+- **(human)** đánh dấu một task mà agent không được làm. Đó cũng là marker nguyên văn dùng trong
+  `tasks.md`.
 
 Tiếp theo: [Cách hoạt động](../how-it-works/).

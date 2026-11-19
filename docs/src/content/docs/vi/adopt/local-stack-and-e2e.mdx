@@ -16,16 +16,9 @@ thật mà không cần thông tin đăng nhập cloud.
 <Steps>
 
 1. **Cho mọi dịch vụ cloud một bản thay thế local**, được khởi động bởi một target `dev`, để
-   `pnpm dev` chạy mọi thứ. Những gì Discava dùng:
-
-   | Dịch vụ | Bản thay thế |
-   | --- | --- |
-   | DynamoDB | DynamoDB local (Docker) |
-   | S3 | S3Mock |
-   | SQS | ElasticMQ |
-   | OpenSearch | OpenSearch trong Docker |
-   | Cognito | Một OIDC server local nhỏ với người dùng cố định và form đăng nhập tự do |
-   | Lambda trigger, stream, EventBridge, MediaConvert, Transcribe, SES | Một tiến trình "event runner" gọi cùng các handler |
+   `pnpm dev` chạy mọi thứ. [Các bản thay thế của Discava](../../discava/local-stack/#những-gì-chạy-local)
+   bao gồm DynamoDB, S3, SQS, OpenSearch và Cognito, cộng một tiến trình "event runner" gọi cùng các
+   handler mà Lambda trigger, stream và EventBridge gọi trên cloud.
 
    Chuyển chế độ code backend bằng một cờ (`LOCAL_DEV=true`), với các endpoint trong một module dùng
    chung. Liệt kê những gì vẫn chỉ chạy trên cloud trong `CONTRIBUTING.md`, và đánh dấu các task cần
@@ -49,8 +42,8 @@ thật mà không cần thông tin đăng nhập cloud.
    });
    ```
 
-   Quy tắc cho kịch bản: mỗi kịch bản tự tạo người dùng và dữ liệu có tên duy nhất, và không kịch bản
-   nào reset dữ liệu local.
+   Mỗi kịch bản tự tạo người dùng và dữ liệu có tên duy nhất, và không kịch bản nào reset dữ liệu
+   local, nên chúng chạy theo thứ tự nào cũng được.
 
 3. **Chép helper ảnh chụp màn hình** từ repository này: `packages/e2e/src/helpers/screenshots.ts`. Nó
    lưu `dist/packages/e2e/screenshots/<scenario>/<nn>-<name>.png`, thư mục mà job `e2e` của PR Checks

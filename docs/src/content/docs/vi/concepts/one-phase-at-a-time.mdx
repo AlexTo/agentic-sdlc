@@ -63,8 +63,7 @@ Agent Issues chạy khi một pull request được merge vào `main`, và chỉ
 2. **Một PR từ nhánh agent (`openhands/…`).** Nó đọc `tasks.md` mà lần merge vừa cập nhật, tìm
    nhóm đầu tiên có một task chưa đánh dấu không phải **(human)**, và mở issue cho nhóm đó.
 
-Mọi lần merge khác đều bị bỏ qua, kể cả lần sửa `specs/`. Điều này là có chủ ý. PR của chính agent
-thay đổi `tasks.md`, nên một quy tắc như "chạy khi `specs/**` thay đổi" sẽ tự kích hoạt chính nó.
+Mọi lần merge khác đều bị bỏ qua, kể cả lần sửa `specs/`. PR của chính agent thay đổi `tasks.md`, nên một quy tắc như "chạy khi `specs/**` thay đổi" sẽ tự kích hoạt chính nó.
 
 ## Điều gì dừng chuỗi
 
@@ -81,8 +80,7 @@ thay đổi `tasks.md`, nên một quy tắc như "chạy khi `specs/**` thay đ
 ## Nhiều tính năng cùng lúc
 
 Chuỗi là tuần tự **bên trong** một spec. Các spec khác nhau thì độc lập: mỗi spec có chuỗi riêng, và
-agent làm việc trên tất cả các issue đang mở của chúng. Đó là nơi thông lượng đến từ. Bạn viết spec
-tiếp theo trong khi các giai đoạn của spec trước đi qua review.
+agent làm việc trên tất cả các issue đang mở của chúng. Đó là nơi thông lượng đến từ.
 
 <Aside type="tip">
 Thay đổi spec giữa chừng là bình thường. Cập nhật `spec.md` và `plan.md`, thêm task mới vào

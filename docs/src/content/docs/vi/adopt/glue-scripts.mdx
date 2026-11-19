@@ -74,16 +74,6 @@ import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
       Tests  143 passed (143)
 ```
 
-Và bộ validate chạy được:
-
-```bash
-pnpm nx run @your-scope/common-scripts:validate-tasks
-```
-
-```text
-0 tasks.md file(s) are in the expected format.
-```
-
 ## Thử chạy dry run
 
 Mỗi script trong ba script agent đọc sự kiện GitHub từ `GITHUB_EVENT_PATH`, và với `DRY_RUN=true` in

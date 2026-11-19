@@ -64,15 +64,13 @@ dụng ghi chú ví dụ trong repository này không có deploy, nên hãy ché
    Kiểm tra độ mới nằm *bên trong* slot concurrency, nên nó phản ánh `main` ngay trước khi deploy, kể
    cả khi lần chạy phải chờ sau một lần chạy khác.
 
-4. **Bật deploy tự động** cho stage development:
+4. **Bật deploy tự động** cho stage development. Trong **Settings → Secrets and
+   variables → Actions → Variables**, thêm một repository variable `AUTO_DEPLOY_STAGE` với tên
+   stage development của bạn.
 
-   ```bash
-   gh variable set AUTO_DEPLOY_STAGE --body your-project-development
-   ```
-
-5. **Bảo vệ production.** Tạo GitHub environment của nó với **required reviewers** (Settings →
-   Environments → stage production của bạn → Required reviewers). Deploy nó bằng
-   `gh workflow run deploy.yml -f stage=your-project-production`. Job khi đó chờ được duyệt.
+5. **Bảo vệ production.** Trong **Settings → Environments**, mở environment của stage production
+   và thêm **Required reviewers**. Để deploy nó, mở **Actions → Deploy → Run workflow** và nhập
+   stage production. Job khi đó chờ được duyệt.
 
 </Steps>
 
@@ -86,6 +84,6 @@ Agent không bao giờ deploy và không bao giờ thấy các role này. Cuộc
 token. Deploy role chỉ được assume bởi một workflow chạy từ `main`, trong environment của stage.
 </Aside>
 
-Tiếp theo: repository của bạn giờ đã có mọi thứ mà một bản fork của repository này có. Tiếp tục với
-lộ trình fork từ [2. Cấu hình repository](../../setup/github-repository/), trỏ mỗi bước vào repository
-của chính bạn thay vì một bản fork.
+Tiếp theo: repository của bạn giờ đã có mọi thứ mà một bản fork của repository này có. Tiếp tục từ
+[2. Cấu hình repository](../../setup/github-repository/), với repository của chính bạn thay cho
+bản fork.

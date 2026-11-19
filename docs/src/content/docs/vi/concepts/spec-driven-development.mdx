@@ -5,16 +5,11 @@ sidebar:
   order: 2
 ---
 
-import { Aside } from '@astrojs/starlight/components';
-
 **Phiên bản ngắn gọn:** một người và một agent viết ra xây gì, xây thế nào, và theo thứ tự nào,
 trước khi có bất kỳ dòng code nào. Kết quả viết ra được review như code và được merge. Từ đó trở đi,
 mọi lần chạy agent đọc cùng các file, nên kết quả không phụ thuộc vào ai đã viết prompt.
 
 ## Vì sao không chỉ dùng prompt?
-
-Một prompt biến mất khi cuộc chat kết thúc. Nó không thể được review, nó khác nhau mỗi lần ai đó gõ,
-và agent quên nó giữa chừng một task dài. Một spec trong repository giải quyết cả bốn vấn đề:
 
 | Một prompt | Một spec |
 | --- | --- |
@@ -23,10 +18,10 @@ và agent quên nó giữa chừng một task dài. Một spec trong repository 
 | Gõ lại cho mỗi lần chạy, mỗi lần hơi khác | Được mọi lần chạy đọc, nguyên văn từng chữ |
 | Nói xây gì, hiếm khi nói vì sao | Nêu user story, yêu cầu và tiêu chí chấp nhận |
 
-## Bốn tài liệu
+## Các tài liệu
 
-[Speckit](https://github.com/github/spec-kit) là một bộ lệnh agent và template tạo ra những tài liệu
-này, từng bước một:
+[Speckit](https://github.com/github/spec-kit) là một bộ lệnh agent và template tạo ra chúng, từng bước
+một:
 
 | Lệnh | Viết | Trả lời |
 | --- | --- | --- |
@@ -60,21 +55,13 @@ constitution -> folder.plan: Constitution Check
 
 ## Constitution
 
-Constitution là thành phần bị đánh giá thấp nhất. Nó chứa các quy tắc không thể thương lượng của dự
-án, được viết để một kế hoạch có thể được đối chiếu với chúng: "a feature MUST work under `pnpm dev`
-with no cloud account" (một tính năng PHẢI chạy được dưới `pnpm dev` mà không cần tài khoản cloud),
-"a failing test MUST be fixed in the code, not by weakening the test" (một test thất bại PHẢI được sửa
-trong code, không phải bằng cách làm yếu test). Mỗi lần chạy `/speckit-plan` điền vào phần
-**Constitution Check** và phải biện minh cho mọi vi phạm.
+Constitution chứa các quy tắc không thể thương lượng của dự án, được viết để một kế hoạch có thể
+được đối chiếu với chúng: "a feature MUST work under `pnpm dev` with no cloud account", "a failing
+test MUST be fixed in the code, not by weakening the test". Mỗi lần chạy `/speckit-plan` điền vào
+phần **Constitution Check** và phải biện minh cho mọi vi phạm.
 
-Vì mọi agent đọc nó trước khi viết code, constitution là nơi bạn đặt các quy tắc khiến output của
-agent đáng tin. Xem [constitution của Discava](../../discava/constitution-and-guidance/) để có một ví
-dụ đầy đủ.
-
-<Aside type="tip">
-Khi một người review liên tục đưa ra cùng một comment trên các agent PR, comment đó thuộc về
-constitution hoặc `AGENTS.md`. Khi đó agent tiếp theo tuân theo nó thay vì bị bắt lỗi vì nó.
-</Aside>
+Mọi agent đọc nó trước khi viết code, nên đó là nơi bạn đặt các quy tắc khiến output của agent đáng
+tin. Xem [constitution của Discava](../../discava/constitution-and-guidance/) để có một ví dụ đầy đủ.
 
 ## `tasks.md` là một hợp đồng với automation
 
@@ -91,13 +78,9 @@ quyết định agent nhận task nào tiếp theo. Nên định dạng của n�
 - [ ] T012 (human) Check the layout on a phone-width window
 ```
 
-- Giai đoạn có dạng `## Phase <n>: <title>`, đánh số tăng dần.
-- Giai đoạn `User Story` đầu tiên kết thúc issue đầu tiên. Setup, nền tảng và story MVP được ship
-  cùng nhau. Mỗi giai đoạn sau là một issue riêng.
-- Task có dạng `- [ ] T<3 chữ số> ...`, được đánh dấu tại chỗ, không bao giờ đánh số lại.
-- **(human)** đánh dấu một task mà agent bỏ qua và liệt kê trong PR cho người review.
-
-Các quy tắc đầy đủ nằm ở [Tham khảo: định dạng tasks.md](../../reference/tasks-format/).
+Giai đoạn là các heading được đánh số, task mang một ID cố định và được đánh dấu tại chỗ, và
+**(human)** đánh dấu một task mà agent bỏ qua và để lại cho người review. Các quy tắc đầy đủ nằm ở
+[Tham khảo: định dạng tasks.md](../../reference/tasks-format/).
 
 ## Thay đổi spec, không phải code
 

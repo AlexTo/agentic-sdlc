@@ -7,53 +7,45 @@ sidebar:
 
 import { Steps } from '@astrojs/starlight/components';
 
-**Bạn đang ở:** cổng người duyệt #2. **Output:** giai đoạn 1 đã merge, issue của giai đoạn 2 đã mở.
+**Bạn đang ở:** 🧑 cổng người duyệt #2. **Output:** giai đoạn 1 đã merge, issue của giai đoạn 2 đã mở.
 
-PR đến tay bạn đã xanh và được agent reviewer duyệt. Việc của bạn là đánh giá kết quả, không phải đi
-săn lỗi.
+PR đến tay bạn đã xanh và được agent reviewer duyệt. Việc của bạn là đánh giá kết quả, không phải
+đi săn lỗi.
 
 <Steps>
 
-1. Đọc mô tả PR và comment **E2E screenshots**. Với giai đoạn website, đây là cách bạn thấy tính năng
-   mà không cần pull nhánh: ô nhập tag trống, một ghi chú có ba tag, bộ lọc đã áp dụng, lỗi hiện ra khi
-   thêm tag thứ sáu.
+1. Đọc mô tả PR và comment **E2E screenshots**. Với giai đoạn website, đây là cách bạn thấy tính
+   năng mà không cần pull nhánh: ô nhập tag trống, một ghi chú có ba tag, bộ lọc đã áp dụng, lỗi
+   hiện ra khi thêm tag thứ sáu.
 
 2. Kiểm tra các task **(human)** mà agent liệt kê và làm chúng.
 
-3. Duyệt và merge, hoặc comment để yêu cầu thay đổi. Một "changes requested" gửi agent quay lại, dưới
-   cùng giới hạn năm lượt thử.
+3. Duyệt và merge. Nếu agent push bằng token của chính bạn, GitHub coi bạn là tác giả PR và không
+   chấp nhận lượt duyệt của bạn, nên hãy bỏ qua bước duyệt như bạn đã làm với spec PR.
 
-   ```bash
-   gh pr merge --squash
-   ```
-
-   Nếu agent push bằng token của chính bạn, GitHub coi bạn là tác giả PR và không chấp nhận lượt duyệt
-   của bạn. Thay vào đó hãy merge với `--admin`.
+   Để yêu cầu thay đổi thay vào đó, hãy review PR và thêm label `openhands-review`. Phán quyết của
+   agent reviewer khi đó gửi agent triển khai quay lại, dưới cùng giới hạn năm lượt thử.
 
 </Steps>
 
 ## Merge làm gì
 
-Workflow **Agent Issues** thấy một PR đã merge trên nhánh `openhands/` và đọc `tasks.md` như lần merge
-để lại:
+Workflow **Agent Issues** thấy một PR đã merge trên nhánh `openhands/` và đọc `tasks.md` như lần
+merge để lại:
 
 1. **Các task agent của giai đoạn này đã được đánh dấu chưa?** Agent đánh dấu mỗi task trong PR, ở
    commit hoàn thành nó. Task **(human)** không được tính: bạn đã làm chúng ở bước 2, và chúng không
    bao giờ chặn chuỗi.
-2. **Rồi:** nó mở issue cho giai đoạn tiếp theo. Giai đoạn 2 (website) giờ chạy y như giai đoạn 1: test
-   trước, PR, các cổng, fix-up, review.
-3. **Chưa:** không có gì mở, và PR đã merge nhận một comment liệt kê ID các task chưa đánh dấu. Đánh
-   dấu hoặc hoàn thành chúng, rồi chạy **Agent Issues** thủ công với tên thư mục spec.
+2. **Rồi:** nó mở issue cho giai đoạn tiếp theo. Giai đoạn 2 (website) giờ chạy y như giai đoạn 1:
+   test trước, PR, các cổng, fix-up, review.
+3. **Chưa:** không có gì mở, và PR đã merge nhận một comment liệt kê ID các task chưa đánh dấu.
+   Đánh dấu hoặc hoàn thành chúng, rồi chạy **Agent Issues** thủ công với tên thư mục spec.
 
-Chỉ nhánh của chính agent mới đẩy chuỗi tiến lên. Một PR bạn merge thủ công bị bỏ qua, nên quy trình
-không thể tự lặp trên các chỉnh sửa của chính nó.
+Chỉ nhánh của chính agent mới đẩy chuỗi tiến lên. Một PR của riêng bạn bị bỏ qua.
 
 ```text
 spec PR merged ─► issue 1 ─► PR 1 merged ─► issue 2 ─► PR 2 merged ─► issue 3 ─► PR 3 merged ─► done
-   (bạn)                       (bạn)                      (bạn)                      (bạn)
+   (you)                       (you)                      (you)                      (you)
 ```
-
-Giữa mỗi lần bạn bấm, không có gì cần đến bạn. Khi giai đoạn cuối được merge, không còn issue nào mở
-và tính năng đã hoàn tất.
 
 Tiếp theo: [Cập nhật docs](../update-the-docs/).

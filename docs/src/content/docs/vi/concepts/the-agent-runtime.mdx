@@ -78,18 +78,16 @@ là hai mảnh của [phần glue còn thiếu](../the-missing-glue/).
 
 ## Vì sao poll, không phải webhook
 
-Các automation poll (mỗi 5 phút ở Discava, mỗi 15 phút theo mặc định). Điều này có nghĩa Agent Canvas
-có thể chạy trên laptop hoặc một server ở nhà mà không cần URL công khai hay webhook secret. Cái giá là
-độ trễ: tối đa một chu kỳ poll giữa lúc một status được đăng và lúc agent bắt đầu. Trên thực tế, con
-số đó nhỏ so với thời gian agent cần để làm việc.
+Các automation poll (mỗi 5 phút ở Discava, mỗi 15 phút theo mặc định), nên Agent Canvas có thể
+chạy trên laptop hoặc một server ở nhà mà không cần URL công khai hay webhook secret. Cái giá là độ
+trễ tối đa một chu kỳ poll, con số nhỏ so với thời gian agent cần để làm việc.
 
 ## Agent có thể và không thể chạm tới gì
 
 Cuộc hội thoại triển khai nhận một secret, GitHub token, để nó có thể đọc issue và push nhánh của nó.
-Nó không nhận thông tin đăng nhập cloud. Các quy tắc của repository (constitution, `AGENTS.md`, hướng
-dẫn trong issue) cấm nó sửa workflow, merge hoặc làm yếu test. Sau đó GitHub thực thi những gì quan
-trọng: branch protection chặn merge khi chưa được duyệt, và các workflow glue chạy code của nhánh mặc
-định, không bao giờ là code của PR.
+Nó không nhận thông tin đăng nhập cloud. Những gì khác nó không bao giờ được làm, và thứ thực thi
+từng giới hạn, nằm ở
+[Cổng người duyệt](../human-gates/#những-gì-agent-không-bao-giờ-được-làm).
 
 ## Chọn agent
 

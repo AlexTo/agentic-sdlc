@@ -5,9 +5,9 @@ sidebar:
   order: 2
 ---
 
-import { Steps, Aside } from '@astrojs/starlight/components';
+import { Steps } from '@astrojs/starlight/components';
 
-**Bạn đang ở:** người + agent. **Output:** `plan.md`, `data-model.md`, `contracts/` và `tasks.md`.
+**Bạn đang ở:** 🧑 bạn + 🤖 agent. **Output:** `plan.md`, `data-model.md`, `contracts/` và `tasks.md`.
 
 <Steps>
 
@@ -18,8 +18,8 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    ```
 
    Kế hoạch đọc spec và constitution của dự án (`.specify/memory/constitution.md`) và quyết định
-   *thế nào*: thêm `tags` vào entity ElectroDB, mở rộng các input schema của tRPC, thêm bộ lọc `tag`
-   vào `notes.list`.
+   *thế nào*: thêm `tags` vào entity ElectroDB, mở rộng các input schema của tRPC, thêm bộ lọc
+   `tag` vào `notes.list`.
 
 2. Sinh task.
 
@@ -27,10 +27,9 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    /speckit-tasks
    ```
 
-   `tasks.md` có thứ tự, có thể đánh dấu và được nhóm theo giai đoạn. Để các bước docs và review hoạt
-   động, định dạng là quan trọng: mỗi task có một ID, giai đoạn là heading `## Phase <n>: <title>`, và
-   ít nhất một giai đoạn là `User Story`. Giai đoạn user story đầu tiên kết thúc issue đầu tiên. Xem
-   [định dạng tasks.md](../../reference/tasks-format/).
+   `tasks.md` có thứ tự, có thể đánh dấu và được nhóm theo giai đoạn. Một script sẽ đọc nó sau này,
+   nên [định dạng](../../reference/tasks-format/) của nó là cố định, và một PR check xác thực nó ở
+   bước tiếp theo.
 
    ```markdown
    ## Phase 1: User Story 1 - Tags in the data and API (Priority: P1) 🎯 MVP
@@ -54,15 +53,10 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    /speckit-analyze
    ```
 
-   Nó báo cáo các yêu cầu không có task, task không có yêu cầu, và mâu thuẫn giữa ba file. Sửa chúng
-   ngay bây giờ; cái giá chỉ là một câu. Sau khi triển khai, cái giá là một PR.
+   Nó báo cáo các yêu cầu không có task, task không có yêu cầu, và mâu thuẫn giữa ba file. Sửa
+   chúng ngay bây giờ; cái giá chỉ là một câu. Sau khi triển khai, cái giá là một PR.
 
 </Steps>
-
-<Aside type="caution">
-Một `tasks.md` sai định dạng sẽ âm thầm làm pipeline đứng lại, nên một PR check xác thực định dạng
-của nó. Bạn sẽ thấy check đó chạy ở bước tiếp theo.
-</Aside>
 
 Các task được đánh dấu **(human)** bị agent bỏ qua và được liệt kê trong mô tả PR cho bạn.
 

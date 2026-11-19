@@ -7,12 +7,13 @@ sidebar:
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Kết quả:** một tính năng cho ứng dụng ghi chú, được agent đưa từ ý tưởng một dòng của bạn đến code
-đã merge, và bằng chứng rằng mọi bước chuyển giao trong vòng lặp đều hoạt động trong bản fork của bạn.
+**Kết quả:** một tính năng cho ứng dụng ghi chú, được agent đưa từ ý tưởng một dòng của bạn đến
+code đã merge, và bằng chứng rằng mọi bước chuyển giao trong vòng lặp đều hoạt động trong bản fork
+của bạn.
 
 Tính năng: **tag cho ghi chú**. *Người dùng có thể thêm tối đa năm tag vào một ghi chú, và lọc danh
-sách ghi chú theo tag.* Nó nhỏ, nhưng chạm vào bảng, API và website, nên mọi giai đoạn đều có việc thật
-để làm. [Tutorial](../../tutorial/the-case/) đi sâu hơn vào từng giai đoạn.
+sách ghi chú theo tag.* Nó nhỏ, nhưng chạm vào bảng, API và website, nên mọi giai đoạn đều có việc
+thật để làm. [Tutorial](../../tutorial/the-case/) đi sâu hơn vào từng giai đoạn.
 
 <Steps>
 
@@ -30,30 +31,25 @@ sách ghi chú theo tag.* Nó nhỏ, nhưng chạm vào bảng, API và website,
    /speckit-analyze
    ```
 
-   Kiểm tra `tasks.md`: mỗi giai đoạn là một heading `## Phase <n>: …`, và ít nhất một giai đoạn là
-   `User Story`. Giai đoạn user story đầu tiên kết thúc issue đầu tiên.
-
-2. **Mở spec PR, gắn label `spec-ready`, merge nó.**
+2. **Mở spec PR, gắn label `spec-ready`, merge nó.** Push nhánh:
 
    ```bash
    git add specs/ && git commit -m "docs(specs): add note tags spec"
    git push -u origin spec/note-tags
-   gh pr create --fill --label spec-ready
-   gh pr checks --watch
-   gh pr merge --squash --admin
    ```
 
-   Cần `--admin` vì bạn là người mở PR, và GitHub không cho bạn tự duyệt PR của mình.
+   Trên GitHub, mở pull request, thêm label `spec-ready`, và merge khi các check xanh. Bạn là người
+   mở PR, nên GitHub không cho bạn duyệt nó: hãy chọn **Merge without waiting for
+   requirements to be met**.
 
    ✅ **Tasks format** pass trên PR. Sau khi merge, **Agent Issues** mở một issue có tiêu đề
-   `feat(<feature>): … (with setup and foundations)`, với label `openhands`, có phạm vi là nhóm giai
-   đoạn đầu tiên.
+   `feat(<feature>): … (with setup and foundations)`, với label `openhands`, có phạm vi là nhóm giai đoạn đầu tiên.
 
 3. **Chờ agent.** Bạn không làm gì cả.
 
-   ✅ Ở lần poll kế, một cuộc hội thoại cho issue bắt đầu trong Agent Canvas. Khi nó xong, một draft PR
-   xuất hiện trên `openhands/issue-<n>` với `openhands-review`, và `tasks.md` được đánh dấu cho đúng
-   các giai đoạn đó.
+   ✅ Ở lần poll kế, một cuộc hội thoại cho issue bắt đầu trong Agent Canvas. Khi nó xong, một
+   draft PR xuất hiện trên `openhands/issue-<n>` với `openhands-review`, và `tasks.md` được đánh dấu
+   cho đúng các giai đoạn đó.
 
 4. **Theo dõi các cổng.**
 
@@ -63,14 +59,9 @@ sách ghi chú theo tag.* Nó nhỏ, nhưng chạm vào bảng, API và website,
    `review-fix-1`.
 
 5. **Review và merge.** Đọc mô tả PR, các task **(human)** nó liệt kê, và, với giai đoạn website,
-   comment **E2E screenshots**. Đánh dấu draft là ready, rồi merge:
-
-   ```bash
-   gh pr ready <pr> && gh pr merge <pr> --squash --admin
-   ```
-
-   Dùng `--admin` khi agent push bằng token của chính bạn. Với một tài khoản agent riêng, hãy duyệt PR
-   và merge bình thường.
+   comment **E2E screenshots**. Bấm **Ready for review**, rồi merge. Nếu agent push bằng token của
+   chính bạn, hãy bỏ qua bước duyệt như ở bước 2. Với một tài khoản agent riêng, hãy duyệt và merge
+   bình thường.
 
    ✅ **Agent Issues** chạy lại và mở issue của giai đoạn tiếp theo. Bước 3 đến 5 lặp lại.
 
@@ -82,9 +73,9 @@ sách ghi chú theo tag.* Nó nhỏ, nhưng chạm vào bảng, API và website,
 
 <Aside type="tip" title="Chưa thấy vòng fix-up?">
 Nếu agent làm đúng mọi thứ ngay lần đầu, bạn chưa thấy vòng CI. Để thử nó, hãy push một commit lên
-một agent PR đang mở làm hỏng một unit test của nó. PR Checks thất bại, `ci-fix-1` xuất hiện, và
-agent push một bản sửa ở lần poll kế. Nó có thể chỉ đơn giản revert commit của bạn, và đó là cách sửa
-đúng trong trường hợp này.
+một agent PR đang mở làm hỏng một unit test của nó. PR Checks thất bại, `ci-fix-1`
+xuất hiện, và agent push một bản sửa ở lần poll kế. Nó có thể chỉ đơn giản revert commit của bạn, và
+đó là cách sửa đúng trong trường hợp này.
 </Aside>
 
 ## Tự kiểm tra
@@ -104,6 +95,7 @@ Có gì đó không xảy ra? Xem [Xử lý sự cố](../../reference/troublesh
 
 ## Tiếp theo
 
-- Thử một tính năng của riêng bạn trên ứng dụng ghi chú, như ghim một ghi chú hoặc sắp xếp danh sách.
+- Thử một tính năng của riêng bạn trên ứng dụng ghi chú, như ghim một ghi chú hoặc sắp xếp danh
+  sách.
 - Sẵn sàng đưa điều này vào một repository sản phẩm? Xem
   [Áp dụng vào repository của bạn](../../adopt/overview/).

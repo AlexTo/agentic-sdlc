@@ -13,28 +13,10 @@ hạn ở bất kỳ đâu.
 
 ## Deploy
 
-`.github/workflows/deploy.yml` chạy khi **CI** hoàn tất trên `main`, hoặc chạy thủ công cho bất kỳ
-stage nào.
-
-```yaml
-on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
-  workflow_dispatch:
-    inputs:
-      stage: { type: string, required: true, default: discava-development }
-
-jobs:
-  deploy:
-    if: ${{ github.event_name == 'workflow_dispatch' ||
-            (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
-    environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
-    concurrency:
-      group: deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
-      cancel-in-progress: false
-```
+`.github/workflows/deploy.yml` chạy khi **CI** hoàn tất và xanh trên `main`, hoặc chạy thủ công cho
+bất kỳ stage nào. Mỗi stage có GitHub environment riêng và nhóm concurrency riêng, nên hai lần deploy
+vào cùng một stage không bao giờ chồng lên nhau. Một bản rút gọn của workflow nằm trong
+[Áp dụng: deploy](../../adopt/deploy/).
 
 ```d2
 direction: right

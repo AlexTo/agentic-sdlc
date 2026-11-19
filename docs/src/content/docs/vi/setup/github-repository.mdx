@@ -7,15 +7,13 @@ sidebar:
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Kết quả:** mọi label mà quy trình dùng, và một nhánh `main` chỉ nhận pull request có check xanh và
-một lượt duyệt.
-
-Chạy các lệnh này từ bản clone của bạn. `gh` dùng repository mặc định bạn đã đặt ở
-[bước 1](../fork/).
+**Kết quả:** mọi label mà quy trình dùng, và một nhánh `main` chỉ nhận pull request có check xanh
+và một lượt duyệt.
 
 <Steps>
 
-1. **Tạo các label.** `--force` cập nhật label đã tồn tại, nên chạy lại cũng an toàn.
+1. **Tạo các label.** Có 16 label, nên bước này làm bằng script nhanh hơn trên UI. Chạy nó từ bản
+   clone của bạn. `--force` cập nhật label đã tồn tại, nên chạy lại cũng an toàn.
 
    ```bash
    gh label create spec-ready           --force --description "Merging this spec PR starts the agent"
@@ -30,40 +28,33 @@ Chạy các lệnh này từ bản clone của bạn. `gh` dùng repository mặ
    gh label create review-fix-exhausted --force --description "Review fix-ups used up; a person takes over"
    ```
 
-2. **Bảo vệ `main`.** Thay `<you>`:
+2. **Bảo vệ `main`.** Trong bản fork, mở **Settings → Branches → Add classic branch protection
+   rule**, và đặt:
 
-   ```bash
-   gh api -X PUT repos/<you>/agentic-sdlc/branches/main/protection --input - <<'EOF'
-   {
-     "required_pull_request_reviews": {
-       "required_approving_review_count": 1,
-       "dismiss_stale_reviews": true
-     },
-     "required_status_checks": {
-       "strict": false,
-       "contexts": [
-         "Checks (lint)", "Checks (test)", "Checks (build)",
-         "Tasks format", "E2E tests", "UI Screenshots"
-       ]
-     },
-     "enforce_admins": false,
-     "restrictions": null
-   }
-   EOF
-   ```
+   | Cài đặt | Giá trị |
+   | --- | --- |
+   | Branch name pattern | `main` |
+   | Require a pull request before merging | bật, với 1 lượt duyệt bắt buộc |
+   | Dismiss stale pull request approvals when new commits are pushed | bật |
+   | Require status checks to pass before merging | bật, với sáu check bên dưới |
+   | Do not allow bypassing the above settings | tắt |
 
-   `enforce_admins: false` cho phép bạn, với tư cách chủ sở hữu, merge các PR mà agent mở bằng token
-   của chính bạn (xem lưu ý bên dưới). `E2E tests` là job gom các shard e2e. `Tasks format` pass khi
-   không có `tasks.md` nào thay đổi, nên yêu cầu nó là an toàn.
+   Sáu check: `Checks (lint)`, `Checks (test)`, `Checks (build)`, `Tasks format`, `E2E tests` và
+   `UI Screenshots`. GitHub chỉ gợi ý một check trong ô tìm kiếm sau khi nó đã chạy một lần, nên
+   nếu thiếu check nào, hãy mở một PR bất kỳ trước.
+
+   Để bypass được phép cho bạn, với tư cách chủ sở hữu, merge các PR mà agent mở bằng token của
+   chính bạn (xem lưu ý bên dưới).
 
    <Aside type="caution">
-   Đừng yêu cầu status `software-factory/review`. Nó là một tín hiệu cho agent, chỉ bao giờ được đăng
-   dưới dạng `failure`, và yêu cầu nó sẽ chặn mọi PR.
+   Đừng yêu cầu status `software-factory/review`. Nó là một tín hiệu cho agent, chỉ bao giờ được
+   đăng dưới dạng `failure`, và yêu cầu nó sẽ chặn mọi PR.
    </Aside>
 
 3. **Cho phép Actions mở pull request.** Mở **Settings → Actions → General**, và trong
    **Workflow permissions** chọn **Allow GitHub Actions to create and approve pull requests**.
-   Workflow Archive Specs cần nó để mở PR chuyển một spec đã xong vào `specs/_archive/`.
+   Workflow Archive Specs cần nó để mở PR chuyển một spec đã xong vào
+   `specs/_archive/`.
 
 </Steps>
 
@@ -77,11 +68,7 @@ thể duyệt agent PR bình thường.
 
 ## Kiểm tra kết quả
 
-```bash
-gh label list | grep -E 'openhands|spec-ready|fix|screenshots'
-gh api repos/<you>/agentic-sdlc/branches/main/protection --jq '.required_status_checks.contexts'
-```
-
-Lệnh đầu liệt kê 16 label. Lệnh thứ hai in ra sáu tên check.
+Trang **Issues → Labels** của bản fork liệt kê 16 label mới, và **Settings → Branches** hiện rule
+trên `main` với sáu check bắt buộc.
 
 Tiếp theo: [3. Cài OpenHands](../openhands/).

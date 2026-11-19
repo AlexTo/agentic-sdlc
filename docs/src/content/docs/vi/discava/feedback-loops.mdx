@@ -14,39 +14,9 @@ hiệu duy nhất mà worker OpenHands vốn đã hành động theo: một comm
 
 ## Agent CI Status
 
-`.github/workflows/agent-ci.yml`, rút gọn:
-
-```yaml
-on:
-  workflow_run:
-    workflows: ["PR Checks"]
-    types: [completed]
-
-concurrency:
-  group: agent-ci-${{ github.event.workflow_run.head_branch }}
-  cancel-in-progress: false
-
-permissions:
-  contents: read
-  actions: read
-  statuses: write
-  issues: write
-  pull-requests: write
-
-jobs:
-  ci-status:
-    if: >-
-      github.event.workflow_run.event == 'pull_request' &&
-      startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
-      (github.event.workflow_run.conclusion == 'failure' ||
-      github.event.workflow_run.conclusion == 'timed_out')
-    steps:
-      - uses: actions/checkout@<sha> # the default branch, never the PR's code
-      - uses: ./.github/actions/init-monorepo
-      - run: pnpm nx run @discava/common-scripts:agent-ci-status
-        env:
-          GH_TOKEN: ${{ github.token }}
-```
+`.github/workflows/agent-ci.yml` chạy khi có `workflow_run`, khi **PR Checks** hoàn tất với
+`failure` hoặc `timed_out` cho một pull request trên nhánh `openhands/issue-`. Nó checkout nhánh mặc
+định và chạy `agent-ci-status`.
 
 `workflow_run` là điểm mấu chốt. Nó chạy trong context của nhánh mặc định, với một token có quyền
 ghi, dù PR Checks đã chạy trên code của PR với một token chỉ đọc.

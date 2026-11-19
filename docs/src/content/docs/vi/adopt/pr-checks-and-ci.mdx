@@ -22,8 +22,6 @@ Screenshots**, và **CI** trên `main`.
    | `e2e`, chia shard, cộng `e2e-result` gom các shard thành một check `E2E tests` | Đặt số shard theo bộ test của bạn |
    | `e2e-screenshots` | Có, khi [bước 8](../local-stack-and-e2e/) đã xong |
 
-   Thay mọi `@agentic-sdlc/` bằng `@your-scope/`.
-
 2. **Chép `.github/workflows/ui-screenshots.yml`.** Trong repository này, quy tắc ảnh chụp màn hình
    là một workflow riêng, kích hoạt khi `opened, synchronize, reopened, labeled, unlabeled`. Khi đó
    thêm hoặc gỡ label `no-ui-screenshots` chỉ chạy lại check này, không phải cả bộ e2e. Discava thì
@@ -34,14 +32,18 @@ Screenshots**, và **CI** trên `main`.
    quên commit. Giữ job `playwright-cache` nếu bạn dùng Playwright: các lần chạy PR chỉ có thể khôi
    phục cache được lưu trên `main`.
 
-   <Aside type="tip">
-   Khi các check của bạn chạy quá vài phút, hãy giữ task cache của Nx giữa các lần chạy, để agent chờ
-   ít hơn ở mỗi vòng sửa. Giới hạn kích thước của nó và xóa cache của một PR khi PR đóng, nếu không 10
-   GB Actions cache của repository sẽ đầy. Xem cách Discava làm trong
-   [Giữ cho nhanh](../../discava/pr-checks/#giữ-cho-nhanh).
-   </Aside>
+   Job `build` truyền `nx-cache-scope: main` cho `init-monorepo`, để lưu task cache của Nx. Lần chạy
+   đầu tiên của một PR bắt đầu từ cache đó, nên các task có input mà `main` đã build được phát lại,
+   không chạy lại, và agent chờ ít hơn ở mỗi vòng sửa. Mỗi leg `checks` trong PR Checks giữ cache
+   riêng theo cách tương tự, trừ `lint`, vốn chỉ khôi phục, vì lint nhanh hơn việc lưu một cache.
+   `init-monorepo` giới hạn cache ở 1 GB.
 
-4. **Ghim mọi action vào một commit SHA**, như các file đã chép, và thêm `.github/dependabot.yml` để
+4. **Chép `.github/workflows/cache-cleanup.yml`.** Nó xóa cache của một PR khi PR đó đóng. Không gì
+   khác đọc được các cache đó, và nếu không có nó, chúng tính vào 10 GB Actions cache của repository
+   cho đến khi GitHub xóa bớt, bắt đầu từ cache của các PR vẫn đang mở. Xem
+   [Giữ cho nhanh](../../discava/pr-checks/#giữ-cho-nhanh) để biết việc này đã giúp Discava những gì.
+
+5. **Ghim mọi action vào một commit SHA**, như các file đã chép, và thêm `.github/dependabot.yml` để
    các pin luôn cập nhật:
 
    ```yaml

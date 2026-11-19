@@ -1,124 +1,110 @@
 ---
 title: Các nguyên tắc
-description: Chín ý tưởng tạo nên quy trình, và ý tưởng quan trọng nhất. Các trang sau tham chiếu lại chúng theo số.
+description: Chín ý tưởng tạo nên quy trình, quan trọng nhất trước.
 sidebar:
   order: 1
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Icon } from '@astrojs/starlight/components';
 
 Mọi thứ trong quy trình này bắt nguồn từ một bước đi: **đưa lập trình viên ra khỏi vòng lặp và đặt
 họ ở hai đầu của nó.** Con người quyết định *xây gì* và *nó có tốt không*. Agent làm mọi thứ ở giữa,
 thông qua quy trình GitHub bình thường.
 
-Phần còn lại của hướng dẫn tham chiếu lại các nguyên tắc này theo số.
+Các nguyên tắc được xếp theo mức độ quan trọng. Nếu bạn chỉ làm được vài nguyên tắc, hãy bắt đầu từ
+trên cùng.
 
-<Aside type="tip" title="Kiểm chứng là quan trọng nhất">
-Kiểm chứng là bước quan trọng nhất. Một agent không thể chạy ứng dụng và nhìn thấy thứ nó đã xây thì
-chỉ đang đoán, và mọi nguyên tắc khác chỉ sắp xếp những phỏng đoán đó.
-</Aside>
+## 1. Kiểm chứng trước tiên: cho agent tay và mắt<Icon name="magnifier" class="heading-icon" />
 
-## 1. Spec là nguồn sự thật
+Một agent không thể chạy ứng dụng và nhìn thấy thứ nó đã xây thì chỉ đang đoán, và mọi nguyên tắc
+khác chỉ sắp xếp những phỏng đoán đó. Code biên dịch được và qua unit test vẫn có thể làm hỏng trải
+nghiệm người dùng, nên agent phải **chạy thứ nó đã xây, từ back end đến front end**, như một người sẽ
+làm:
+
+- **Tay:** khởi động toàn bộ ứng dụng trên local stack không cần tài khoản cloud, gọi API, đăng nhập,
+  bấm qua luồng trong một trình duyệt thật, và kích hoạt các tác vụ nền phía sau.
+- **Mắt:** đọc những gì trả về: response, log, dữ liệu để lại trong cơ sở dữ liệu, và ảnh chụp màn
+  hình của mọi trạng thái mà người review muốn xem.
+
+Agent không làm việc này trên máy của nó. Nó viết các kịch bản e2e, và CI chạy chúng trên mọi PR với
+một local stack mới. Kết quả, lỗi invariant và ảnh chụp màn hình quay về PR, nên agent tự bắt lỗi của
+mình và mỗi PR đến kèm bằng chứng.
+
+Hãy xây cho điều này ngay từ ngày đầu: mọi dịch vụ cloud cần một bản thay thế local, mọi luồng người
+dùng cần một kịch bản e2e, và mọi trạng thái UI cần một ảnh chụp màn hình. Bất cứ thứ gì agent không
+chạy được là một task mà một người phải kiểm chứng.
+
+## 2. Spec là nguồn sự thật<Icon name="document" class="heading-icon" />
 
 Một tính năng bắt đầu bằng `spec.md`, `plan.md` và `tasks.md`, được review như code. Agent xây dựng
 từ chúng. Để thay đổi hành vi, hãy thay đổi spec và sinh lại kế hoạch và task. Đừng vá code thủ công
 rồi để spec lỗi thời.
 
-## 2. Mỗi bước để lại một artifact
-
-Ý định nằm trong spec, phạm vi trong issue, lịch sử trong pull request, và lý do một lần chạy dừng lại
-nằm trong một label hoặc một comment. Không có gì chỉ nằm trong một cửa sổ chat hay trong đầu ai đó,
-nên một đồng đội mới hay một agent mới có thể tiếp tục từ chỗ người trước dừng lại.
-
-## 3. Đơn vị công việc nhỏ, có phạm vi
-
-Một spec được chia thành các giai đoạn. Mỗi nhóm giai đoạn là một issue và một pull request, với một
-phạm vi task mà agent không được rời khỏi. PR nhỏ thì rẻ để review và rẻ để bỏ đi.
-
-## 4. Kiểm chứng là bước quan trọng nhất: cho agent tay và mắt
-
-Code biên dịch được và qua unit test vẫn có thể làm hỏng trải nghiệm người dùng. Agent phải **chạy thứ
-nó đã xây và tương tác với nó, từ back end đến front end**, như một người sẽ làm:
-
-- **Tay:** khởi động toàn bộ ứng dụng trên local stack không cần tài khoản cloud, gọi API, đăng nhập
-  như một người dùng, bấm qua luồng trong một trình duyệt thật, và kích hoạt các tác vụ nền phía sau.
-- **Mắt:** đọc những gì trả về: response, log, dữ liệu để lại trong cơ sở dữ liệu, và ảnh chụp màn
-  hình của mọi trạng thái mà người review muốn xem.
-
-Agent không cần làm việc này trên máy của nó. Trong quy trình này, agent viết các kịch bản e2e, và
-GitHub CI chạy chúng trên mọi PR với một local stack mới. Kết quả, lỗi invariant và ảnh chụp màn
-hình quay về PR để agent đọc, nên môi trường của agent vẫn đơn giản.
-
-Không có tay và mắt, agent viết code mà nó chưa từng thấy chạy, và một người phải pull nhánh về để
-biết. Có chúng, agent tự bắt lỗi của mình và mỗi PR đến kèm bằng chứng. Hãy xây cho điều này ngay từ
-ngày đầu: mọi dịch vụ cloud cần một bản thay thế local, mọi luồng người dùng cần một kịch bản e2e, và
-mọi trạng thái UI cần một ảnh chụp màn hình. Bất cứ thứ gì agent không chạy được ở local là một task
-mà một người phải kiểm chứng.
-
-## 5. Các cổng tự động đưa ra phản hồi, không phải bạn
+## 3. Các cổng tự động đưa ra phản hồi, không phải bạn<Icon name="approve-check-circle" class="heading-icon" />
 
 Lint, typecheck, unit test, invariant, e2e test, test đồng thời, ảnh chụp màn hình và một agent
 reviewer chạy trên mọi PR. Một kết quả đỏ quay thẳng về agent đã viết thay đổi đó. Không ai phải dán
 thông báo lỗi.
 
-## 6. Tự chủ có giới hạn
+## 4. Con người giữ hai quyết định quan trọng<Icon name="star" class="heading-icon" />
+
+1. **Duyệt spec.** Merge spec PR với label `spec-ready` là tín hiệu bắt đầu.
+2. **Duyệt kết quả.** Một người thực hiện lần review cuối và merge mỗi PR.
+
+## 5. Biến rule và skill thành tất định<Icon name="setting" class="heading-icon" />
+
+Một rule chỉ được viết trong `AGENTS.md` hay constitution là một lời đề nghị. Agent có thể bỏ sót,
+hiểu theo hai cách, hoặc quên nó trong một phiên dài. Ở chỗ nào một script có thể kiểm tra một rule,
+hãy viết script đó, chạy nó trong một hook hoặc một PR check, và giữ phần văn xuôi làm lời giải
+thích. Một check thất bại cho agent biết chính xác cái gì sai và sai ở đâu, qua cùng vòng phản hồi
+như mọi kết quả đỏ khác.
+
+Discava làm điều này ở khắp nơi:
+
+| Rule bằng văn xuôi | Thứ thực thi nó |
+| --- | --- |
+| `tasks.md` theo một định dạng cố định | PR check `Tasks format`. Không có nó, một giai đoạn sai định dạng bị bỏ qua mà không báo |
+| Một thay đổi UI chụp ảnh trong e2e scenario của nó | Check `UI Screenshots` thất bại nếu markup hay style thay đổi mà không scenario nào có thêm lời gọi `screenshot(`. Một maintainer có thể miễn bằng `no-ui-screenshots` |
+| Một rule trải trên nhiều bản ghi cần một invariant | Check `Invariant coverage` làm thất bại một PR thay đổi ai ghi vào core table mà không chạm vào các check invariant trong `helpers/invariants/`. Một hook pre-push giữ bản đồ writer của nó luôn cập nhật. Một maintainer có thể miễn bằng `no-new-invariant` |
+| Conventional Commits, không commit secret | commitlint trong hook `commit-msg`, `git-secrets` trên mọi commit |
+| Mỗi bước Speckit có nhánh và commit riêng | Các skill chạy script cho việc đó, từ extension hook của Speckit, dù agent có nhớ hay không |
+
+Nếu bạn viết cùng một lời sửa trong review hai lần, có lẽ đó là một check còn thiếu.
+
+## 6. Glue là code, không phải prompt<Icon name="puzzle" class="heading-icon" />
+
+Điều tương tự áp dụng giữa các bước. Bất cứ thứ gì quyết định *điều gì xảy ra tiếp theo* (issue nào
+mở, agent có quay lại không, khi nào dừng) là một script có unit test, được chạy bởi một workflow.
+Agent chỉ được yêu cầu làm những việc cần phán đoán: viết code, và review nó. Một prompt có thể bị
+phớt lờ. Một workflow thì không.
+
+## 7. Tự chủ có giới hạn<Icon name="padlock" class="heading-icon" />
 
 Agent không thể merge, không thể sửa workflow, không thể chạm vào thông tin đăng nhập cloud, và không
 thể làm yếu test để có màu xanh. Mỗi vòng fix-up bị giới hạn ở năm lượt thử. Sau đó nó dừng và hỏi
 một người.
 
-## 7. Con người giữ hai quyết định quan trọng
+## 8. Đơn vị công việc nhỏ, có phạm vi<Icon name="list-format" class="heading-icon" />
 
-1. **Duyệt spec.** Merge spec PR với label `spec-ready` là tín hiệu bắt đầu.
-2. **Duyệt kết quả.** Một người thực hiện lần review cuối và merge mỗi PR.
+Một spec được chia thành các giai đoạn. Mỗi nhóm giai đoạn là một issue và một pull request, với một
+phạm vi task mà agent không được rời khỏi. PR nhỏ thì rẻ để review và rẻ để bỏ đi.
 
-## 8. Glue là code, không phải prompt
+## 9. Mỗi bước để lại một artifact<Icon name="notes" class="heading-icon" />
 
-Bất cứ thứ gì quyết định *điều gì xảy ra tiếp theo* (issue nào mở, agent có quay lại không, khi nào
-dừng) là một script tất định có unit test, được chạy bởi một workflow. Agent chỉ được yêu cầu làm
-những việc cần phán đoán: viết code, và review nó. Một prompt có thể bị phớt lờ. Một workflow thì không.
+Ý định nằm trong spec, phạm vi trong issue, lịch sử trong pull request, và lý do một lần chạy dừng lại
+nằm trong một label hoặc một comment. Không có gì chỉ nằm trong một cửa sổ chat hay trong đầu ai đó,
+nên một đồng đội mới hay một agent mới có thể tiếp tục từ chỗ người trước dừng lại.
 
-## 9. Biến rule và skill thành tất định
+## Đọc thêm ở đâu
 
-Nguyên tắc 8 nói về glue giữa các bước. Nguyên tắc này nói về các rule và skill mà agent tuân theo
-bên trong một bước. Một rule chỉ được viết trong `AGENTS.md` hay constitution là một lời đề nghị.
-Agent có thể bỏ sót, hiểu theo hai cách, hoặc quên nó trong một phiên dài. Ở chỗ nào một rule có thể
-được kiểm tra bằng script, hãy viết script đó, chạy nó trong một hook hoặc một PR check, và giữ phần
-văn xuôi làm lời giải thích. Một check thất bại cho agent biết chính xác cái gì sai và sai ở đâu, và
-nó quay lại qua cùng vòng phản hồi như mọi kết quả đỏ khác.
-
-Discava làm điều này ở khắp nơi:
-
-- **Định dạng task.** Workflow của agent đọc `tasks.md` bằng một parser. Một file lệch khỏi định
-  dạng không bị từ chối; các giai đoạn của nó bị bỏ qua mà không báo. Vì vậy PR check `Tasks format`
-  chạy một validator trên mọi `tasks.md`, và workflow mở issue từ chối file không đạt.
-- **Ảnh chụp màn hình cho thay đổi UI.** Constitution nói một thay đổi về những gì người dùng thấy
-  phải chụp ảnh trong e2e scenario của nó. Check `UI Screenshots` đọc diff của PR và thất bại nếu
-  markup hay style của một portal thay đổi mà không scenario nào có thêm lời gọi `screenshot(`. Một
-  maintainer có thể miễn bằng label `no-ui-screenshots`.
-- **Invariant cho bản ghi dùng chung.** Constitution nói một rule trải trên nhiều bản ghi cần một
-  check trong `helpers/invariants/`. Check `Invariant coverage` quét xem code nào ghi vào core table, và
-  thất bại nếu có writer mới mà không có invariant nêu tên entity của nó. Một hook pre-push tạo lại
-  bản đồ writer, để agent biết trước khi CI phát hiện.
-- **Commit.** Conventional Commits được commitlint thực thi trong hook `commit-msg`, và
-  `git-secrets` chạy trên mọi commit.
-- **Skill gọi script.** Các skill của Speckit không mô tả cách tạo nhánh feature hay commit một
-  bước. Chúng chạy `create-new-feature.sh` và `auto-commit.sh`, và extension hook của Speckit chạy
-  chúng trước và sau mỗi lệnh, dù agent có nhớ hay không.
-
-Để phần phán đoán cho agent, và chuyển mọi thứ kiểm tra được vào code. Nếu bạn viết cùng một lời
-sửa trong review hai lần, có lẽ đó là một check còn thiếu.
-
-## Các nguyên tắc ứng với các thành phần ra sao
-
-| Nguyên tắc | Bạn thấy nó ở đâu |
+| Nguyên tắc | Trang |
 | --- | --- |
-| 1. Spec là nguồn sự thật | [Phát triển hướng spec](../spec-driven-development/) |
-| 2. Artifact | [Phần glue còn thiếu](../the-missing-glue/), [Tham khảo: label](../../reference/labels/) |
-| 3. Đơn vị nhỏ | [Mỗi lần một giai đoạn](../one-phase-at-a-time/) |
-| **4. Kiểm chứng** | [Các lớp niềm tin](../layers-of-trust/), [Local stack, e2e và ảnh chụp màn hình](../../adopt/local-stack-and-e2e/) |
-| 5. Cổng tự động | [Các lớp niềm tin](../layers-of-trust/), [PR check ở Discava](../../discava/pr-checks/) |
-| 6. Tự chủ có giới hạn | [Vòng phản hồi](../feedback-loops/) |
-| 7. Quyết định của con người | [Cổng người duyệt](../human-gates/) |
-| 8. Glue là code | [Phần glue còn thiếu](../the-missing-glue/) |
-| 9. Rule và skill tất định | [Constitution và hướng dẫn](../../discava/constitution-and-guidance/), [PR check ở Discava](../../discava/pr-checks/) |
+| 1. Kiểm chứng | [Các lớp niềm tin](../layers-of-trust/#kiểm-chứng-là-quan-trọng-nhất), [Local stack ở Discava](../../discava/local-stack/) |
+| 2. Spec là nguồn sự thật | [Phát triển hướng spec](../spec-driven-development/) |
+| 3. Cổng tự động | [Các lớp niềm tin](../layers-of-trust/), [Vòng phản hồi](../feedback-loops/) |
+| 4. Quyết định của con người | [Cổng người duyệt](../human-gates/) |
+| 5. Rule và skill tất định | [PR check ở Discava](../../discava/pr-checks/), [Constitution và hướng dẫn](../../discava/constitution-and-guidance/) |
+| 6. Glue là code | [Phần glue còn thiếu](../the-missing-glue/) |
+| 7. Tự chủ có giới hạn | [Vòng phản hồi](../feedback-loops/), [Cổng người duyệt](../human-gates/#những-gì-agent-không-bao-giờ-được-làm) |
+| 8. Đơn vị nhỏ | [Mỗi lần một giai đoạn](../one-phase-at-a-time/) |
+| 9. Artifact | [Tham khảo: label](../../reference/labels/), [status và marker](../../reference/statuses-and-markers/) |

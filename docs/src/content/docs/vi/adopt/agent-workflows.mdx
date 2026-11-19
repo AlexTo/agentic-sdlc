@@ -12,15 +12,9 @@ requested", và một workflow thứ tư lưu trữ spec khi mọi task đã đ�
 
 <Steps>
 
-1. **Chép ba workflow** từ `.github/workflows/` của repository này:
-
-   | File | Tên | Kích hoạt | Chạy |
-   | --- | --- | --- | --- |
-   | `agent-issues.yml` | Agent Issues | `pull_request: [closed, labeled]` vào `main`, và `workflow_dispatch` với `spec_folder` | `agent-issue` |
-   | `agent-ci.yml` | Agent CI Status | `workflow_run` của **PR Checks**, `completed` | `agent-ci-status` |
-   | `agent-review.yml` | Agent Review Status | `pull_request_review: submitted` | `agent-review-status` |
-
-   Thay `@agentic-sdlc/` bằng `@your-scope/`.
+1. **Chép ba workflow** từ `.github/workflows/` của repository này: `agent-issues.yml`,
+   `agent-ci.yml` và `agent-review.yml`. Kích hoạt và permission của chúng được liệt kê trong
+   [Tham khảo: workflow](../../reference/workflows/).
 
 2. **Kiểm tra các điều kiện `if:` khớp với quyết định của bạn.** Nếu bạn đã đổi tiền tố nhánh hoặc
    label, hãy đổi chúng ở đây nữa:
@@ -50,16 +44,9 @@ requested", và một workflow thứ tư lưu trữ spec khi mọi task đã đ�
      contains(github.event.review.body, 'CHANGES REQUESTED')
    ```
 
-3. **Giữ nguyên permission và checkout như khi chép.** Mỗi workflow chỉ xin những gì nó ghi:
-
-   | Workflow | Permission |
-   | --- | --- |
-   | Agent Issues | `contents: read`, `issues: write`, `pull-requests: write` |
-   | Agent CI Status | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` |
-   | Agent Review Status | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` |
-
-   Label và comment trên một PR đi qua issues API, vốn từ chối token của workflow với lỗi
-   "Resource not accessible by integration" trừ khi nó cũng có quyền ghi pull request.
+3. **Giữ nguyên permission và checkout như khi chép.** Mỗi workflow chỉ xin những gì nó ghi.
+   `pull-requests: write` trông có vẻ thừa nhưng không phải: label và comment trên một PR đi qua
+   issues API, vốn từ chối token của workflow nếu thiếu quyền này.
 
    Hai workflow status checkout **nhánh mặc định**. Agent Issues checkout **merge commit**, để nó
    thấy các dấu tích mà PR đã merge tạo ra. Không bao giờ đổi cái nào sang checkout head của PR: các
@@ -89,13 +76,9 @@ requested", và một workflow thứ tư lưu trữ spec khi mọi task đã đ�
 
 ## Kiểm tra kết quả
 
-Các workflow xuất hiện dưới tab **Actions** của repository sau khi chúng vào `main`. Chạy Agent
-Issues thủ công với một thư mục không có `tasks.md`:
-
-```bash
-gh workflow run agent-issues.yml -f spec_folder=does-not-exist
-gh run watch
-```
+Các workflow xuất hiện dưới tab **Actions** của repository sau khi chúng vào `main`. Mở
+**Actions → Agent Issues → Run workflow**, và nhập một thư mục spec không tồn tại, chẳng hạn
+`does-not-exist`.
 
 Lần chạy thành công kèm một notice: `No issue created: no spec folder with a tasks.md was found`.
 

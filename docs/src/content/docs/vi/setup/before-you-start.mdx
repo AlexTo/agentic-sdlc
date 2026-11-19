@@ -7,13 +7,10 @@ sidebar:
 
 import { Aside } from '@astrojs/starlight/components';
 
-Repository này là một bản sao hoạt động của thiết lập agentic của Discava, bao quanh một ứng dụng ghi
-chú nhỏ. **Fork nó và bạn có cùng thiết lập mà Discava chạy**: template Speckit và constitution, issue
-template, PR check, ba agent workflow và phần glue có unit test đứng sau chúng.
-
-Thứ mà bản fork không có là phần nằm ngoài repository: các cài đặt GitHub của bạn, và một bản cài
-OpenHands trỏ vào bản fork. Các bước này bổ sung những thứ đó. Sau đó bạn viết một spec cho ứng dụng
-ghi chú và xem nó đi qua đúng quy trình mà Discava dùng, từ spec PR đến các agent PR đã merge.
+Một [bản fork của repository này](../../guides/fork-this-repo/) có mọi thứ mà thiết lập của Discava
+giữ trong repository. Các bước này bổ sung phần nằm ngoài nó: các cài đặt GitHub của bạn, và một bản
+cài OpenHands trỏ vào bản fork. Sau đó bạn viết một spec cho ứng dụng ghi chú và xem nó đi từ spec PR
+đến các agent PR đã merge.
 
 **Thời gian:** khoảng một giờ, phần lớn là chờ lần chạy agent đầu tiên.
 
@@ -30,7 +27,7 @@ ghi chú và xem nó đi qua đúng quy trình mà Discava dùng, từ spec PR �
 
 <Aside type="note">
 Agent Canvas chạy trên máy của chính bạn và poll GitHub, nên nó không cần địa chỉ công khai hay
-webhook. Nhưng nó cần đang chạy thì agent mới làm việc được. Hãy để nó chạy trong khi bạn thử quy trình.
+webhook. Agent chỉ làm việc khi nó đang chạy.
 </Aside>
 
 ## Các bước

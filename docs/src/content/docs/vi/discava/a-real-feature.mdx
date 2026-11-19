@@ -22,12 +22,6 @@ trừ khi có ghi khác.
 > instructor can respond; an admin can remove abusive reviews. One review per student per course
 > under concurrency; an average/count invariant in `helpers/invariants.ts`.
 
-(Học viên đã ghi danh để lại một điểm 1-5 cùng một đánh giá văn bản tùy chọn cho mỗi khóa học, có
-thể sửa và xóa. Khóa học mang điểm và số lượt tổng hợp, được giữ nhất quán qua một helper của
-core-table. Hiển thị trên thẻ catalogue, trang khóa học và như một tiêu chí sắp xếp/ưu tiên trong
-tìm kiếm. Giảng viên có thể phản hồi; admin có thể gỡ đánh giá lạm dụng. Mỗi học viên một đánh giá
-cho mỗi khóa học kể cả khi đồng thời; một invariant trung bình/số lượng trong `helpers/invariants.ts`.)
-
 ## Spec
 
 [PR #358](https://github.com/AlexTo/discava/pull/358), `docs(specs): course ratings and written
@@ -36,9 +30,8 @@ reviews`, trên nhánh `spec/reviews`: 14 commit, 923 dòng, tất cả nằm d�
 
 - `/speckit-clarify` chạy khi không có người để hỏi, nên agent ghi lại câu trả lời của nó dưới mục
   "Clarifications". Ví dụ: *"Must a student have made progress before they may review? → No.
-  Any student whose enrolment is not dropped may review."* (Học viên có cần đã có tiến độ mới được
-  đánh giá không? → Không. Bất kỳ học viên nào chưa hủy ghi danh đều có thể đánh giá.) Người review
-  spec PR có thể phản đối bất kỳ câu trả lời nào trước khi có code.
+  Any student whose enrolment is not dropped may review."* Người review spec PR có thể phản đối
+  bất kỳ câu trả lời nào trước khi có code.
 - `tasks.md` ra **tám giai đoạn và 36 task**. Giai đoạn 1 là user story đầu tiên (bản ghi, phần tổng
   hợp và writer dùng chung), và giai đoạn 2 đến 8 mỗi giai đoạn nói rõ nó là PR nào ("core-api review
   procedures (PR 2)"). Hai task là **(human)**: một lần chạy thử thủ công trên local stack, và kiểm
@@ -61,14 +54,15 @@ Mở ngày 15 tháng 11, gắn label `spec-ready`, merge ngày 18 tháng 11 lúc
 
 Tám PR, khoảng 9.700 dòng kể cả test. Sáu PR đầu được merge trong sáu giờ. PR của agent cho giai
 đoạn 7 mở mười giờ sau issue của nó, và hai PR cuối được merge trong vòng chín mươi phút sau đó. Mỗi
-issue mở khoảng một phút sau khi PR trước được merge, và PR cuối đóng #279. **Không ai mở issue, viết prompt hay dán thông báo lỗi** ở bất kỳ
-điểm nào trong chuỗi.
+issue mở khoảng một phút sau khi PR trước được merge, và PR cuối đóng #279.
 
 ## Người đã làm gì
 
 1. Viết tracking issue dài một đoạn.
 2. Review và merge spec PR.
 3. Với mỗi PR trong tám PR: đọc mô tả và comment ảnh chụp màn hình, rồi merge.
+
+Không ai mở issue, viết prompt hay dán thông báo lỗi.
 
 ## Các vòng lặp đã bắt được gì
 

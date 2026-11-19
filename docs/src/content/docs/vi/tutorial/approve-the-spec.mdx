@@ -7,19 +7,19 @@ sidebar:
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Bạn đang ở:** cổng người duyệt #1. **Output:** một spec PR đã merge và issue triển khai đầu tiên.
+**Bạn đang ở:** 🧑 cổng người duyệt #1. **Output:** một spec PR đã merge và issue triển khai đầu tiên.
 
 <Steps>
 
-1. Mở spec PR.
+1. Push nhánh, rồi mở một pull request cho nó trên GitHub.
 
    ```bash
    git add specs/ && git commit -m "docs(specs): add note tags spec"
    git push -u origin spec/note-tags
-   gh pr create --fill
    ```
 
-2. Review nó như bạn review code. Đọc `spec.md` trước, rồi `plan.md`, rồi lướt qua `tasks.md`. Tự hỏi:
+2. Review nó như bạn review code. Đọc `spec.md` trước, rồi `plan.md`, rồi lướt qua `tasks.md`.
+   Tự hỏi:
 
    - Spec có nói đúng điều bạn thực sự muốn không?
    - Mỗi giai đoạn có đủ nhỏ để review trong một lần ngồi không?
@@ -27,20 +27,14 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
    Comment trên PR để thay đổi bất cứ điều gì. Agent cũng đọc comment, nên bạn có thể yêu cầu nó sửa.
 
-   Hãy mời business analyst hoặc product owner của bạn vào đây. `spec.md` là ngôn ngữ thông thường, nên
-   họ có thể review và duyệt nó trên PR trong khi bạn kiểm tra kế hoạch. Việc review này giờ là bước
-   chậm nhất của con người, và chia sẻ nó là cách bạn tăng tốc. Xem
+   Hãy mời business analyst hoặc product owner của bạn vào đây. `spec.md` là ngôn ngữ thông thường,
+   nên họ có thể review nó trên PR trong khi bạn kiểm tra kế hoạch. Xem
    [Cổng người duyệt](../../concepts/human-gates/#đây-giờ-là-nút-thắt-chính).
 
 3. Gắn label `spec-ready` cho PR, rồi merge.
 
-   ```bash
-   gh pr edit --add-label spec-ready
-   gh pr merge --squash
-   ```
-
    Bạn là người mở PR này, nên GitHub không cho bạn duyệt nó. Khi branch protection được bật, hãy
-   merge nó với tư cách admin của repository bằng `gh pr merge --squash --admin`.
+   chọn **Merge without waiting for requirements to be met** để merge với tư cách admin của repository.
 
 </Steps>
 
@@ -53,8 +47,7 @@ thư mục spec, phạm vi task `T001` đến `T003`, và các quy tắc agent p
 `openhands`, tín hiệu bắt đầu.
 
 <Aside type="note">
-Quên gắn label? Thêm `spec-ready` vào PR đã merge, hoặc chạy workflow thủ công với tên thư mục spec.
-Không cần gì khác.
+Quên gắn label? Thêm `spec-ready` vào PR đã merge.
 </Aside>
 
 Giờ bạn rảnh tay cho đến khi có thứ cần review. Tiếp theo: [Agent triển khai](../agent-implements/).

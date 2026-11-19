@@ -12,30 +12,23 @@ OpenHands trên cloud và không có webhook. Mọi thứ là poll ra ngoài t�
 
 ## Agent Canvas
 
-Agent Canvas 1.41.0, cài từ npm và khởi động bằng một lệnh:
-
-```bash
-npm install -g @openhands/agent-canvas
-agent-canvas
-```
-
-Trạng thái nằm trong `~/.openhands/`: cài đặt, agent profile, secret và database SQLite của các
+Agent Canvas 1.41.0, cài từ npm (`@openhands/agent-canvas`) và chạy như một user service. Trạng
+thái của nó nằm trong `~/.openhands/`: cài đặt, agent profile, secret và database SQLite của các
 automation.
 
 ## Cài đặt cuộc hội thoại
 
-Các phần của `~/.openhands/settings.json` định hình cách agent làm việc:
+Các cài đặt định hình cách agent làm việc:
 
 | Cài đặt | Giá trị | Vì sao |
 | --- | --- | --- |
-| `agent_kind` | `acp` | Dùng một coding agent bên ngoài qua Agent Client Protocol |
-| `acp_server` | `claude-code` | Coding agent |
-| `acp_prompt_timeout` | `1800` | 30 phút mỗi lượt: một lượt triển khai thì dài |
-| `max_iterations` | `500` | Đủ chỗ cho cả một giai đoạn trong một cuộc hội thoại |
-| `confirmation_mode` | `false` | Không người giám sát. Không có ai ở đó để xác nhận |
-| `security_analyzer` | `llm` | Các lệnh vẫn được sàng lọc rủi ro |
-| `default_runtime` | `local` | Chạy trên host, nơi Node, pnpm và git đã có sẵn |
-| `worktree_branch_prefix` | `openhands/` | Mọi nhánh agent tạo đều bắt đầu bằng tiền tố này. Glue dựa vào nó |
+| Agent | ACP, server `claude-code` | Một coding agent bên ngoài, qua Agent Client Protocol |
+| ACP prompt timeout | 30 phút | Một lượt triển khai thì dài |
+| Max iterations | 500 | Đủ chỗ cho cả một giai đoạn trong một cuộc hội thoại |
+| Confirmation mode | tắt | Không người giám sát. Không có ai ở đó để xác nhận |
+| Security analyzer | LLM | Các lệnh vẫn được sàng lọc rủi ro |
+| Runtime | local | Chạy trên host, nơi Node, pnpm và git đã có sẵn |
+| Worktree branch prefix | `openhands/` | Mọi nhánh agent tạo đều bắt đầu bằng tiền tố này. Glue dựa vào nó |
 
 ## Agent profile
 
@@ -46,7 +39,7 @@ Các phần của `~/.openhands/settings.json` định hình cách agent làm vi
 
 ## Secret
 
-Lưu trong Agent Canvas (Settings → Secrets), theo tên:
+Lưu trong Agent Canvas (**Settings → Secrets**), theo tên:
 
 | Tên | Dùng cho |
 | --- | --- |
@@ -58,7 +51,8 @@ repository, issue, pull request và workflow.
 
 ## Hai automation
 
-Cả hai được cài từ catalog automation của Agent Canvas, không phải viết tay.
+Cả hai được cài từ catalog automation của Agent Canvas, không phải viết tay. Mỗi automation làm gì
+trong một lần poll được mô tả ở [Runtime của agent](../../concepts/the-agent-runtime/#hai-automation).
 
 ### GitHub issue to PR
 
@@ -73,8 +67,7 @@ Cả hai được cài từ catalog automation của Agent Canvas, không phải
 | Lịch | `*/5 * * * *`, Australia/Sydney |
 | Agent profile | `default` |
 
-Mỗi lần poll, nó sửa lại mọi PR `openhands/issue-<n>` có head mang status `software-factory/review`
-thất bại, rồi bắt đầu làm các issue có label chưa có PR. Một lượt revise bảo agent gắn lại label
+Một lượt revise bảo agent gắn lại label
 `openhands-review` sau đó, để head mới được review.
 
 ### GitHub code review
@@ -93,15 +86,13 @@ thất bại, rồi bắt đầu làm các issue có label chưa có PR. Một l
 
 Trong khi các check vẫn đang chạy, reviewer đăng một comment "⏳ Review waiting on checks" và thử lại
 ở một lần quét sau. Các review của nó bắt đầu bằng "_This review was posted by an AI agent
-(OpenHands)._", mang một marker ẩn `<!-- openhands-review-run: <id> -->`, và kết thúc bằng
-`✅ APPROVED` hoặc `🔄 CHANGES REQUESTED`.
+(OpenHands)._" và mang một marker ẩn `<!-- openhands-review-run: <id> -->`.
 
 <Aside type="caution" title="Một tài khoản cho mọi thứ">
 Ở Discava, agent triển khai, reviewer và maintainer đều dùng cùng một tài khoản GitHub. GitHub không
 cho một tài khoản duyệt PR của chính nó, nên verdict của reviewer được đăng dưới dạng review
 `COMMENTED`, và glue đọc dòng verdict thay vì trạng thái review. Với một team, hãy cho các automation
-một tài khoản máy riêng. Khi đó mọi người có thể duyệt agent PR bình thường, và branch protection có
-thể yêu cầu điều đó.
+một tài khoản máy riêng.
 </Aside>
 
 Tiếp theo: [Spec sang issue](../spec-to-issue/).

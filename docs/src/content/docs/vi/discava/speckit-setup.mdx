@@ -34,13 +34,8 @@ gì Speckit viết ra có thể được automation đọc.
 ## Extension git
 
 Extension `git` đi kèm Speckit được cài (`.specify/extensions.yml`). Các hook của nó tạo một nhánh
-tính năng trước `/speckit-specify` và commit sau mỗi bước, nên mỗi bước viết spec là một commit riêng
-trong spec PR. `.specify/extensions/git/git-config.yml` đặt:
-
-```yaml
-branch_numbering: timestamp
-commit_style: conventional
-```
+tính năng trước `/speckit-specify` và commit sau mỗi bước, nên mỗi bước viết spec là một
+Conventional Commit riêng trong spec PR.
 
 ## Thay đổi template
 
@@ -64,25 +59,14 @@ Ba bổ sung vào template gốc:
 2. **Ai chạy gì.** Một đoạn nói rằng agent triển khai các task này mà không có Docker, rằng e2e test
    và test đồng thời chạy trên PR CI, và **(human)** có nghĩa là gì. Bao gồm cả "không dùng cho ảnh
    chụp màn hình": một thay đổi UI chụp ảnh trong e2e.
-3. **Read by automation.** Các quy tắc định dạng mà bộ validate thực thi, được nêu trong template để
-   agent viết `tasks.md` tuân theo:
-
-```markdown
-**Read by automation**: the Agent Issues workflow reads this file to decide which tasks to hand the
-implementing agent, so keep this structure (PR checks refuse a file that strays from it):
-
-- every phase is a heading `## Phase <number>: <title>`, numbered upwards, with at least one task;
-- a user story's phase is titled `User Story <n> - <what it delivers>`; the first one ends the first
-  implementation issue (setup, foundations and that story);
-- every task is a line `- [ ] T<3 digits> <description>` starting in the first column, under a
-  phase, with an id no other task has; a task added later takes the next unused id, wherever it is
-  placed;
-- a finished task is ticked in place (`- [x]`), never deleted or renumbered.
-```
+3. **Read by automation.** Các [quy tắc định dạng](../../reference/tasks-format/) mà bộ validate
+   thực thi, được nêu trong template để agent viết `tasks.md` tuân theo.
 
 Và một dòng được thêm vào phần ghi chú ở cuối: "Do not edit existing tests to make them pass. If one
-looks wrong, stop and raise it." (Đừng sửa test có sẵn để chúng pass. Nếu một test có vẻ sai, hãy
-dừng lại và nêu vấn đề.)
+looks wrong, stop and raise it."
+
+Nguyên văn của từng thay đổi nằm trong
+[Áp dụng: constitution và template](../../adopt/constitution-and-templates/).
 
 ## Một thư mục spec
 

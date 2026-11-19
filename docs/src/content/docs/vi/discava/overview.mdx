@@ -11,8 +11,7 @@ cổng React, ba tRPC API trên Lambda, một bảng DynamoDB duy nhất, một 
 deploy bằng CDK từ một Nx monorepo. Nó đủ lớn để không ai nắm hết trong đầu, và đó chính là lúc quy
 trình phát huy giá trị.
 
-Phần này mô tả những gì Discava thực sự chạy, tính đến tháng 11 năm 2026. Mỗi trang liên kết đến các
-file, để bạn có thể đọc mã nguồn bên cạnh phần giải thích.
+Phần này mô tả những gì Discava chạy, tính đến tháng 11 năm 2026, cùng các file đứng sau mỗi phần.
 
 ## Công cụ và phiên bản
 
@@ -55,10 +54,11 @@ Và văn bản hướng dẫn mà mọi agent đọc:
 
 ## Qua các con số
 
-Từ ngày 29 tháng 10 đến 18 tháng 11 năm 2026:
+Từ ngày 14 tháng 11, khi quy trình bắt đầu chạy thật, đến ngày 18 tháng 11 năm 2026:
 
 - 12 spec tính năng được viết bằng Speckit, trong `specs/`.
-- 2.576 lượt quét automation: 1.670 lần poll issue-to-PR và 906 lần poll review.
+- 2.344 lượt quét automation, cứ năm phút một lần: 1.304 lần poll issue-to-PR và 1.040 lần poll
+  review. 149 lượt trong số đó tìm thấy việc và khởi động một agent.
 - 67 agent PR được merge. 42 không cần sửa tự động, 17 cần một vòng, một PR làm cạn một vòng lặp.
 
 Tiếp theo: [Constitution và hướng dẫn](../constitution-and-guidance/).

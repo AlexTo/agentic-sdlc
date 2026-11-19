@@ -6,7 +6,7 @@ sidebar:
 ---
 
 Khoảng trống 8: agent không thể chạy stack thật khi không có quyền truy cập cloud, và bạn không muốn
-cấp cho nó quyền đó. Câu trả lời của Discava là nguyên tắc III của constitution. Mọi dịch vụ AWS đều có
+cấp cho nó quyền đó. Câu trả lời của Discava là nguyên tắc III của constitution: mọi dịch vụ AWS đều có
 một bản thay thế local, và `pnpm dev` khởi động tất cả chúng bằng Docker.
 
 ## Những gì chạy local
@@ -33,8 +33,7 @@ form "Someone else" cho claim bất kỳ. Không mật khẩu, không Cognito.
 
 **Agent triển khai thì không.** Issue của nó nói không dùng `pnpm dev`, Docker hay e2e runner. Nó viết
 các kịch bản, và **PR CI** chạy chúng: mỗi shard e2e khởi động `pnpm dev` riêng trên một runner mới.
-Điều này giữ cho máy của agent đơn giản và các lần chạy nhanh. Nó cũng có nghĩa kết quả e2e mà agent
-đọc luôn đến từ một stack sạch.
+Máy của agent được giữ đơn giản, và kết quả nó đọc luôn đến từ một stack sạch.
 
 Con người chạy nó cho các task **(human)**, và để tái hiện một lỗi.
 

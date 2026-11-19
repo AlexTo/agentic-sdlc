@@ -5,8 +5,6 @@ sidebar:
   order: 7
 ---
 
-import { Aside } from '@astrojs/starlight/components';
-
 `.github/workflows/pr-checks.yml` chạy trên mọi pull request vào `main`. Thất bại của nó là thứ Agent
 CI Status biến thành một lượt fix-up, nên nó cũng là nguồn phản hồi chính của agent.
 
@@ -17,6 +15,7 @@ CI Status biến thành một lượt fix-up, nên nó cũng là nguồn phản 
 | `Checks (lint)`, `Checks (test)`, `Checks (build)` | `pnpm nx affected --target <target>`, dạng matrix với `fail-fast: false` | Style, unit test, kiểu, bundling, CDK synth và checkov trên hạ tầng |
 | `Tasks format` | `validate-tasks`, chỉ khi một `tasks.md` hoặc bộ đọc của nó thay đổi | Một `tasks.md` mà workflow Agent Issues sẽ đọc sai (khoảng trống 5) |
 | `UI Screenshots` | `ui-screenshots` | Một thay đổi UI không có ảnh chụp màn hình mới (khoảng trống 6) |
+| `Invariant coverage` | `invariant-coverage`, chỉ khi code có thể ghi vào bảng chính thay đổi | Một writer mới của một bản ghi dùng chung mà không có thay đổi nào ở các invariant. Xem [Local stack](../local-stack/#invariant-sau-mỗi-test) |
 | `E2E tests (1/6)` … `(6/6)` | `pnpm nx affected --target e2e`, chia shard | Luồng người dùng hỏng, invariant bị phá, race condition |
 | `E2E tests` | Gom sáu shard thành một kết quả | Cho branch protection một tên ổn định, bất kể số shard |
 | `E2E screenshots` | `screenshots-comment` | Đăng ảnh lên PR |
@@ -66,18 +65,13 @@ Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifa
 - `search/03-search-minimum-rating-4.png`
 ```
 
-Agent reviewer đọc cùng danh sách này. Người review có thể thấy những gì đã thay đổi mà không phải
-chạy gì.
-
-<Aside type="note">
-Artifact không có URL công khai, nên comment chỉ có thể nêu tên ảnh và liên kết đến lần chạy. Như vậy
-vẫn đủ để người review tải về đúng những ảnh quan trọng.
-</Aside>
+Agent reviewer đọc cùng danh sách này. Artifact không có URL công khai, nên comment nêu tên các ảnh
+và liên kết đến lần chạy nơi có thể tải chúng về.
 
 ## Giữ cho nhanh
 
-Thời gian chạy check là thời gian agent chờ phản hồi: mỗi phút một lần chạy tốn thêm được cộng vào
-mọi vòng sửa. Discava rút ngắn PR checks của mình theo bốn cách:
+Thời gian chạy check là thời gian phản hồi của agent: mỗi phút một lần chạy tốn được cộng vào mọi
+vòng sửa. Discava rút ngắn PR checks của mình theo bốn cách:
 
 - **Task cache của Nx được giữ giữa các lần chạy.** Action `init-monorepo` giữ `.nx/cache` trong một
   Actions cache, mỗi leg của Checks một cái. Nó được lưu theo từng commit và khôi phục từ lần push
@@ -88,8 +82,8 @@ mọi vòng sửa. Discava rút ngắn PR checks của mình theo bốn cách:
   một cache được lưu không còn mang theo output cũ của cả tuần; leg lint khôi phục cache của `main`
   nhưng không lưu cái nào, vì Biome lint nhanh hơn thời gian lưu một cache; và một workflow **Cache
   Cleanup** xóa cache của một PR khi PR đó đóng.
-- **Test chậm có target riêng.** Một file test từng chiếm 4 trong 5 phút của leg build. Với target
-  riêng, mà input chỉ là các file nó test, nó được phát lại từ cache trên hầu hết các PR.
+- **Test chậm có target riêng.** Một file test từng chiếm 4 trong 5 phút của leg build. Target riêng
+  của nó, mà input chỉ là các file nó test, được phát lại từ cache trên hầu hết các PR.
 - **Điều chỉnh mức song song.** `nx affected` chạy bốn task một lúc, không phải tám như trong
   `nx.json`: mỗi task Vitest tự khởi động worker riêng, và bốn nhanh hơn khoảng 12% trên runner bốn
   nhân. E2E tăng từ bốn shard lên sáu, với các file được chia cho các shard theo thời gian chạy. Mỗi

@@ -8,8 +8,8 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 
 Automation chỉ đáng giá nếu bạn tin được những gì nó tạo ra. Mọi thay đổi đi qua nhiều lớp kiểm
-tra. Mỗi lớp thu hẹp những gì đến được lớp kế tiếp: các kiểm tra rẻ, tự động chạy trước và bắt được
-nhiều nhất, và chỉ những gì chúng không thể đánh giá mới đến tay một người.
+tra: các kiểm tra rẻ, tự động chạy trước và bắt được nhiều nhất, và chỉ những gì chúng không thể
+đánh giá mới đến tay một người.
 
 <p>
   <img alt="Tam giác ngược gồm năm lớp, từ rộng nhất đến hẹp nhất: Codebase, Phân tích tĩnh, Kiểm chứng, Văn bản hướng dẫn, Người review" src="/agentic-sdlc/diagrams/automation-trust.svg" width="640" />
@@ -31,16 +31,13 @@ nhiều nhất, và chỉ những gì chúng không thể đánh giá mới đ�
 
 ## Kiểm chứng là quan trọng nhất
 
-Trong tất cả các lớp, kiểm chứng là lớp giành được niềm tin của bạn. Unit test, lint và kiểu cho
-thấy code nhất quán với chính nó. Chỉ e2e test và ảnh chụp màn hình cho thấy tính năng *hoạt động*,
-theo cách người dùng thấy, trên stack thật. Đó cũng là lớp một người có thể kiểm tra nhanh nhất: một
-lập trình viên nhìn ảnh chụp màn hình có thể đánh giá một PR trong vài phút, không cần pull nhánh.
+Unit test, lint và kiểu cho thấy code nhất quán với chính nó. Chỉ e2e test và ảnh chụp màn hình
+cho thấy tính năng *hoạt động*, theo cách người dùng thấy, trên stack thật. Đây là
+[nguyên tắc 1](../principles/#1-kiểm-chứng-trước-tiên-cho-agent-tay-và-mắt). Đó cũng là lớp một
+người có thể kiểm tra nhanh nhất: ảnh chụp màn hình cho phép bạn đánh giá một PR trong vài phút, không
+cần pull nhánh.
 
-Đây là [nguyên tắc 4](../principles/): cho agent tay và mắt. Các kịch bản e2e agent viết là tay của
-nó: chúng khởi động toàn bộ stack, đăng nhập, gọi API và bấm qua UI. Kết quả, lỗi invariant và ảnh
-chụp màn hình là mắt của nó: chúng cho agent, rồi đến bạn, thấy thay đổi thực sự làm gì.
-
-Vì vậy CI biến nó thành mặc định:
+CI biến nó thành mặc định:
 
 1. Mọi kịch bản e2e cho một luồng UI gọi `screenshot(page, 'name')` ở mỗi trạng thái mà người review
    muốn thấy.
@@ -57,15 +54,14 @@ cài đặt thông báo:
 
 Người review mở chín ảnh mới và kiểm tra từng trạng thái: trang cài đặt với mọi loại được liệt kê,
 một công tắc được lưu, email bị dừng và bật lại, một liên kết hủy đăng ký hợp lệ và một liên kết không
-hợp lệ, một lỗi và "thử lại". Mỗi trạng thái đó là một yêu cầu từ spec, được thấy đang hoạt động. Đó
-là mục đích của lần review cuối: đánh giá kết quả, không phải đọc từng dòng.
+hợp lệ, một lỗi và "thử lại". Mỗi trạng thái đó là một yêu cầu từ spec, được thấy đang hoạt động.
 
 ## Văn bản hướng dẫn, code thực thi
 
 Văn bản hướng dẫn (constitution, `AGENTS.md`, hướng dẫn trong issue) rẻ để viết và ngăn được phần
-lớn lỗi. Nhưng agent có thể hiểu sai hoặc bỏ qua nó. Nên mọi quy tắc quan trọng đều có thêm một check
-sẽ thất bại: "viết e2e screenshots" nằm trong issue template *và* được check UI Screenshots thực thi.
-"Giữ `tasks.md` theo định dạng này" nằm trong template *và* trong một PR check.
+lớn lỗi, nhưng agent có thể hiểu sai hoặc bỏ qua nó. Nên mọi quy tắc quan trọng đều có thêm một check
+sẽ thất bại. [Nguyên tắc 5](../principles/#5-biến-rule-và-skill-thành-tất-định) liệt kê các check
+của Discava.
 
 Khi bạn thêm một quy tắc, hãy hỏi: nếu agent phớt lờ điều này, cái gì sẽ chuyển đỏ?
 
@@ -77,10 +73,6 @@ Quy tắc quan trọng nhất trong constitution của Discava:
 > it covers. Weakening an existing test (loosening an assertion, deleting a case, adding `skip` or
 > `only`, widening a mock or snapshot) is allowed only when a task names the behavior change that
 > justifies it, and the PR description says so.
-
-(Một test thất bại PHẢI được giải quyết bằng cách sửa code, trừ khi spec hoặc kế hoạch thay đổi hành
-vi mà nó bao phủ. Làm yếu một test có sẵn chỉ được phép khi một task nêu rõ thay đổi hành vi biện minh
-cho nó, và mô tả PR nói như vậy.)
 
 Một agent chịu áp lực phải làm CI xanh, sớm hay muộn, sẽ "sửa" test. Quy tắc này, được lặp lại trong
 issue template và được agent reviewer kiểm tra, là thứ giữ cho bộ test còn ý nghĩa.

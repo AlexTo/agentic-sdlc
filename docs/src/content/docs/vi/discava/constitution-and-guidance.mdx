@@ -26,22 +26,19 @@ tắc, mỗi nguyên tắc có một lý do ngắn. Những nguyên tắc quan t
 > A feature MUST work under `pnpm dev` with Docker and no AWS account. Any AWS service a feature
 > adds MUST get a local stand-in or a documented, justified exception.
 
-(Một tính năng PHẢI chạy được dưới `pnpm dev` với Docker và không cần tài khoản AWS. Mọi dịch vụ AWS
-mà một tính năng thêm vào PHẢI có bản thay thế local hoặc một ngoại lệ được ghi lại và biện minh.)
-
 Đây là điều cho phép CI chạy toàn bộ ứng dụng cho e2e test, và giữ thông tin đăng nhập cloud tránh xa
 agent. Xem [Local stack](../local-stack/).
 
 ### IV. Test nhiều lớp: unit, invariant, end to end
 
-Năm quy tắc con. Hai quy tắc đáng chép nguyên văn:
+Năm quy tắc con. Hai quy tắc quan trọng nhất:
 
 - **Kiểm tra tác động.** Một kế hoạch PHẢI liệt kê các bản ghi dùng chung mà tính năng ghi vào, hoặc
   đọc theo cách mới, và với mỗi bản ghi nêu tên các invariant và test đã bao phủ nó. Ở chỗ tính năng
   thay đổi ý nghĩa của một bản ghi, kế hoạch PHẢI mở rộng các kiểm tra đó, và `tasks.md` PHẢI có một
   task cho mỗi cái.
-- **Test là một đặc tả.** Một test thất bại PHẢI được giải quyết bằng cách sửa code. Làm yếu một test
-  chỉ được phép khi một task nêu tên thay đổi hành vi, và PR nói như vậy. Invariant được tính là test.
+- **Test là một đặc tả.** Một test thất bại được sửa trong code, không phải bằng cách làm yếu test.
+  Invariant được tính là test. Toàn văn quy tắc được trích trong [Các lớp niềm tin](../../concepts/layers-of-trust/#test-là-một-đặc-tả).
 
 Kiểm tra tác động tồn tại vì agent vui vẻ thêm kiểm tra mới nhưng hiếm khi xem lại cái cũ. Một tính
 năng mới thay đổi ý nghĩa của "một học viên đang hoạt động" sẽ âm thầm phá vỡ ý nghĩa của một
@@ -58,9 +55,6 @@ nó được kiểm tra ở thời điểm **lập kế hoạch**: thêm key sau
 > Until production is live, routes, APIs and data shapes MUST be changed outright: no redirects,
 > deprecated aliases or fallbacks for old data.
 
-(Cho đến khi production chạy thật, route, API và cấu trúc dữ liệu PHẢI được thay đổi thẳng: không
-redirect, alias deprecated hay fallback cho dữ liệu cũ.)
-
 Không có quy tắc này, agent thêm lớp tương thích vào mọi thay đổi, vì thận trọng.
 
 ### Phần quy trình phát triển
@@ -71,14 +65,6 @@ Phần được viết riêng cho agent:
 > list MUST NOT require a local stack, Docker or `pnpm dev`. […] A task that needs a running local
 > stack or people MUST be marked `(human)` in `tasks.md`. […] An agent MUST NOT merge, push to
 > `main`, edit CI workflows, or weaken a test to make CI pass.
-
-(Tính năng được triển khai bởi các agent tự chủ, mỗi agent trên nhánh và pull request riêng, nên danh
-sách task KHÔNG ĐƯỢC yêu cầu local stack, Docker hay `pnpm dev`. Task cần một local stack đang chạy
-hoặc cần con người PHẢI được đánh dấu `(human)`. Agent KHÔNG ĐƯỢC merge, push lên `main`, sửa CI
-workflow, hoặc làm yếu test để CI pass.)
-
-Agent triển khai chạy không có Docker. Nó viết e2e test và test đồng thời, và **PR CI chạy chúng**.
-Một lần CI thất bại là cách nó biết chúng không pass.
 
 ## `AGENTS.md`
 
@@ -112,31 +98,21 @@ dạng skill. Skill được nạp khi liên quan, nên chúng có thể chứa 
 
 ## Hướng dẫn trong issue
 
-Mọi issue triển khai kết thúc bằng cùng các gạch đầu dòng, được script Agent Issues chép từ
-`.github/ISSUE_TEMPLATE/implement-phase.md`:
+Mọi issue triển khai kết thúc bằng cùng một phần hướng dẫn, được script Agent Issues chép từ
+`.github/ISSUE_TEMPLATE/implement-phase.md`. Phần đó yêu cầu agent:
 
-```markdown
-## Instructions for the agent
+- đọc `AGENTS.md`, constitution và thư mục spec trước
+- viết test của mỗi story trước, và đánh dấu mỗi task trong commit hoàn thành nó
+- chạy unit test, lint, typecheck và build ở local, và để e2e test và test đồng thời cho PR CI
+- thêm lời gọi `screenshot()` cho mọi thay đổi UI, và không bao giờ để screenshot cho một task
+  **(human)**
+- bỏ qua các task **(human)** và liệt kê chúng trong mô tả PR
+- dùng Conventional Commits, và `Refs #<parent>` thay vì `Closes`
+- không bao giờ làm yếu test, sửa workflow, merge, hay đụng vào thông tin đăng nhập AWS
+- comment lên issue và dừng lại khi bị chặn
 
-- Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
-- Work through the scope in order, writing each story's tests first. Tick each task in `tasks.md`
-  in the same commit that completes it.
-- Do not use `pnpm dev`, Docker or the e2e runner locally. Run unit and component tests (once, not
-  in watch mode), `pnpm lint`, typecheck and `pnpm build` on what you changed. E2E and concurrency
-  tests run on PR CI: write them, then read CI's result.
-- A change to what a user sees ships with `screenshot(page, 'name')` calls in the e2e scenario for
-  that flow, at each state a reviewer would want to see. […] Don't leave screenshots to a
-  **(human)** task.
-- Skip tasks marked **(human)** and list them in the PR description for the reviewer.
-- Use Conventional Commits for every commit. The PR title is a Conventional Commit too.
-- In the PR description write `Refs #<parent>`. Never use `Closes` or `Fixes` against the parent
-  issue; closing this issue is fine.
-- Never weaken a test to make it pass, never edit `.github/workflows/`, never merge, and don't
-  touch AWS credentials.
-- If you are blocked, comment on this issue with what you tried and stop.
-```
-
-Mỗi gạch đầu dòng có mặt vì một lần chạy sớm đã làm điều ngược lại. Ví dụ, quy tắc `Refs`/`Closes`
-ngăn PR của giai đoạn đầu đóng mất parent issue của cả tính năng.
+Mỗi quy tắc có mặt vì một lần chạy sớm đã làm điều ngược lại. Ví dụ, quy tắc `Refs` ngăn PR của giai
+đoạn đầu đóng mất parent issue của cả tính năng. Toàn văn nằm trong
+[Áp dụng: hướng dẫn cho agent](../../adopt/agent-guidance/).
 
 Tiếp theo: [Thiết lập Speckit](../speckit-setup/).

@@ -7,19 +7,17 @@ sidebar:
 
 import { FileTree, LinkCard } from '@astrojs/starlight/components';
 
-Bạn không cần xây quy trình từ đầu để thử nó. Repository này *chính là* quy trình: cùng thiết lập
-Speckit, issue template, PR check, agent workflow và phần glue có unit test mà Discava đang chạy,
-chỉ là bao quanh một ứng dụng ghi chú nhỏ thay vì một hệ thống quản lý học tập.
+Repository này *chính là* quy trình: cùng thiết lập Speckit, issue template, PR check, agent
+workflow và phần glue có unit test mà Discava đang chạy, bao quanh một ứng dụng ghi chú nhỏ.
 
 **Fork nó, và bạn có thiết lập của Discava.** Trỏ OpenHands của chính bạn vào bản fork, viết một
-spec cho ứng dụng ghi chú, và spec đó đi qua đúng vòng lặp được mô tả trong
-[Cách hoạt động](../how-it-works/): spec PR, issue, agent PR, CI, agent review, bạn merge, issue
-tiếp theo.
+spec cho ứng dụng ghi chú, và spec đó đi qua vòng lặp được mô tả trong
+[Cách hoạt động](../how-it-works/).
 
 ## Bạn nhận được gì
 
 <FileTree>
-- .specify/ template, script của Speckit và bản hiến chương (constitution)
+- .specify/ template, script của Speckit và constitution
 - .github/
   - ISSUE_TEMPLATE/implement-phase.md hướng dẫn mà mọi issue triển khai đều mang theo
   - actions/init-monorepo/ thiết lập CI dùng chung
@@ -54,9 +52,8 @@ Chỉ những thứ không thể nằm trong repository:
 
 ## Những gì bị lược bỏ
 
-Phần deploy AWS của Discava và script thiết lập stage của nó. Ứng dụng ghi chú không có hạ tầng
-cloud, nên merge không ship gì ngoài trang docs. [Deploy và bảo mật](../../discava/deploy-and-security/)
-mô tả pipeline của Discava, và [Áp dụng: deploy](../../adopt/deploy/) cho thấy cách thêm nó vào
-repository của bạn.
+Phần deploy AWS của Discava. Ứng dụng ghi chú không có hạ tầng cloud, nên merge không ship gì
+ngoài trang docs. [Deploy và bảo mật](../../discava/deploy-and-security/) mô tả pipeline của
+Discava, và [Áp dụng: deploy](../../adopt/deploy/) cho thấy cách thêm một pipeline.
 
 <LinkCard title="Thiết lập: fork, cấu hình, chạy tính năng đầu tiên" href="/agentic-sdlc/vi/setup/before-you-start/" />

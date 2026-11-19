@@ -7,7 +7,7 @@ sidebar:
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Bạn đang ở:** người + agent. **Output:** `specs/<timestamp>-note-tags/spec.md`.
+**Bạn đang ở:** 🧑 bạn + 🤖 agent. **Output:** `specs/<timestamp>-note-tags/spec.md`.
 
 Spec nói *cái gì* và *vì sao*, không bao giờ nói *thế nào*. Đó là thứ quan trọng nhất bạn viết.
 
@@ -26,8 +26,8 @@ Spec nói *cái gì* và *vì sao*, không bao giờ nói *thế nào*. Đó là
    Tags are case-insensitive and unique per note.
    ```
 
-   Speckit tạo `specs/<timestamp>-note-tags/spec.md` với user story, yêu cầu chức năng và tiêu chí
-   chấp nhận.
+   Speckit tạo `specs/<timestamp>-note-tags/spec.md` với user story, yêu cầu chức năng và tiêu
+   chí chấp nhận.
 
 3. Để agent tìm các lỗ hổng.
 
@@ -35,8 +35,8 @@ Spec nói *cái gì* và *vì sao*, không bao giờ nói *thế nào*. Đó là
    /speckit-clarify
    ```
 
-   Nó hỏi tối đa năm câu hỏi nhắm đích và ghi câu trả lời của bạn lại vào spec. Với tính năng này, hãy
-   chờ những câu hỏi như:
+   Nó hỏi tối đa năm câu hỏi nhắm đích và ghi câu trả lời của bạn lại vào spec. Với tính năng này,
+   hãy chờ những câu hỏi như:
 
    - Điều gì xảy ra khi thêm tag thứ sáu: từ chối, hay bỏ tag cũ nhất?
    - `Work` có phải cùng tag với `work` không? (Spec nói có: chuyển thành chữ thường khi lưu.)
@@ -47,8 +47,8 @@ Spec nói *cái gì* và *vì sao*, không bao giờ nói *thế nào*. Đó là
 ## Thế nào là tốt
 
 - Mỗi user story có thể được test riêng, với kịch bản chấp nhận viết dạng Given/When/Then.
-- Mọi quy tắc được nêu thành một yêu cầu, ví dụ *"A note MUST NOT have more than five tags."* (Một ghi
-  chú KHÔNG ĐƯỢC có quá năm tag.) Những quy tắc đó sau này trở thành invariant và test.
+- Mọi quy tắc được nêu thành một yêu cầu, ví dụ *"A note MUST NOT have more than five tags."*
+  Những quy tắc đó sau này trở thành invariant và test.
 - Không có công nghệ nào xuất hiện trong spec. Không DynamoDB, không tRPC.
 
 <Aside type="tip">

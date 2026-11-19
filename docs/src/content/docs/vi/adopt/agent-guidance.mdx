@@ -47,27 +47,11 @@ khai.
    package vào một `AGENTS.md` lồng trong thư mục của nó, và để ở file gốc một dòng trỏ tới đó. Agent
    chỉ nạp một file lồng khi nó làm việc trong thư mục đó, nên mỗi lần chạy chỉ đọc chi tiết nó cần.
 
-2. **Chép issue template** từ repository này sang `.github/ISSUE_TEMPLATE/implement-phase.md`.
-   Script Agent Issues đọc mọi thứ dưới `## Instructions for the agent` từ đó lúc chạy. Template đầy
-   đủ:
+2. **Chép issue template** từ repository này sang
+   `.github/ISSUE_TEMPLATE/implement-phase.md`. Script Agent Issues tự viết các mục spec và scope
+   của issue, và đọc mọi thứ dưới `## Instructions for the agent` từ template lúc chạy:
 
    ```markdown
-   ---
-   name: Implement a spec phase
-   about: Hand one phase of a feature's tasks.md to the implementing agent
-   title: "feat(<scope>): <phase or story>"
-   labels: []
-   ---
-
-   ## Spec
-
-   - Spec folder: `specs/<timestamp>-<name>/` (read `spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `contracts/`)
-   - Parent issue: #<number>
-
-   ## Scope
-
-   Tasks `T0xx` to `T0yy` of `tasks.md` (<phase or story>). Do not start tasks outside this range.
-
    ## Instructions for the agent
 
    - Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.

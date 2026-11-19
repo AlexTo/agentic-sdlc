@@ -7,7 +7,7 @@ sidebar:
 
 import { Aside } from '@astrojs/starlight/components';
 
-**Bạn đang ở:** automation, không người giám sát. **Output:** một PR xanh với một review duyệt từ agent.
+**Bạn đang ở:** ⚙️ automation, không người giám sát. **Output:** một PR xanh với một review duyệt từ agent.
 
 Mỗi lần push lên PR của agent đều chạy các cổng. Thất bại quay về agent, không bao giờ về bạn.
 
@@ -25,36 +25,29 @@ Mỗi lần push lên PR của agent đều chạy các cổng. Thất bại qua
 
 ## Khi một cổng thất bại
 
-1. Workflow **Agent CI Status** đăng một commit status thất bại mà agent vốn đã theo dõi.
+1. Workflow **Agent CI Status** đánh dấu head commit của PR là thất bại.
 2. Agent sửa lại *chính* PR đó trong cuộc hội thoại ban đầu của nó, dựa trên output thất bại.
 3. CI chạy lại.
 
 Một ví dụ: test đồng thời thất bại vì việc thêm tag đọc ghi chú, nối thêm trong bộ nhớ rồi ghi lại,
-nên hai request tranh nhau. Agent đổi nó thành một thao tác nối nguyên tử với điều kiện trên số lượng,
-và test chuyển xanh. Bạn không hề thấy nó.
+nên hai request tranh nhau. Agent đổi nó thành một thao tác nối nguyên tử với điều kiện trên số
+lượng, và test chuyển xanh. Bạn không hề thấy nó.
 
 ## Agent review
 
-Khi CI xanh, một agent OpenHands thứ hai review PR như một người sẽ làm: tính đúng đắn, edge case bị
-sót, các quy tắc từ spec mà không test nào bao phủ. Nó hoặc duyệt, hoặc yêu cầu thay đổi, điều này gửi
-agent triển khai quay lại theo cùng cách như một lần CI đỏ.
+Khi CI xanh, một agent OpenHands thứ hai review PR như một người sẽ làm: tính đúng đắn, edge case
+bị sót, các quy tắc từ spec mà không test nào bao phủ. Nó hoặc duyệt, hoặc yêu cầu thay đổi, điều
+này gửi agent triển khai quay lại theo cùng cách như một lần CI đỏ.
 
 ## Giới hạn
 
-Có hai vòng fix-up, và mỗi vòng bị giới hạn ở **năm** lượt thử cho mỗi PR:
-
-| Vòng | Gửi quay lại bởi | Đếm bằng | Bỏ cuộc với |
-| --- | --- | --- | --- |
-| CI | **Agent CI Status**, khi PR Checks chạy đỏ | `ci-fix-1` đến `ci-fix-5` | `ci-fix-exhausted` |
-| Review | **Agent Review Status**, khi agent reviewer đưa `🔄 CHANGES REQUESTED` | `review-fix-1` đến `review-fix-5` | `review-fix-exhausted` |
-
-Các bộ đếm là riêng biệt, nên một PR có thể dùng tối đa năm lần sửa CI và năm lần sửa review. Sau lượt
-thử thứ năm trong một vòng, workflow của vòng đó comment, thêm label `*-exhausted` và dừng.
+Mỗi vòng bị giới hạn ở **năm** lượt thử cho mỗi PR, đếm bằng label: `ci-fix-1` đến `ci-fix-5` cho
+CI, `review-fix-1` đến `review-fix-5` cho review. Sau lượt thứ năm, workflow comment, thêm
+`ci-fix-exhausted` hoặc `review-fix-exhausted`, và dừng.
 
 <Aside type="caution">
-Một vòng bị cạn là lần duy nhất bạn bị kéo vào sớm. Với `ci-fix-exhausted`, đọc lần thất bại cuối. Với
-`review-fix-exhausted`, quyết định reviewer có đúng không. Sau đó hoặc comment hướng dẫn, tự sửa, hoặc
-quay lại spec: thất bại lặp lại thường có nghĩa là spec mơ hồ. Sửa spec và sinh lại tốt hơn vá code.
+Một vòng bị cạn là lần duy nhất bạn bị kéo vào sớm.
+[Cổng người duyệt](../../concepts/human-gates/#khi-nào-bạn-bị-kéo-vào-sớm) nói cần làm gì.
 </Aside>
 
 Tiếp theo: [Merge và lặp lại](../merge-and-repeat/).

@@ -14,6 +14,7 @@ sidebar:
 | Archive Specs | `archive-specs.yml` | `push` lên `main` thay đổi `specs/*/tasks.md`, `workflow_dispatch` | `contents: write`, `issues: read`, `pull-requests: write` | `main` |
 | Agent CI Status | `agent-ci.yml` | `workflow_run` của PR Checks, `completed` | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` | Nhánh mặc định |
 | Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` | Nhánh mặc định |
+| Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | Không gì cả (truyền số PR cho `gh`) |
 | Deploy (Discava) | `deploy.yml` | `workflow_run` của CI trên `main`, `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | Commit mà CI đã xác minh |
 
 ## Tên job cần yêu cầu trong branch protection
