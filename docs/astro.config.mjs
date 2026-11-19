@@ -130,7 +130,6 @@ export default defineConfig({
             'zh-CN': '在你自己的仓库中采用',
             vi: 'Áp dụng vào kho mã của bạn',
           },
-          collapsed: true,
           items: [{ autogenerate: { directory: 'adopt' } }],
         },
         {
