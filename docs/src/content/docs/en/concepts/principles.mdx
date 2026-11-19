@@ -62,7 +62,7 @@ Discava does this throughout:
 | --- | --- |
 | `tasks.md` follows a fixed format | The `Tasks format` PR check. Without it, a malformed phase is silently skipped |
 | A UI change takes screenshots in its e2e scenario | The `UI Screenshots` check fails if markup or styles changed and no scenario gained a `screenshot(` call. A maintainer can waive it with `no-ui-screenshots` |
-| A rule that spans records needs an invariant | The `Invariant coverage` check fails a PR that changes who writes the core table without touching `invariants.ts`. A pre-push hook keeps its writer map current. A maintainer can waive it with `no-new-invariant` |
+| A rule that spans records needs an invariant | The `Invariant coverage` check fails a PR that changes who writes the core table without touching the invariant checks in `helpers/invariants/`. A pre-push hook keeps its writer map current. A maintainer can waive it with `no-new-invariant` |
 | Conventional Commits, no committed secrets | commitlint in a `commit-msg` hook, `git-secrets` on every commit |
 | Each Speckit step gets its own branch and commit | The skills run scripts for it, from Speckit's extension hooks, whether or not the agent remembers |
 

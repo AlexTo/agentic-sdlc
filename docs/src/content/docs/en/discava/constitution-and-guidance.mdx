@@ -67,14 +67,23 @@ The part written specifically for agents:
 
 ## `AGENTS.md`
 
-Discava's `AGENTS.md` is about 110 lines. It covers:
+Discava's root `AGENTS.md` is about 110 lines. It covers:
 
 - **Commands.** Install, build, lint, test one project or one file, e2e, local dev, deploy.
-- **Architecture.** One paragraph per package: what it is, what it may import, where new code
-  goes.
+- **Architecture.** One line per package: what it is, and where its detail lives.
 - **Conventions.** The rules a reviewer would otherwise repeat on every PR: Conventional Commits,
   Biome rather than ESLint, the `helpers/` folder rule, "buttons carry text labels only, no arrow
-  icons", where shared code goes, and how to test anything that imports the database package.
+  icons", where shared code goes, and naming: kebab-case file names, `helpers/` and never `lib/`
+  in backend packages, and a `*Writes` function returns transaction items while a verb-named one
+  runs its own I/O.
+
+The detail for one package lives in a nested `AGENTS.md` in that package's folder: seven of them,
+5 to 28 lines each, for the APIs, the database package, events, infrastructure and so on. An agent
+loads one only when it works in that folder. When the root file had grown to a paragraph per
+package, Discava moved the detail down, so every run no longer read about packages it wasn't
+touching. The database package's file, for example, says which helper each shared write goes
+through, and that changing who writes the table means regenerating the map the `Invariant coverage`
+check reads.
 
 <Aside type="tip">
 Discava's `AGENTS.md` grew one line at a time, each time a review caught the same mistake twice.

@@ -19,7 +19,7 @@ check, and **CI** on `main`.
    | --- | --- |
    | `checks`, a matrix of `lint`, `test`, `build` with `fail-fast: false` | Yes |
    | `tasks-format` | Yes |
-   | `e2e`, four shards, plus `e2e-result` gathering them into one `E2E tests` check | Adjust the shard count to your suite |
+   | `e2e`, sharded, plus `e2e-result` gathering the shards into one `E2E tests` check | Set the shard count to your suite |
    | `e2e-screenshots` | Yes, once [step 8](../local-stack-and-e2e/) is done |
 
 2. **Copy `.github/workflows/ui-screenshots.yml`.** In this repository the screenshots rule is its
@@ -31,6 +31,13 @@ check, and **CI** on `main`.
    (`git diff --ignore-space-at-eol --exit-code` after the build). It catches generated files the
    agent forgot to commit. Keep the `playwright-cache` job if you use Playwright: PR runs can only
    restore caches saved on `main`.
+
+   <Aside type="tip">
+   Once your checks take more than a few minutes, keep Nx's task cache between runs, so the agent
+   waits less on every fix-up round. Cap its size and delete a PR's caches when it closes, or the
+   repository's 10 GB of Actions cache fills up. See how Discava does it in
+   [Keeping it fast](../../discava/pr-checks/#keeping-it-fast).
+   </Aside>
 
 4. **Pin every action to a commit SHA**, as the copied files do, and add
    `.github/dependabot.yml` so the pins stay current:

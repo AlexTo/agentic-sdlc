@@ -97,7 +97,7 @@ Discava làm điều này ở khắp nơi:
   markup hay style của một portal thay đổi mà không scenario nào có thêm lời gọi `screenshot(`. Một
   maintainer có thể miễn bằng label `no-ui-screenshots`.
 - **Invariant cho bản ghi dùng chung.** Constitution nói một rule trải trên nhiều bản ghi cần một
-  check trong `invariants.ts`. Check `Invariant coverage` quét xem code nào ghi vào core table, và
+  check trong `helpers/invariants/`. Check `Invariant coverage` quét xem code nào ghi vào core table, và
   thất bại nếu có writer mới mà không có invariant nêu tên entity của nó. Một hook pre-push tạo lại
   bản đồ writer, để agent biết trước khi CI phát hiện.
 - **Commit.** Conventional Commits được commitlint thực thi trong hook `commit-msg`, và

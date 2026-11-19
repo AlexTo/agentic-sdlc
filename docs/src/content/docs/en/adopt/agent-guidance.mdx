@@ -43,6 +43,10 @@ implementation issue.
    the whole suite in watch mode and hang.
    </Aside>
 
+   When the architecture section outgrows a line per package, move each package's detail into a
+   nested `AGENTS.md` in its folder, and leave the root a line pointing there. An agent loads a
+   nested file only when it works in that folder, so a run reads only the detail it needs.
+
 2. **Copy the issue template** from this repository to
    `.github/ISSUE_TEMPLATE/implement-phase.md`. The Agent Issues script writes the issue's spec and
    scope sections itself, and reads everything under `## Instructions for the agent` from the

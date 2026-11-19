@@ -16,8 +16,8 @@ CI Status turns into a fix-up attempt, so it is also the agent's main source of 
 | `Tasks format` | `validate-tasks`, only when a `tasks.md` or its reader changed | A `tasks.md` the Agent Issues workflow would misread (gap 5) |
 | `UI Screenshots` | `ui-screenshots` | A UI change with no new screenshots (gap 6) |
 | `Invariant coverage` | `invariant-coverage`, only when code that could write the core table changed | A new writer of a shared record with no change to the invariants. See [Local stack](../local-stack/#invariants-after-every-test) |
-| `E2E tests (1/4)` … `(4/4)` | `pnpm nx affected --target e2e`, sharded | Broken user flows, broken invariants, races |
-| `E2E tests` | Gathers the four shards into one result | Gives branch protection one stable name, whatever the shard count |
+| `E2E tests (1/6)` … `(6/6)` | `pnpm nx affected --target e2e`, sharded | Broken user flows, broken invariants, races |
+| `E2E tests` | Gathers the six shards into one result | Gives branch protection one stable name, whatever the shard count |
 | `E2E screenshots` | `screenshots-comment` | Posts the pictures on the PR |
 
 `fail-fast: false` matters for agents. When lint *and* a test fail, the agent hears about both in
@@ -68,6 +68,32 @@ Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifa
 The reviewer agent reads the same list. Artifacts have no public URL, so the comment names the
 images and links the run they can be downloaded from.
 
+## Keeping it fast
+
+Check time is the agent's feedback time: every minute a run takes is added to every fix-up round.
+Discava cut its PR checks in four ways:
+
+- **Nx's task cache is kept between runs.** The `init-monorepo` action keeps `.nx/cache` in an
+  Actions cache, one per Checks leg. It is saved per commit and restored from the same branch's
+  last push or, failing that, from `main`'s, which `ci.yml` saves. A task whose inputs didn't
+  change since the last push is replayed, not run again.
+- **The cache stays under quota.** The repository reached 12.3 GB of its 10 GB of Actions cache,
+  and GitHub evicted the caches of open PRs. Three changes fixed it: `NX_MAX_CACHE_SIZE=1GB`, so a
+  saved cache no longer carries a week of old outputs; the lint leg restores `main`'s cache but
+  saves none, since Biome lints faster than a cache saves; and a **Cache Cleanup** workflow
+  deletes a PR's caches when it closes.
+- **Slow tests get a target of their own.** One test file took 4 of the build leg's 5 minutes.
+  Its own target, whose inputs are only the files it tests, is replayed from the cache on most
+  PRs.
+- **Tuned parallelism.** `nx affected` runs four tasks at a time, not `nx.json`'s eight: each
+  Vitest task starts its own workers, and four was about 12% faster on a four-core runner. E2E
+  went from four shards to six, with files spread over the shards by run time. A shard costs about
+  two minutes before its first test, so more shards stop paying off once each one's tests take
+  about that long.
+
+`Tasks format` and `Invariant coverage` only matter for some paths. A small `changed-paths` action
+diffs the PR first, and the job skips installing dependencies when nothing relevant changed.
+
 ## Safe by construction
 
 The jobs that can write to the PR (`E2E screenshots`, and the agent workflows) check out the
@@ -84,7 +110,8 @@ an attempt.
   generator changed files that weren't committed.
 - **Trivy**: the vulnerability and secret scan. See [Deploy and security](../deploy-and-security/).
 - **Playwright cache**: saves Chromium under the key PR runs look for. A PR can only restore caches
-  from its own ref or `main`.
+  from its own ref or `main`. For the same reason, the lint, test and build steps save the Nx cache
+  each PR's first run starts from.
 - **Deploy Docs** to GitHub Pages, only if no newer commit has landed on `main` meanwhile.
 
 Next: [Local stack](../local-stack/).

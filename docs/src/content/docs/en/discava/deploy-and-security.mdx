@@ -64,6 +64,10 @@ workflow. It prompts for everything and defaults what it can detect. It creates:
   the stacks can only create roles that carry it
 - the GitHub environment's `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN` and `AWS_EXECUTION_ROLE_ARN`
   variables, and optionally `AUTO_DEPLOY_STAGE`
+- optionally, custom domains, from one question: a root domain. Every component gets a fixed
+  subdomain of it, and the script finds the issued certificate for each. If one is missing, it
+  lists it and stops before changing anything. The domains are stored as stage overrides on the
+  GitHub environment (step 3 above)
 
 ### Production waits for a person
 

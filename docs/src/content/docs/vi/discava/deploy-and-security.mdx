@@ -84,6 +84,10 @@ workflow. Nó hỏi mọi thứ và đặt mặc định cho những gì nó dò
   các stack chỉ có thể tạo role mang boundary đó
 - các biến `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN` và `AWS_EXECUTION_ROLE_ARN` của GitHub environment, và
   tùy chọn `AUTO_DEPLOY_STAGE`
+- tùy chọn, các tên miền riêng, chỉ từ một câu hỏi: một tên miền gốc. Mỗi thành phần nhận một tên
+  miền con cố định của nó, và script tự tìm chứng chỉ đã cấp cho từng cái. Nếu thiếu một chứng chỉ,
+  nó liệt kê ra và dừng trước khi thay đổi bất cứ thứ gì. Các tên miền được lưu thành stage override
+  trên GitHub environment (bước 3 ở trên)
 
 ### Production chờ một người
 

@@ -43,6 +43,10 @@ khai.
    cả bộ test ở chế độ watch và bị treo.
    </Aside>
 
+   Khi mục kiến trúc không còn gói gọn trong một dòng cho mỗi package, hãy chuyển chi tiết của từng
+   package vào một `AGENTS.md` lồng trong thư mục của nó, và để ở file gốc một dòng trỏ tới đó. Agent
+   chỉ nạp một file lồng khi nó làm việc trong thư mục đó, nên mỗi lần chạy chỉ đọc chi tiết nó cần.
+
 2. **Chép issue template** từ repository này sang `.github/ISSUE_TEMPLATE/implement-phase.md`.
    Script Agent Issues đọc mọi thứ dưới `## Instructions for the agent` từ đó lúc chạy. Template đầy
    đủ:

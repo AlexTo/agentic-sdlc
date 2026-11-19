@@ -17,8 +17,8 @@ CI Status biến thành một lượt fix-up, nên nó cũng là nguồn phản 
 | `Checks (lint)`, `Checks (test)`, `Checks (build)` | `pnpm nx affected --target <target>`, dạng matrix với `fail-fast: false` | Style, unit test, kiểu, bundling, CDK synth và checkov trên hạ tầng |
 | `Tasks format` | `validate-tasks`, chỉ khi một `tasks.md` hoặc bộ đọc của nó thay đổi | Một `tasks.md` mà workflow Agent Issues sẽ đọc sai (khoảng trống 5) |
 | `UI Screenshots` | `ui-screenshots` | Một thay đổi UI không có ảnh chụp màn hình mới (khoảng trống 6) |
-| `E2E tests (1/4)` … `(4/4)` | `pnpm nx affected --target e2e`, chia shard | Luồng người dùng hỏng, invariant bị phá, race condition |
-| `E2E tests` | Gom bốn shard thành một kết quả | Cho branch protection một tên ổn định, bất kể số shard |
+| `E2E tests (1/6)` … `(6/6)` | `pnpm nx affected --target e2e`, chia shard | Luồng người dùng hỏng, invariant bị phá, race condition |
+| `E2E tests` | Gom sáu shard thành một kết quả | Cho branch protection một tên ổn định, bất kể số shard |
 | `E2E screenshots` | `screenshots-comment` | Đăng ảnh lên PR |
 
 `fail-fast: false` quan trọng với agent. Khi lint *và* một test cùng thất bại, agent nghe về cả hai
@@ -74,6 +74,31 @@ Artifact không có URL công khai, nên comment chỉ có thể nêu tên ảnh
 vẫn đủ để người review tải về đúng những ảnh quan trọng.
 </Aside>
 
+## Giữ cho nhanh
+
+Thời gian chạy check là thời gian agent chờ phản hồi: mỗi phút một lần chạy tốn thêm được cộng vào
+mọi vòng sửa. Discava rút ngắn PR checks của mình theo bốn cách:
+
+- **Task cache của Nx được giữ giữa các lần chạy.** Action `init-monorepo` giữ `.nx/cache` trong một
+  Actions cache, mỗi leg của Checks một cái. Nó được lưu theo từng commit và khôi phục từ lần push
+  trước của cùng nhánh, hoặc nếu không có thì từ cache của `main`, do `ci.yml` lưu. Một task có input
+  không đổi kể từ lần push trước được phát lại, không chạy lại.
+- **Cache nằm trong hạn mức.** Repository từng chạm 12,3 GB trên 10 GB Actions cache cho phép, và
+  GitHub xóa bớt cache của các PR đang mở. Ba thay đổi đã sửa việc này: `NX_MAX_CACHE_SIZE=1GB`, để
+  một cache được lưu không còn mang theo output cũ của cả tuần; leg lint khôi phục cache của `main`
+  nhưng không lưu cái nào, vì Biome lint nhanh hơn thời gian lưu một cache; và một workflow **Cache
+  Cleanup** xóa cache của một PR khi PR đó đóng.
+- **Test chậm có target riêng.** Một file test từng chiếm 4 trong 5 phút của leg build. Với target
+  riêng, mà input chỉ là các file nó test, nó được phát lại từ cache trên hầu hết các PR.
+- **Điều chỉnh mức song song.** `nx affected` chạy bốn task một lúc, không phải tám như trong
+  `nx.json`: mỗi task Vitest tự khởi động worker riêng, và bốn nhanh hơn khoảng 12% trên runner bốn
+  nhân. E2E tăng từ bốn shard lên sáu, với các file được chia cho các shard theo thời gian chạy. Mỗi
+  shard tốn khoảng hai phút trước test đầu tiên, nên thêm shard không còn đáng khi test trong mỗi
+  shard chỉ mất cỡ đó.
+
+`Tasks format` và `Invariant coverage` chỉ liên quan đến một số đường dẫn. Một action nhỏ
+`changed-paths` diff PR trước, và job bỏ qua việc cài dependency khi không có gì liên quan thay đổi.
+
 ## An toàn từ thiết kế
 
 Các job có thể ghi vào PR (`E2E screenshots`, và các agent workflow) checkout **nhánh mặc định** và
@@ -89,7 +114,8 @@ kịp bắt đầu sẽ khiến agent mất một lượt thử.
   generator đã thay đổi file chưa được commit.
 - **Trivy**: quét lỗ hổng và secret. Xem [Deploy và bảo mật](../deploy-and-security/).
 - **Playwright cache**: lưu Chromium dưới key mà các lần chạy PR tìm. Một PR chỉ có thể khôi phục
-  cache từ ref của chính nó hoặc `main`.
+  cache từ ref của chính nó hoặc `main`. Cũng vì lý do đó, các bước lint, test và build lưu Nx cache
+  mà lần chạy đầu tiên của mỗi PR bắt đầu từ đó.
 - **Deploy Docs** lên GitHub Pages, chỉ khi không có commit mới hơn đã vào `main` trong lúc đó.
 
 Tiếp theo: [Local stack](../local-stack/).

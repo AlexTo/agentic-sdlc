@@ -19,7 +19,7 @@ Screenshots**, và **CI** trên `main`.
    | --- | --- |
    | `checks`, một matrix gồm `lint`, `test`, `build` với `fail-fast: false` | Có |
    | `tasks-format` | Có |
-   | `e2e`, bốn shard, cộng `e2e-result` gom chúng thành một check `E2E tests` | Điều chỉnh số shard theo bộ test của bạn |
+   | `e2e`, chia shard, cộng `e2e-result` gom các shard thành một check `E2E tests` | Đặt số shard theo bộ test của bạn |
    | `e2e-screenshots` | Có, khi [bước 8](../local-stack-and-e2e/) đã xong |
 
    Thay mọi `@agentic-sdlc/` bằng `@your-scope/`.
@@ -33,6 +33,13 @@ Screenshots**, và **CI** trên `main`.
    (`git diff --ignore-space-at-eol --exit-code` sau khi build). Nó bắt các file sinh ra mà agent
    quên commit. Giữ job `playwright-cache` nếu bạn dùng Playwright: các lần chạy PR chỉ có thể khôi
    phục cache được lưu trên `main`.
+
+   <Aside type="tip">
+   Khi các check của bạn chạy quá vài phút, hãy giữ task cache của Nx giữa các lần chạy, để agent chờ
+   ít hơn ở mỗi vòng sửa. Giới hạn kích thước của nó và xóa cache của một PR khi PR đóng, nếu không 10
+   GB Actions cache của repository sẽ đầy. Xem cách Discava làm trong
+   [Giữ cho nhanh](../../discava/pr-checks/#giữ-cho-nhanh).
+   </Aside>
 
 4. **Ghim mọi action vào một commit SHA**, như các file đã chép, và thêm `.github/dependabot.yml` để
    các pin luôn cập nhật:
