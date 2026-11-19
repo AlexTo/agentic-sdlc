@@ -1,6 +1,6 @@
 ---
 title: Các nguyên tắc
-description: Tám ý tưởng tạo nên quy trình, và ý tưởng quan trọng nhất. Các trang sau tham chiếu lại chúng theo số.
+description: Chín ý tưởng tạo nên quy trình, và ý tưởng quan trọng nhất. Các trang sau tham chiếu lại chúng theo số.
 sidebar:
   order: 1
 ---
@@ -78,6 +78,37 @@ Bất cứ thứ gì quyết định *điều gì xảy ra tiếp theo* (issue n
 dừng) là một script tất định có unit test, được chạy bởi một workflow. Agent chỉ được yêu cầu làm
 những việc cần phán đoán: viết code, và review nó. Một prompt có thể bị phớt lờ. Một workflow thì không.
 
+## 9. Biến rule và skill thành tất định
+
+Nguyên tắc 8 nói về glue giữa các bước. Nguyên tắc này nói về các rule và skill mà agent tuân theo
+bên trong một bước. Một rule chỉ được viết trong `AGENTS.md` hay constitution là một lời đề nghị.
+Agent có thể bỏ sót, hiểu theo hai cách, hoặc quên nó trong một phiên dài. Ở chỗ nào một rule có thể
+được kiểm tra bằng script, hãy viết script đó, chạy nó trong một hook hoặc một PR check, và giữ phần
+văn xuôi làm lời giải thích. Một check thất bại cho agent biết chính xác cái gì sai và sai ở đâu, và
+nó quay lại qua cùng vòng phản hồi như mọi kết quả đỏ khác.
+
+Discava làm điều này ở khắp nơi:
+
+- **Định dạng task.** Workflow của agent đọc `tasks.md` bằng một parser. Một file lệch khỏi định
+  dạng không bị từ chối; các giai đoạn của nó bị bỏ qua mà không báo. Vì vậy PR check `Tasks format`
+  chạy một validator trên mọi `tasks.md`, và workflow mở issue từ chối file không đạt.
+- **Ảnh chụp màn hình cho thay đổi UI.** Constitution nói một thay đổi về những gì người dùng thấy
+  phải chụp ảnh trong e2e scenario của nó. Check `UI Screenshots` đọc diff của PR và thất bại nếu
+  markup hay style của một portal thay đổi mà không scenario nào có thêm lời gọi `screenshot(`. Một
+  maintainer có thể miễn bằng label `no-ui-screenshots`.
+- **Invariant cho bản ghi dùng chung.** Constitution nói một rule trải trên nhiều bản ghi cần một
+  check trong `invariants.ts`. Check `Invariant coverage` quét xem code nào ghi vào core table, và
+  thất bại nếu có writer mới mà không có invariant nêu tên entity của nó. Một hook pre-push tạo lại
+  bản đồ writer, để agent biết trước khi CI phát hiện.
+- **Commit.** Conventional Commits được commitlint thực thi trong hook `commit-msg`, và
+  `git-secrets` chạy trên mọi commit.
+- **Skill gọi script.** Các skill của Speckit không mô tả cách tạo nhánh feature hay commit một
+  bước. Chúng chạy `create-new-feature.sh` và `auto-commit.sh`, và extension hook của Speckit chạy
+  chúng trước và sau mỗi lệnh, dù agent có nhớ hay không.
+
+Để phần phán đoán cho agent, và chuyển mọi thứ kiểm tra được vào code. Nếu bạn viết cùng một lời
+sửa trong review hai lần, có lẽ đó là một check còn thiếu.
+
 ## Các nguyên tắc ứng với các thành phần ra sao
 
 | Nguyên tắc | Bạn thấy nó ở đâu |
@@ -90,3 +121,4 @@ những việc cần phán đoán: viết code, và review nó. Một prompt có
 | 6. Tự chủ có giới hạn | [Vòng phản hồi](../feedback-loops/) |
 | 7. Quyết định của con người | [Cổng người duyệt](../human-gates/) |
 | 8. Glue là code | [Phần glue còn thiếu](../the-missing-glue/) |
+| 9. Rule và skill tất định | [Constitution và hướng dẫn](../../discava/constitution-and-guidance/), [PR check ở Discava](../../discava/pr-checks/) |

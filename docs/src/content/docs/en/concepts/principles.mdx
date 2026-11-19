@@ -1,6 +1,6 @@
 ---
 title: The principles
-description: The eight ideas the workflow is built from, and the one that matters most. Later pages refer back to them by number.
+description: The nine ideas the workflow is built from, and the one that matters most. Later pages refer back to them by number.
 sidebar:
   order: 1
 ---
@@ -77,6 +77,37 @@ Anything that decides *what happens next* (which issue opens, whether the agent 
 stop) is a deterministic script with unit tests, run by a workflow. The agent is only asked to do
 what needs judgment: write the code, and review it. A prompt can be ignored. A workflow can't.
 
+## 9. Make rules and skills deterministic
+
+Principle 8 covers the glue between steps. This one covers the rules and skills the agent follows
+inside a step. A rule written only in `AGENTS.md` or the constitution is a request. The agent may
+miss it, read it two ways, or forget it in a long session. Wherever a rule can be checked by a
+script, write the script, run it in a hook or a PR check, and keep the prose as the explanation.
+A failed check tells the agent exactly what is wrong and where, and it goes back through the same
+feedback loop as any other red result.
+
+Discava does this throughout:
+
+- **Task format.** The agent workflow reads `tasks.md` with a parser. A file that strays from the
+  format isn't refused; its phases are silently skipped. So the `Tasks format` PR check runs a
+  validator on every `tasks.md`, and the workflow that opens issues refuses a file that fails it.
+- **Screenshots of UI changes.** The constitution says a change to what a user sees must take
+  screenshots in its e2e scenario. The `UI Screenshots` check reads the PR's diff and fails if a
+  portal's markup or styles changed but no scenario gained a `screenshot(` call. A maintainer can
+  waive it with the `no-ui-screenshots` label.
+- **Invariants for shared records.** The constitution says a rule that spans records needs a check
+  in `invariants.ts`. The `Invariant coverage` check scans which code writes the core table, and
+  fails if a new writer arrives without an invariant naming its entity. A pre-push hook regenerates
+  the writer map, so the agent finds out before CI does.
+- **Commits.** Conventional Commits are enforced by commitlint in a `commit-msg` hook, and
+  `git-secrets` runs on every commit.
+- **Skills that call scripts.** The Speckit skills don't describe how to create a feature branch or
+  commit a step. They run `create-new-feature.sh` and `auto-commit.sh`, and Speckit's extension
+  hooks run them before and after each command, whether or not the agent remembers to.
+
+Leave the judgment to the agent and move everything checkable into code. If you write the same
+correction in a review twice, it's probably a missing check.
+
 ## How the principles map to the pieces
 
 | Principle | Where you see it |
@@ -89,3 +120,4 @@ what needs judgment: write the code, and review it. A prompt can be ignored. A w
 | 6. Bounded autonomy | [Feedback loops](../feedback-loops/) |
 | 7. Human decisions | [Human gates](../human-gates/) |
 | 8. Glue is code | [The missing glue](../the-missing-glue/) |
+| 9. Deterministic rules and skills | [Constitution and guidance](../../discava/constitution-and-guidance/), [PR checks in Discava](../../discava/pr-checks/) |
