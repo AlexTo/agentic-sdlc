@@ -73,16 +73,6 @@ The workflows in steps 6 and 7 only call these targets.
       Tests  124 passed (124)
 ```
 
-And the validator runs:
-
-```bash
-pnpm nx run @your-scope/common-scripts:validate-tasks
-```
-
-```text
-0 tasks.md file(s) are in the expected format.
-```
-
 ## Try a dry run
 
 Each of the three agent scripts reads the GitHub event from `GITHUB_EVENT_PATH`, and with

@@ -7,14 +7,11 @@ sidebar:
 
 import { FileTree, LinkCard } from '@astrojs/starlight/components';
 
-You don't have to build the workflow from scratch to try it. This repository *is* the workflow:
-the same Speckit setup, issue template, PR checks, agent workflows and unit-tested glue that
-Discava runs, wrapped around a small notes app instead of a learning management system.
+This repository *is* the workflow: the same Speckit setup, issue template, PR checks, agent
+workflows and unit-tested glue that Discava runs, wrapped around a small notes app.
 
 **Fork it, and you have Discava's setup.** Point your own OpenHands at the fork, write a spec for
-the notes app, and the spec goes through exactly the loop described in
-[How it works](../how-it-works/): spec PR, issue, agent PR, CI, agent review, your merge, next
-issue.
+the notes app, and it goes through the loop described in [How it works](../how-it-works/).
 
 ## What you get
 
@@ -53,9 +50,8 @@ Only what can't live in a repository:
 
 ## What's left out
 
-Discava's AWS deployment and its stage setup script. The notes app has no cloud infrastructure, so
-merging ships nothing beyond the docs site. [Deploy and security](../../discava/deploy-and-security/)
-describes Discava's pipeline, and [Adopt: deploy](../../adopt/deploy/) shows how to add it to your
-own repository.
+Discava's AWS deployment. The notes app has no cloud infrastructure, so merging ships nothing
+beyond the docs site. [Deploy and security](../../discava/deploy-and-security/) describes Discava's
+pipeline, and [Adopt: deploy](../../adopt/deploy/) shows how to add one.
 
 <LinkCard title="Set it up: fork, configure, run your first feature" href="/agentic-sdlc/en/setup/before-you-start/" />

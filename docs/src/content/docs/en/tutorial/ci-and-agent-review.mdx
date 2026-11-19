@@ -25,7 +25,7 @@ Every push to the agent's PR runs the gates. Failures go back to the agent, neve
 
 ## When a gate fails
 
-1. The **Agent CI Status** workflow posts a failing commit status that the agent already watches.
+1. The **Agent CI Status** workflow marks the PR's head commit as failing.
 2. The agent revises the *same* PR in its original conversation, using the failure output.
 3. CI runs again.
 
@@ -41,21 +41,13 @@ sends the implementing agent back the same way a red CI does.
 
 ## The cap
 
-There are two fix-up loops, and each is limited to **five** attempts per PR:
-
-| Loop | Sent back by | Counted with | Gives up with |
-| --- | --- | --- | --- |
-| CI | **Agent CI Status**, on a red PR Checks run | `ci-fix-1` to `ci-fix-5` | `ci-fix-exhausted` |
-| Review | **Agent Review Status**, on the reviewer agent's `🔄 CHANGES REQUESTED` | `review-fix-1` to `review-fix-5` | `review-fix-exhausted` |
-
-The counters are separate, so a PR can use up to five CI fixes and five review fixes. After the
-fifth attempt in a loop, its workflow comments, adds the `*-exhausted` label and stops.
+Each loop is limited to **five** attempts per PR, counted in labels: `ci-fix-1` to `ci-fix-5` for
+CI, `review-fix-1` to `review-fix-5` for review. After the fifth, the workflow comments, adds
+`ci-fix-exhausted` or `review-fix-exhausted`, and stops.
 
 <Aside type="caution">
-An exhausted loop is the one time you are pulled in early. For `ci-fix-exhausted`, read the last
-failure. For `review-fix-exhausted`, decide whether the reviewer is right. Then either comment with
-guidance, fix it yourself, or go back to the spec: repeated failure often means the spec was
-ambiguous. Fixing the spec and regenerating beats patching the code.
+An exhausted loop is the one time you are pulled in early.
+[Human gates](../../concepts/human-gates/#when-you-are-pulled-in-early) says what to do.
 </Aside>
 
 Next: [Merge and repeat](../merge-and-repeat/).

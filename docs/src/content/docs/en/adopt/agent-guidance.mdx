@@ -44,26 +44,11 @@ implementation issue.
    </Aside>
 
 2. **Copy the issue template** from this repository to
-   `.github/ISSUE_TEMPLATE/implement-phase.md`. The Agent Issues script reads everything under
-   `## Instructions for the agent` from it at run time. The full template:
+   `.github/ISSUE_TEMPLATE/implement-phase.md`. The Agent Issues script writes the issue's spec and
+   scope sections itself, and reads everything under `## Instructions for the agent` from the
+   template at run time:
 
    ```markdown
-   ---
-   name: Implement a spec phase
-   about: Hand one phase of a feature's tasks.md to the implementing agent
-   title: "feat(<scope>): <phase or story>"
-   labels: []
-   ---
-
-   ## Spec
-
-   - Spec folder: `specs/<timestamp>-<name>/` (read `spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `contracts/`)
-   - Parent issue: #<number>
-
-   ## Scope
-
-   Tasks `T0xx` to `T0yy` of `tasks.md` (<phase or story>). Do not start tasks outside this range.
-
    ## Instructions for the agent
 
    - Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.

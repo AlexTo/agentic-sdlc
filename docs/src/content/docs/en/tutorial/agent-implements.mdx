@@ -9,9 +9,8 @@ import { Aside } from '@astrojs/starlight/components';
 
 **You are here:** agent, unattended. **Output:** a pull request for phase 1 on an `openhands/...` branch.
 
-On its next poll (every 5 minutes in Discava, 15 by default), OpenHands finds the issue labelled
-`openhands` and starts a conversation for it.
-You do nothing. This is what it does, and what you can check on the PR afterwards.
+On its next poll, OpenHands finds the issue labelled `openhands` and starts a conversation for it.
+You do nothing.
 
 ## What the agent does
 
@@ -25,7 +24,7 @@ You do nothing. This is what it does, and what you can check on the PR afterward
 
 ## What it is told not to do
 
-The issue template spells the limits out, and the workflows enforce the important ones:
+The issue spells the limits out:
 
 - Never work outside the task range.
 - Never weaken a test to make it pass.

@@ -13,27 +13,9 @@ anywhere.
 
 ## Deploy
 
-`.github/workflows/deploy.yml` runs when **CI** completes on `main`, or by hand for any stage.
-
-```yaml
-on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
-  workflow_dispatch:
-    inputs:
-      stage: { type: string, required: true, default: discava-development }
-
-jobs:
-  deploy:
-    if: ${{ github.event_name == 'workflow_dispatch' ||
-            (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
-    environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
-    concurrency:
-      group: deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
-      cancel-in-progress: false
-```
+`.github/workflows/deploy.yml` runs when **CI** completes green on `main`, or by hand for any
+stage. Each stage has its own GitHub environment and its own concurrency group, so two deploys to
+one stage never overlap. An abridged copy of the workflow is in [Adopt: deploy](../../adopt/deploy/).
 
 ```d2
 direction: right

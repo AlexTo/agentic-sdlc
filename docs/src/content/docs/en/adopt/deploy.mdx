@@ -65,15 +65,13 @@ example notes app in this repository has no deploy, so copy from
    The freshness check sits *inside* the concurrency slot, so it reflects `main` right before the
    deploy, even if the run waited behind another one.
 
-4. **Turn on automatic deploys** for the development stage:
+4. **Turn on automatic deploys** for the development stage. Under **Settings → Secrets and
+   variables → Actions → Variables**, add a repository variable `AUTO_DEPLOY_STAGE` with your
+   development stage's name.
 
-   ```bash
-   gh variable set AUTO_DEPLOY_STAGE --body your-project-development
-   ```
-
-5. **Protect production.** Create its GitHub environment with **required reviewers** (Settings →
-   Environments → your production stage → Required reviewers). Deploy it with
-   `gh workflow run deploy.yml -f stage=your-project-production`. The job then waits for approval.
+5. **Protect production.** Under **Settings → Environments**, open your production stage's
+   environment and add **Required reviewers**. To deploy it, open **Actions → Deploy → Run
+   workflow** and enter the production stage. The job then waits for approval.
 
 </Steps>
 
@@ -88,6 +86,6 @@ The agent never deploys and never sees these roles. Its conversation has only th
 The deploy role is assumed only by a workflow running from `main`, in the stage's environment.
 </Aside>
 
-Next: your repository now has everything a fork of this one has. Continue with the fork path from
-[2. Configure the repository](../../setup/github-repository/), pointing each step at your own
-repository instead of a fork.
+Next: your repository now has everything a fork of this one has. Continue from
+[2. Configure the repository](../../setup/github-repository/), with your own repository in place
+of the fork.

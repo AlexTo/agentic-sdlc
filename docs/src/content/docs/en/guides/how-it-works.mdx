@@ -5,11 +5,8 @@ sidebar:
   order: 2
 ---
 
-import { Aside } from '@astrojs/starlight/components';
-
-This page follows one feature through the whole loop, so you have the full picture before the
-details. Each step names who acts, and what artifact the step leaves behind. The red paths, where CI or the
-reviewer sends the agent back, are on [Feedback loops](../../concepts/feedback-loops/).
+This page follows one feature through the whole loop. Each step names who acts and what it leaves
+behind.
 
 ```d2
 grid-rows: 2
@@ -46,23 +43,19 @@ merge -> issues: next phase
 | 3 | You + agent | `/speckit-tasks` writes an ordered task list, grouped into phases. `/speckit-analyze` cross-checks all three files | `tasks.md` |
 | 4 | **You** | Open the spec PR, review it like code, add the `spec-ready` label, merge | A merged spec PR. **Human gate 1** |
 | 5 | Automation | The **Agent Issues** workflow reads `tasks.md` and opens an issue for the first group of phases, with the `openhands` label | An implementation issue |
-| 6 | OpenHands | The Issue-to-PR automation picks the issue up on its next poll. The agent writes tests first, implements, ticks tasks and opens a PR on `openhands/issue-<n>`, then adds `openhands-review` | A pull request |
+| 6 | OpenHands | On its next poll, the agent picks the issue up, writes tests first, implements, ticks its tasks and opens a PR on `openhands/issue-<n>` | A pull request |
 | 7 | CI | PR checks run lint, unit tests, build, the `tasks.md` format check, e2e tests and the screenshots check | Check results |
-| 8 | Automation + OpenHands | On a red run, **Agent CI Status** posts a failing `software-factory/review` status. The agent sees it on the next poll and revises the same PR | `ci-fix-1` to `ci-fix-5` labels |
-| 9 | OpenHands | Once every check has finished, the reviewer agent reviews the exact head commit and ends with `✅ APPROVED` or `🔄 CHANGES REQUESTED`. **Agent Review Status** turns the second into the same failing status | A review, and maybe `review-fix-N` labels |
+| 8 | Automation + OpenHands | On a red run, **Agent CI Status** marks the PR as failing. The agent sees it on the next poll and revises the same PR | `ci-fix-1` to `ci-fix-5` labels |
+| 9 | OpenHands | Once every check has finished, the reviewer agent reviews the head commit and ends with `✅ APPROVED` or `🔄 CHANGES REQUESTED`. **Agent Review Status** sends the agent back on the second | A review, and maybe `review-fix-N` labels |
 | 10 | **You** | You read the PR description and the **E2E screenshots** comment, do any **(human)** tasks, and merge | A merged PR. **Human gate 2** |
-| 11 | Automation | The merge of an `openhands/` branch runs **Agent Issues** again on the merged `tasks.md`. The agent ticked its tasks in the PR, so the workflow moves to the first phase with an unticked agent task and opens its issue. **(human)** tasks don't count. If the merged phase still has unticked agent tasks, nothing opens and the PR gets a comment listing them. When no agent tasks are left, nothing opens | The next issue, a "not opened" comment, or done |
+| 11 | Automation | The merge runs **Agent Issues** again. It opens the issue for the next phase that has unticked agent tasks, and steps 6 to 10 repeat until none are left | The next issue, or done |
 
 ## What you actually do
 
 Per feature, you write and approve the spec once. Per pull request, you do one review and click
 merge. You are pulled in early only when a loop runs out of attempts (`ci-fix-exhausted` or
-`review-fix-exhausted`), or when the agent comments that it is blocked.
-
-<Aside type="tip">
-The waiting is still there. It just isn't yours any more. An agent PR typically takes a few
-polls to implement, check and review. While it runs, you can write the next spec.
-</Aside>
+`review-fix-exhausted`), or when the agent comments that it is blocked. While the agents work, you
+can write the next spec.
 
 ## Where each piece lives
 
@@ -78,6 +71,7 @@ polls to implement, check and review. While it runs, you can write the next spec
 | The rules behind the glue, unit-tested | `packages/common/scripts/src/agent-*`, `ui-screenshots/` |
 | The agent runtime | OpenHands Agent Canvas, outside the repository |
 
-How the phases are grouped, and what stops the chain: [One phase at a time](../../concepts/one-phase-at-a-time/).
+The details are in Concepts: [how phases become issues](../../concepts/one-phase-at-a-time/), and
+[how a failure sends the agent back](../../concepts/feedback-loops/).
 
 Next: [Fork this repository](../fork-this-repo/), or go to [Concepts](../../concepts/principles/).

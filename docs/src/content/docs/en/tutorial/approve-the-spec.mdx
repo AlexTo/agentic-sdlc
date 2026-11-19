@@ -11,12 +11,11 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 <Steps>
 
-1. Open the spec PR.
+1. Push the branch, then open a pull request for it on GitHub.
 
    ```bash
    git add specs/ && git commit -m "docs(specs): add note tags spec"
    git push -u origin spec/note-tags
-   gh pr create --fill
    ```
 
 2. Review it as you would code. Read `spec.md` first, then `plan.md`, then skim `tasks.md`.
@@ -29,19 +28,13 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    Comment on the PR to change anything. The agent reads comments too, so you can ask it to revise.
 
    Bring in your business analyst or product owner here. `spec.md` is plain language, so they can
-   review and approve it on the PR while you check the plan. This review is now the slowest human
-   step, and sharing it is how you speed it up. See
+   review it on the PR while you check the plan. See
    [Human gates](../../concepts/human-gates/#this-is-now-the-main-bottleneck).
 
-3. Label the PR `spec-ready`, then merge.
+3. Add the `spec-ready` label to the PR, then merge it.
 
-   ```bash
-   gh pr edit --add-label spec-ready
-   gh pr merge --squash
-   ```
-
-   You opened this PR, so GitHub won't let you approve it. With branch protection on, merge it as
-   the repository admin with `gh pr merge --squash --admin`.
+   You opened this PR, so GitHub won't let you approve it. With branch protection on, tick
+   **Merge without waiting for requirements to be met** to merge as the repository admin.
 
 </Steps>
 
@@ -54,8 +47,7 @@ spec folder, task range `T001` to `T003`, and the rules the agent must follow. I
 `openhands` label, which is the go signal.
 
 <Aside type="note">
-Forgot the label? Add `spec-ready` to the already merged PR, or run the workflow by hand with the
-spec folder name. Nothing else is needed.
+Forgot the label? Add `spec-ready` to the already merged PR.
 </Aside>
 
 Your attention is now free until there is something to review. Next: [Agent implements](../agent-implements/).

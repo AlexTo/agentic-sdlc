@@ -70,17 +70,11 @@ A first run with nothing to do logs a sweep of the repository and ends `COMPLETE
 
 Close the PR and delete the branch afterwards.
 
-## What runs on each poll
-
-| Automation | On each poll |
-| --- | --- |
-| Issue to PR | 1. For each open `openhands/issue-<n>` PR whose head has `software-factory/review` = `failure` or `error`, send a revise turn to that issue's conversation. 2. For each open issue with `openhands` and no PR, start an implement turn. Issues labelled `priority:high` go first |
-| Code review | For each PR with `openhands-review`, a review request for its account, or open, non-draft and unreviewed: if every check on the head has finished, review that exact commit. Otherwise comment "⏳ Review waiting on checks" and try again on a later poll |
+What each automation does on a poll is on [The agent runtime](../../concepts/the-agent-runtime/).
 
 <Aside type="note">
 To give the agent a second try at an issue from scratch, remove and re-apply the `openhands` label.
-A revise only happens through the `software-factory/review` status, which the glue workflows post.
-You can post it by hand too, to send the agent back with your own comment:
+To send it back to an open PR with your own comment, post the status the glue workflows post:
 `gh api repos/<you>/agentic-sdlc/statuses/<sha> -f state=failure -f context=software-factory/review -f description="See my comment"`.
 </Aside>
 

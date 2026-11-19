@@ -1,123 +1,104 @@
 ---
 title: The principles
-description: The nine ideas the workflow is built from, and the one that matters most. Later pages refer back to them by number.
+description: The nine ideas the workflow is built from, most important first.
 sidebar:
   order: 1
 ---
-
-import { Aside } from '@astrojs/starlight/components';
 
 Everything in this workflow follows from one move: **take the developer out of the loop and put
 them at its two ends.** Humans decide *what* to build and *whether it is good*. Agents do
 everything in between, through the normal GitHub process.
 
-The rest of this guide refers back to these principles by number.
+The principles are in order of importance. If you can only do a few, start at the top.
 
-<Aside type="tip" title="Verification matters most">
-Verification is the most important step. An agent that can't run the app and see what it built
-is guessing, and every other principle only organises the guesses.
-</Aside>
+## 1. Verification first: give the agent hands and eyes
 
-## 1. The spec is the source of truth
+An agent that can't run the app and see what it built is guessing, and every other principle only
+organises the guesses. Code that compiles and passes its unit tests can still fail the user, so the
+agent has to **run what it built, from the back end to the front end**, the way a person would:
+
+- **Hands:** start the whole app on a local stack with no cloud account, call the API, sign in,
+  click through the flow in a real browser, and trigger the background work behind it.
+- **Eyes:** read what comes back: responses, logs, the data left in the database, and screenshots
+  of every state a reviewer would want to see.
+
+The agent doesn't do this on its own machine. It writes the e2e scenarios, and CI runs them on
+every PR against a fresh local stack. The results, invariant failures and screenshots come back on
+the PR, so the agent catches its own mistakes and every PR arrives with evidence.
+
+Build for this from day one: every cloud service needs a local stand-in, every user flow an e2e
+scenario, and every UI state a screenshot. Anything the agent can't run is a task a person has to
+verify.
+
+## 2. The spec is the source of truth
 
 A feature starts as `spec.md`, `plan.md` and `tasks.md`, reviewed like code. The agent builds from
 them. To change behaviour, change the spec and regenerate the plan and tasks. Don't patch the code
 by hand and let the spec go stale.
 
-## 2. Every step leaves an artifact
-
-Intent lives in the spec, scope in the issue, history in the pull request, and the reason a run
-stopped in a label or a comment. Nothing lives only in a chat window or in someone's head, so a new
-teammate or a new agent can pick up where the last one stopped.
-
-## 3. Small, scoped units of work
-
-A spec splits into phases. Each group of phases is one issue and one pull request, with a task
-range the agent must not leave. Small PRs are cheap to review and cheap to throw away.
-
-## 4. Verification is the most important step: give the agent hands and eyes
-
-Code that compiles and passes its unit tests can still fail the user. The agent has to **run what
-it built and interact with it, from the back end to the front end**, the way a person would:
-
-- **Hands:** start the whole app on a local stack with no cloud account, call the API, sign in as a
-  user, click through the flow in a real browser, and trigger the background work behind it.
-- **Eyes:** read what comes back: responses, logs, the data left in the database, and screenshots
-  of every state a reviewer would want to see.
-
-The agent doesn't need to do this on its own machine. In this workflow it writes the e2e scenarios,
-and GitHub CI runs them on every PR against a fresh local stack. The results, invariant failures
-and screenshots come back on the PR for the agent to read, so its own environment stays simple.
-
-Without hands and eyes the agent writes code it has never seen work, and a person has to pull the
-branch to find out. With them, the agent catches its own mistakes and every PR arrives with
-evidence. Build for this from day one: every cloud service needs a local stand-in, every user flow
-an e2e scenario, and every UI state a screenshot. Anything the agent can't run locally is a task a
-person has to verify.
-
-## 5. Automated gates give the feedback, not you
+## 3. Automated gates give the feedback, not you
 
 Lint, typecheck, unit tests, invariants, e2e tests, concurrency tests, screenshots and an agent
 reviewer run on every PR. A red result goes straight back to the agent that wrote the change.
 Nobody pastes an error message.
 
-## 6. Bounded autonomy
-
-The agent can't merge, can't edit workflows, can't touch cloud credentials, and can't weaken a test
-to get green. Each fix-up loop is capped at five attempts. Then it stops and asks a person.
-
-## 7. Humans keep the two decisions that matter
+## 4. Humans keep the two decisions that matter
 
 1. **Approve the spec.** Merging the spec PR with the `spec-ready` label is the go signal.
 2. **Approve the result.** A person does the final review and merges each PR.
 
-## 8. The glue is code, not prompts
+## 5. Make rules and skills deterministic
 
-Anything that decides *what happens next* (which issue opens, whether the agent goes back, when to
-stop) is a deterministic script with unit tests, run by a workflow. The agent is only asked to do
-what needs judgment: write the code, and review it. A prompt can be ignored. A workflow can't.
-
-## 9. Make rules and skills deterministic
-
-Principle 8 covers the glue between steps. This one covers the rules and skills the agent follows
-inside a step. A rule written only in `AGENTS.md` or the constitution is a request. The agent may
-miss it, read it two ways, or forget it in a long session. Wherever a rule can be checked by a
-script, write the script, run it in a hook or a PR check, and keep the prose as the explanation.
-A failed check tells the agent exactly what is wrong and where, and it goes back through the same
-feedback loop as any other red result.
+A rule written only in `AGENTS.md` or the constitution is a request. The agent may miss it, read it
+two ways, or forget it in a long session. Wherever a script can check a rule, write the script, run
+it in a hook or a PR check, and keep the prose as the explanation. A failed check tells the agent
+exactly what is wrong and where, through the same feedback loop as any other red result.
 
 Discava does this throughout:
 
-- **Task format.** The agent workflow reads `tasks.md` with a parser. A file that strays from the
-  format isn't refused; its phases are silently skipped. So the `Tasks format` PR check runs a
-  validator on every `tasks.md`, and the workflow that opens issues refuses a file that fails it.
-- **Screenshots of UI changes.** The constitution says a change to what a user sees must take
-  screenshots in its e2e scenario. The `UI Screenshots` check reads the PR's diff and fails if a
-  portal's markup or styles changed but no scenario gained a `screenshot(` call. A maintainer can
-  waive it with the `no-ui-screenshots` label.
-- **Invariants for shared records.** The constitution says a rule that spans records needs a check
-  in `invariants.ts`. The `Invariant coverage` check scans which code writes the core table, and
-  fails if a new writer arrives without an invariant naming its entity. A pre-push hook regenerates
-  the writer map, so the agent finds out before CI does.
-- **Commits.** Conventional Commits are enforced by commitlint in a `commit-msg` hook, and
-  `git-secrets` runs on every commit.
-- **Skills that call scripts.** The Speckit skills don't describe how to create a feature branch or
-  commit a step. They run `create-new-feature.sh` and `auto-commit.sh`, and Speckit's extension
-  hooks run them before and after each command, whether or not the agent remembers to.
-
-Leave the judgment to the agent and move everything checkable into code. If you write the same
-correction in a review twice, it's probably a missing check.
-
-## How the principles map to the pieces
-
-| Principle | Where you see it |
+| Rule in prose | What enforces it |
 | --- | --- |
-| 1. Spec as source of truth | [Spec-driven development](../spec-driven-development/) |
-| 2. Artifacts | [The missing glue](../the-missing-glue/), [Reference: labels](../../reference/labels/) |
-| 3. Small units | [One phase at a time](../one-phase-at-a-time/) |
-| **4. Verification** | [Layers of trust](../layers-of-trust/#verification-matters-most), [Local stack, e2e and screenshots](../../adopt/local-stack-and-e2e/) |
-| 5. Automated gates | [Layers of trust](../layers-of-trust/), [PR checks in Discava](../../discava/pr-checks/) |
-| 6. Bounded autonomy | [Feedback loops](../feedback-loops/) |
-| 7. Human decisions | [Human gates](../human-gates/) |
-| 8. Glue is code | [The missing glue](../the-missing-glue/) |
-| 9. Deterministic rules and skills | [Constitution and guidance](../../discava/constitution-and-guidance/), [PR checks in Discava](../../discava/pr-checks/) |
+| `tasks.md` follows a fixed format | The `Tasks format` PR check. Without it, a malformed phase is silently skipped |
+| A UI change takes screenshots in its e2e scenario | The `UI Screenshots` check fails if markup or styles changed and no scenario gained a `screenshot(` call. A maintainer can waive it with `no-ui-screenshots` |
+| A rule that spans records needs an invariant | The `Invariant coverage` check fails if new code writes the core table without an invariant naming its entity |
+| Conventional Commits, no committed secrets | commitlint in a `commit-msg` hook, `git-secrets` on every commit |
+| Each Speckit step gets its own branch and commit | The skills run scripts for it, from Speckit's extension hooks, whether or not the agent remembers |
+
+If you write the same correction in a review twice, it's probably a missing check.
+
+## 6. The glue is code, not prompts
+
+The same applies between steps. Anything that decides *what happens next* (which issue opens,
+whether the agent goes back, when to stop) is a script with unit tests, run by a workflow. The agent
+is only asked to do what needs judgment: write the code, and review it. A prompt can be ignored. A
+workflow can't.
+
+## 7. Bounded autonomy
+
+The agent can't merge, can't edit workflows, can't touch cloud credentials, and can't weaken a test
+to get green. Each fix-up loop is capped at five attempts. Then it stops and asks a person.
+
+## 8. Small, scoped units of work
+
+A spec splits into phases. Each group of phases is one issue and one pull request, with a task
+range the agent must not leave. Small PRs are cheap to review and cheap to throw away.
+
+## 9. Every step leaves an artifact
+
+Intent lives in the spec, scope in the issue, history in the pull request, and the reason a run
+stopped in a label or a comment. Nothing lives only in a chat window or in someone's head, so a new
+teammate or a new agent can pick up where the last one stopped.
+
+## Where to read more
+
+| Principle | Page |
+| --- | --- |
+| 1. Verification | [Layers of trust](../layers-of-trust/#verification-matters-most), [Local stack in Discava](../../discava/local-stack/) |
+| 2. Spec as source of truth | [Spec-driven development](../spec-driven-development/) |
+| 3. Automated gates | [Layers of trust](../layers-of-trust/), [Feedback loops](../feedback-loops/) |
+| 4. Human decisions | [Human gates](../human-gates/) |
+| 5. Deterministic rules and skills | [PR checks in Discava](../../discava/pr-checks/), [Constitution and guidance](../../discava/constitution-and-guidance/) |
+| 6. Glue is code | [The missing glue](../the-missing-glue/) |
+| 7. Bounded autonomy | [Feedback loops](../feedback-loops/), [Human gates](../human-gates/#what-agents-may-never-do) |
+| 8. Small units | [One phase at a time](../one-phase-at-a-time/) |
+| 9. Artifacts | [Reference: labels](../../reference/labels/), [statuses and markers](../../reference/statuses-and-markers/) |

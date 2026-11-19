@@ -30,20 +30,16 @@ something real to do. The [tutorial](../../tutorial/the-case/) covers each stage
    /speckit-analyze
    ```
 
-   Check `tasks.md`: each phase is a `## Phase <n>: …` heading, and at least one is a
-   `User Story`. The first user story phase ends the first issue.
-
-2. **Open the spec PR, label it `spec-ready`, merge it.**
+2. **Open the spec PR, label it `spec-ready`, merge it.** Push the branch:
 
    ```bash
    git add specs/ && git commit -m "docs(specs): add note tags spec"
    git push -u origin spec/note-tags
-   gh pr create --fill --label spec-ready
-   gh pr checks --watch
-   gh pr merge --squash --admin
    ```
 
-   `--admin` is needed because you opened the PR, and GitHub won't let you approve your own.
+   On GitHub, open the pull request, add the `spec-ready` label, and merge once the checks are
+   green. You opened the PR, so GitHub won't let you approve it: tick **Merge without waiting for
+   requirements to be met**.
 
    ✅ **Tasks format** passes on the PR. After the merge, **Agent Issues** opens an issue titled
    `feat(<feature>): … (with setup and foundations)`, labelled `openhands`, scoped to the first group of phases.
@@ -62,14 +58,9 @@ something real to do. The [tutorial](../../tutorial/the-case/) covers each stage
    too, with `review-fix-1`.
 
 5. **Review and merge.** Read the PR description, any **(human)** tasks it lists, and, for the
-   website phase, the **E2E screenshots** comment. Mark the draft ready, then merge:
-
-   ```bash
-   gh pr ready <pr> && gh pr merge <pr> --squash --admin
-   ```
-
-   Use `--admin` when the agents push with your own token. With a separate agent account, approve
-   the PR and merge normally.
+   website phase, the **E2E screenshots** comment. Click **Ready for review**, then merge. If the
+   agents push with your own token, bypass the approval as in step 2. With a separate agent
+   account, approve and merge normally.
 
    ✅ **Agent Issues** runs again and opens the next phase's issue. Steps 3 to 5 repeat.
 

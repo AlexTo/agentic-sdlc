@@ -23,9 +23,8 @@ idea: run only what the PR affects, and expose every script as a named task.
    pnpm create @aws/nx-workspace your-project --iac=cdk --no-interactive
    ```
 
-   This also installs the git-secrets pre-commit hook used in sub-step 4. An existing Nx workspace
-   works too. Pin pnpm in the root `package.json`, so CI and the agent
-   use the same version:
+   This also installs the git-secrets pre-commit hook used in step 4. An existing Nx workspace
+   works too. Pin pnpm in the root `package.json`, so CI and the agent use the same version:
 
    ```json
    { "packageManager": "pnpm@<version>" }

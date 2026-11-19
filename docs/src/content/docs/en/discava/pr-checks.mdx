@@ -5,8 +5,6 @@ sidebar:
   order: 7
 ---
 
-import { Aside } from '@astrojs/starlight/components';
-
 `.github/workflows/pr-checks.yml` runs on every pull request to `main`. Its failure is what Agent
 CI Status turns into a fix-up attempt, so it is also the agent's main source of feedback.
 
@@ -66,12 +64,8 @@ Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifa
 - `search/03-search-minimum-rating-4.png`
 ```
 
-The reviewer agent reads the same list. A reviewer can see what changed without running anything.
-
-<Aside type="note">
-Artifacts have no public URL, so the comment can only name the images and link the run. That is
-still enough for the reviewer to download exactly the screenshots that matter.
-</Aside>
+The reviewer agent reads the same list. Artifacts have no public URL, so the comment names the
+images and links the run they can be downloaded from.
 
 ## Safe by construction
 

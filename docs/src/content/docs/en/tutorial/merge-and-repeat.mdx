@@ -20,15 +20,11 @@ not to hunt for problems.
 
 2. Check the **(human)** tasks the agent listed and do them.
 
-3. Approve and merge, or comment to request changes. A "changes requested" sends the agent back,
-   under the same five-attempt cap.
+3. Approve and merge. If the agents push with your own token, GitHub sees you as the PR's author
+   and won't accept your approval, so bypass it as you did for the spec PR.
 
-   ```bash
-   gh pr merge --squash
-   ```
-
-   If the agents push with your own token, GitHub sees you as the PR's author and won't accept
-   your approval. Merge with `--admin` instead.
+   To request changes instead, review the PR and add the `openhands-review` label. The reviewer
+   agent's verdict then sends the implementing agent back, under the same five-attempt cap.
 
 </Steps>
 
@@ -45,15 +41,11 @@ the merge left it:
 3. **No:** nothing opens, and the merged PR gets a comment listing the unticked task IDs. Tick or
    finish them, then run **Agent Issues** by hand with the spec folder name.
 
-Only the agent's own branches advance the chain. A PR you merge by hand is ignored, so the process
-can't loop on its own edits.
+Only the agent's own branches advance the chain. A PR of your own is ignored.
 
 ```text
 spec PR merged ─► issue 1 ─► PR 1 merged ─► issue 2 ─► PR 2 merged ─► issue 3 ─► PR 3 merged ─► done
    (you)                       (you)                      (you)                      (you)
 ```
-
-Between each of your clicks, nothing needs you. When the last phase merges, no further issue opens
-and the feature is complete.
 
 Next: [Update the docs](../update-the-docs/).

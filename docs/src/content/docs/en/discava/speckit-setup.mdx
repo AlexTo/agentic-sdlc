@@ -35,12 +35,7 @@ what Speckit writes can be read by the automation.
 
 Speckit's bundled `git` extension is installed (`.specify/extensions.yml`). Its hooks create a
 feature branch before `/speckit-specify` and commit after each step, so every step of writing a
-spec is its own commit in the spec PR. `.specify/extensions/git/git-config.yml` sets:
-
-```yaml
-branch_numbering: timestamp
-commit_style: conventional
-```
+spec is its own Conventional Commit in the spec PR.
 
 ## Template changes
 
@@ -64,24 +59,14 @@ Three additions to the stock template:
 2. **Who runs what.** A paragraph saying an agent implements these tasks without Docker, that e2e
    and concurrency tests run on PR CI, and what **(human)** means. That includes "not for
    screenshots": a UI change takes its screenshots in e2e.
-3. **Read by automation.** The format rules the validator enforces, stated in the template so the
-   agent writing `tasks.md` follows them:
-
-```markdown
-**Read by automation**: the Agent Issues workflow reads this file to decide which tasks to hand the
-implementing agent, so keep this structure (PR checks refuse a file that strays from it):
-
-- every phase is a heading `## Phase <number>: <title>`, numbered upwards, with at least one task;
-- a user story's phase is titled `User Story <n> - <what it delivers>`; the first one ends the first
-  implementation issue (setup, foundations and that story);
-- every task is a line `- [ ] T<3 digits> <description>` starting in the first column, under a
-  phase, with an id no other task has; a task added later takes the next unused id, wherever it is
-  placed;
-- a finished task is ticked in place (`- [x]`), never deleted or renumbered.
-```
+3. **Read by automation.** The [format rules](../../reference/tasks-format/) the validator
+   enforces, stated in the template so the agent writing `tasks.md` follows them.
 
 And one line added to the notes at the end: "Do not edit existing tests to make them pass. If one
 looks wrong, stop and raise it."
+
+The exact text of each change is in
+[Adopt: constitution and templates](../../adopt/constitution-and-templates/).
 
 ## A spec folder
 

@@ -78,18 +78,15 @@ that gap is two pieces of the [missing glue](../the-missing-glue/).
 
 ## Why polling, not webhooks
 
-The automations poll (every 5 minutes in Discava, every 15 by default). This means Agent Canvas can
-run on a laptop or a home server with no public URL and no webhook secret. The cost is latency: up
-to one poll interval between a status being posted and the agent starting. In practice that is
-small next to the time the agent takes to work.
+The automations poll (every 5 minutes in Discava, every 15 by default), so Agent Canvas can run on
+a laptop or a home server with no public URL and no webhook secret. The cost is up to one poll
+interval of latency, which is small next to the time the agent takes to work.
 
 ## What the agent can and can't reach
 
 The implementing conversation gets one secret, the GitHub token, so it can read the issue and push
-its branch. It does not get cloud credentials. The repository rules (constitution, `AGENTS.md`, the
-issue's instructions) forbid it from editing workflows, merging or weakening tests. GitHub then
-enforces what matters: branch protection stops a merge without approval, and the glue workflows run
-the default branch's code, never the PR's.
+its branch. It does not get cloud credentials. What else it may never do, and what enforces each
+limit, is on [Human gates](../human-gates/#what-agents-may-never-do).
 
 ## Choosing agents
 

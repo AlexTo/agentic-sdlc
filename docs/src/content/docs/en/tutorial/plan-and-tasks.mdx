@@ -5,7 +5,7 @@ sidebar:
   order: 2
 ---
 
-import { Steps, Aside } from '@astrojs/starlight/components';
+import { Steps } from '@astrojs/starlight/components';
 
 **You are here:** human + agent. **Output:** `plan.md`, `data-model.md`, `contracts/` and `tasks.md`.
 
@@ -27,10 +27,8 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    /speckit-tasks
    ```
 
-   `tasks.md` is ordered, checkable and grouped by phase. For the docs and review steps to work,
-   the format matters: every task has an ID, phases are `## Phase <n>: <title>` headings, and at
-   least one phase is a `User Story`. The first user story phase ends the first issue. See
-   [tasks.md format](../../reference/tasks-format/).
+   `tasks.md` is ordered, checkable and grouped by phase. A script reads it later, so its
+   [format](../../reference/tasks-format/) is fixed, and a PR check validates it in the next step.
 
    ```markdown
    ## Phase 1: User Story 1 - Tags in the data and API (Priority: P1) 🎯 MVP
@@ -58,11 +56,6 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    the three files. Fix them now; it costs a sentence. After implementation it costs a PR.
 
 </Steps>
-
-<Aside type="caution">
-A malformed `tasks.md` would stall the pipeline silently, so a PR check validates its format.
-You will see that check run in the next step.
-</Aside>
 
 Tasks marked **(human)** are skipped by the agent and listed in its PR description for you.
 

@@ -10,12 +10,10 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 **You'll end with:** every label the workflow uses, and a `main` branch that only takes pull
 requests with green checks and an approval.
 
-Run these from your clone. `gh` uses the default repository you set in
-[step 1](../fork/).
-
 <Steps>
 
-1. **Create the labels.** `--force` updates a label that already exists, so this is safe to re-run.
+1. **Create the labels.** There are 16, so this one is quicker as a script than in the UI. Run it
+   from your clone. `--force` updates a label that already exists, so it is safe to re-run.
 
    ```bash
    gh label create spec-ready           --force --description "Merging this spec PR starts the agent"
@@ -30,31 +28,23 @@ Run these from your clone. `gh` uses the default repository you set in
    gh label create review-fix-exhausted --force --description "Review fix-ups used up; a person takes over"
    ```
 
-2. **Protect `main`.** Replace `<you>`:
+2. **Protect `main`.** In your fork, open **Settings → Branches → Add classic branch protection
+   rule**, and set:
 
-   ```bash
-   gh api -X PUT repos/<you>/agentic-sdlc/branches/main/protection --input - <<'EOF'
-   {
-     "required_pull_request_reviews": {
-       "required_approving_review_count": 1,
-       "dismiss_stale_reviews": true
-     },
-     "required_status_checks": {
-       "strict": false,
-       "contexts": [
-         "Checks (lint)", "Checks (test)", "Checks (build)",
-         "Tasks format", "E2E tests", "UI Screenshots"
-       ]
-     },
-     "enforce_admins": false,
-     "restrictions": null
-   }
-   EOF
-   ```
+   | Setting | Value |
+   | --- | --- |
+   | Branch name pattern | `main` |
+   | Require a pull request before merging | on, with 1 required approval |
+   | Dismiss stale pull request approvals when new commits are pushed | on |
+   | Require status checks to pass before merging | on, with the six checks below |
+   | Do not allow bypassing the above settings | off |
 
-   `enforce_admins: false` lets you, as the owner, merge PRs that the agents opened with your own
-   token (see the caution below). `E2E tests` is the job that gathers the e2e shards. `Tasks format`
-   passes when no `tasks.md` changed, so it is safe to require.
+   The six checks: `Checks (lint)`, `Checks (test)`, `Checks (build)`, `Tasks format`, `E2E tests`
+   and `UI Screenshots`. GitHub only offers a check in the search box after it has run once, so
+   open any PR first if one is missing.
+
+   Leaving bypass allowed lets you, as the owner, merge PRs that the agents opened with your own
+   token (see the caution below).
 
    <Aside type="caution">
    Don't require the `software-factory/review` status. It is a signal to the agent, only ever
@@ -73,11 +63,7 @@ approve agent PRs normally.
 
 ## Check it worked
 
-```bash
-gh label list | grep -E 'openhands|spec-ready|fix|screenshots'
-gh api repos/<you>/agentic-sdlc/branches/main/protection --jq '.required_status_checks.contexts'
-```
-
-The first command lists 16 labels. The second prints the six check names.
+The fork's **Issues → Labels** page lists the 16 new labels, and **Settings → Branches** shows the
+rule on `main` with six required checks.
 
 Next: [3. Install OpenHands](../openhands/).

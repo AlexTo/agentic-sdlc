@@ -23,8 +23,7 @@ script behind it.
 | PR labelled | merged already, and the label is `spec-ready` | Someone forgot the label before merging |
 | Manual run | a spec folder name | Restart a chain by hand |
 
-Any other merged PR is ignored, **even one that touches `specs/**`**. The agent's own PRs tick
-boxes in `tasks.md`, so a path filter would make the chain trigger itself.
+Any other merged PR is ignored, [even one that touches `specs/`](../../concepts/one-phase-at-a-time/#what-opens-the-next-issue).
 
 The job checks out the **merge commit**, so it sees the ticks the PR just made. Its concurrency
 group is per PR, never global: a global group keeps only the newest pending run, so two merges
@@ -67,9 +66,8 @@ exists -> open: no
    paths the PR changed.
 3. **Validate** (`validate.ts`). A `tasks.md` that fails the format check fails the run, rather
    than handing the agent the wrong tasks.
-4. **Group the phases** (`tasks.ts`). Everything up to and including the first `User Story` phase
-   is group 0 (setup, foundations and the MVP story ship together). Each later phase is its own
-   group.
+4. **Group the phases** (`tasks.ts`): everything up to and including the first `User Story` phase,
+   then each later phase on its own.
 5. **Pick the next group**: the first one with an unticked task that isn't **(human)**.
 6. **Check for an existing issue.** Every issue body starts with a marker such as
    `<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->`. If an issue for this group

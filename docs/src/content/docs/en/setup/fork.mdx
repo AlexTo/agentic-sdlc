@@ -19,18 +19,15 @@ checks passing.
    cd agentic-sdlc
    ```
 
-2. **Make your fork the default for `gh`.** Otherwise `gh pr create` and `gh issue create` target
-   the original repository, not yours.
+2. **Make your fork the default for `gh`.** Otherwise `gh` commands target the original
+   repository, not yours.
 
    ```bash
    gh repo set-default <you>/agentic-sdlc
    ```
 
-3. **Turn on Issues.** GitHub turns them off for forks, and the whole workflow runs on issues.
-
-   ```bash
-   gh repo edit --enable-issues
-   ```
+3. **Turn on Issues.** GitHub turns them off for forks, and the whole workflow runs on issues. In
+   your fork, open **Settings → General → Features** and tick **Issues**.
 
 4. **Turn on Actions.** Open your fork's **Actions** tab and click **I understand my workflows, go
    ahead and enable them**. GitHub doesn't run workflows in a fork until you do.
@@ -50,32 +47,13 @@ checks passing.
 
 ## Check it worked
 
-```bash
-gh repo view --json isFork,hasIssuesEnabled --jq .
-pnpm nx run @agentic-sdlc/common-scripts:validate-tasks
-```
-
-```text
-{"hasIssuesEnabled":true,"isFork":true}
-0 tasks.md file(s) are in the expected format.
-```
-
-## What your fork already has
-
-| Piece | Where |
-| --- | --- |
-| Speckit templates, scripts and constitution | `.specify/`, and the `speckit-*` skills |
-| The instructions every implementation issue carries | `.github/ISSUE_TEMPLATE/implement-phase.md` |
-| PR checks: lint, test, build, tasks format, e2e, screenshots | `.github/workflows/pr-checks.yml`, `ui-screenshots.yml` |
-| CI on `main`, including the Trivy scan and the docs deploy | `.github/workflows/ci.yml` |
-| Spec → issue, CI → agent, review → agent | `.github/workflows/agent-issues.yml`, `agent-ci.yml`, `agent-review.yml` |
-| The rules behind them, with 124 unit tests | `packages/common/scripts/src/agent-*`, `ui-screenshots/` |
-| The notes app the agent will change | `packages/notes-table`, `notes-api`, `notes-website`, `e2e` |
+Your fork shows an **Issues** tab, and its **Actions** tab lists the workflows. Locally, the three
+`nx run-many` commands pass.
 
 <Aside type="note">
 Two things work differently in a fork, and neither blocks the workflow. With no `CODECOV_TOKEN`
 secret, the coverage upload step logs an error and carries on. The **Deploy Docs** job in CI fails
-until you turn on GitHub Pages (Settings → Pages → Source: GitHub Actions). You can also just ignore
+until you turn on GitHub Pages (**Settings → Pages → Source: GitHub Actions**), or you can ignore
 it.
 </Aside>
 

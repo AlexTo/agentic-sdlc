@@ -14,39 +14,9 @@ the OpenHands worker already acts on: a commit status named `software-factory/re
 
 ## Agent CI Status
 
-`.github/workflows/agent-ci.yml`, abridged:
-
-```yaml
-on:
-  workflow_run:
-    workflows: ["PR Checks"]
-    types: [completed]
-
-concurrency:
-  group: agent-ci-${{ github.event.workflow_run.head_branch }}
-  cancel-in-progress: false
-
-permissions:
-  contents: read
-  actions: read
-  statuses: write
-  issues: write
-  pull-requests: write
-
-jobs:
-  ci-status:
-    if: >-
-      github.event.workflow_run.event == 'pull_request' &&
-      startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
-      (github.event.workflow_run.conclusion == 'failure' ||
-      github.event.workflow_run.conclusion == 'timed_out')
-    steps:
-      - uses: actions/checkout@<sha> # the default branch, never the PR's code
-      - uses: ./.github/actions/init-monorepo
-      - run: pnpm nx run @discava/common-scripts:agent-ci-status
-        env:
-          GH_TOKEN: ${{ github.token }}
-```
+`.github/workflows/agent-ci.yml` runs on `workflow_run`, when **PR Checks** completes with
+`failure` or `timed_out` for a pull request on an `openhands/issue-` branch. It checks out the
+default branch and runs `agent-ci-status`.
 
 `workflow_run` matters. It runs in the context of the default branch, with a token that can write,
 even though PR Checks ran on the PR's code with a read-only token.

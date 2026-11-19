@@ -5,17 +5,11 @@ sidebar:
   order: 2
 ---
 
-import { Aside } from '@astrojs/starlight/components';
-
 **The short version:** a person and an agent write down what to build, how, and in what order,
 before any code exists. The written result is reviewed like code and merged. From then on every
 agent run reads the same files, so the result doesn't depend on who phrased the prompt.
 
 ## Why not just prompt?
-
-A prompt is gone once the chat ends. It can't be reviewed, it differs every time someone types it,
-and the agent forgets it halfway through a long task. A spec in the repository fixes all four
-problems:
 
 | A prompt | A spec |
 | --- | --- |
@@ -24,10 +18,10 @@ problems:
 | Re-typed for every run, slightly differently | Read, word for word, by every run |
 | Says what to build, rarely why | States user stories, requirements and acceptance criteria |
 
-## The four documents
+## The documents
 
 [Speckit](https://github.com/github/spec-kit) is a set of agent commands and templates that
-produce these, one step at a time:
+produce them, one step at a time:
 
 | Command | Writes | Answers |
 | --- | --- | --- |
@@ -61,19 +55,14 @@ constitution -> folder.plan: Constitution Check
 
 ## The constitution
 
-The constitution is the most underrated piece. It holds the project's non-negotiable rules,
-written so a plan can be checked against them: "a feature MUST work under `pnpm dev` with no cloud
-account", "a failing test MUST be fixed in the code, not by weakening the test". Every
-`/speckit-plan` run fills in a **Constitution Check** section and must justify any violation.
+The constitution holds the project's non-negotiable rules, written so a plan can be checked
+against them: "a feature MUST work under `pnpm dev` with no cloud account", "a failing test MUST be
+fixed in the code, not by weakening the test". Every `/speckit-plan` run fills in a **Constitution
+Check** section and must justify any violation.
 
-Because every agent reads it before it writes code, the constitution is where you put the rules
-that make agent output trustworthy. See
-[Discava's constitution](../../discava/constitution-and-guidance/) for a full example.
-
-<Aside type="tip">
-When a reviewer keeps making the same comment on agent PRs, that comment belongs in the
-constitution or in `AGENTS.md`. Then the next agent follows it instead of being caught by it.
-</Aside>
+Every agent reads it before it writes code, so it is where you put the rules that make agent output
+trustworthy. See [Discava's constitution](../../discava/constitution-and-guidance/) for a full
+example.
 
 ## `tasks.md` is a contract with the automation
 
@@ -90,13 +79,9 @@ decide which tasks the agent gets next. So its format is fixed and checked on ev
 - [ ] T012 (human) Check the layout on a phone-width window
 ```
 
-- Phases are `## Phase <n>: <title>`, numbered upwards.
-- The first `User Story` phase ends the first issue. Setup, foundations and the MVP story ship
-  together. Every later phase is its own issue.
-- Tasks are `- [ ] T<3 digits> ...`, ticked in place, never renumbered.
-- **(human)** marks a task the agent skips and lists in its PR for the reviewer.
-
-The full rules are in [Reference: tasks.md format](../../reference/tasks-format/).
+Phases are numbered headings, tasks carry a fixed ID and are ticked in place, and **(human)** marks
+a task the agent skips and leaves for the reviewer. The full rules are in
+[Reference: tasks.md format](../../reference/tasks-format/).
 
 ## Change the spec, not the code
 

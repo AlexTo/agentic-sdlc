@@ -12,15 +12,9 @@ CI or a "changes requested" review.
 
 <Steps>
 
-1. **Copy the three workflows** from this repository's `.github/workflows/`:
-
-   | File | Name | Trigger | Runs |
-   | --- | --- | --- | --- |
-   | `agent-issues.yml` | Agent Issues | `pull_request: [closed, labeled]` to `main`, and `workflow_dispatch` with `spec_folder` | `agent-issue` |
-   | `agent-ci.yml` | Agent CI Status | `workflow_run` of **PR Checks**, `completed` | `agent-ci-status` |
-   | `agent-review.yml` | Agent Review Status | `pull_request_review: submitted` | `agent-review-status` |
-
-   Replace `@agentic-sdlc/` with `@your-scope/`.
+1. **Copy the three workflows** from this repository's `.github/workflows/`: `agent-issues.yml`,
+   `agent-ci.yml` and `agent-review.yml`. Their triggers and permissions are listed in
+   [Reference: workflows](../../reference/workflows/).
 
 2. **Check the `if:` conditions match your decisions.** If you changed the branch prefix or the
    labels, change them here too:
@@ -51,16 +45,8 @@ CI or a "changes requested" review.
    ```
 
 3. **Keep the permissions and the checkout exactly as copied.** Each workflow asks only for what
-   it writes:
-
-   | Workflow | Permissions |
-   | --- | --- |
-   | Agent Issues | `contents: read`, `issues: write`, `pull-requests: write` |
-   | Agent CI Status | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` |
-   | Agent Review Status | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` |
-
-   Labels and comments on a PR go through the issues API, which refuses the workflow token with
-   "Resource not accessible by integration" unless it can also write pull requests.
+   it writes. `pull-requests: write` looks spare but isn't: labels and comments on a PR go through
+   the issues API, which refuses the workflow token without it.
 
    The two status workflows check out the **default branch**. Agent Issues checks out the
    **merge commit**, so it sees the ticks the merged PR made. Never change either to check out the
@@ -74,13 +60,9 @@ CI or a "changes requested" review.
 
 ## Check it worked
 
-The workflows appear under the repository's **Actions** tab after they reach `main`. Run Agent
-Issues by hand against a folder with no `tasks.md`:
-
-```bash
-gh workflow run agent-issues.yml -f spec_folder=does-not-exist
-gh run watch
-```
+The workflows appear under the repository's **Actions** tab after they reach `main`. Open
+**Actions → Agent Issues → Run workflow**, and enter a spec folder that doesn't exist, such as
+`does-not-exist`.
 
 The run succeeds with a notice: `No issue created: no spec folder with a tasks.md was found`.
 

@@ -63,8 +63,8 @@ Agent Issues runs when a pull request merges into `main`, and acts on only two k
 2. **A PR from an agent branch (`openhands/…`).** It reads the `tasks.md` the merge just updated,
    finds the first group with an unticked task that isn't **(human)**, and opens its issue.
 
-Every other merge is ignored, even one that edits `specs/`. This is deliberate. The agent's own PRs
-change `tasks.md`, so a rule like "run when `specs/**` changes" would trigger itself.
+Every other merge is ignored, even one that edits `specs/`. The agent's own PRs change `tasks.md`,
+so a rule like "run when `specs/**` changes" would trigger itself.
 
 ## What stops the chain
 
@@ -81,8 +81,7 @@ by hand with the spec folder name.
 ## Many features at once
 
 The chain is sequential **within** one spec. Different specs are independent: each has its own
-chain, and the agent works on all their open issues. That is where the throughput comes from. You
-write the next spec while the last one's phases go through review.
+chain, and the agent works on all their open issues. That is where the throughput comes from.
 
 <Aside type="tip">
 Changing a spec halfway through is normal. Update `spec.md` and `plan.md`, add the new tasks to

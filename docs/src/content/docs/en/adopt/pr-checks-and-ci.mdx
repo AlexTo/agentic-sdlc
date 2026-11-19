@@ -22,8 +22,6 @@ check, and **CI** on `main`.
    | `e2e`, four shards, plus `e2e-result` gathering them into one `E2E tests` check | Adjust the shard count to your suite |
    | `e2e-screenshots` | Yes, once [step 8](../local-stack-and-e2e/) is done |
 
-   Replace every `@agentic-sdlc/` with `@your-scope/`.
-
 2. **Copy `.github/workflows/ui-screenshots.yml`.** In this repository the screenshots rule is its
    own workflow, triggered on `opened, synchronize, reopened, labeled, unlabeled`. Adding or
    removing the `no-ui-screenshots` label then re-runs only this check, not the whole e2e suite.

@@ -16,16 +16,9 @@ feedback without cloud credentials.
 <Steps>
 
 1. **Give every cloud service a local stand-in**, started by a `dev` target, so `pnpm dev` runs
-   everything. What Discava uses:
-
-   | Service | Stand-in |
-   | --- | --- |
-   | DynamoDB | DynamoDB local (Docker) |
-   | S3 | S3Mock |
-   | SQS | ElasticMQ |
-   | OpenSearch | OpenSearch in Docker |
-   | Cognito | A small local OIDC server with fixed users and a free-form sign-in |
-   | Lambda triggers, streams, EventBridge, MediaConvert, Transcribe, SES | An "event runner" process that calls the same handlers |
+   everything. [Discava's stand-ins](../../discava/local-stack/#what-runs-locally) cover DynamoDB,
+   S3, SQS, OpenSearch and Cognito, plus an "event runner" process that calls the same handlers
+   that Lambda triggers, streams and EventBridge call in the cloud.
 
    Switch backend code on one flag (`LOCAL_DEV=true`), with the endpoints in one shared module.
    List what still only runs in the cloud in `CONTRIBUTING.md`, and mark tasks that need it
@@ -49,8 +42,8 @@ feedback without cloud credentials.
    });
    ```
 
-   The rules for scenarios: each makes its own users and uniquely named data, and none resets
-   local data.
+   Each scenario makes its own users and uniquely named data, and none resets local data, so they
+   run in any order.
 
 3. **Copy the screenshot helper** from this repository: `packages/e2e/src/helpers/screenshots.ts`.
    It saves `dist/packages/e2e/screenshots/<scenario>/<nn>-<name>.png`, the folder the PR Checks

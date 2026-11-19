@@ -26,12 +26,12 @@ secret, and two agent profiles: `default` for implementing and `reviewer` for re
    your fork, with **Contents**, **Issues**, **Pull requests** and **Workflows** set to read and
    write.
 
-   The agent is told never to edit workflows, so why Workflows? GitHub rejects a whole push from a
-   token without it whenever the branch touches `.github/workflows/`, for example through a merge
-   of `main`.
+   The agent never edits workflows, but GitHub rejects a whole push from a token without
+   **Workflows** whenever the branch touches `.github/workflows/`, for example through a merge of
+   `main`.
 
 3. **Store the token as a secret** named `GITHUB_PERSONAL_ACCESS_TOKEN` in Agent Canvas, under
-   Settings → Secrets.
+   **Settings → Secrets**.
 
 4. **Choose the agent.** Discava runs Claude Code over ACP (the Agent Client Protocol), so the
    coding agent you already use does the work. In the agent settings, set:

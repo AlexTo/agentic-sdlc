@@ -5,12 +5,9 @@ sidebar:
   order: 7
 ---
 
-import { Aside } from '@astrojs/starlight/components';
-
 **You are here:** agent, then human gate #2 again. **Output:** the docs describe tags.
 
-Phase 3 is not different in kind from the others. The docs are code (this site is MDX in
-`docs/`), so the same chain handles them.
+The docs are code (this site is MDX in `docs/`), so the same chain handles them.
 
 ## What the agent does
 
@@ -33,18 +30,13 @@ Given the issue for tasks `T007` to `T008`, the agent:
 ## Why it's in the chain
 
 Docs written after the fact, by a different person, from memory, drift. Docs generated from the
-spec and the merged code, in the same workflow, and reviewed with the same gates, don't. The agent
-reviewer is also a cheap second reader: it flags a docs claim that no test or code backs up.
-
-<Aside type="tip">
-When you change behaviour later, start at the spec again. Update it, regenerate the plan and
-tasks, and the docs phase comes round with the rest.
-</Aside>
+spec and the merged code, and reviewed with the same gates, don't. The agent reviewer is also a
+cheap second reader: it flags a docs claim that no test or code backs up.
 
 ## Done
 
-Merge the docs PR. With no tasks left, no new issue opens, and the feature has gone from one
-sentence to merged code and docs, with your hands on exactly two decisions per PR: approving the
-spec, and approving the result.
+Merge the docs PR. With no agent tasks left, no new issue opens. The feature has gone from one
+sentence to merged code and docs, and you made two kinds of decision: approving the spec, and
+approving each result.
 
-Back to [the principles](../../concepts/principles/) to see how each step maps to them.
+Back to [the principles](../../concepts/principles/).

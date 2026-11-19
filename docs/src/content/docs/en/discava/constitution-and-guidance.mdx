@@ -31,15 +31,14 @@ the agent. See [Local stack](../local-stack/).
 
 ### IV. Layered tests: unit, invariants, end to end
 
-Five sub-rules. Two are worth copying word for word:
+Five sub-rules. Two matter most:
 
 - **Impact check.** A plan MUST list the shared records the feature writes, or reads in a new way,
   and for each one name the existing invariants and tests that already cover it. Where the feature
   changes what a record means, the plan MUST extend those checks, and `tasks.md` MUST carry a task
   for each.
-- **Tests are a specification.** A failing test MUST be resolved by fixing the code. Weakening a
-  test is allowed only when a task names the behaviour change, and the PR says so. Invariants count
-  as tests.
+- **Tests are a specification.** A failing test is fixed in the code, not by weakening the test.
+  Invariants count as tests. The full rule is quoted on [Layers of trust](../../concepts/layers-of-trust/#tests-are-a-specification).
 
 The impact check exists because agents add new checks happily but rarely revisit old ones. A new
 feature that changes what "an active student" means silently breaks an older invariant's meaning.
@@ -66,9 +65,6 @@ The part written specifically for agents:
 > stack or people MUST be marked `(human)` in `tasks.md`. […] An agent MUST NOT merge, push to
 > `main`, edit CI workflows, or weaken a test to make CI pass.
 
-The implementing agent runs without Docker. It writes e2e and concurrency tests, and **PR CI runs
-them**. A CI failure is how it finds out they don't pass.
-
 ## `AGENTS.md`
 
 Discava's `AGENTS.md` is about 110 lines. It covers:
@@ -94,31 +90,20 @@ far more detail than `AGENTS.md`.
 
 ## The issue instructions
 
-Every implementation issue ends with the same bullets, copied from
-`.github/ISSUE_TEMPLATE/implement-phase.md` by the Agent Issues script:
+Every implementation issue ends with the same instructions, copied from
+`.github/ISSUE_TEMPLATE/implement-phase.md` by the Agent Issues script. They tell the agent to:
 
-```markdown
-## Instructions for the agent
+- read `AGENTS.md`, the constitution and the spec folder first
+- write each story's tests first, and tick each task in the commit that completes it
+- run unit tests, lint, typecheck and build locally, and leave e2e and concurrency tests to PR CI
+- add `screenshot()` calls for every UI change, and never leave screenshots to a **(human)** task
+- skip **(human)** tasks and list them in the PR description
+- use Conventional Commits, and `Refs #<parent>` rather than `Closes`
+- never weaken a test, edit workflows, merge, or touch AWS credentials
+- comment on the issue and stop when blocked
 
-- Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
-- Work through the scope in order, writing each story's tests first. Tick each task in `tasks.md`
-  in the same commit that completes it.
-- Do not use `pnpm dev`, Docker or the e2e runner locally. Run unit and component tests (once, not
-  in watch mode), `pnpm lint`, typecheck and `pnpm build` on what you changed. E2E and concurrency
-  tests run on PR CI: write them, then read CI's result.
-- A change to what a user sees ships with `screenshot(page, 'name')` calls in the e2e scenario for
-  that flow, at each state a reviewer would want to see. […] Don't leave screenshots to a
-  **(human)** task.
-- Skip tasks marked **(human)** and list them in the PR description for the reviewer.
-- Use Conventional Commits for every commit. The PR title is a Conventional Commit too.
-- In the PR description write `Refs #<parent>`. Never use `Closes` or `Fixes` against the parent
-  issue; closing this issue is fine.
-- Never weaken a test to make it pass, never edit `.github/workflows/`, never merge, and don't
-  touch AWS credentials.
-- If you are blocked, comment on this issue with what you tried and stop.
-```
-
-Each bullet is there because an early run did the opposite. The `Refs`/`Closes` rule, for
-example, stops the first phase's PR from closing the whole feature's parent issue.
+Each one is there because an early run did the opposite. The `Refs` rule, for example, stops the
+first phase's PR from closing the whole feature's parent issue. The full text is in
+[Adopt: agent guidance](../../adopt/agent-guidance/).
 
 Next: [Speckit setup](../speckit-setup/).

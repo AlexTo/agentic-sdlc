@@ -11,8 +11,7 @@ and kept away from the waiting and the typing in between.
 ## Gate 1: approve the spec
 
 The spec PR is reviewed like code. Merging it **with the `spec-ready` label** is the only thing
-that starts implementation. The label is deliberate. The automation never starts from a path filter
-on `specs/**`, because the agent's own PRs edit `tasks.md` and the chain would trigger itself.
+that starts implementation.
 
 What to look for:
 
@@ -35,8 +34,7 @@ on the spec PR, comment, and approve. Split the review by file:
 | Engineer | `plan.md`, `data-model.md`, `contracts/`, `tasks.md` | Is the design sound? Are the phases small enough to review? |
 
 Anyone who can read the repository can comment. For their approval to count toward branch
-protection, they need write access. Make the spec PR the place where requirements are agreed,
-instead of a separate document that drifts.
+protection, they need write access.
 
 ## Gate 2: approve the result
 
@@ -44,9 +42,9 @@ Each agent PR reaches you after CI is green and the reviewer agent has approved.
 judge the outcome, not to hunt for problems:
 
 - Read the PR description: what changed, which tasks, which **(human)** tasks are left for you.
-- Look at the **E2E screenshots** comment instead of pulling the branch. This is the most
-  important part of the review: it shows the feature working. See
-  [Verification matters most](../layers-of-trust/#verification-matters-most) for an example.
+- Look at the **E2E screenshots** comment instead of pulling the branch. It shows the feature
+  working. See [Verification matters most](../layers-of-trust/#verification-matters-most) for an
+  example.
 - Do the **(human)** tasks: manual checks on a local stack or a deployed stage.
 - Merge, or request changes. To have the agent make them, add the `openhands-review` label after
   your review: the reviewer agent re-reviews the PR, and its "changes requested" verdict sends the
@@ -67,7 +65,7 @@ judge the outcome, not to hunt for problems:
 
 | Signal | What happened | What to do |
 | --- | --- | --- |
-| `ci-fix-exhausted` | CI failed five times after automatic fixes | Read the last failure. Comment with guidance, fix it yourself, or fix the spec. Remove the labels to let the agent retry |
+| `ci-fix-exhausted` | CI failed five times after automatic fixes | Read the last failure. Comment with guidance, fix it yourself, or fix the spec. Then [reset the loop](../../reference/labels/#resetting-a-loop) |
 | `review-fix-exhausted` | The reviewer still asks for changes after five rounds | Decide whether the reviewer is right. Often the spec is ambiguous |
 | A comment on the issue from the agent | It was blocked and stopped, as instructed | Answer it, then remove and re-apply the `openhands` label |
 | A comment on a merged PR: "the next implementation issue … was not opened" | The phase's tasks aren't all ticked | Tick or finish them, then run Agent Issues by hand for the spec folder |

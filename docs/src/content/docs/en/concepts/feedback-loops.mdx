@@ -76,9 +76,8 @@ that uncovered a second problem, or a CI run and a review that each ask for some
 the fifth failure, the agent is usually stuck on something it can't see, and more attempts cost
 money without converging. Discava started with a cap of three and raised it to five.
 
-In Discava, 67 agent PRs had merged by 18 November 2026. 42 carry no fix label (some predate the
-fix-up workflows), 17 needed exactly one round of CI or review fixes, and only one ran a loop to
-exhaustion.
+Of Discava's first 67 merged agent PRs, 42 carry no fix label (some predate the fix-up workflows),
+17 needed exactly one round, and only one ran a loop to exhaustion.
 
 <Aside type="caution">
 When a loop is exhausted, read the last failure before you fix anything. Repeated failure often
@@ -86,9 +85,7 @@ means the spec or plan was ambiguous, and the agent was trying to satisfy two re
 the spec, then let the agent try again.
 </Aside>
 
-## Letting it try again
-
-To give the agent another round after you've added guidance, remove the counter labels and the
-`*-exhausted` label, then re-run the checks (CI loop) or re-request the review (review loop).
+To give the agent another round afterwards, see
+[Resetting a loop](../../reference/labels/#resetting-a-loop).
 
 Next: [Layers of trust](../layers-of-trust/).
