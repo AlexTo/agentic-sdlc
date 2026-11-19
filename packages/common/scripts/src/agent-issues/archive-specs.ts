@@ -85,9 +85,9 @@ const foldersWithOpenIssues = (repository: string, gh: Deps['gh']) =>
 
 const prBody = (folder: string): string =>
   [
-    `Every task in \`${livePath(folder)}/tasks.md\` is ticked, so this moves the spec to \`${archivedPath(folder)}/\` (see \`specs/README.md\`, "When to archive").`,
+    `Every task in \`${livePath(folder)}/tasks.md\` is ticked, so this moves the spec to \`${archivedPath(folder)}/\`.`,
     '',
-    'Opened by the **Archive Specs** workflow, which also fixed the links to and from the folder: relative Markdown links, and plain mentions of its path such as the design page\'s "Spec" link and code comments.',
+    'Opened by the **Archive Specs** workflow, which also fixed the links to and from the folder: relative Markdown links, and plain mentions of its path in docs and code comments.',
     '',
     `Before merging, look for mentions of the old path it could not fix, such as one split across two lines: \`git grep -n "${featureName(folder)}" -- ':!specs/${ARCHIVE_FOLDER}'\`.`,
     '',
