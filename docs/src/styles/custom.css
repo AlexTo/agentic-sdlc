@@ -1,1 +1,27 @@
 /* Customise the appearance of the Starlight docs theme here. */
+
+/*
+ * On wide screens Starlight gives the right sidebar (the table of contents)
+ * half of the spare width, so it grows far wider than its links. Keep it at a
+ * fixed width, give the rest to the page, centre the text column in it, and
+ * let that column use some of the space for wide tables.
+ */
+@media (min-width: 72rem) {
+  :root {
+    --sl-content-width: 52rem;
+  }
+
+  .right-sidebar-container {
+    width: 16rem;
+  }
+
+  .right-sidebar .sl-container {
+    width: calc(16rem - 2 * var(--sl-sidebar-pad-x));
+    max-width: none;
+  }
+
+  [data-has-sidebar][data-has-toc] .main-pane {
+    --sl-content-margin-inline: auto;
+    width: calc(100% - 16rem);
+  }
+}
