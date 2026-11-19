@@ -45,6 +45,10 @@ nó đã xây và tương tác với nó, từ back end đến front end**, như
 - **Mắt:** đọc những gì trả về: response, log, dữ liệu để lại trong cơ sở dữ liệu, và ảnh chụp màn
   hình của mọi trạng thái mà người review muốn xem.
 
+Agent không cần làm việc này trên máy của nó. Trong quy trình này, agent viết các kịch bản e2e, và
+GitHub CI chạy chúng trên mọi PR với một local stack mới. Kết quả, lỗi invariant và ảnh chụp màn
+hình quay về PR để agent đọc, nên môi trường của agent vẫn đơn giản.
+
 Không có tay và mắt, agent viết code mà nó chưa từng thấy chạy, và một người phải pull nhánh về để
 biết. Có chúng, agent tự bắt lỗi của mình và mỗi PR đến kèm bằng chứng. Hãy xây cho điều này ngay từ
 ngày đầu: mọi dịch vụ cloud cần một bản thay thế local, mọi luồng người dùng cần một kịch bản e2e, và

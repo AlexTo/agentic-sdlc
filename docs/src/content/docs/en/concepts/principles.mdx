@@ -45,6 +45,10 @@ it built and interact with it, from the back end to the front end**, the way a p
 - **Eyes:** read what comes back: responses, logs, the data left in the database, and screenshots
   of every state a reviewer would want to see.
 
+The agent doesn't need to do this on its own machine. In this workflow it writes the e2e scenarios,
+and GitHub CI runs them on every PR against a fresh local stack. The results, invariant failures
+and screenshots come back on the PR for the agent to read, so its own environment stays simple.
+
 Without hands and eyes the agent writes code it has never seen work, and a person has to pull the
 branch to find out. With them, the agent catches its own mistakes and every PR arrives with
 evidence. Build for this from day one: every cloud service needs a local stand-in, every user flow
