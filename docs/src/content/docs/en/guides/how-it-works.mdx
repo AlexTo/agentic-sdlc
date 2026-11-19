@@ -38,17 +38,17 @@ merge -> issues: next phase
 
 | # | Who | What happens | Artifact |
 | --- | --- | --- | --- |
-| 1 | You + agent | `/speckit-specify` turns a one-paragraph idea into a spec. `/speckit-clarify` asks up to five questions and writes your answers back | `specs/<timestamp>-<name>/spec.md` |
-| 2 | You + agent | `/speckit-plan` decides *how*, and checks the plan against the constitution | `plan.md`, `data-model.md`, `contracts/` |
-| 3 | You + agent | `/speckit-tasks` writes an ordered task list, grouped into phases. `/speckit-analyze` cross-checks all three files | `tasks.md` |
-| 4 | **You** | Open the spec PR, review it like code, add the `spec-ready` label, merge | A merged spec PR. **Human gate 1** |
-| 5 | Automation | The **Agent Issues** workflow reads `tasks.md` and opens an issue for the first group of phases, with the `openhands` label | An implementation issue |
-| 6 | OpenHands | On its next poll, the agent picks the issue up, writes tests first, implements, ticks its tasks and opens a PR on `openhands/issue-<n>` | A pull request |
-| 7 | CI | PR checks run lint, unit tests, build, the `tasks.md` format check, e2e tests and the screenshots check | Check results |
-| 8 | Automation + OpenHands | On a red run, **Agent CI Status** marks the PR as failing. The agent sees it on the next poll and revises the same PR | `ci-fix-1` to `ci-fix-5` labels |
-| 9 | OpenHands | Once every check has finished, the reviewer agent reviews the head commit and ends with `✅ APPROVED` or `🔄 CHANGES REQUESTED`. **Agent Review Status** sends the agent back on the second | A review, and maybe `review-fix-N` labels |
-| 10 | **You** | You read the PR description and the **E2E screenshots** comment, do any **(human)** tasks, and merge | A merged PR. **Human gate 2** |
-| 11 | Automation | The merge runs **Agent Issues** again. It opens the issue for the next phase that has unticked agent tasks, and steps 6 to 10 repeat until none are left | The next issue, or done |
+| 1 | 🧑🤖&nbsp;You + agent | `/speckit-specify` turns a one-paragraph idea into a spec. `/speckit-clarify` asks up to five questions and writes your answers back | `specs/<timestamp>-<name>/spec.md` |
+| 2 | 🧑🤖&nbsp;You + agent | `/speckit-plan` decides *how*, and checks the plan against the constitution | `plan.md`, `data-model.md`, `contracts/` |
+| 3 | 🧑🤖&nbsp;You + agent | `/speckit-tasks` writes an ordered task list, grouped into phases. `/speckit-analyze` cross-checks all three files | `tasks.md` |
+| 4 | 🧑&nbsp;**You** | Open the spec PR, review it like code, add the `spec-ready` label, merge | A merged spec PR. **Human gate 1** |
+| 5 | ⚙️&nbsp;Automation | The **Agent Issues** workflow reads `tasks.md` and opens an issue for the first group of phases, with the `openhands` label | An implementation issue |
+| 6 | 🤖&nbsp;OpenHands | On its next poll, the agent picks the issue up, writes tests first, implements, ticks its tasks and opens a PR on `openhands/issue-<n>` | A pull request |
+| 7 | ⚙️&nbsp;CI | PR checks run lint, unit tests, build, the `tasks.md` format check, e2e tests and the screenshots check | Check results |
+| 8 | ⚙️🤖&nbsp;Automation + OpenHands | On a red run, **Agent CI Status** marks the PR as failing. The agent sees it on the next poll and revises the same PR | `ci-fix-1` to `ci-fix-5` labels |
+| 9 | 🤖&nbsp;OpenHands | Once every check has finished, the reviewer agent reviews the head commit and ends with `✅ APPROVED` or `🔄 CHANGES REQUESTED`. **Agent Review Status** sends the agent back on the second | A review, and maybe `review-fix-N` labels |
+| 10 | 🧑&nbsp;**You** | You read the PR description and the **E2E screenshots** comment, do any **(human)** tasks, and merge | A merged PR. **Human gate 2** |
+| 11 | ⚙️&nbsp;Automation | The merge runs **Agent Issues** again. It opens the issue for the next phase that has unticked agent tasks, and steps 6 to 10 repeat until none are left | The next issue, or done |
 
 ## What you actually do
 

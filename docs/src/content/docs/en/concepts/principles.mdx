@@ -5,13 +5,15 @@ sidebar:
   order: 1
 ---
 
+import { Icon } from '@astrojs/starlight/components';
+
 Everything in this workflow follows from one move: **take the developer out of the loop and put
 them at its two ends.** Humans decide *what* to build and *whether it is good*. Agents do
 everything in between, through the normal GitHub process.
 
 The principles are in order of importance. If you can only do a few, start at the top.
 
-## 1. Verification first: give the agent hands and eyes
+## 1. Verification first: give the agent hands and eyes<Icon name="magnifier" class="heading-icon" />
 
 An agent that can't run the app and see what it built is guessing, and every other principle only
 organises the guesses. Code that compiles and passes its unit tests can still fail the user, so the
@@ -30,24 +32,24 @@ Build for this from day one: every cloud service needs a local stand-in, every u
 scenario, and every UI state a screenshot. Anything the agent can't run is a task a person has to
 verify.
 
-## 2. The spec is the source of truth
+## 2. The spec is the source of truth<Icon name="document" class="heading-icon" />
 
 A feature starts as `spec.md`, `plan.md` and `tasks.md`, reviewed like code. The agent builds from
 them. To change behaviour, change the spec and regenerate the plan and tasks. Don't patch the code
 by hand and let the spec go stale.
 
-## 3. Automated gates give the feedback, not you
+## 3. Automated gates give the feedback, not you<Icon name="approve-check-circle" class="heading-icon" />
 
 Lint, typecheck, unit tests, invariants, e2e tests, concurrency tests, screenshots and an agent
 reviewer run on every PR. A red result goes straight back to the agent that wrote the change.
 Nobody pastes an error message.
 
-## 4. Humans keep the two decisions that matter
+## 4. Humans keep the two decisions that matter<Icon name="star" class="heading-icon" />
 
 1. **Approve the spec.** Merging the spec PR with the `spec-ready` label is the go signal.
 2. **Approve the result.** A person does the final review and merges each PR.
 
-## 5. Make rules and skills deterministic
+## 5. Make rules and skills deterministic<Icon name="setting" class="heading-icon" />
 
 A rule written only in `AGENTS.md` or the constitution is a request. The agent may miss it, read it
 two ways, or forget it in a long session. Wherever a script can check a rule, write the script, run
@@ -66,24 +68,24 @@ Discava does this throughout:
 
 If you write the same correction in a review twice, it's probably a missing check.
 
-## 6. The glue is code, not prompts
+## 6. The glue is code, not prompts<Icon name="puzzle" class="heading-icon" />
 
 The same applies between steps. Anything that decides *what happens next* (which issue opens,
 whether the agent goes back, when to stop) is a script with unit tests, run by a workflow. The agent
 is only asked to do what needs judgment: write the code, and review it. A prompt can be ignored. A
 workflow can't.
 
-## 7. Bounded autonomy
+## 7. Bounded autonomy<Icon name="padlock" class="heading-icon" />
 
 The agent can't merge, can't edit workflows, can't touch cloud credentials, and can't weaken a test
 to get green. Each fix-up loop is capped at five attempts. Then it stops and asks a person.
 
-## 8. Small, scoped units of work
+## 8. Small, scoped units of work<Icon name="list-format" class="heading-icon" />
 
 A spec splits into phases. Each group of phases is one issue and one pull request, with a task
 range the agent must not leave. Small PRs are cheap to review and cheap to throw away.
 
-## 9. Every step leaves an artifact
+## 9. Every step leaves an artifact<Icon name="notes" class="heading-icon" />
 
 Intent lives in the spec, scope in the issue, history in the pull request, and the reason a run
 stopped in a label or a comment. Nothing lives only in a chat window or in someone's head, so a new

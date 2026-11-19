@@ -25,3 +25,18 @@
     width: calc(100% - 16rem);
   }
 }
+
+/* An icon on a heading (the principles page). It is written at the end of the
+   heading so the anchor stays clean, and moved to the start with flex order. */
+.sl-markdown-content :is(h2, h3):has(.heading-icon) {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4em;
+}
+
+.sl-markdown-content :is(h2, h3) .heading-icon {
+  order: -1;
+  flex-shrink: 0;
+  margin-block-start: 0.12em;
+  color: var(--sl-color-text-accent);
+}
