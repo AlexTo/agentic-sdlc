@@ -1,6 +1,6 @@
 ---
 title: "A real feature: course reviews"
-description: One Discava feature traced from tracking issue to spec to six agent pull requests, with timestamps.
+description: One Discava feature traced from tracking issue to spec to eight agent pull requests, with timestamps.
 sidebar:
   order: 10
   label: A real feature
@@ -47,16 +47,19 @@ Opened 15 November, labelled `spec-ready`, merged 18 November at 06:47.
 | 3. Student portal ratings and reviews | [#461](https://github.com/AlexTo/discava/issues/461) 08:31 | [#464](https://github.com/AlexTo/discava/pull/464) | 09:55 | +1,357 | `review-fix-1` |
 | 4. Ratings in search | [#466](https://github.com/AlexTo/discava/issues/466) 09:56 | [#470](https://github.com/AlexTo/discava/pull/470) | 11:24 | +900 | `ci-fix-1` |
 | 5. Instructor responses | [#475](https://github.com/AlexTo/discava/issues/475) 11:25 | [#476](https://github.com/AlexTo/discava/pull/476) | 12:30 | +1,791 | `ci-fix-1` |
-| 6. Admin removal | [#481](https://github.com/AlexTo/discava/issues/481) 12:31 | [#483](https://github.com/AlexTo/discava/pull/483) | in review | +1,526 | |
+| 6. Admin removal | [#481](https://github.com/AlexTo/discava/issues/481) 12:31 | [#483](https://github.com/AlexTo/discava/pull/483) | 13:09 | +1,526 | none |
+| 7. Instructor notifications | [#485](https://github.com/AlexTo/discava/issues/485) 13:10 | [#497](https://github.com/AlexTo/discava/pull/497) | 00:20, 19 Nov | +422 | `review-fix-1` |
+| 8. End-to-end, docs and manual checks | [#501](https://github.com/AlexTo/discava/issues/501) 00:21, 19 Nov | [#504](https://github.com/AlexTo/discava/pull/504) | 01:08, 19 Nov | +427 | `ci-fix-1` |
 
-Five PRs, about 7,300 lines including tests, merged in under five hours. Each issue opened about a
-minute after the previous PR merged.
+Eight PRs, about 9,700 lines including tests. The first six merged in six hours. The agent's PR for
+phase 7 opened ten hours after its issue, and the last two merged within ninety minutes of that.
+Each issue opened about a minute after the previous PR merged, and the last PR closed #279.
 
 ## What the person did
 
 1. Wrote the one-paragraph tracking issue.
 2. Reviewed and merged the spec PR.
-3. For each of five PRs: read the description and the screenshots comment, and merged.
+3. For each of eight PRs: read the description and the screenshots comment, and merged.
 
 Nobody opened an issue, wrote a prompt or pasted an error.
 
@@ -68,6 +71,8 @@ Nobody opened an issue, wrote a prompt or pasted an error.
   Agent CI Status sent the agent back once. The agent fixed the locator and said why in a comment.
   See [Feedback loops](../feedback-loops/) for the full timeline.
 - **PR #476**: one CI failure, fixed on the first attempt.
+- **PR #497**: one round of review changes.
+- **PR #504**: one CI failure, fixed on the first attempt.
 
 <Aside type="note">
 Each PR's title starts `[#<issue>]`, the issue-to-PR automation's own format, even though the
@@ -78,8 +83,10 @@ title, enforce it with a check.
 
 ## What's left for a person
 
-Phases 7 and 8 (instructor notifications, then e2e, docs and manual checks) will open as issues
-when #483 merges. The two **(human)** tasks in phase 8 are done by the reviewer before that last PR
-merges. That PR also closes #279.
+The two **(human)** tasks in phase 8: a manual run-through on a local stack, and checks on the
+deployed stage. The last PR merged with both still unticked in `tasks.md`, so the automation didn't
+wait for them, and nothing else did either. What does track them is the
+[Archive Specs](../spec-to-issue/#archiving-a-finished-spec) workflow: the spec folder stays live
+until a person ticks both.
 
 Next: [Set it up: fork and run](../../setup/before-you-start/).

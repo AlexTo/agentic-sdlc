@@ -123,4 +123,27 @@ DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=workflow_dispatch \
 Lệnh này in tiêu đề và nội dung của issue mà nó sẽ mở. Nó vẫn đọc các issue có sẵn qua `gh`, nên bạn
 cần đăng nhập.
 
+## Lưu trữ một spec đã xong
+
+Một workflow thứ hai, **Archive Specs** (`.github/workflows/archive-specs.yml`), khép lại chuỗi. Nó
+chạy khi một push lên `main` thay đổi một `specs/*/tasks.md` đang hoạt động, và khi chạy thủ công. Nó
+cần trigger riêng vì dấu tick cuối cùng thường là một task **(human)**, trong một PR mà Agent Issues
+bỏ qua.
+
+`pnpm nx run @discava/common-scripts:archive-specs`, trong `src/agent-issues/archive-specs.ts`:
+
+1. Tìm mỗi spec đang hoạt động mà mọi task đã được đánh dấu, kể cả task **(human)**.
+2. Bỏ qua spec còn agent issue đang mở, và spec đã từng có PR lưu trữ. Đóng PR đó mà không merge sẽ
+   giữ spec ở trạng thái đang hoạt động.
+3. Mở một PR trên nhánh `archive-spec/<folder>`, chuyển thư mục vào `specs/_archive/` và sửa các
+   liên kết đến và đi từ nó.
+
+Agent Issues bỏ qua `specs/_archive/`, nên một PR lưu trữ không bao giờ mở issue. Check
+`Tasks format` cũng đọc các `tasks.md` đã lưu trữ, và thất bại nếu có task chưa được đánh dấu.
+
+<Aside type="caution">
+Workflow cần cài đặt repository "Allow GitHub Actions to create and approve pull requests". PR mở
+bằng token của workflow không khởi động PR Checks: đóng rồi mở lại từng PR để chạy chúng.
+</Aside>
+
 Tiếp theo: [Vòng phản hồi](../feedback-loops/).

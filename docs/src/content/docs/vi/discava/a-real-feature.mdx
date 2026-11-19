@@ -1,6 +1,6 @@
 ---
 title: "Một tính năng thật: đánh giá khóa học"
-description: Một tính năng của Discava được lần theo từ tracking issue đến spec đến sáu agent pull request, kèm mốc thời gian.
+description: Một tính năng của Discava được lần theo từ tracking issue đến spec đến tám agent pull request, kèm mốc thời gian.
 sidebar:
   order: 10
   label: Một tính năng thật
@@ -55,17 +55,20 @@ Mở ngày 15 tháng 11, gắn label `spec-ready`, merge ngày 18 tháng 11 lúc
 | 3. Xếp hạng và đánh giá trên cổng học viên | [#461](https://github.com/AlexTo/discava/issues/461) 08:31 | [#464](https://github.com/AlexTo/discava/pull/464) | 09:55 | +1.357 | `review-fix-1` |
 | 4. Xếp hạng trong tìm kiếm | [#466](https://github.com/AlexTo/discava/issues/466) 09:56 | [#470](https://github.com/AlexTo/discava/pull/470) | 11:24 | +900 | `ci-fix-1` |
 | 5. Phản hồi của giảng viên | [#475](https://github.com/AlexTo/discava/issues/475) 11:25 | [#476](https://github.com/AlexTo/discava/pull/476) | 12:30 | +1.791 | `ci-fix-1` |
-| 6. Admin gỡ đánh giá | [#481](https://github.com/AlexTo/discava/issues/481) 12:31 | [#483](https://github.com/AlexTo/discava/pull/483) | đang review | +1.526 | |
+| 6. Admin gỡ đánh giá | [#481](https://github.com/AlexTo/discava/issues/481) 12:31 | [#483](https://github.com/AlexTo/discava/pull/483) | 13:09 | +1.526 | không |
+| 7. Thông báo cho giảng viên | [#485](https://github.com/AlexTo/discava/issues/485) 13:10 | [#497](https://github.com/AlexTo/discava/pull/497) | 00:20, 19/11 | +422 | `review-fix-1` |
+| 8. End-to-end, docs và kiểm tra thủ công | [#501](https://github.com/AlexTo/discava/issues/501) 00:21, 19/11 | [#504](https://github.com/AlexTo/discava/pull/504) | 01:08, 19/11 | +427 | `ci-fix-1` |
 
-Năm PR, khoảng 7.300 dòng kể cả test, được merge trong chưa đầy năm giờ. Mỗi issue mở khoảng một
-phút sau khi PR trước được merge. **Không ai mở issue, viết prompt hay dán thông báo lỗi** ở bất kỳ
+Tám PR, khoảng 9.700 dòng kể cả test. Sáu PR đầu được merge trong sáu giờ. PR của agent cho giai
+đoạn 7 mở mười giờ sau issue của nó, và hai PR cuối được merge trong vòng chín mươi phút sau đó. Mỗi
+issue mở khoảng một phút sau khi PR trước được merge, và PR cuối đóng #279. **Không ai mở issue, viết prompt hay dán thông báo lỗi** ở bất kỳ
 điểm nào trong chuỗi.
 
 ## Người đã làm gì
 
 1. Viết tracking issue dài một đoạn.
 2. Review và merge spec PR.
-3. Với mỗi PR trong năm PR: đọc mô tả và comment ảnh chụp màn hình, rồi merge.
+3. Với mỗi PR trong tám PR: đọc mô tả và comment ảnh chụp màn hình, rồi merge.
 
 ## Các vòng lặp đã bắt được gì
 
@@ -75,6 +78,8 @@ phút sau khi PR trước được merge. **Không ai mở issue, viết prompt 
   Agent CI Status gửi agent quay lại một lần. Agent sửa locator và giải thích lý do trong một comment.
   Xem [Vòng phản hồi](../feedback-loops/) để có dòng thời gian đầy đủ.
 - **PR #476**: một lần CI thất bại, được sửa ngay lần thử đầu.
+- **PR #497**: một vòng sửa theo review.
+- **PR #504**: một lần CI thất bại, được sửa ngay lần thử đầu.
 
 <Aside type="note">
 Tiêu đề mỗi PR bắt đầu bằng `[#<issue>]`, định dạng riêng của automation issue-to-PR, dù issue yêu
@@ -85,8 +90,10 @@ thực thi nó bằng một check.
 
 ## Những gì còn lại cho một người
 
-Giai đoạn 7 và 8 (thông báo cho giảng viên, rồi e2e, docs và kiểm tra thủ công) sẽ mở thành issue khi
-#483 được merge. Hai task **(human)** trong giai đoạn 8 được người review làm trước khi PR cuối đó
-được merge. PR đó cũng đóng #279.
+Hai task **(human)** trong giai đoạn 8: một lần chạy thử thủ công trên local stack, và kiểm tra trên
+stage đã deploy. PR cuối được merge khi cả hai vẫn chưa được đánh dấu trong `tasks.md`, nên automation
+không chờ chúng, và cũng không có gì khác chờ. Thứ theo dõi chúng là workflow
+[Archive Specs](../spec-to-issue/#lưu-trữ-một-spec-đã-xong): thư mục spec vẫn ở trạng thái đang
+hoạt động cho đến khi một người đánh dấu cả hai.
 
 Tiếp theo: [Thiết lập: fork và chạy](../../setup/before-you-start/).
