@@ -1,0 +1,97 @@
+---
+title: Configuración de Speckit
+description: Cómo está configurado Speckit en Discava, y los cambios en las plantillas que hacen que lo que produce sea legible por máquinas.
+sidebar:
+  order: 3
+---
+
+import { FileTree } from '@astrojs/starlight/components';
+
+Discava usa Speckit 1.3.2 casi tal como viene. Los cambios importantes están en dos plantillas, para
+que la automatización pueda leer lo que escribe Speckit.
+
+## Configuración
+
+`.specify/init-options.json`, escrito por `specify init`:
+
+```json
+{
+  "ai": "claude",
+  "ai_skills": true,
+  "feature_numbering": "timestamp",
+  "here": true,
+  "integration": "claude",
+  "script": "sh",
+  "speckit_version": "1.3.2"
+}
+```
+
+- **Integración como skills.** Los comandos se instalan como skills (`/speckit-specify`,
+  `/speckit-plan`, …) para el agente de programación del equipo.
+- **Numeración por marca de tiempo.** Las carpetas de specs se llaman `YYYYMMDD-HHMMSS-<name>`, no
+  `001-<name>`. Dos personas que escriben specs en dos ramas el mismo día nunca chocan con un número.
+
+## La extensión git
+
+Está instalada la extensión `git` que incluye Speckit (`.specify/extensions.yml`). Sus hooks crean
+una rama de feature antes de `/speckit-specify` y hacen commit después de cada paso, así que
+cada paso de la redacción de una spec es su propio Conventional Commit en el PR de la spec.
+
+## Cambios en las plantillas
+
+### `spec-template.md`: una línea de issue padre
+
+```markdown
+**Parent issue**: [#<number>, or "none" if there is no tracking issue]
+```
+
+El script de Agent Issues lee esta línea y escribe `Refs #<parent>` en cada issue de implementación,
+para que la issue de seguimiento de la feature enlace a cada PR.
+
+### `tasks-template.md`: el bloque de formato y las tareas de tests
+
+Tres añadidos a la plantilla original:
+
+1. **Los tests no son opcionales.** La plantilla original dice que los tests son opcionales. La de
+   Discava dice que la constitución los exige, y cada fase de historia de usuario lleva tres tareas
+   de plantilla: tests unitarios, una invariante y un test que la rompe (si una regla abarca varios
+   registros), y un escenario e2e (si cambia un flujo principal).
+2. **Quién ejecuta qué.** Un párrafo que dice que un agente implementa estas tareas sin Docker, que
+   los tests e2e y de concurrencia se ejecutan en el CI del PR, y qué significa **(human)**. Eso
+   incluye "not for screenshots": un cambio de UI toma sus capturas en el e2e.
+3. **Leído por la automatización.** Las [reglas de formato](../../reference/tasks-format/) que
+   impone el validador, escritas en la plantilla para que el agente que escribe `tasks.md` las siga.
+
+Y una línea añadida a las notas del final: "Do not edit existing tests to make them pass. If one
+looks wrong, stop and raise it."
+
+El texto exacto de cada cambio está en
+[Adoptar: constitución y plantillas](../../adopt/constitution-and-templates/).
+
+## Una carpeta de spec
+
+<FileTree>
+- specs/20261116-013307-course-reviews/
+  - spec.md qué y por qué, con las aclaraciones y la issue padre
+  - plan.md cómo, con el Constitution Check
+  - research.md decisiones y las alternativas descartadas
+  - data-model.md entidades, claves, índices
+  - contracts/ formas de la API
+  - quickstart.md cómo lo prueba a mano un revisor
+  - tasks.md ocho fases, 36 tareas, dos de ellas (human)
+  - checklists/ checklists de calidad de los requisitos
+</FileTree>
+
+## Cómo se escribe una spec
+
+1. Una persona abre una issue de seguimiento para la feature, como #279 "course ratings and
+   written reviews".
+2. Un agente de programación ejecuta `/speckit-specify` con el texto de la issue y después
+   `/speckit-clarify`. Cuando no hay nadie disponible para responder, el agente elige la respuesta
+   recomendada y la anota en "Clarifications" en la spec.
+3. `/speckit-plan`, `/speckit-tasks`, `/speckit-analyze`. Lo que encuentra analyze se corrige en el
+   mismo PR. Puedes verlo en el historial de Discava como commits del tipo "resolve analysis
+   findings in the public pages spec".
+4. El PR de la spec recibe la label `spec-ready` y se fusiona.
+
+Siguiente: [Configuración de OpenHands](../openhands-setup/).

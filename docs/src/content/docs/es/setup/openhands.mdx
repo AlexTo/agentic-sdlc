@@ -1,0 +1,75 @@
+---
+title: 3. Instala OpenHands
+description: Instala Agent Canvas con npm, ejecútalo, añade el token de GitHub y crea los dos perfiles de agente.
+sidebar:
+  order: 3
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Al terminar tendrás:** OpenHands Agent Canvas ejecutándose en tu máquina, un token de GitHub guardado como
+secret y dos perfiles de agente: `default` para implementar y `reviewer` para hacer review.
+
+<Steps>
+
+1. **Instala e inicia Agent Canvas.** Discava usa la versión 1.41.0:
+
+   ```bash
+   npm install -g @openhands/agent-canvas
+   agent-canvas
+   ```
+
+   Abre [http://127.0.0.1:8000](http://127.0.0.1:8000). Déjalo en ejecución: las automatizaciones solo consultan
+   mientras Agent Canvas está activo.
+
+2. **Crea un token de GitHub** para la cuenta que usarán los agentes: un token fine-grained, limitado a
+   tu fork, con **Contents**, **Issues**, **Pull requests** y **Workflows** en lectura y
+   escritura.
+
+   El agente nunca edita workflows, pero GitHub rechaza un push entero de un token sin
+   **Workflows** siempre que la rama toque `.github/workflows/`, por ejemplo a través de un merge de
+   `main`.
+
+3. **Guarda el token como secret** con el nombre `GITHUB_PERSONAL_ACCESS_TOKEN` en Agent Canvas, en
+   **Settings → Secrets**.
+
+4. **Elige el agente.** Discava ejecuta Claude Code sobre ACP (el Agent Client Protocol), así que el
+   agente de programación que ya usas hace el trabajo. En la configuración del agente, pon:
+
+   | Ajuste | Valor |
+   | --- | --- |
+   | Agent | ACP, servidor `claude-code` |
+   | Confirmation mode | desactivado (no hay nadie para confirmar) |
+   | Max iterations | 500 (espacio para una fase entera) |
+
+   El agente de programación debe estar instalado y con sesión iniciada en esta máquina, con el mismo usuario.
+
+5. **Crea dos perfiles de agente:**
+
+   | Perfil | Agente | Modelo |
+   | --- | --- | --- |
+   | `default` | ACP, `claude-code` | `sonnet` |
+   | `reviewer` | ACP, `claude-code` | `opus` |
+
+   Cualquier agente y modelo sirve. Mantén el revisor al menos tan potente como el implementador: es el
+   último control antes de ti.
+
+</Steps>
+
+## Comprueba que funciona
+
+En Agent Canvas, inicia una conversación con el perfil `default` y dale el
+secret `GITHUB_PERSONAL_ACCESS_TOKEN`. Pídele:
+
+```text
+Run gh auth status using the GITHUB_PERSONAL_ACCESS_TOKEN secret, and list the open issues in <you>/agentic-sdlc.
+```
+
+Informa de la cuenta de los agentes y de una lista de issues vacía.
+
+<Aside type="caution">
+El agente ejecuta comandos en esta máquina con tu usuario. No guardes credenciales de la nube en su
+entorno, y usa una máquina o VM separada cuando vayas más allá de probarlo.
+</Aside>
+
+Siguiente: [4. Crea las dos automatizaciones](../automations/).

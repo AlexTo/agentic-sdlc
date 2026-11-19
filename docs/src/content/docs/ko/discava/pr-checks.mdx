@@ -1,0 +1,109 @@
+---
+title: PR 검사
+description: Discava에서 에이전트 PR이 통과해야 하는 모든 검사, 에이전트를 위해 작성한 두 가지 포함.
+sidebar:
+  order: 7
+---
+
+`.github/workflows/pr-checks.yml`은 `main`으로 향하는 모든 pull request에서 실행됩니다. 이것의 실패를 Agent CI
+Status가 수정 시도로 바꾸므로, 에이전트의 주된 피드백 원천이기도 합니다.
+
+## job
+
+| Job | 실행하는 것 | 잡아내는 것 |
+| --- | --- | --- |
+| `Checks (lint)`, `Checks (test)`, `Checks (build)` | `pnpm nx affected --target <target>`, `fail-fast: false`인 matrix로 | 스타일, 단위 테스트, 타입, 번들링, 인프라에 대한 CDK synth와 checkov |
+| `Tasks format` | `validate-tasks`, `tasks.md`나 그 reader가 바뀌었을 때만 | Agent Issues workflow가 잘못 읽을 `tasks.md` (빈틈 5) |
+| `UI Screenshots` | `ui-screenshots` | 새 스크린샷이 없는 UI 변경 (빈틈 6) |
+| `Invariant coverage` | `invariant-coverage`, 핵심 테이블에 쓸 수 있는 코드가 바뀌었을 때만 | invariant 변경 없이 생긴 공유 레코드의 새 writer. [로컬 스택](../local-stack/#모든-테스트-후의-invariant) 참고 |
+| `E2E tests (1/6)` … `(6/6)` | `pnpm nx affected --target e2e`, 샤드로 나눠서 | 깨진 사용자 흐름, 깨진 invariant, 경쟁 상태 |
+| `E2E tests` | 여섯 샤드를 하나의 결과로 모읍니다 | 샤드 수와 상관없이 branch protection에 안정적인 이름 하나를 제공합니다 |
+| `E2E screenshots` | `screenshots-comment` | PR에 이미지를 올립니다 |
+
+`fail-fast: false`는 에이전트에게 중요합니다. lint *와* 테스트가 함께 실패하면, 에이전트는 시도마다 하나씩이 아니라
+한 라운드에 둘 다 듣게 됩니다.
+
+## Tasks format
+
+`src/agent-issues/validate.ts`는 모든 `specs/*/tasks.md`가 reader가 예상하는 형식을 따르게 합니다. reader는 형식이
+잘못된 줄에서 실패하지 않습니다. 그 줄을 건너뛰므로, 에이전트는 조용히 잘못된 작업을 받게 됩니다. validator는
+reader가 건너뛸 것을 잡아냅니다.
+
+- phase처럼 보이지만 `## Phase <n>: <title>`이 아닌 제목
+- 첫 번째 열에서 시작하는 `- [ ] T<3 digits> …`가 아닌 체크박스 줄
+- 작업이 없는 phase, 증가하지 않는 phase 번호, 첫 phase보다 위에 있는 작업
+- 두 번 쓰인 작업 ID
+- `User Story` phase가 아예 없어서 첫 issue가 끝날 곳이 없는 경우
+
+CI에서는 GitHub annotation을 출력하므로, 각 문제가 PR diff의 해당 줄에 표시됩니다.
+
+```text
+::error file=specs/…/tasks.md,line=42::A task must be written "- [ ] T<3 digits> <description>", starting in the first column
+```
+
+## UI Screenshots와 E2E screenshots 댓글
+
+규칙(`src/ui-screenshots/check.ts`): PR이 포털이나 공유 컴포넌트의 `.tsx` 또는 `.css` 소스(테스트 제외, 생성된 파일
+제외)를 바꾸면, `packages/e2e/src/scenarios/`의 어떤 파일이든 `screenshot(`을 호출하는 줄을 **추가**해야 합니다.
+볼 것이 없는 변경이라면 메인테이너가 `no-ui-screenshots` label을 붙이고 job을 다시 실행해 이를 면제할 수 있습니다.
+
+helper(`packages/e2e/src/helpers/screenshots.ts`)는 `search/01-search-results-with-ratings.png`처럼 시나리오별로
+번호가 붙은 PNG를 CI가 artifact로 업로드하는 폴더에 저장합니다. 샤드가 끝나면 `E2E screenshots` job이 PR의 댓글
+하나를 최신으로 유지합니다. 이 PR이 추가한 이미지를 먼저 나열하고, 이미 있던 시나리오의 이미지는 접어 둡니다.
+
+```markdown
+### E2E screenshots
+
+Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifacts from the run.
+
+**Added by this pull request (3)**
+
+- `search/01-search-results-with-ratings.png`
+- `search/02-search-sorted-by-highest-rated.png`
+- `search/03-search-minimum-rating-4.png`
+```
+
+리뷰어 에이전트도 같은 목록을 읽습니다. artifact에는 공개 URL이 없으므로, 댓글은 이미지 이름을 적고 이를 내려받을
+수 있는 실행에 링크합니다.
+
+## 빠르게 유지하기
+
+검사 시간은 곧 에이전트의 피드백 시간입니다. 실행에 걸리는 1분 1분이 모든 수정 라운드에 더해집니다. Discava는 네
+가지 방법으로 PR 검사 시간을 줄였습니다.
+
+- **Nx의 task cache를 실행 사이에 유지합니다.** `init-monorepo` action은 `.nx/cache`를 Checks 갈래마다 하나씩
+  Actions cache에 보관합니다. 커밋마다 저장되며, 같은 브랜치의 마지막 push에서, 그것이 없으면 `ci.yml`이 저장하는
+  `main`의 cache에서 복원됩니다. 마지막 push 이후 입력이 바뀌지 않은 task는 다시 실행되지 않고 재생됩니다.
+- **cache를 할당량 안으로 유지합니다.** 저장소가 Actions cache 10 GB 중 12.3 GB에 도달하자, GitHub가 열린 PR의
+  cache를 제거했습니다. 세 가지 변경으로 이를 해결했습니다. `NX_MAX_CACHE_SIZE=1GB`로 저장된 cache가 더 이상 일주일
+  치 오래된 출력을 담지 않게 했고, Biome의 lint가 cache 저장보다 빠르므로 lint 갈래는 `main`의 cache를 복원하되
+  아무것도 저장하지 않게 했으며, **Cache Cleanup** workflow가 PR이 닫힐 때 그 PR의 cache를 삭제하게 했습니다.
+- **느린 테스트는 자기 target을 갖습니다.** 테스트 파일 하나가 build 갈래 5분 중 4분을 차지했습니다. 입력이 그
+  파일이 테스트하는 파일들뿐인 별도의 target을 만들자, 대부분의 PR에서 cache로부터 재생됩니다.
+- **병렬성을 조정했습니다.** `nx affected`는 `nx.json`의 8개가 아니라 한 번에 4개의 task를 실행합니다. 각 Vitest
+  task가 자기 worker를 시작하므로, 4코어 러너에서는 4개가 약 12% 더 빨랐습니다. E2E는 샤드 네 개에서 여섯 개로
+  늘었고, 파일은 실행 시간에 따라 샤드에 분배됩니다. 샤드 하나는 첫 테스트 전에 약 2분이 들기 때문에, 각 샤드의
+  테스트가 그 정도 걸리게 되면 샤드를 더 늘려도 효과가 없습니다.
+
+`Tasks format`과 `Invariant coverage`는 일부 경로에서만 의미가 있습니다. 작은 `changed-paths` action이 먼저 PR의
+diff를 확인하고, 관련된 것이 바뀌지 않았으면 job은 의존성 설치를 건너뜁니다.
+
+## 구조적으로 안전하게
+
+PR에 쓸 수 있는 job(`E2E screenshots`, 그리고 에이전트 workflow)은 **기본 브랜치**를 checkout하고 API를 통해 PR의
+diff만 읽습니다. 모든 action은 커밋 SHA로 고정되어 있고, Dependabot이 매주 이 고정 버전을 최신으로 유지합니다.
+`pnpm/setup` 단계는 최대 세 번까지 재시도합니다. job이 시작되기도 전에 레지스트리 타임아웃이 나면 그렇지 않을 경우
+에이전트의 시도 한 번을 날리기 때문입니다.
+
+## `main`에서
+
+`.github/workflows/ci.yml`은 `main`에 push할 때마다 같은 lint, test, build를 실행하고, 추가로 다음을 실행합니다.
+
+- **Check for mutations**: build 후의 `git diff --exit-code`. lint나 sync generator가 커밋되지 않은 파일을 바꾸면
+  실패합니다.
+- **Trivy**: 취약점과 secret 스캔. [배포와 보안](../deploy-and-security/)을 참고하세요.
+- **Playwright cache**: PR 실행이 찾는 키로 Chromium을 저장합니다. PR은 자기 ref나 `main`의 cache만 복원할 수
+  있습니다. 같은 이유로 lint, test, build 단계는 각 PR의 첫 실행이 시작점으로 쓰는 Nx cache를 저장합니다.
+- **Deploy Docs**: 그사이 `main`에 더 새로운 커밋이 들어오지 않았을 때만 GitHub Pages에 배포합니다.
+
+다음: [로컬 스택](../local-stack/).

@@ -1,0 +1,86 @@
+---
+title: フィードバックループ
+description: 赤い CI の実行や "changes requested" のレビューがエージェントを差し戻す仕組みと、各ループが 5 回で止まる理由。
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**要約:** 何かが失敗すると、ワークフローが PR の head コミットに失敗のステータスを付けます。OpenHands のワーカーは次の
+ポーリングでそれを見て、同じエージェントの会話に同じ PR を修正するよう依頼します。各ループにはラベルによるカウンターがあり、5 回で止まります。
+
+## 2 つのループ
+
+```d2
+direction: right
+
+pr: エージェントが push {shape: page}
+checks: PR Checks
+review: レビュー担当エージェント
+you: 人間のレビュー
+
+actions: GitHub Actions {
+  style.stroke-dash: 3
+  ci: Agent CI Status
+  rv: Agent Review Status
+}
+
+status: "software-factory/review\n= failure" {shape: document}
+worker: "issue-to-PR ワーカー\n(次のポーリング)"
+
+pr -> checks
+checks -> review: すべて完了
+checks -> actions.ci: 失敗
+review -> actions.rv: changes requested
+review -> you: 承認
+actions.ci -> status: ci-fix-N
+actions.rv -> status: review-fix-N
+status -> worker
+worker -> pr: 同じ PR を修正
+```
+
+| | CI ループ | レビューループ |
+| --- | --- | --- |
+| トリガー | PR Checks ワークフローが `failure` または `timed_out` で終了 | レビュー担当エージェントが書いた PR のレビューが `🔄 CHANGES REQUESTED` で終わる |
+| ワークフロー | Agent CI Status | Agent Review Status |
+| カウンターのラベル | `ci-fix-1` … `ci-fix-5` | `review-fix-1` … `review-fix-5` |
+| 諦めるとき | `ci-fix-exhausted` とコメント | `review-fix-exhausted` とコメント |
+| ステータスの説明 | `CI failed (fix attempt 2 of 5): E2E tests (3/4)` | `Review requested changes (fix attempt 1 of 5): see the review` |
+
+成功した実行は何も投稿しません。次のコミットはステータスなしで始まるので、ワーカーはその PR に手を出しません。
+
+## エージェントを差し戻す前のチェック
+
+各スクリプトは、次のすべてが成り立たない限り動きません。
+
+1. ブランチが正確に `openhands/issue-<n>` であること。`openhands/issue-308-2` のような 2 回目の試行のブランチは
+   ワーカーが修正することはないので、これにも応答しません。
+2. PR が開いていること。
+3. 実行やレビューが、PR の**現在の** head コミットに対するものであること。古い実行は無効です。
+4. そのコミットがまだ差し戻されていないこと。同じチェックの再実行で、試行回数をもう 1 回使ってはいけません。
+5. レビューの場合: レビューにレビュアーの隠し実行マーカーがあり、書き込み権限のあるアカウントからのものであること。
+   これにより、人が判定を引用してもトリガーされません。
+6. 使った試行回数が 5 回未満であること。
+
+ラベルはステータスを投稿する**前に**付けます。その後ステータスの投稿が失敗した場合、次の失敗では同じ試行を永遠に繰り返すのではなく、
+試行回数がもう 1 回カウントされます。
+
+## なぜ 5 回なのか
+
+ほとんどのミスは 1 回の再試行で直ります。不安定なロケーター、見落とした型、lint のルールなどです。その次の数回は、修正によって
+2 つ目の問題が見つかった場合や、CI の実行とレビューがそれぞれ違うことを求めている場合に対応します。5 回目の失敗までに、
+エージェントはたいてい自分には見えない何かで行き詰まっていて、それ以上試行しても収束せずにお金がかかるだけです。Discava は上限 3 回で始め、
+5 回に引き上げました。
+
+Discava で最初にマージされた 67 個のエージェントの PR のうち、42 個には修正ラベルがなく (一部は修正ワークフローより前のもの)、
+17 個はちょうど 1 ラウンドを必要とし、ループを使い切ったのは 1 個だけでした。
+
+<Aside type="caution">
+ループを使い切ったら、何かを直す前に最後の失敗を読んでください。失敗が繰り返されるのは、spec や plan が曖昧で、エージェントが
+2 つの解釈を同時に満たそうとしていることが多いからです。spec を直してから、エージェントにもう一度試させましょう。
+</Aside>
+
+その後エージェントにもう 1 ラウンド与えるには、[ループのリセット](../../reference/labels/#ループをリセットする)を参照してください。
+
+次へ: [信頼の層](../layers-of-trust/)。

@@ -1,0 +1,60 @@
+---
+title: 2. 配置仓库
+description: 创建标签并保护 main。fork 不会复制这两者。
+sidebar:
+  order: 2
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完成后你将拥有：** 工作流用到的所有标签，以及一个只接受检查全绿且已获批准的 pull request 的 `main` 分支。
+
+<Steps>
+
+1. **创建标签。** 一共 16 个，所以用脚本比在 UI 中操作更快。在你的克隆中运行它。`--force` 会更新已存在的标签，所以可以放心重复运行。
+
+   ```bash
+   gh label create spec-ready           --force --description "Merging this spec PR starts the agent"
+   gh label create openhands            --force --description "OpenHands implements this issue"
+   gh label create openhands-review     --force --description "OpenHands reviews this PR's head"
+   gh label create no-ui-screenshots    --force --description "Waives the UI Screenshots check: a UI change with nothing to look at"
+   for n in 1 2 3 4 5; do
+     gh label create ci-fix-$n          --force --description "CI fix-up attempt $n of 5"
+     gh label create review-fix-$n      --force --description "Review fix-up attempt $n of 5"
+   done
+   gh label create ci-fix-exhausted     --force --description "CI fix-ups used up; a person takes over"
+   gh label create review-fix-exhausted --force --description "Review fix-ups used up; a person takes over"
+   ```
+
+2. **保护 `main`。** 在你的 fork 中打开 **Settings → Branches → Add classic branch protection
+   rule**，然后设置：
+
+   | 设置 | 值 |
+   | --- | --- |
+   | Branch name pattern | `main` |
+   | Require a pull request before merging | 开启，需要 1 个批准 |
+   | Dismiss stale pull request approvals when new commits are pushed | 开启 |
+   | Require status checks to pass before merging | 开启，并选择下面六项检查 |
+   | Do not allow bypassing the above settings | 关闭 |
+
+   六项检查是：`Checks (lint)`、`Checks (test)`、`Checks (build)`、`Tasks format`、`E2E tests` 和 `UI Screenshots`。一项检查至少运行过一次后，GitHub 才会在搜索框中提供它，所以如果缺了哪一项，先随便开一个 PR。
+
+   保留允许绕过的设置，你作为所有者就能合并智能体用你自己的 token 开的 PR（见下方的注意事项）。
+
+   <Aside type="caution">
+   不要把 `software-factory/review` status 设为必需。它是发给智能体的信号，只会以 `failure` 的形式发布，把它设为必需会阻塞每一个 PR。
+   </Aside>
+
+3. **允许 Actions 开启 pull request。** 打开 **Settings → Actions → General**，在 **Workflow permissions** 下勾选 **Allow GitHub Actions to create and approve pull requests**。Archive Specs workflow 需要它来开启把已完成的 spec 移到 `specs/_archive/` 的 PR。
+
+</Steps>
+
+<Aside type="caution" title="一个账号还是两个">
+初次尝试时，智能体可以使用你自己账号的 token，Discava 就是这么做的。不过 GitHub 不允许一个账号批准自己的 PR。这时你的批准和评审智能体的批准都会显示为评论，你以仓库管理员身份合并。对于团队，给智能体一个拥有写权限的单独 GitHub 账号，并把它的 token 作为[第 3 步](../openhands/)中使用的 token。这样大家就能正常批准智能体的 PR。
+</Aside>
+
+## 检查是否成功
+
+fork 的 **Issues → Labels** 页面列出了 16 个新标签，**Settings → Branches** 显示 `main` 上的规则，带有六项必需检查。
+
+下一步：[3. 安装 OpenHands](../openhands/)。

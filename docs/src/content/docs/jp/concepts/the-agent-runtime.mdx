@@ -1,0 +1,89 @@
+---
+title: エージェントのランタイム
+description: OpenHands がラベル付きの issue を pull request にする仕組みと、修正すべきタイミングを知る仕組み。
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**要約:** OpenHands は、リポジトリに対して 2 つのスケジュール実行の automation を動かします。1 つはラベル付きの issue を実装し、
+失敗とマークされた pull request を修正します。もう 1 つは、チェックが終わった pull request をレビューします。どちらも、決まったプロンプトで
+普通のコーディングエージェントを起動します。どちらも、あなたがチャットを開く必要はありません。
+
+```d2
+direction: right
+
+machine: あなたのマシン {
+  style.stroke-dash: 3
+  canvas: Agent Canvas {
+    i2p: issue から PR へ
+    review: コードレビュー
+  }
+  agent: コーディングエージェント
+  canvas.i2p -> agent: 実装または修正
+  canvas.review -> agent: レビュー
+}
+
+github: GitHub {
+  style.stroke-dash: 3
+  issues: issues {shape: page}
+  prs: pull requests {shape: page}
+  statuses: コミットステータス {shape: document}
+}
+
+machine.canvas -> github: 5 分ごとにポーリング
+machine.agent -> github.prs: push、open、review
+```
+
+## 構成要素
+
+| 要素 | 何であるか |
+| --- | --- |
+| **Agent Canvas** | 自分で動かす OpenHands のアプリ (`npx @openhands/agent-canvas`)。エージェントサーバー、automation のバックエンド、Web UI がまとめられている |
+| **エージェントプロファイル** | どのエージェントを、どのモデルで動かすか。プロファイルは、任意の LLM を使う OpenHands 自身のエージェントにも、ACP (Agent Client Protocol) 経由の外部のコーディングエージェントにもできる |
+| **automation** | cron スケジュールで動く小さな Python のワーカー。GitHub を読み、何をするか決め、エージェントの会話を開始または再開する。Agent Canvas のカタログからインストールする |
+| **シークレット** | GitHub トークンのような、名前付きの認証情報。会話には、その許可リストにあるシークレットだけが渡される |
+
+## 2 つの automation
+
+### GitHub issue to PR
+
+ポーリングのたびに、ワーカーは監視している各リポジトリについて次のことを行います。
+
+1. `openhands/issue-<n>` ブランチ上の開いている PR のうち、head コミットに `software-factory/review` という名前で状態が
+   `failure` または `error` のコミットステータスが付いているものを探します。それぞれについて、その issue の会話に **revise** のターンを送ります。
+   レビュー、コメント、失敗しているチェックを読み、それらを直し、同じブランチに push するというものです。
+2. トリガーラベル (`openhands`) が付いていて、まだ PR がない開いている issue を探し、**implement** のターンを開始します。
+   clone し、`openhands/issue-<n>` を作り、実装し、テストし、push し、PR を開き、`openhands-review` ラベルを付けます。
+
+各 issue は、安定した会話を持つ 1 つの*サブジェクト*です。修正は元の実装と同じ会話に送られるので、エージェントはコンテキストを保ちます。
+
+### GitHub code review
+
+ポーリングのたびに、`openhands-review` ラベルが付いている PR、自分のアカウントへのレビュー依頼が保留中の PR、または開いていてドラフトではなく、
+依頼もレビューもされていない PR を探します。それぞれについて、**head コミットのすべてのチェックが終わる**まで待ち、そのコミットそのもののレビューを開始します。
+レビューは、独立した行の判定で終わります。`✅ APPROVED` または `🔄 CHANGES REQUESTED` です。
+
+<Aside type="caution">
+issue-to-PR ワーカーが PR を修正するのは、失敗した `software-factory/review` ステータスを見たときだけです。赤い CI の実行も、レビュアーの
+"changes requested" も、それだけではそのステータスを設定しません。そのギャップを埋めるのが、[欠けているグルー](../the-missing-glue/)のうちの 2 つです。
+</Aside>
+
+## なぜ webhook ではなくポーリングなのか
+
+automation はポーリングします (Discava では 5 分ごと、デフォルトでは 15 分ごと)。そのため Agent Canvas は、公開 URL も webhook のシークレットもない
+ノート PC や自宅サーバーで動かせます。代償は最大でポーリング間隔 1 回分の遅延ですが、エージェントが作業にかける時間に比べれば小さなものです。
+
+## エージェントが届くもの、届かないもの
+
+実装を担う会話には、GitHub トークンというシークレットが 1 つだけ渡されます。これで issue を読み、ブランチを push できます。クラウドの認証情報は
+渡されません。他に決してしてはいけないこと、そしてそれぞれの制限を何が強制しているかは、[人間のゲート](../human-gates/#エージェントが決してしてはいけないこと)にあります。
+
+## エージェントの選び方
+
+Discava は両方の automation を **ACP 経由の Claude Code** で動かしています。実装には Sonnet、レビューには Opus です。レビューに
+より強いモデルを使うのは意図的です。レビュアーは人の前の最後のチェックであり、読むコードは実装担当が書くコードよりはるかに少ないからです。
+どの ACP エージェントでも、任意の LLM を使う OpenHands 自身のエージェントでも、同じプロファイルに組み込めます。
+
+次へ: [欠けているグルー](../the-missing-glue/)。

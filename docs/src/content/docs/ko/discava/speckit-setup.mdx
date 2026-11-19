@@ -1,0 +1,92 @@
+---
+title: Speckit 설정
+description: Discava에서 Speckit을 구성하는 방식, 그리고 출력을 기계가 읽을 수 있게 만드는 템플릿 변경.
+sidebar:
+  order: 3
+---
+
+import { FileTree } from '@astrojs/starlight/components';
+
+Discava는 Speckit 1.3.2를 거의 배포된 그대로 사용합니다. 중요한 변경은 템플릿 두 개에 대한 것으로, Speckit이 작성한
+것을 자동화가 읽을 수 있게 하기 위한 것입니다.
+
+## 구성
+
+`specify init`이 작성한 `.specify/init-options.json`:
+
+```json
+{
+  "ai": "claude",
+  "ai_skills": true,
+  "feature_numbering": "timestamp",
+  "here": true,
+  "integration": "claude",
+  "script": "sh",
+  "speckit_version": "1.3.2"
+}
+```
+
+- **skill로 통합.** 명령은 팀의 코딩 에이전트를 위한 skill(`/speckit-specify`, `/speckit-plan`, …)로
+  설치됩니다.
+- **타임스탬프 번호 매기기.** spec 폴더 이름은 `001-<name>`이 아니라 `YYYYMMDD-HHMMSS-<name>`입니다. 두 사람이 같은 날
+  두 브랜치에서 spec을 작성해도 번호가 충돌하지 않습니다.
+
+## git extension
+
+Speckit에 번들된 `git` extension이 설치되어 있습니다(`.specify/extensions.yml`). 그 hook이 `/speckit-specify` 전에
+기능 브랜치를 만들고 각 단계 후에 커밋하므로, spec 작성의 모든 단계가 spec PR에서 각각 하나의 Conventional Commit이
+됩니다.
+
+## 템플릿 변경
+
+### `spec-template.md`: 상위 issue 줄
+
+```markdown
+**Parent issue**: [#<number>, or "none" if there is no tracking issue]
+```
+
+Agent Issues 스크립트가 이 줄을 읽고 모든 구현 issue에 `Refs #<parent>`를 적으므로, 기능의 추적 issue가 모든 PR과
+연결됩니다.
+
+### `tasks-template.md`: 형식 블록과 테스트 작업
+
+기본 템플릿에 세 가지를 추가했습니다.
+
+1. **테스트는 선택 사항이 아닙니다.** 기본 템플릿은 테스트가 선택 사항이라고 합니다. Discava의 템플릿은
+   constitution이 테스트를 요구한다고 말하며, 각 사용자 스토리 phase에는 템플릿 작업 세 개가 있습니다. 단위 테스트,
+   (규칙이 여러 레코드에 걸친다면) invariant와 그것을 깨는 테스트, (주요 흐름을 바꾼다면) e2e 시나리오입니다.
+2. **누가 무엇을 실행하는가.** 에이전트가 Docker 없이 이 작업들을 구현한다는 것, e2e와 동시성 테스트는 PR CI에서
+   실행된다는 것, **(human)**이 무엇을 뜻하는지를 말하는 문단입니다. 여기에는 "스크린샷용은 아님"도 포함됩니다. UI
+   변경은 e2e에서 스크린샷을 찍습니다.
+3. **자동화가 읽음.** validator가 강제하는 [형식 규칙](../../reference/tasks-format/)을 템플릿에 명시해서,
+   `tasks.md`를 작성하는 에이전트가 이를 따르게 합니다.
+
+그리고 끝의 참고 사항에 한 줄을 추가했습니다. "Do not edit existing tests to make them pass. If one looks wrong,
+stop and raise it."
+
+각 변경의 정확한 텍스트는 [도입: constitution과 템플릿](../../adopt/constitution-and-templates/)에 있습니다.
+
+## spec 폴더
+
+<FileTree>
+- specs/20261116-013307-course-reviews/
+  - spec.md 무엇을, 왜, clarification과 상위 issue 포함
+  - plan.md 어떻게, Constitution Check 포함
+  - research.md 결정 사항과 기각된 대안
+  - data-model.md 엔터티, 키, 인덱스
+  - contracts/ API 형태
+  - quickstart.md 리뷰어가 직접 시도해 보는 방법
+  - tasks.md phase 여덟 개, 작업 36개, 그중 두 개는 (human)
+  - checklists/ 요구 사항 품질 체크리스트
+</FileTree>
+
+## spec을 작성하는 방법
+
+1. 사람이 기능에 대한 추적 issue를 엽니다. 예를 들어 #279 "course ratings and written reviews"입니다.
+2. 코딩 에이전트가 issue의 텍스트로 `/speckit-specify`를 실행한 다음 `/speckit-clarify`를 실행합니다. 답해 줄 사람이
+   없으면 에이전트가 권장 답을 고르고 spec의 "Clarifications" 아래에 기록합니다.
+3. `/speckit-plan`, `/speckit-tasks`, `/speckit-analyze`. analyze에서 나온 결과는 같은 PR에서 수정합니다. Discava의
+   이력에서 "resolve analysis findings in the public pages spec" 같은 커밋으로 이를 볼 수 있습니다.
+4. spec PR에 `spec-ready` label을 붙이고 merge합니다.
+
+다음: [OpenHands 설정](../openhands-setup/).

@@ -1,0 +1,46 @@
+---
+title: 0. 始める前に
+description: 必要なものと、このリポジトリを fork すると Discava のセットアップが手に入る仕組み。
+sidebar:
+  order: 0
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+[このリポジトリの fork](../../guides/fork-this-repo/) には、Discava のセットアップのうちリポジトリ内に
+置かれているものがすべて含まれています。これらの手順では、リポジトリの外にある部分、つまり GitHub の設定と、
+fork を対象にした OpenHands のインストールを追加します。その後、notes アプリの spec を書き、
+spec PR からマージされたエージェントの PR になるまでを見届けます。
+
+**所要時間:** 約 1 時間。大半は最初のエージェント実行の待ち時間です。
+
+## 必要なもの
+
+| 必要なもの | 理由 |
+| --- | --- |
+| GitHub アカウント | fork するため、またエージェントが使うトークンの所有者になるため |
+| Node.js 24 と pnpm | リポジトリと Agent Canvas を実行するため |
+| `uv` | Agent Canvas は `uvx` でバックエンドを起動します |
+| Docker | notes アプリとその e2e テストをローカルで実行する場合のみ。エージェント向けには CI が実行します |
+| サインイン済みの GitHub CLI (`gh`) | ほとんどの手順で使います |
+| インストール済みでサインイン済みのコーディングエージェント | Speckit で spec を書き、OpenHands の中で動きます。Discava は Claude Code を使っています |
+
+<Aside type="note">
+Agent Canvas は自分のマシン上で動き、GitHub をポーリングするので、公開アドレスも webhook も
+不要です。エージェントは Agent Canvas が動いている間だけ作業します。
+</Aside>
+
+## 手順
+
+| # | 手順 | 完了時の状態 |
+| --- | --- | --- |
+| 1 | [リポジトリを fork する](../fork/) | Actions と Issues が有効になった自分のコピー |
+| 2 | [リポジトリを設定する](../github-repository/) | ラベルと、保護された `main` |
+| 3 | [OpenHands をインストールする](../openhands/) | 動作中の Agent Canvas、GitHub トークン、2 つのエージェントプロファイル |
+| 4 | [2 つの automation を作成する](../automations/) | fork で実装とレビューを行う OpenHands |
+| 5 | [最初の機能を実行する](../first-feature/) | エージェントによってマージ済みのコードまで運ばれた notes アプリの spec |
+
+代わりに既存のリポジトリでセットアップしたい場合は、
+[自分のリポジトリに導入する](../../adopt/overview/) を参照してください。
+
+次へ: [1. リポジトリを fork する](../fork/)。

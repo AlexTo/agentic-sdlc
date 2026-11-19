@@ -1,0 +1,53 @@
+---
+title: 3. Aprueba la spec
+description: Revisa el PR de spec como si fuera código, y ponle la label spec-ready para arrancar el agente.
+sidebar:
+  order: 3
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Estás aquí:** 🧑 control humano n.º 1. **Resultado:** un PR de spec fusionado y la primera issue de implementación.
+
+<Steps>
+
+1. Sube la rama y después abre un pull request para ella en GitHub.
+
+   ```bash
+   git add specs/ && git commit -m "docs(specs): add note tags spec"
+   git push -u origin spec/note-tags
+   ```
+
+2. Revísalo como revisarías código. Lee primero `spec.md`, después `plan.md`, y luego echa un vistazo a `tasks.md`.
+   Pregúntate:
+
+   - ¿La spec dice lo que realmente quieres?
+   - ¿Cada fase es lo bastante pequeña para revisarla de una sentada?
+   - ¿Hay algo en el plan que rechazarías en una code review?
+
+   Comenta en el PR para cambiar lo que sea. El agente también lee los comentarios, así que puedes pedirle que lo revise.
+
+   Involucra aquí a tu analista de negocio o product owner. `spec.md` está en lenguaje llano, así que pueden
+   revisarlo en el PR mientras tú compruebas el plan. Consulta
+   [Controles humanos](../../concepts/human-gates/#esto-es-ahora-el-principal-cuello-de-botella).
+
+3. Añade la label `spec-ready` al PR y después fusiónalo.
+
+   Tú abriste este PR, así que GitHub no te deja aprobarlo. Con la protección de rama activada, marca
+   **Merge without waiting for requirements to be met** para fusionar como administrador del repositorio.
+
+</Steps>
+
+## Qué pasa después, sin que nadie toque nada
+
+El workflow **Agent Issues** ve un PR fusionado que lleva `spec-ready`. Lee `tasks.md`, toma
+la primera fase sin terminar y abre una issue a partir de la
+[plantilla de implementación](https://github.com/AlexTo/agentic-sdlc/blob/main/.github/ISSUE_TEMPLATE/implement-phase.md):
+carpeta de la spec, rango de tareas de `T001` a `T003` y las reglas que el agente debe seguir. Añade la
+label `openhands`, que es la señal de salida.
+
+<Aside type="note">
+¿Olvidaste la label? Añade `spec-ready` al PR ya fusionado.
+</Aside>
+
+Tu atención queda libre hasta que haya algo que revisar. Siguiente: [El agente implementa](../agent-implements/).

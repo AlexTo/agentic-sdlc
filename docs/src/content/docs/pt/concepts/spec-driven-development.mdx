@@ -1,0 +1,93 @@
+---
+title: Desenvolvimento orientado a spec
+description: A spec, o plano e a lista de tarefas, a constitution que os governa, e por que o agent constrói a partir deles em vez de a partir de um prompt.
+sidebar:
+  order: 2
+---
+
+**A versão curta:** uma pessoa e um agent escrevem o que construir, como e em que ordem,
+antes de existir qualquer código. O resultado escrito é revisado como código e mergeado. A partir daí, toda
+execução de agent lê os mesmos arquivos, então o resultado não depende de quem escreveu o prompt.
+
+## Por que não usar só um prompt?
+
+| Um prompt | Uma spec |
+| --- | --- |
+| Vive no histórico de chat de uma pessoa | Vive em `specs/`, sob controle de versão |
+| Ninguém o revisa antes de o trabalho começar | Passa por um pull request |
+| Redigitado a cada execução, um pouco diferente | Lido, palavra por palavra, por toda execução |
+| Diz o que construir, raramente por quê | Traz histórias de usuário, requisitos e critérios de aceitação |
+
+## Os documentos
+
+O [Speckit](https://github.com/github/spec-kit) é um conjunto de comandos de agent e templates que
+os produzem, um passo de cada vez:
+
+| Comando | Escreve | Responde |
+| --- | --- | --- |
+| `/speckit-constitution` | `.specify/memory/constitution.md` | As regras que todo plano deve obedecer, para o projeto inteiro. Escrita uma vez, emendada por PR |
+| `/speckit-specify` | `spec.md` | **O quê e por quê.** Histórias de usuário, requisitos funcionais, cenários de aceitação. Nenhuma tecnologia |
+| `/speckit-clarify` | atualiza `spec.md` | Até cinco perguntas direcionadas, com as respostas registradas na spec |
+| `/speckit-plan` | `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md` | **Como.** A abordagem técnica, verificada contra a constitution |
+| `/speckit-tasks` | `tasks.md` | **Em que ordem.** Tarefas marcáveis, agrupadas em fases |
+| `/speckit-analyze` | um relatório | Requisitos sem tarefa, tarefas sem requisito, contradições entre os arquivos |
+
+Cada feature ganha sua própria pasta, por exemplo `specs/20261116-013307-course-reviews/`.
+
+```d2
+direction: right
+
+idea: ideia de um parágrafo
+constitution: constitution.md {shape: document}
+
+folder: "specs/<timestamp>-<name>/" {
+  style.stroke-dash: 3
+  spec: spec.md {shape: document}
+  plan: "plan.md\ndata-model.md\ncontracts/" {shape: document}
+  tasks: tasks.md {shape: document}
+  spec -> plan: /speckit-plan
+  plan -> tasks: /speckit-tasks
+}
+
+idea -> folder.spec: "/speckit-specify\n/speckit-clarify"
+constitution -> folder.plan: Constitution Check
+```
+
+## A constitution
+
+A constitution guarda as regras inegociáveis do projeto, escritas de forma que um plano possa ser verificado
+contra elas: "a feature MUST work under `pnpm dev` with no cloud account", "a failing test MUST be
+fixed in the code, not by weakening the test". Toda execução de `/speckit-plan` preenche uma seção **Constitution
+Check** e precisa justificar qualquer violação.
+
+Todo agent a lê antes de escrever código, então é nela que você coloca as regras que tornam a saída do agent
+confiável. Veja [a constitution do Discava](../../discava/constitution-and-guidance/) para um exemplo
+completo.
+
+## `tasks.md` é um contrato com a automação
+
+O Speckit trata o `tasks.md` como um documento para pessoas. Neste workflow, um script também o lê, para
+decidir quais tarefas o agent recebe em seguida. Por isso, o formato dele é fixo e verificado em todo PR:
+
+```markdown
+## Phase 1: Setup
+- [ ] T001 Create the review entity in packages/databases/core-table/src/entities/review.ts
+
+## Phase 3: User Story 1 - Leave a rating (Priority: P1) 🎯 MVP
+- [ ] T010 [P] [US1] Unit tests for rating rules
+- [ ] T011 [US1] review.upsert procedure
+- [ ] T012 (human) Check the layout on a phone-width window
+```
+
+As fases são headings numerados, as tarefas têm um ID fixo e são marcadas no lugar, e **(human)** marca
+uma tarefa que o agent pula e deixa para o revisor. As regras completas estão em
+[Referência: formato do tasks.md](../../reference/tasks-format/).
+
+## Mude a spec, não o código
+
+Quando o comportamento precisa mudar, volte à spec, atualize-a e gere de novo o plano e as tarefas.
+Novas tarefas recebem o próximo ID não usado, então a automação abre uma issue para elas como para qualquer outra. Se você
+corrigir o código à mão em vez disso, a spec deixa de descrever o produto, e o próximo agent que a ler
+reconstrói o comportamento antigo.
+
+Próximo: [Uma fase de cada vez](../one-phase-at-a-time/).

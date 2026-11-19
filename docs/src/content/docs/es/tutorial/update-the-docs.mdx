@@ -1,0 +1,42 @@
+---
+title: 7. Actualiza la documentación
+description: La documentación es la última fase de la misma cadena, hecha por el agente y revisada por ti.
+sidebar:
+  order: 7
+---
+
+**Estás aquí:** 🤖 agente, y después 🧑 control humano n.º 2 de nuevo. **Resultado:** la documentación describe los tags.
+
+La documentación es código (este sitio es MDX en `docs/`), así que la misma cadena se encarga de ella.
+
+## Qué hace el agente
+
+Con la issue de las tareas `T007` a `T008`, el agente:
+
+1. Lee la spec y el código fusionado de las fases 1 y 2. La spec dice para qué sirve la feature;
+   el código dice qué hace.
+2. Actualiza la página de la app de notas: el atributo `tags`, la nueva entrada y el nuevo filtro de la API, y las reglas
+   (cinco tags, únicos, sin distinguir mayúsculas y minúsculas), redactadas exactamente como las enuncia la spec.
+3. Reutiliza las capturas de pantalla del escenario e2e en lugar de inventar otras nuevas, para que la documentación muestre
+   lo que la app hace de verdad.
+4. Construye el sitio de documentación, para que un enlace roto o un MDX mal formado haga fallar el PR como cualquier otro error de build.
+
+## Qué compruebas tú
+
+- ¿Cada regla de la página coincide con un requisito de `spec.md`?
+- Si la documentación y la spec no coinciden, **gana la spec.** Cambia la spec, no la documentación a mano.
+- ¿Hay algo documentado que el código no hace?
+
+## Por qué está en la cadena
+
+La documentación escrita a posteriori, por otra persona, de memoria, se desvía. La documentación generada a partir de la
+spec y del código fusionado, y revisada con los mismos controles, no. El agente revisor es además un
+segundo lector barato: señala cualquier afirmación de la documentación que ningún test ni código respalda.
+
+## Hecho
+
+Fusiona el PR de documentación. Sin tareas de agente pendientes, no se abre ninguna issue nueva. La feature ha pasado de una
+frase a código y documentación fusionados, y tú tomaste dos tipos de decisión: aprobar la spec y
+aprobar cada resultado.
+
+Volver a [los principios](../../concepts/principles/).

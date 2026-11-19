@@ -1,0 +1,62 @@
+---
+title: 2. Plan et tâches
+description: Dérivez le plan technique et une liste de tâches ordonnée, puis vérifiez-les par rapport à la spec.
+sidebar:
+  order: 2
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+**Vous êtes ici :** 🧑 vous + 🤖 agent. **Sortie :** `plan.md`, `data-model.md`, `contracts/` et `tasks.md`.
+
+<Steps>
+
+1. Générez le plan.
+
+   ```text
+   /speckit-plan
+   ```
+
+   Le plan lit la spec et la constitution du projet (`.specify/memory/constitution.md`) et
+   décide du *comment* : ajouter `tags` à l'entité ElectroDB, étendre les schémas d'entrée tRPC, ajouter un
+   filtre `tag` à `notes.list`.
+
+2. Générez les tâches.
+
+   ```text
+   /speckit-tasks
+   ```
+
+   `tasks.md` est ordonné, vérifiable et groupé par phase. Un script le lit plus tard, donc son
+   [format](../../reference/tasks-format/) est fixe, et un check de PR le valide à l'étape suivante.
+
+   ```markdown
+   ## Phase 1: User Story 1 - Tags in the data and API (Priority: P1) 🎯 MVP
+   - [ ] T001 Add `tags` to the note entity in packages/notes-table/src/entities/note.ts
+   - [ ] T002 [P] Unit tests for tag rules (max five, unique, case-insensitive)
+   - [ ] T003 Extend create and update procedures in packages/notes-api/src/procedures/notes.ts
+
+   ## Phase 2: User Story 2 - Tags on the website (Priority: P2)
+   - [ ] T004 Tag input on the note form
+   - [ ] T005 Tag filter on the list page
+   - [ ] T006 e2e scenario with screenshots, invariant and concurrency tests
+
+   ## Phase 3: Docs
+   - [ ] T007 Describe tags on the notes app page in docs/
+   - [ ] T008 **(human)** Confirm the screenshots match the docs wording
+   ```
+
+3. Faites une vérification croisée de tout avant que le moindre code existe.
+
+   ```text
+   /speckit-analyze
+   ```
+
+   Il signale les exigences sans tâche, les tâches sans exigence, et les contradictions entre
+   les trois fichiers. Corrigez-les maintenant : cela coûte une phrase. Après l'implémentation, cela coûte une PR.
+
+</Steps>
+
+Les tâches marquées **(human)** sont sautées par l'agent et listées pour vous dans la description de sa PR.
+
+Suite : [Approuver la spec](../approve-the-spec/).

@@ -1,0 +1,87 @@
+---
+title: 反馈循环
+description: 红色的 CI 运行或 "changes requested" 评审如何把智能体送回去，以及为什么每个循环在五次尝试后停止。
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**简短版本：**当某处失败时，一个 workflow 会给 PR 的 head commit 标上失败状态。OpenHands worker
+在下一次轮询时看到它，并让同一个智能体会话去修复同一个 PR。每个循环都有一个记在标签里的计数器，
+到五次就停止。
+
+## 两个循环
+
+```d2
+direction: right
+
+pr: 智能体推送 {shape: page}
+checks: PR Checks
+review: 评审智能体
+you: 人工评审
+
+actions: GitHub Actions {
+  style.stroke-dash: 3
+  ci: Agent CI Status
+  rv: Agent Review Status
+}
+
+status: "software-factory/review\n= failure" {shape: document}
+worker: "issue-to-PR worker\n（下一次轮询）"
+
+pr -> checks
+checks -> review: 全部结束
+checks -> actions.ci: 失败
+review -> actions.rv: 要求修改
+review -> you: 已批准
+actions.ci -> status: ci-fix-N
+actions.rv -> status: review-fix-N
+status -> worker
+worker -> pr: 修改同一个 PR
+```
+
+| | CI 循环 | 评审循环 |
+| --- | --- | --- |
+| 触发条件 | PR Checks workflow 以 `failure` 或 `timed_out` 结束 | PR 上一条由评审智能体撰写、以 `🔄 CHANGES REQUESTED` 结尾的评审 |
+| Workflow | Agent CI Status | Agent Review Status |
+| 计数标签 | `ci-fix-1` … `ci-fix-5` | `review-fix-1` … `review-fix-5` |
+| 何时放弃 | `ci-fix-exhausted`，外加一条评论 | `review-fix-exhausted`，外加一条评论 |
+| 状态描述 | `CI failed (fix attempt 2 of 5): E2E tests (3/4)` | `Review requested changes (fix attempt 1 of 5): see the review` |
+
+通过的运行不会发布任何东西。下一个 commit 一开始没有状态，所以 worker 不会去动这个 PR。
+
+## 把智能体送回去之前的检查
+
+每个脚本只有在以下条件全部成立时才会行动：
+
+1. 分支恰好是 `openhands/issue-<n>`。第二个尝试分支（例如 `openhands/issue-308-2`）永远不会被
+   worker 修改，所以也不会得到回应。
+2. PR 处于打开状态。
+3. 这次运行或评审针对的是 PR **当前**的 head commit。较早的运行已经过时。
+4. 该 commit 还没有被送回过。重新运行相同的检查不能消耗另一次尝试。
+5. 对于评审：评审带有评审者的隐藏运行标记，并且来自一个有写权限的账号，这样某个人引用该结论时
+   不会触发它。
+6. 已用的尝试次数少于五次。
+
+标签会在状态发布**之前**加上。如果之后发布状态失败，下一次失败会多计一次尝试，而不是永远重复这
+一次。
+
+## 为什么是五次
+
+一次重试就能修好大多数错误：一个不稳定的定位器、一个漏掉的类型、一条 lint 规则。接下来的几次用来
+应对修复后又暴露出的第二个问题，或者 CI 运行和评审各自要求不同的东西。到第五次失败时，智能体通常
+卡在了它看不到的东西上，更多的尝试只会花钱而不会收敛。Discava 一开始的上限是三次，后来提高到了
+五次。
+
+在 Discava 最早合并的 67 个智能体 PR 中，42 个没有任何修复标签（其中一些早于修复 workflow），17 个
+恰好需要一轮，只有一个把循环跑到了用尽。
+
+<Aside type="caution">
+当一个循环被用尽时，先阅读最后一次失败，再去修任何东西。反复失败往往意味着 spec 或计划有歧义，
+而智能体在试图同时满足两种理解。先修正 spec，再让智能体重试。
+</Aside>
+
+如果之后想再给智能体一轮机会，请参阅[重置循环](../../reference/labels/#重置循环)。
+
+下一步：[信任的层次](../layers-of-trust/)。

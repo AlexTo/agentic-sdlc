@@ -1,0 +1,98 @@
+---
+title: Configuração do OpenHands
+description: O Agent Canvas, os agent profiles e as duas automations exatamente como o Discava os usa.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Os agents do Discava rodam em uma workstation Linux, sob o OpenHands Agent Canvas. Não há deploy do
+OpenHands em nuvem nem webhook. Tudo é polling de saída para o GitHub.
+
+## Agent Canvas
+
+Agent Canvas 1.41.0, instalado pelo npm (`@openhands/agent-canvas`) e rodando como um serviço de usuário.
+O estado dele fica em `~/.openhands/`: configurações, agent profiles, secrets e o banco de dados SQLite
+das automations.
+
+## Configurações de conversa
+
+As configurações que definem como os agents trabalham:
+
+| Configuração | Valor | Por quê |
+| --- | --- | --- |
+| Agent | ACP, servidor `claude-code` | Um coding agent externo, via Agent Client Protocol |
+| Timeout do prompt ACP | 30 minutos | Um turno de implementação é longo |
+| Máximo de iterações | 500 | Espaço para uma fase inteira em uma conversa |
+| Modo de confirmação | desligado | Sem supervisão. Não há ninguém para confirmar |
+| Analisador de segurança | LLM | Os comandos ainda são avaliados quanto a risco |
+| Runtime | local | Roda no host, onde Node, pnpm e git já estão |
+| Prefixo de branch da worktree | `openhands/` | Toda branch que um agent cria começa com isso. A cola se baseia nele |
+
+## Agent profiles
+
+| Profile | Agent | Modelo | Usado por |
+| --- | --- | --- | --- |
+| `default` | Claude Code (ACP) | Sonnet | GitHub issue to PR |
+| `reviewer` | Claude Code (ACP) | Opus | GitHub code review |
+
+## Secrets
+
+Guardados no Agent Canvas (**Settings → Secrets**), por nome:
+
+| Nome | Usado para |
+| --- | --- |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | As automations leem o GitHub com ele. As conversas o recebem para clonar, fazer push e abrir PRs |
+| `OPENHANDS_AUTOMATION_API_KEY` | A chave própria do backend de automations |
+
+O token do GitHub é um personal access token na conta do mantenedor, com acesso de escrita a conteúdo do repositório,
+issues, pull requests e workflows.
+
+## As duas automations
+
+As duas foram instaladas a partir do catálogo de automations do Agent Canvas, não escritas à mão. O que cada uma faz
+em um poll está em [O runtime do agent](../../concepts/the-agent-runtime/#as-duas-automations).
+
+### GitHub issue to PR
+
+| Campo | Valor |
+| --- | --- |
+| Template | `github-issue-to-pr` 1.2.4 |
+| Repositório | `AlexTo/discava` |
+| Label de disparo | `openhands` |
+| Prefixo de branch | `openhands/issue` → branches `openhands/issue-<n>` |
+| Modo de pull request | Draft |
+| Secret do token do GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+| Agendamento | `*/5 * * * *`, Australia/Sydney |
+| Agent profile | `default` |
+
+Um turno de revisão diz ao agent para aplicar de novo o label `openhands-review` depois, para que o novo head
+passe por review.
+
+### GitHub code review
+
+| Campo | Valor |
+| --- | --- |
+| Template | `github-pr-reviewer` 1.11.2 |
+| Repositório | `alexto/discava` |
+| Label de disparo | `openhands-review` |
+| Revisor solicitado | `all-hands-bot` (não usado na prática: o label faz o trabalho) |
+| Novos reviews por varredura | 2 |
+| Tom do review | Concise |
+| Mantenedores | nenhum |
+| Agendamento | `*/5 * * * *`, Australia/Sydney |
+| Agent profile | `reviewer` |
+
+Enquanto os checks ainda estão rodando, o revisor publica um comentário "⏳ Review waiting on checks" e
+tenta de novo em uma varredura posterior. Os reviews dele começam com "_This review was posted by an AI agent
+(OpenHands)._" e carregam um marcador oculto `<!-- openhands-review-run: <id> -->`.
+
+<Aside type="caution" title="Uma conta para tudo">
+No Discava, o agent implementador, o revisor e o mantenedor usam a mesma conta do GitHub.
+O GitHub não permite que uma conta aprove o próprio PR, então o veredito do revisor é publicado como um
+review `COMMENTED`, e a cola lê a linha do veredito em vez do estado do review. Para uma equipe,
+dê às automations uma conta de máquina separada.
+</Aside>
+
+Próximo: [Da spec à issue](../spec-to-issue/).

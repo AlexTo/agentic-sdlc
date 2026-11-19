@@ -1,0 +1,82 @@
+---
+title: Feedback loops
+description: Agent CI Status e Agent Review Status, os dois workflows que mandam o agent de volta.
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Lacunas 2, 3 e 4: o agent não fica sabendo de uma execução vermelha do CI nem de um review "changes requested", e
+nada o impediria se ficasse sabendo e continuasse falhando. Os dois workflows transformam um evento no único sinal
+com o qual o worker do OpenHands já age: um commit status chamado `software-factory/review` no estado
+`failure` no head do PR.
+
+## Agent CI Status
+
+O `.github/workflows/agent-ci.yml` roda em `workflow_run`, quando o **PR Checks** termina com
+`failure` ou `timed_out` para um pull request em uma branch `openhands/issue-`. Ele faz checkout da
+branch padrão e roda `agent-ci-status`.
+
+O `workflow_run` é importante. Ele roda no contexto da branch padrão, com um token que pode escrever,
+mesmo que o PR Checks tenha rodado no código do PR com um token só de leitura.
+
+O script (`src/agent-ci/`):
+
+1. Verifica o nome da branch contra `^openhands/issue-\d+$` **antes** de usá-lo em qualquer requisição. Ele
+   vem do autor do PR.
+2. Encontra o PR aberto, seus labels e o head atual, e os status no commit da execução.
+3. Lista os jobs que falharam, como `E2E tests (3/4)` e `Checks (lint)`.
+4. Chama `planCi()`, que retorna `ignore`, `send-back` ou `give-up`.
+5. Para `send-back`: adiciona `ci-fix-<n>`, depois publica o status com os jobs que falharam na
+   descrição e a execução como link.
+6. Para `give-up`: adiciona `ci-fix-exhausted` e comenta, por exemplo:
+
+   > CI is still failing after 5 automatic fix attempts, so the agent will not be sent back again.
+   >
+   > Failing checks on `1a2b3c4`: E2E tests (2/4).
+   >
+   > A person needs to take over this pull request. To let the agent try again, remove the
+   > `ci-fix-*` and `ci-fix-exhausted` labels and re-run the checks.
+
+## Agent Review Status
+
+O `.github/workflows/agent-review.yml` roda em `pull_request_review: submitted`, quando a branch é
+uma branch de agent no mesmo repositório e o corpo do review contém `CHANGES REQUESTED`. Ele faz checkout
+explicitamente da branch padrão e roda `agent-review-status`.
+
+O `planReview()` adiciona três verificações próprias antes de mandar o agent de volta:
+
+| Verificação | Por quê |
+| --- | --- |
+| A associação do autor é `OWNER`, `MEMBER` ou `COLLABORATOR` | Só alguém com acesso de escrita pode dispará-lo |
+| O corpo tem `<!-- openhands-review-run: … -->` | É o review do agent revisor, não uma pessoa citando-o |
+| O corpo tem uma linha que é exatamente `🔄 CHANGES REQUESTED` | O veredito, não uma menção a ele |
+
+Depois, os mesmos passos do CI: `review-fix-<n>`, o status de falha com link para o review, e
+`review-fix-exhausted` depois de cinco.
+
+O revisor refaz o review sozinho depois que o agent faz push, porque o prompt de revisão diz ao agent
+para aplicar de novo o `openhands-review`, e um novo commit head conta como um novo review.
+
+## Como fica em um PR
+
+Do [#470](https://github.com/AlexTo/discava/pull/470), "ratings in search":
+
+1. O agent abre o PR. O shard `E2E tests (4/4)` falha.
+2. O Agent CI Status adiciona `ci-fix-1` e publica o status de falha.
+3. No próximo poll, o agent revisa, faz push de `94b9ee3` e comenta: *"The only finding was the
+   failing `E2E tests (4/4)` shard: my new scenario […] hit a strict-mode violation, because
+   `getByText('4.5')` matched both the rating and the `4.5 and up` option […]. I fixed both
+   locators."*
+4. O revisor vê checks ainda rodando no novo head e comenta "⏳ Review waiting on
+   checks". Em uma varredura posterior, tudo está verde. Ele faz o review de `94b9ee3` e termina com `✅ APPROVED`.
+5. A `main` é mergeada na branch. O revisor faz o review do novo head de novo e o aprova.
+6. Uma pessoa faz o merge.
+
+<Aside type="tip">
+Os dois scripts aceitam `DRY_RUN=true`, que imprime o plano como JSON e não muda nada. Aponte
+`GITHUB_EVENT_PATH` para um payload de evento salvo para reproduzir um caso real.
+</Aside>
+
+Próximo: [PR checks](../pr-checks/).

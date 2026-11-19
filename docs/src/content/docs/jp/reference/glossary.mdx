@@ -1,0 +1,30 @@
+---
+title: 用語集
+description: このガイド全体で使われる用語。
+sidebar:
+  order: 6
+---
+
+| 用語 | 意味 |
+| --- | --- |
+| **ACP** | Agent Client Protocol。OpenHands が Claude Code などの外部コーディングエージェントを動かす仕組み |
+| **Agent Canvas** | セルフホストの OpenHands アプリ。エージェントサーバー、automation のバックエンド、Web UI からなる |
+| **エージェントプロファイル** | 会話で使うエージェントとモデルを指定する OpenHands の設定 |
+| **`AGENTS.md`** | リポジトリのルートにあるエージェント向けガイダンスのファイル。コマンド、アーキテクチャ、規約 |
+| **Automation** | GitHub を読み取り、エージェントの会話を開始する、スケジュール実行の OpenHands ワーカー |
+| **憲章** | `.specify/memory/constitution.md`。すべての plan がチェックされるプロジェクトのルール |
+| **Constitution Check** | plan を憲章に照らしてチェックする `plan.md` のセクション |
+| **修正の試行** | エージェントに自動で差し戻す 1 回分。`ci-fix-<n>` または `review-fix-<n>` で数える |
+| **グルー** | Speckit、OpenHands、CI の間で作業を受け渡す workflow とスクリプト |
+| **グループ** | 1 つの実装 issue がカバーするフェーズ。グループ 0 は最初のユーザーストーリーまで |
+| **人間のゲート** | 人だけが下す判断。spec の承認、PR の承認、本番環境へのデプロイ |
+| **(human) タスク** | 人または稼働中のスタックを必要とする `tasks.md` のタスク。エージェントはスキップする |
+| **Invariant** | すべてのデータにわたるルール。e2e テストのたびにチェックされる |
+| **マーカー** | グルーが自分の issue やコメントを見つけるために使う、隠れた HTML コメント |
+| **親 issue** | 機能を追跡する issue。`spec.md` に記載され、すべての PR から参照される |
+| **フェーズ** | `tasks.md` の `## Phase <n>: <title>` セクション |
+| **修正ターン** | 既存のエージェントの会話に送る、PR の修正を求めるメッセージ |
+| **spec フォルダ** | `specs/<timestamp>-<name>/`。1 つの機能の spec、plan、tasks を保持する |
+| **`software-factory/review`** | 状態が `failure` のとき、OpenHands に PR を修正させるコミットステータス |
+| **Speckit** | GitHub の spec 駆動開発ツールキット（`specify-cli`） |
+| **停滞** | issue は存在するが、タスクがすべてはチェックされていないため、新しい issue が開かれないグループ |

@@ -1,0 +1,104 @@
+---
+title: 1. 工作区与提交规范
+description: 一个使用 pnpm 的 Nx monorepo，以及让智能体的 commit 保持整洁的 commit hook。
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完成后你将拥有：** 一个带 Nx 和 Biome 的 pnpm 工作区，每个 commit 都强制遵循 Conventional Commits，并且每次提交前都会进行 secret 检查。
+
+粘合层并不需要 Nx。但正是 `nx affected` 让 PR 检查足够快，智能体才能在上面反复迭代，而且每个粘合脚本都作为一个 Nx target 运行。如果你使用别的 monorepo 工具，保留这个思路即可：只运行 PR 影响到的部分，并把每个脚本暴露为一个具名任务。
+
+<Steps>
+
+1. 如果你还没有工作区，**创建一个**。Discava 和这个仓库都是用 Nx Plugin for AWS 创建的：
+
+   ```bash
+   pnpm create @aws/nx-workspace your-project --iac=cdk --no-interactive
+   ```
+
+   这也会安装第 4 步用到的 git-secrets pre-commit hook。已有的 Nx 工作区也可以。在根目录的 `package.json` 中固定 pnpm 版本，让 CI 和智能体使用同一个版本：
+
+   ```json
+   { "packageManager": "pnpm@<version>" }
+   ```
+
+2. **添加根脚本**，供 `AGENTS.md`、CI 和智能体调用：
+
+   ```json
+   "scripts": {
+     "dev": "nx run-many --target dev",
+     "build": "nx run-many --target build",
+     "lint": "nx run-many --target lint --configuration=fix",
+     "test": "nx run-many --target test --all",
+     "trivy": "nx run-many --target trivy --all",
+     "prepare": "husky"
+   }
+   ```
+
+3. **用 commitlint 引入 Conventional Commits。** 粘合层写的 issue 标题就是 Conventional Commit 的头部，智能体会复用它们。
+
+   ```bash
+   pnpm add -Dw @commitlint/config-conventional commitlint husky lint-staged
+   echo "export default { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
+   ```
+
+   `.husky/commit-msg`：
+
+   ```bash
+   FORCE_COLOR=1 pnpm commitlint --edit "$1"
+   ```
+
+4. **添加 pre-commit hook。** 它会注册一次 AWS secret 模式，拒绝含有 secret 的 commit，对暂存的文件运行 Biome，并在 Biome 改动了任何内容时失败，让智能体重新暂存后再提交。`.husky/pre-commit`：
+
+   ```bash
+   if ! git config --get-all secrets.patterns >/dev/null 2>&1; then
+     bash .git-secrets/git-secrets --register-aws
+   fi
+   bash .git-secrets/git-secrets --pre_commit_hook
+
+   PRE_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
+   FORCE_COLOR=1 pnpm lint-staged
+   POST_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
+
+   if [ "$PRE_SHA" != "$POST_SHA" ]; then
+     echo "Pre-commit modified your working directory"
+     echo "Please verify and stage changed, then retry git commit"
+     exit 1
+   fi
+   ```
+
+   用 Nx Plugin for AWS 创建的工作区已经有 `.git-secrets/git-secrets`、`.gitallowed` 和这个 hook 的大部分内容。否则，从这个仓库复制它们。`lint-staged.config.js`：
+
+   ```js
+   export default {
+     'packages/**/*.{ts,tsx,js,jsx,json,css,scss}': ['biome check --write --no-errors-on-unmatched'],
+     '*.{js,json}': ['biome check --write --no-errors-on-unmatched'],
+   };
+   ```
+
+5. 从这个仓库**复制共享的 CI 初始化 action**：`.github/actions/init-monorepo/`。它安装 pnpm（会尝试三次，否则一次 registry 超时就会让智能体白白耗掉一次修复机会）、Node 24 以及可选的 uv，恢复 pnpm 缓存，安装依赖，并为 `nx affected` 设置 `NX_BASE`/`NX_HEAD`。
+
+</Steps>
+
+## 检查是否成功
+
+```bash
+git commit --allow-empty -m "not conventional"
+```
+
+```text
+⧗   input: not conventional
+✖   subject may not be empty [subject-empty]
+✖   type may not be empty [type-empty]
+```
+
+然后 `git commit --allow-empty -m "chore: check hooks"` 会成功。
+
+<Aside type="note">
+Discava 还会从 `prepare-commit-msg` 运行 Commitizen，供交互式提交的人使用。当用 `-m` 给出提交信息时（智能体就是这样提交的），它会自动跳过，所以它是可选的。
+</Aside>
+
+下一步：[2. 安装 Speckit](../speckit/)。

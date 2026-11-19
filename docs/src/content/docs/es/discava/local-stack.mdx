@@ -1,0 +1,114 @@
+---
+title: Stack local
+description: Cómo Discava ejecuta en local cada servicio de AWS, para que el CI pueda probar la app real sin cuenta en la nube.
+sidebar:
+  order: 8
+---
+
+Hueco 8: el agente no puede ejecutar el stack real sin acceso a la nube, y tú no quieres darle acceso
+a la nube. La respuesta de Discava es el principio III de la constitución: cada servicio de AWS tiene
+un sustituto local, y `pnpm dev` los arranca todos con Docker.
+
+## Qué se ejecuta en local
+
+| Servicio | Puerto | Sustituye a |
+| --- | --- | --- |
+| Portales de estudiantes, instructores y administración | 4201, 4200, 4202 | CloudFront |
+| core-api, instructor-api | 2022, 2023 | API Gateway y Lambda |
+| DynamoDB local | 8001 | DynamoDB |
+| S3Mock | 9090 | S3 |
+| ElasticMQ | 9324 | SQS |
+| OpenSearch (Docker) | | OpenSearch Serverless |
+| Event runner | 2024 | DynamoDB streams y el router de streams, MediaConvert (ffmpeg), Transcribe (una pista de relleno), SES (una página de bandeja de entrada), EventBridge, Scheduler, triggers de Cognito |
+| Servidor OIDC local | 9400 | Cognito |
+
+El código de backend cambia de comportamiento con `LOCAL_DEV=true`. La configuración compartida
+está en un único paquete (`common-server-utils/local-dev`), así que cada Lambda resuelve los
+endpoints de la misma forma. Cada sustituto es un target de Nx en `packages/common/scripts`, que
+descarga y arranca su contenedor.
+
+La página de inicio de sesión local ofrece usuarios fijos (un instructor, dos estudiantes, un
+administrador) y un formulario "Someone else" para cualquier conjunto de claims. Sin contraseñas,
+sin Cognito.
+
+## Quién lo ejecuta
+
+El **agente implementador no**. Su issue le dice que no use `pnpm dev`, Docker ni el runner de e2e.
+Escribe los escenarios, y el **CI del PR** los ejecuta: cada shard de e2e arranca su propio
+`pnpm dev` en un runner recién creado. La máquina del agente sigue siendo sencilla, y el resultado
+que lee siempre procede de un stack limpio.
+
+Las personas lo ejecutan para las tareas **(human)** y para reproducir un fallo.
+
+## Escenarios E2E
+
+`packages/e2e` tiene un `src/scenarios/*.e2e.ts` por flujo de usuario, construido con helpers
+compartidos. Las reglas que hacen que sea seguro ejecutarlos en cualquier orden, sobre un stack
+compartido:
+
+- Cada escenario crea sus propios usuarios y datos con nombres únicos.
+- Ningún escenario reinicia los datos locales.
+- Un worker, un reintento en el CI, timeout de dos minutos. Los flujos esperan al trabajo en segundo
+  plano, como el recálculo del progreso.
+
+## Invariantes después de cada test
+
+`packages/databases/core-table/src/helpers/invariants/` contiene comprobaciones sobre toda la tabla,
+un archivo por tema (curriculum, student activity, media, analytics, etc.): "un curso tiene un instructor", "el número de actividades de un estudiante coincide con los estudiantes que usaron el
+elemento", "el orden entre elementos hermanos es único", y más de cuarenta más.
+
+Un fixture de Playwright (`packages/e2e/src/helpers/table-invariants.ts`) las ejecuta **después de
+cada test e2e**. Registra las infracciones que ya existían antes del test y solo falla con las
+nuevas, para que los datos locales antiguos no puedan hacer fallar una ejecución. El mensaje nombra
+la invariante y el registro infractor. Un agente que escribe mal un contador se entera en el test
+que lo escribió, no tres features después.
+
+Cada regla que abarca varios escritores se escribe mediante un helper compartido al que llaman todos
+los escritores (por ejemplo `studentActivityWrites`), y tiene una invariante y un test que la rompe.
+
+El PR check **Invariant coverage** mantiene esto en orden. El `entity-writers.json` de `core-table`
+relaciona cada entidad con los archivos de cada paquete que la escriben, generado a partir del
+código con el compilador de TypeScript. Comparado con `main`, el check hace fallar un PR cuando:
+
+- una entidad gana un paquete escritor además de los que tenía,
+- un archivo fuera del paquete `core-table` empieza a escribir una entidad que escriben varios
+  paquetes, o
+- aparece una entidad nueva.
+
+Vuelve a pasar cuando las líneas que el PR añade bajo `helpers/invariants/` (los tests y los
+fixtures no cuentan) nombran cada una de esas entidades o su clave de `TableSnapshot`, como
+`snapshot.enrolments`. El check también falla mientras `entity-writers.json` esté desactualizado. Un
+hook pre-push lo regenera y detiene el push si ha cambiado, así que el agente se entera antes que el
+CI.
+
+### Eximir el check
+
+El check solo ve que el conjunto de escritores ha cambiado. No puede saber si ahora una regla los
+abarca, así que un mantenedor puede eximirlo: añade la label `no-new-invariant` al PR y vuelve a
+ejecutar el job.
+
+Usa la label cuando las escrituras se movieron o se dividieron, pero no hay ninguna regla nueva en
+juego. El caso habitual es una refactorización. Cuando Discava sacó helpers de sus procedimientos de
+API a archivos propios, las escrituras existentes aparecieron en archivos nuevos e hicieron saltar el
+check, pero las reglas que mantienen ya estaban cubiertas.
+
+No la uses para sacar adelante una feature. Si un nuevo escritor significa que otra API u otro
+handler depende ahora de que un registro sea correcto, la regla debe estar en un helper de
+`core-table` al que llamen todos los escritores, con una comprobación en `helpers/invariants/`. La
+label la pone una persona, no el agente: decidir que no hay ninguna regla en juego es justo el
+criterio que el check existe para forzar.
+
+## Tests de concurrencia
+
+`packages/e2e/src/concurrency/` lanza peticiones a la API en el mismo instante, directamente contra
+las APIs, para escrituras en las que dos usuarios podrían competir: emitir un certificado, adjuntar
+un subtítulo, los contadores de analítica. Se ejecutan en el mismo job de e2e.
+
+## Lo que solo se ejecuta en un stage desplegado
+
+Los sustitutos no son perfectos, y `CONTRIBUTING.md` enumera exactamente dónde se quedan cortos: la firma de CloudFront,
+la salida exacta de MediaConvert, Transcribe real, Cognito Managed Login, los reintentos de
+EventBridge y las colas de fallos. Las tareas que dependen de ellos son tareas **(human)**, que se
+comprueban en `discava-development` después del despliegue.
+
+Siguiente: [Despliegue y seguridad](../deploy-and-security/).

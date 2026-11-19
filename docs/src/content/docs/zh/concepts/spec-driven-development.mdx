@@ -1,0 +1,89 @@
+---
+title: spec 驱动开发
+description: spec、计划和任务列表，约束它们的 constitution，以及为什么智能体依据它们而不是 prompt 来构建。
+sidebar:
+  order: 2
+---
+
+**简短版本：**在任何代码出现之前，一个人和一个智能体先写下要构建什么、怎么构建、按什么顺序构建。
+写出来的结果像代码一样接受评审并合并。从此以后，每次智能体运行都读取同样的文件，因此结果不取决于
+是谁写的 prompt。
+
+## 为什么不直接用 prompt？
+
+| prompt | spec |
+| --- | --- |
+| 存在于某一个人的聊天记录里 | 存在于 `specs/` 中，受版本控制 |
+| 工作开始前没有人评审它 | 要经过一个 pull request |
+| 每次运行都要重新输入，而且每次都略有不同 | 每次运行都逐字读取 |
+| 说了要构建什么，却很少说为什么 | 写明用户故事、需求和验收标准 |
+
+## 这些文档
+
+[Speckit](https://github.com/github/spec-kit) 是一组智能体命令和模板，一步一步地产出这些文档：
+
+| 命令 | 写入 | 回答的问题 |
+| --- | --- | --- |
+| `/speckit-constitution` | `.specify/memory/constitution.md` | 整个项目中每份计划都必须遵守的规则。只写一次，通过 PR 修订 |
+| `/speckit-specify` | `spec.md` | **做什么、为什么做。** 用户故事、功能需求、验收场景。不涉及技术 |
+| `/speckit-clarify` | 更新 `spec.md` | 最多五个有针对性的问题，并把回答写回 spec |
+| `/speckit-plan` | `plan.md`、`research.md`、`data-model.md`、`contracts/`、`quickstart.md` | **怎么做。** 技术方案，并对照 constitution 检查 |
+| `/speckit-tasks` | `tasks.md` | **按什么顺序做。** 可勾选的任务，按阶段分组 |
+| `/speckit-analyze` | 一份报告 | 没有任务对应的需求、没有需求对应的任务，以及文件之间的矛盾 |
+
+每个功能都有自己的文件夹，例如 `specs/20261116-013307-course-reviews/`。
+
+```d2
+direction: right
+
+idea: 一段话的想法
+constitution: constitution.md {shape: document}
+
+folder: "specs/<timestamp>-<name>/" {
+  style.stroke-dash: 3
+  spec: spec.md {shape: document}
+  plan: "plan.md\ndata-model.md\ncontracts/" {shape: document}
+  tasks: tasks.md {shape: document}
+  spec -> plan: /speckit-plan
+  plan -> tasks: /speckit-tasks
+}
+
+idea -> folder.spec: "/speckit-specify\n/speckit-clarify"
+constitution -> folder.plan: Constitution Check
+```
+
+## constitution
+
+constitution 记录项目中不容商量的规则，其写法使计划可以对照它们来检查："a feature MUST work under
+`pnpm dev` with no cloud account"、"a failing test MUST be fixed in the code, not by weakening the
+test"。每次运行 `/speckit-plan` 都会填写一个 **Constitution Check** 小节，并且必须为任何违反之处
+给出理由。
+
+每个智能体在编写代码之前都会阅读它，所以它就是放置那些让智能体产出值得信任的规则的地方。完整示例见
+[Discava 的 constitution](../../discava/constitution-and-guidance/)。
+
+## `tasks.md` 是与自动化之间的契约
+
+Speckit 把 `tasks.md` 当作给人看的文档。在这套工作流中，还有一个脚本会读取它，以决定智能体接下来
+拿到哪些任务。所以它的格式是固定的，并在每个 PR 上检查：
+
+```markdown
+## Phase 1: Setup
+- [ ] T001 Create the review entity in packages/databases/core-table/src/entities/review.ts
+
+## Phase 3: User Story 1 - Leave a rating (Priority: P1) 🎯 MVP
+- [ ] T010 [P] [US1] Unit tests for rating rules
+- [ ] T011 [US1] review.upsert procedure
+- [ ] T012 (human) Check the layout on a phone-width window
+```
+
+阶段是带编号的标题，任务带有固定的 ID 并就地勾选，**(human)** 标记一个智能体会跳过、留给评审者的
+任务。完整规则见[参考：tasks.md 格式](../../reference/tasks-format/)。
+
+## 改 spec，而不是改代码
+
+当行为需要改变时，回到 spec，更新它，并重新生成计划和任务。新任务使用下一个未使用的 ID，所以自动化
+会像对待其他任务一样为它们开 issue。如果你改为手动修改代码，spec 就不再描述产品，下一个读取它的
+智能体会把旧行为重新构建回来。
+
+下一步：[一次一个阶段](../one-phase-at-a-time/)。

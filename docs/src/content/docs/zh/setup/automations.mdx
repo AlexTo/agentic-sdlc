@@ -1,0 +1,72 @@
+---
+title: 4. 创建两个 automation
+description: 从 Agent Canvas 目录安装 “GitHub issue to PR” 和 “GitHub code review”，并使用 Discava 的设置。
+sidebar:
+  order: 4
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完成后你将拥有：** OpenHands 每五分钟轮询一次你的 fork。它会实现带 `openhands` 标签的 issue，修订被标记为失败的 PR，并评审带 `openhands-review` 标签的 PR。
+
+两个 automation 都来自 Agent Canvas 的 **automation catalog**。你只需填写一个表单，目录就会把一个经过测试的 worker 和你的设置打包好。你不需要编写或上传任何代码。
+
+<Steps>
+
+1. 从目录中**添加 “GitHub issue to PR”**，使用以下设置：
+
+   | 字段 | 值 |
+   | --- | --- |
+   | Repositories | `<you>/agentic-sdlc` |
+   | Trigger label | `openhands` |
+   | Branch prefix | `openhands/issue` |
+   | Pull request mode | Draft |
+   | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+   | Agent profile | `default` |
+   | Check frequency | `*/5 * * * *` |
+   | Timezone | 你所在的时区 |
+
+   Discava 使用的模板版本是 1.2.4。worker 的提示词会让智能体在开启 PR 之后加上 `openhands-review` 标签，这样新 PR 即使是草稿也能到达评审者。
+
+2. 从目录中**添加 “GitHub code review”**：
+
+   | 字段 | 值 |
+   | --- | --- |
+   | Repositories | `<you>/agentic-sdlc` |
+   | Trigger label | `openhands-review` |
+   | Requested reviewer | 智能体的 GitHub 登录名 |
+   | New reviews per scan | `2` |
+   | Review tone | Concise |
+   | Maintainers | 留空，或填写两个及以上的登录名（见下文） |
+   | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+   | Agent profile | `reviewer` |
+   | Check frequency | `*/5 * * * *` |
+
+   Discava 使用的模板版本是 1.11.2。**New reviews per scan** 限制一次轮询最多启动多少个评审对话，这样积压的工作不会一下子启动十个智能体。
+
+   **Maintainers** 是可选的。设置后，已批准的 PR 会交给其中一人作为被请求的评审者，人选依据谁以前改过这些文件来决定。只有当 PR 对应的 issue 带有 `priority:medium` 或 `priority:high` 时才会这样做。Discava 将其留空。
+
+3. 在 Agent Canvas 中各个 automation 的页面上**手动运行一次**，并阅读运行日志。
+
+</Steps>
+
+## 检查是否成功
+
+在没有工作可做时，第一次运行会在日志中记录对仓库的一次扫描，并以 `COMPLETED` 结束。然后：
+
+1. 创建一个测试 issue：“Add a line to README.md saying hello”，并加上 `openhands` 标签。
+2. 在一次轮询之内，Agent Canvas 中会出现该 issue 的对话。
+3. 智能体完成后，`openhands/issue-<n>` 上会出现一个草稿 PR，标题为 `[#<n>] <issue
+   title>`，并已加上 `openhands-review`。
+4. 等它的检查完成后，评审者会发布一条评审，开头是 “_This review was posted by an AI agent (OpenHands)._”，结尾是 `✅ APPROVED` 或 `🔄 CHANGES REQUESTED`。
+
+之后关闭该 PR 并删除分支。
+
+每个 automation 在一次轮询中做了什么，见[智能体运行时](../../concepts/the-agent-runtime/)。
+
+<Aside type="note">
+若要让智能体从头再试一次某个 issue，移除并重新加上 `openhands` 标签。若要带着你自己的评论把它打回到一个已开启的 PR，发布粘合 workflow 所发布的那个 status：
+`gh api repos/<you>/agentic-sdlc/statuses/<sha> -f state=failure -f context=software-factory/review -f description="See my comment"`。
+</Aside>
+
+下一步：[5. 运行你的第一个功能](../first-feature/)。

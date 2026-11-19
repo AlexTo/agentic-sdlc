@@ -1,0 +1,86 @@
+---
+title: Boucles de retour
+description: Agent CI Status et Agent Review Status, les deux workflows qui renvoient l'agent au travail.
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Manques 2, 3 et 4 : l'agent n'est pas informé d'une exécution de CI rouge ni d'une revue « changes
+requested », et rien ne l'arrêterait s'il l'était et continuait d'échouer. Les deux workflows
+transforment un événement en l'unique signal auquel le worker OpenHands réagit déjà : un statut de
+commit nommé `software-factory/review` à l'état `failure` sur la tête de la PR.
+
+## Agent CI Status
+
+`.github/workflows/agent-ci.yml` s'exécute sur `workflow_run`, quand **PR Checks** se termine en
+`failure` ou `timed_out` pour une pull request sur une branche `openhands/issue-`. Il récupère la
+branche par défaut et exécute `agent-ci-status`.
+
+`workflow_run` a son importance. Il s'exécute dans le contexte de la branche par défaut, avec un token
+qui peut écrire, alors même que PR Checks s'est exécuté sur le code de la PR avec un token en lecture
+seule.
+
+Le script (`src/agent-ci/`) :
+
+1. Vérifie le nom de la branche par rapport à `^openhands/issue-\d+$` **avant** de l'utiliser dans la
+   moindre requête. Il vient de l'auteur de la PR.
+2. Trouve la PR ouverte, ses labels et sa tête actuelle, ainsi que les statuts du commit de
+   l'exécution.
+3. Liste les jobs qui ont échoué, comme `E2E tests (3/4)` et `Checks (lint)`.
+4. Appelle `planCi()`, qui renvoie `ignore`, `send-back` ou `give-up`.
+5. Pour `send-back` : ajoute `ci-fix-<n>`, puis publie le statut avec les jobs en échec dans la
+   description et l'exécution comme lien.
+6. Pour `give-up` : ajoute `ci-fix-exhausted` et commente, par exemple :
+
+   > CI is still failing after 5 automatic fix attempts, so the agent will not be sent back again.
+   >
+   > Failing checks on `1a2b3c4`: E2E tests (2/4).
+   >
+   > A person needs to take over this pull request. To let the agent try again, remove the
+   > `ci-fix-*` and `ci-fix-exhausted` labels and re-run the checks.
+
+## Agent Review Status
+
+`.github/workflows/agent-review.yml` s'exécute sur `pull_request_review: submitted`, quand la branche
+est une branche d'agent dans le même dépôt et que le corps de la revue contient `CHANGES REQUESTED`.
+Il récupère explicitement la branche par défaut, et exécute `agent-review-status`.
+
+`planReview()` ajoute trois vérifications qui lui sont propres avant de renvoyer l'agent :
+
+| Vérification | Pourquoi |
+| --- | --- |
+| L'association de l'auteur est `OWNER`, `MEMBER` ou `COLLABORATOR` | Seule une personne avec un accès en écriture peut la déclencher |
+| Le corps contient `<!-- openhands-review-run: … -->` | C'est la revue de l'agent relecteur, pas une personne qui la cite |
+| Le corps contient une ligne qui est exactement `🔄 CHANGES REQUESTED` | Le verdict, pas une simple mention de celui-ci |
+
+Ensuite, les mêmes étapes que pour la CI : `review-fix-<n>`, le statut en échec lié à la revue, et
+`review-fix-exhausted` après cinq.
+
+Le relecteur relit de lui-même après que l'agent a poussé, parce que le prompt de révision dit à
+l'agent de remettre `openhands-review`, et qu'un nouveau commit de tête compte comme une nouvelle
+revue.
+
+## À quoi cela ressemble sur une PR
+
+Tiré de [#470](https://github.com/AlexTo/discava/pull/470), « ratings in search » :
+
+1. L'agent ouvre la PR. Le shard `E2E tests (4/4)` échoue.
+2. Agent CI Status ajoute `ci-fix-1` et publie le statut en échec.
+3. Au passage suivant, l'agent révise, pousse `94b9ee3`, et commente : *"The only finding was the
+   failing `E2E tests (4/4)` shard: my new scenario […] hit a strict-mode violation, because
+   `getByText('4.5')` matched both the rating and the `4.5 and up` option […]. I fixed both
+   locators."*
+4. Le relecteur voit que des checks tournent encore sur la nouvelle tête et commente « ⏳ Review
+   waiting on checks ». Lors d'un passage ultérieur, tout est vert. Il relit `94b9ee3` et conclut par
+   `✅ APPROVED`.
+5. `main` est mergé dans la branche. Le relecteur relit à nouveau la nouvelle tête et l'approuve.
+6. Une personne merge.
+
+<Aside type="tip">
+Les deux scripts acceptent `DRY_RUN=true`, qui affiche le plan en JSON et ne modifie rien. Faites
+pointer `GITHUB_EVENT_PATH` vers une charge utile d'événement enregistrée pour rejouer un cas réel.
+</Aside>
+
+Suite : [Checks de PR](../pr-checks/).

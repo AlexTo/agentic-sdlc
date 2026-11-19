@@ -1,0 +1,84 @@
+---
+title: 6. Checks de PR et CI
+description: Ajoutez le workflow PR Checks (lint, test, build, format des tâches, e2e, captures d'écran) et la CI sur main.
+sidebar:
+  order: 6
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Résultat :** un workflow **PR Checks** dont l'échec alimente la boucle CI, un check **UI Screenshots**,
+et la **CI** sur `main`.
+
+<Steps>
+
+1. **Copiez `.github/workflows/pr-checks.yml`** depuis ce dépôt. Gardez exactement son `name: PR Checks` :
+   Agent CI Status écoute un workflow portant ce nom. Ses jobs :
+
+   | Job | À garder tel quel ? |
+   | --- | --- |
+   | `checks`, une matrice de `lint`, `test`, `build` avec `fail-fast: false` | Oui |
+   | `tasks-format` | Oui |
+   | `e2e`, découpé en shards, plus `e2e-result` qui regroupe les shards en un seul check `E2E tests` | Réglez le nombre de shards selon votre suite |
+   | `e2e-screenshots` | Oui, une fois l'[étape 8](../local-stack-and-e2e/) faite |
+
+2. **Copiez `.github/workflows/ui-screenshots.yml`.** Dans ce dépôt, la règle des captures d'écran est un
+   workflow à part, déclenché sur `opened, synchronize, reopened, labeled, unlabeled`. Ajouter ou
+   retirer le label `no-ui-screenshots` ne relance alors que ce check, pas toute la suite e2e.
+   Discava applique plutôt la même règle comme job de PR Checks. Les deux fonctionnent.
+
+3. **Copiez `.github/workflows/ci.yml`** pour les pushs sur `main`. Gardez l'étape `Check for mutations`
+   (`git diff --ignore-space-at-eol --exit-code` après le build). Elle repère les fichiers générés que
+   l'agent a oublié de committer. Gardez le job `playwright-cache` si vous utilisez Playwright : les exécutions de PR ne peuvent
+   restaurer que des caches enregistrés sur `main`.
+
+   Le job `build` passe `nx-cache-scope: main` à `init-monorepo`, qui enregistre le cache de tâches de Nx.
+   La première exécution d'une PR part de ce cache, donc les tâches dont `main` a déjà construit les entrées sont rejouées, pas
+   réexécutées, et l'agent attend moins à chaque tour de correction. Chaque branche de `checks` dans PR Checks garde
+   son propre cache de la même façon, sauf `lint`, qui ne fait que restaurer, car le lint est plus rapide que
+   l'enregistrement d'un cache. `init-monorepo` plafonne le cache à 1 Go.
+
+4. **Copiez `.github/workflows/cache-cleanup.yml`.** Il supprime les caches d'une PR quand elle est fermée.
+   Rien d'autre ne peut les lire, et sans lui ils comptent dans les 10 Go de cache Actions du dépôt
+   jusqu'à ce que GitHub les évince, en commençant par ceux des PR encore ouvertes. Voir
+   [Rester rapide](../../discava/pr-checks/#garder-les-checks-rapides) pour ce que cela a fait gagner à Discava.
+
+5. **Épinglez chaque action sur un SHA de commit**, comme le font les fichiers copiés, et ajoutez
+   `.github/dependabot.yml` pour que les épinglages restent à jour :
+
+   ```yaml
+   version: 2
+   updates:
+     - package-ecosystem: 'npm'
+       directory: '/'
+       schedule: { interval: 'weekly' }
+       groups: { all: { patterns: ['*'] } }
+     - package-ecosystem: 'github-actions'
+       directories: ['/', '/.github/actions/*']
+       schedule: { interval: 'weekly' }
+       groups: { github-actions: { applies-to: version-updates, patterns: ['*'] } }
+   ```
+
+</Steps>
+
+## Vérifier que ça marche
+
+Ouvrez une PR jetable qui casse une ligne de `tasks.md`, par exemple en indentant une tâche. Le
+check **Tasks format** échoue avec une annotation sur cette ligne :
+
+```text
+A task must be written "- [ ] T<3 digits> <description>", starting in the first column
+```
+
+Ouvrez-en une autre qui modifie un fichier d'UI sans toucher à un scénario. **UI Screenshots** échoue :
+
+```text
+This pull request changes UI source (…) but no e2e scenario gained a `screenshot(page, 'name')` call.
+```
+
+<Aside type="note">
+`codecov/codecov-action` dans les fichiers copiés a besoin d'un secret `CODECOV_TOKEN`. Retirez l'étape si
+vous n'utilisez pas Codecov.
+</Aside>
+
+Suite : [7. Les workflows des agents](../agent-workflows/).

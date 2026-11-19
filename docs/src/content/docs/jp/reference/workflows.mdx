@@ -1,0 +1,54 @@
+---
+title: Workflow
+description: ループ内のすべての GitHub Actions workflow と、そのトリガー、権限、ジョブ名。
+sidebar:
+  order: 3
+---
+
+| Workflow | ファイル | トリガー | 権限 | チェックアウトするもの |
+| --- | --- | --- | --- | --- |
+| PR Checks | `pr-checks.yml` | `main` への `pull_request` | `contents: read`。スクリーンショットのコメントジョブには `pull-requests: write` も | PR |
+| UI Screenshots | `ui-screenshots.yml` | `main` への `pull_request`。`labeled`/`unlabeled` も含む | `contents: read`、`pull-requests: read` | デフォルトブランチ（差分は API から読む） |
+| CI | `ci.yml` | `main` への `push`、`workflow_dispatch` | `contents: read`、`pages: write`、`id-token: write` | `main` |
+| Agent Issues | `agent-issues.yml` | `main` への `pull_request: [closed, labeled]`、`workflow_dispatch(spec_folder)` | `contents: read`、`issues: write`、`pull-requests: write` | マージコミット |
+| Archive Specs | `archive-specs.yml` | `specs/*/tasks.md` を変更する `main` への `push`、`workflow_dispatch` | `contents: write`、`issues: read`、`pull-requests: write` | `main` |
+| Agent CI Status | `agent-ci.yml` | PR Checks の `workflow_run`、`completed` | `contents: read`、`actions: read`、`statuses: write`、`issues: write`、`pull-requests: write` | デフォルトブランチ |
+| Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`、`statuses: write`、`issues: write`、`pull-requests: write` | デフォルトブランチ |
+| Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | なし（PR 番号を `gh` に渡す） |
+| Deploy (Discava) | `deploy.yml` | `main` での CI の `workflow_run`、`workflow_dispatch(stage)` | `contents: read`、`id-token: write` | CI が検証したコミット |
+
+## ブランチ保護で必須にするジョブ名
+
+| チェック | 出どころ |
+| --- | --- |
+| `Checks (lint)`、`Checks (test)`、`Checks (build)` | PR Checks |
+| `Tasks format` | PR Checks |
+| `E2E tests` | PR Checks（シャードをまとめる） |
+| `UI Screenshots` | UI Screenshots |
+
+## 同時実行グループ
+
+| Workflow | グループ | 実行中のものをキャンセル |
+| --- | --- | --- |
+| PR Checks | `pr-checks-<ref>` | はい。新しい push で古い実行は無意味になる |
+| Agent Issues | `agent-issues-<PR number or folder>` | いいえ |
+| Archive Specs | `archive-specs` | いいえ。一度に 1 つだけ実行するので、2 つが同じ PR を開くことはない |
+| Agent CI Status | `agent-ci-<head branch>` | いいえ |
+| Agent Review Status | `agent-review-<PR number>` | いいえ |
+| Deploy | `deploy-<stage>` | いいえ |
+
+エージェントの workflow はキャンセルしません。各実行は、試行を数える処理や issue を開く処理をちょうど 1 回だけ
+行う必要があります。また PR ごとのグループなので、無関係な PR が互いを待つことはありません。
+
+## 実行する Nx ターゲット
+
+すべて `@your-scope/common-scripts` にあります。
+
+| ターゲット | エントリポイント | 読む環境変数 |
+| --- | --- | --- |
+| `agent-issue` | `src/agent-issues/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_NAME`、`GITHUB_EVENT_PATH`、`SPEC_FOLDER`、`DRY_RUN` |
+| `archive-specs` | `src/agent-issues/archive-main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_WORKSPACE`、`BASE_BRANCH`、`DRY_RUN` |
+| `agent-ci-status` | `src/agent-ci/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH`、`DRY_RUN` |
+| `agent-review-status` | `src/agent-review/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH`、`DRY_RUN` |
+| `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH` |
+| `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`、`GITHUB_ACTIONS`（注釈用） |

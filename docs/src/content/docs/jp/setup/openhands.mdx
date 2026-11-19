@@ -1,0 +1,73 @@
+---
+title: 3. OpenHands をインストールする
+description: npm で Agent Canvas をインストールして実行し、GitHub トークンを追加して、2 つのエージェントプロファイルを作成します。
+sidebar:
+  order: 3
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完了時の状態:** 自分のマシンで動く OpenHands Agent Canvas、シークレットとして保存された GitHub トークン、
+そして実装用の `default` とレビュー用の `reviewer` の 2 つのエージェントプロファイル。
+
+<Steps>
+
+1. **Agent Canvas をインストールして起動します。** Discava はバージョン 1.41.0 を使っています:
+
+   ```bash
+   npm install -g @openhands/agent-canvas
+   agent-canvas
+   ```
+
+   [http://127.0.0.1:8000](http://127.0.0.1:8000) を開きます。起動したままにしてください。automation は
+   Agent Canvas が動いている間だけポーリングします。
+
+2. エージェントが使うアカウントで **GitHub トークンを作成します**。fork に限定した fine-grained トークンで、
+   **Contents**、**Issues**、**Pull requests**、**Workflows** を読み書きに設定します。
+
+   エージェントが workflow を編集することはありませんが、ブランチが `.github/workflows/` に触れると
+   (たとえば `main` のマージによって)、GitHub は **Workflows** 権限のないトークンからの push 全体を拒否します。
+
+3. Agent Canvas の **Settings → Secrets** で、トークンを `GITHUB_PERSONAL_ACCESS_TOKEN` という名前の
+   **シークレットとして保存します**。
+
+4. **エージェントを選びます。** Discava は Claude Code を ACP(Agent Client Protocol)経由で動かしているので、
+   普段使っているコーディングエージェントが作業を行います。エージェントの設定で次のように設定します:
+
+   | 設定 | 値 |
+   | --- | --- |
+   | Agent | ACP、サーバー `claude-code` |
+   | Confirmation mode | オフ(確認する人がいないため) |
+   | Max iterations | 500(1 つのフェーズ全体に足りる余裕) |
+
+   コーディングエージェントは、このマシンに同じユーザーでインストールされ、サインインしている必要があります。
+
+5. **2 つのエージェントプロファイルを作成します:**
+
+   | プロファイル | Agent | Model |
+   | --- | --- | --- |
+   | `default` | ACP、`claude-code` | `sonnet` |
+   | `reviewer` | ACP、`claude-code` | `opus` |
+
+   どのエージェントとモデルでも動きます。レビュアーは少なくとも実装者と同等の強さにしてください。
+   あなたの前の最後のチェックだからです。
+
+</Steps>
+
+## 動作を確認する
+
+Agent Canvas で `default` プロファイルを使って会話を始め、
+`GITHUB_PERSONAL_ACCESS_TOKEN` シークレットを渡します。次のように依頼します:
+
+```text
+Run gh auth status using the GITHUB_PERSONAL_ACCESS_TOKEN secret, and list the open issues in <you>/agentic-sdlc.
+```
+
+エージェントのアカウントと、空の issue 一覧が報告されます。
+
+<Aside type="caution">
+エージェントはこのマシン上で、あなたのユーザーとしてコマンドを実行します。その環境にクラウドの認証情報を置かず、
+試用の範囲を超えたら別のマシンか VM を使ってください。
+</Aside>
+
+次へ: [4. 2 つの automation を作成する](../automations/)。

@@ -1,0 +1,62 @@
+---
+title: 2. Plan e task
+description: Ricava il piano tecnico e un elenco ordinato di task, poi verificali rispetto alla spec.
+sidebar:
+  order: 2
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+**Sei qui:** 🧑 tu + 🤖 agente. **Output:** `plan.md`, `data-model.md`, `contracts/` e `tasks.md`.
+
+<Steps>
+
+1. Genera il plan.
+
+   ```text
+   /speckit-plan
+   ```
+
+   Il plan legge la spec e la costituzione del progetto (`.specify/memory/constitution.md`) e
+   decide il *come*: aggiungere `tags` all'entità ElectroDB, estendere gli schemi di input tRPC, aggiungere un
+   filtro `tag` a `notes.list`.
+
+2. Genera i task.
+
+   ```text
+   /speckit-tasks
+   ```
+
+   `tasks.md` è ordinato, spuntabile e raggruppato per fase. Più avanti lo legge uno script, quindi il suo
+   [formato](../../reference/tasks-format/) è fisso, e un check della PR lo valida nel passaggio successivo.
+
+   ```markdown
+   ## Phase 1: User Story 1 - Tags in the data and API (Priority: P1) 🎯 MVP
+   - [ ] T001 Add `tags` to the note entity in packages/notes-table/src/entities/note.ts
+   - [ ] T002 [P] Unit tests for tag rules (max five, unique, case-insensitive)
+   - [ ] T003 Extend create and update procedures in packages/notes-api/src/procedures/notes.ts
+
+   ## Phase 2: User Story 2 - Tags on the website (Priority: P2)
+   - [ ] T004 Tag input on the note form
+   - [ ] T005 Tag filter on the list page
+   - [ ] T006 e2e scenario with screenshots, invariant and concurrency tests
+
+   ## Phase 3: Docs
+   - [ ] T007 Describe tags on the notes app page in docs/
+   - [ ] T008 **(human)** Confirm the screenshots match the docs wording
+   ```
+
+3. Verifica tutto incrociando i file prima che esista una riga di codice.
+
+   ```text
+   /speckit-analyze
+   ```
+
+   Segnala requisiti senza task, task senza requisito, e contraddizioni tra
+   i tre file. Correggili ora: costa una frase. Dopo l'implementazione costa una PR.
+
+</Steps>
+
+I task segnati **(human)** vengono saltati dall'agente ed elencati per te nella descrizione della sua PR.
+
+Avanti: [Approva la spec](../approve-the-spec/).

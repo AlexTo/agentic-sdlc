@@ -1,0 +1,99 @@
+---
+title: 5. 첫 기능 실행하기
+description: fork에서 노트 앱의 spec을 작성하고, Discava가 사용하는 것과 같은 workflow를 따라 spec PR에서 merge된 에이전트 PR까지 진행되는 과정을 지켜봅니다.
+sidebar:
+  order: 5
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**결과:** 한 줄짜리 아이디어에서 merge된 코드까지 에이전트가 이끌어 간 노트 앱의 기능 하나,
+그리고 루프의 모든 인계가 fork에서 동작한다는 증거.
+
+기능은 **note에 tag 달기**입니다. *사용자는 note에 최대 다섯 개의 tag를 추가할 수 있고, note 목록을
+tag로 필터링할 수 있습니다.* 작은 기능지만 테이블, API, 웹사이트를 모두 건드리므로 모든 단계에
+실제로 할 일이 있습니다. [튜토리얼](../../tutorial/the-case/)에서 각 단계를 더 자세히 다룹니다.
+
+<Steps>
+
+1. clone한 저장소의 브랜치에서 코딩 에이전트와 함께 **spec을 작성**합니다.
+
+   ```bash
+   git switch -c spec/note-tags
+   ```
+
+   ```text
+   /speckit-specify Users can add up to five tags to a note and filter the note list by tag. Tags are case-insensitive and unique per note.
+   /speckit-clarify
+   /speckit-plan
+   /speckit-tasks
+   /speckit-analyze
+   ```
+
+2. **spec PR을 열고, `spec-ready` label을 붙이고, merge합니다.** 브랜치를 push합니다.
+
+   ```bash
+   git add specs/ && git commit -m "docs(specs): add note tags spec"
+   git push -u origin spec/note-tags
+   ```
+
+   GitHub에서 pull request를 열고 `spec-ready` label을 추가한 뒤, 검사가 초록색이 되면
+   merge합니다. PR을 연 사람이 여러분이므로 GitHub는 승인을 허용하지 않습니다. **Merge without waiting for
+   requirements to be met**에 체크하세요.
+
+   ✅ PR에서 **Tasks format**이 통과합니다. merge 후 **Agent Issues**가
+   `feat(<feature>): … (with setup and foundations)` 제목의 issue를 열고, `openhands` label을 붙이며, 범위는 첫 번째 phase 그룹입니다.
+
+3. **에이전트를 기다립니다.** 여러분은 아무것도 하지 않습니다.
+
+   ✅ 다음 폴링에서 Agent Canvas에 해당 issue의 대화가 시작됩니다. 끝나면
+   `openhands/issue-<n>`에 `openhands-review`가 붙은 draft PR이 나타나고, `tasks.md`에서
+   정확히 그 phase들이 체크되어 있습니다.
+
+4. **게이트를 지켜봅니다.**
+
+   ✅ PR Checks가 실행됩니다. 하나가 실패하면 **Agent CI Status**가 `ci-fix-1`을 추가하고, 에이전트가
+   다음 폴링에서 같은 PR을 수정합니다. 모든 검사가 끝나면 리뷰어 에이전트가 head를 리뷰하고
+   `✅ APPROVED` 또는 `🔄 CHANGES REQUESTED`로 끝냅니다. 변경 요청도 `review-fix-1`과 함께
+   에이전트를 되돌려 보냅니다.
+
+5. **리뷰하고 merge합니다.** PR 설명, 거기에 나열된 **(human)** task, 그리고 웹사이트
+   phase라면 **E2E screenshots** 댓글을 읽습니다. **Ready for review**를 클릭한 뒤 merge합니다. 에이전트가
+   여러분의 토큰으로 push한다면 2단계처럼 승인을 우회합니다. 별도의 에이전트 계정을 쓴다면
+   평소처럼 승인하고 merge합니다.
+
+   ✅ **Agent Issues**가 다시 실행되어 다음 phase의 issue를 엽니다. 3단계부터 5단계까지 반복됩니다.
+
+6. **마지막 PR을 merge합니다.**
+
+   ✅ Agent Issues가 `No issue created: … no tasks left for the agent`를 로그에 남깁니다. 기능이 완성되었습니다.
+
+</Steps>
+
+<Aside type="tip" title="수정 루프를 보지 못했나요?">
+에이전트가 처음부터 모든 것을 맞게 했다면 아직 CI 루프를 보지 못한 것입니다. 테스트하려면
+열린 에이전트 PR에 단위 테스트 하나를 깨뜨리는 커밋을 push하세요. PR Checks가 실패하고, `ci-fix-1`이
+나타나며, 에이전트가 다음 폴링에서 수정을 push합니다. 에이전트가 단순히 여러분의 커밋을 revert할 수도 있는데,
+이 경우에는 그것이 올바른 수정입니다.
+</Aside>
+
+## 자가 점검
+
+다음 질문에 모두 그렇다고 답할 수 있다면 Discava와 같은 workflow를 갖춘 것입니다.
+
+- [ ] `spec-ready` spec PR을 merge하자, 아무도 손으로 열지 않았는데 issue가 열렸다.
+- [ ] 에이전트가 `openhands/issue-<n>`에 PR을 열고 정확히 자신의 task만 체크했다.
+- [ ] 빨간 CI 실행이 에이전트를 되돌려 보냈고, PR에 `ci-fix-1`이 붙어 있다.
+- [ ] 검사가 끝난 뒤 리뷰어 에이전트가 PR의 head를 리뷰했다.
+- [ ] 에이전트의 PR을 merge하자 다음 phase의 issue가 열렸다.
+- [ ] 웹사이트 변경에는 PR에 나열된 스크린샷이 함께 왔다.
+- [ ] 마지막 merge는 아무것도 열지 않았다.
+- [ ] 어느 시점에도 에러를 붙여 넣거나 에이전트를 위한 prompt를 작성하지 않았다.
+
+일어나지 않은 일이 있나요? [문제 해결](../../reference/troubleshooting/)을 참고하세요.
+
+## 다음
+
+- note 고정이나 목록 정렬 같은 여러분만의 기능을 노트 앱에서 시도해 보세요.
+- 이것을 제품 저장소에 적용할 준비가 되었나요?
+  [여러분의 저장소에 도입하기](../../adopt/overview/)를 참고하세요.

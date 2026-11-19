@@ -1,0 +1,53 @@
+---
+title: 5. CI e review do agent
+description: Gates automáticos e loops de correção limitados, sem nenhum humano no meio.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Você está aqui:** ⚙️ automação, sem supervisão. **Resultado:** um PR verde com um review de aprovação do agent.
+
+Todo push no PR do agent roda os gates. As falhas voltam para o agent, nunca para você.
+
+## Os gates
+
+| Gate | O que ele pega no caso das tags |
+| --- | --- |
+| Lint, typecheck, build | Um tipo da API que não bate mais com a entidade |
+| Testes unitários | Uma sexta tag aceita, ou `Work` e `work` salvas como duas tags |
+| Invariantes | Qualquer nota na tabela com mais de cinco tags, depois de cada teste e2e |
+| Testes E2E | O campo de tags não salva, ou o filtro mostra as notas erradas |
+| Teste de concorrência | Duas adições simultâneas sobrescrevem uma à outra e uma tag se perde |
+| Screenshots | Ninguém olhou para a nova UI: o check `UI Screenshots` falha |
+| Check de formato das tasks | Um `tasks.md` malformado que travaria a cadeia |
+
+## Quando um gate falha
+
+1. O workflow **Agent CI Status** marca o head commit do PR como falhando.
+2. O agent revisa o *mesmo* PR na conversa original, usando a saída da falha.
+3. O CI roda de novo.
+
+Um exemplo: o teste de concorrência falha porque adicionar uma tag lê a nota, acrescenta em memória
+e grava de volta, então duas requisições competem. O agent muda isso para um append atômico com
+uma condição sobre a contagem, e o teste fica verde. Você nem viu.
+
+## Review do agent
+
+Quando o CI está verde, um segundo agent do OpenHands revisa o PR como uma pessoa faria: correção,
+casos de borda esquecidos, regras da spec que nenhum teste cobre. Ele aprova, ou pede mudanças, o
+que manda o agent implementador de volta do mesmo jeito que um CI vermelho.
+
+## O limite
+
+Cada loop é limitado a **cinco** tentativas por PR, contadas em labels: `ci-fix-1` a `ci-fix-5`
+para o CI, `review-fix-1` a `review-fix-5` para o review. Depois da quinta, o workflow comenta,
+adiciona `ci-fix-exhausted` ou `review-fix-exhausted`, e para.
+
+<Aside type="caution">
+Um loop esgotado é a única vez em que você é chamado antes.
+[Gates humanos](../../concepts/human-gates/#quando-você-é-chamado-antes) diz o que fazer.
+</Aside>
+
+Próximo: [Merge e repita](../merge-and-repeat/).

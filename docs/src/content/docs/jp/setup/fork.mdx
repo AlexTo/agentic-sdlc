@@ -1,0 +1,58 @@
+---
+title: 1. リポジトリを fork する
+description: このリポジトリを fork し、GitHub が fork で無効にしている機能を有効にして、動作を確認します。
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完了時の状態:** Issues と Actions が有効で、ローカルにクローンされ、チェックが通る自分の fork。
+
+<Steps>
+
+1. **fork してクローンします。**
+
+   ```bash
+   gh repo fork AlexTo/agentic-sdlc --clone
+   cd agentic-sdlc
+   ```
+
+2. **自分の fork を `gh` のデフォルトにします。** そうしないと、`gh` コマンドは自分のリポジトリではなく
+   元のリポジトリを対象にします。
+
+   ```bash
+   gh repo set-default <you>/agentic-sdlc
+   ```
+
+3. **Issues を有効にします。** GitHub は fork では Issues を無効にしますが、workflow 全体は issue の上で動きます。
+   fork で **Settings → General → Features** を開き、**Issues** にチェックを入れます。
+
+4. **Actions を有効にします。** fork の **Actions** タブを開き、**I understand my workflows, go
+   ahead and enable them** をクリックします。これを行うまで、GitHub は fork で workflow を実行しません。
+
+5. CI と同じ **チェックをローカルでインストールして実行します**:
+
+   ```bash
+   pnpm install
+   pnpm nx run-many --target lint --all
+   pnpm nx run-many --target test --all
+   pnpm nx run-many --target build --all
+   ```
+
+   notes アプリを実行するには(Docker が必要): `pnpm dev` を実行し、ウェブサイトが表示する URL を開きます。
+
+</Steps>
+
+## 動作を確認する
+
+fork に **Issues** タブが表示され、**Actions** タブに workflow が一覧されます。ローカルでは、3 つの
+`nx run-many` コマンドが通ります。
+
+<Aside type="note">
+fork では 2 つの点が異なりますが、どちらも workflow を妨げません。`CODECOV_TOKEN`
+シークレットがないため、カバレッジのアップロードステップはエラーをログに出して続行します。CI の **Deploy Docs** ジョブは、
+GitHub Pages を有効にする(**Settings → Pages → Source: GitHub Actions**)まで失敗します。無視してもかまいません。
+</Aside>
+
+次へ: [2. リポジトリを設定する](../github-repository/)。

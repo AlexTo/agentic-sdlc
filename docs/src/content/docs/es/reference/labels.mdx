@@ -1,0 +1,29 @@
+---
+title: Labels
+description: Cada label que el workflow lee o escribe, quién la pone y qué significa.
+sidebar:
+  order: 1
+---
+
+| Label | En | La pone | La lee | Significa |
+| --- | --- | --- | --- | --- |
+| `spec-ready` | PR de spec | Una persona | Agent Issues | Fusionar este PR inicia la implementación. Añadirla a un PR ya fusionado también |
+| `openhands` | Issue | Agent Issues, o una persona | Automatización issue-to-PR | Implementa esta issue. Quítala y vuelve a ponerla para un intento nuevo en una rama nueva |
+| `openhands-review` | PR | El agente implementador, tras abrir o revisar | Automatización de code review | Haz review del head actual de este PR |
+| `ci-fix-1` … `ci-fix-5` | PR del agente | Agent CI Status | Agent CI Status | Se han usado ese número de correcciones automáticas por CI en rojo |
+| `ci-fix-exhausted` | PR del agente | Agent CI Status | Agent CI Status, personas | Se han agotado las correcciones de CI. Una persona toma el relevo |
+| `review-fix-1` … `review-fix-5` | PR del agente | Agent Review Status | Agent Review Status | Se han usado ese número de correcciones por "changes requested" |
+| `review-fix-exhausted` | PR del agente | Agent Review Status | Agent Review Status, personas | Se han agotado las correcciones de review. Una persona toma el relevo |
+| `no-ui-screenshots` | PR | Un maintainer | UI Screenshots | Exime de la regla de capturas de pantalla: el cambio de UI no tiene nada que mirar. Vuelve a ejecutar el check después de añadirla |
+| `priority:high` | Issue | Una persona | Automatización issue-to-PR | Empieza esta issue antes que las demás en la misma consulta |
+
+## Reiniciar un bucle
+
+Para que el agente lo intente de nuevo después de que hayas añadido indicaciones, quita tanto las labels de contador como la
+label `*-exhausted`, y después:
+
+- **Bucle de CI:** vuelve a ejecutar la ejecución fallida de PR Checks.
+- **Bucle de review:** vuelve a solicitar una review, o vuelve a poner `openhands-review`.
+
+El recuento es la label `*-fix-<n>` más alta del PR, así que quitar solo la label `exhausted` no es
+suficiente.

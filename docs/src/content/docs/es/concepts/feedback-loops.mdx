@@ -1,0 +1,93 @@
+---
+title: Bucles de feedback
+description: Cómo una ejecución de CI en rojo o una revisión con "changes requested" devuelven el trabajo al agente, y por qué cada bucle se detiene tras cinco intentos.
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**La versión corta:** cuando algo falla, un workflow marca el commit de cabeza del PR con un status
+fallido. El worker de OpenHands lo ve en su siguiente sondeo y pide a la misma conversación del
+agente que corrija el mismo PR. Cada bucle tiene un contador en una label y se detiene en cinco.
+
+## Los dos bucles
+
+```d2
+direction: right
+
+pr: el agente hace push {shape: page}
+checks: PR Checks
+review: agente revisor
+you: revisión humana
+
+actions: GitHub Actions {
+  style.stroke-dash: 3
+  ci: Agent CI Status
+  rv: Agent Review Status
+}
+
+status: "software-factory/review\n= failure" {shape: document}
+worker: "worker de issue a PR\n(siguiente sondeo)"
+
+pr -> checks
+checks -> review: todos terminados
+checks -> actions.ci: fallido
+review -> actions.rv: cambios solicitados
+review -> you: aprobado
+actions.ci -> status: ci-fix-N
+actions.rv -> status: review-fix-N
+status -> worker
+worker -> pr: revisar el mismo PR
+```
+
+| | Bucle de CI | Bucle de revisión |
+| --- | --- | --- |
+| Lo dispara | El workflow PR Checks terminando con `failure` o `timed_out` | Una revisión en el PR escrita por el agente revisor, que termina en `🔄 CHANGES REQUESTED` |
+| Workflow | Agent CI Status | Agent Review Status |
+| Labels de contador | `ci-fix-1` … `ci-fix-5` | `review-fix-1` … `review-fix-5` |
+| Cuándo se rinde | `ci-fix-exhausted`, más un comentario | `review-fix-exhausted`, más un comentario |
+| Descripción del status | `CI failed (fix attempt 2 of 5): E2E tests (3/4)` | `Review requested changes (fix attempt 1 of 5): see the review` |
+
+Una ejecución correcta no publica nada. El siguiente commit empieza sin status, así que el worker
+deja el PR en paz.
+
+## Las comprobaciones antes de devolver el trabajo al agente
+
+Cada script se niega a actuar salvo que se cumpla todo esto:
+
+1. La rama es exactamente `openhands/issue-<n>`. Una rama de segundo intento, como
+   `openhands/issue-308-2`, nunca la revisa el worker, así que tampoco se responde.
+2. El PR está abierto.
+3. La ejecución o la revisión corresponde al commit de cabeza **actual** del PR. Una ejecución más
+   antigua está obsoleta.
+4. Ese commit no se ha devuelto ya. Volver a ejecutar los mismos checks no debe gastar otro intento.
+5. Para las revisiones: la revisión lleva el marcador oculto de ejecución del revisor y procede de
+   una cuenta con acceso de escritura, para que una persona que cite el veredicto no lo dispare.
+6. Se han usado menos de cinco intentos.
+
+La label se pone **antes** de publicar el status. Si después falla la publicación del status, el
+siguiente fallo cuenta un intento más en lugar de repetir este para siempre.
+
+## Por qué cinco
+
+Un reintento corrige la mayoría de los errores: un localizador inestable, un tipo olvidado, una regla
+de lint. Los siguientes cubren una corrección que destapó un segundo problema, o una ejecución de CI
+y una revisión que piden cosas distintas. Para el quinto fallo, el agente suele estar atascado en
+algo que no puede ver, y más intentos cuestan dinero sin converger. Discava empezó con un límite de
+tres y lo subió a cinco.
+
+De los primeros 67 PR de agentes fusionados en Discava, 42 no llevan ninguna label de corrección
+(algunos son anteriores a los workflows de corrección), 17 necesitaron exactamente una ronda y solo
+uno agotó un bucle.
+
+<Aside type="caution">
+Cuando un bucle se agota, lee el último fallo antes de corregir nada. Los fallos repetidos suelen
+significar que la spec o el plan eran ambiguos y que el agente intentaba satisfacer dos
+interpretaciones a la vez. Corrige la spec y después deja que el agente lo intente de nuevo.
+</Aside>
+
+Para darle al agente otra ronda después, consulta
+[Reiniciar un bucle](../../reference/labels/#reiniciar-un-bucle).
+
+Siguiente: [Capas de confianza](../layers-of-trust/).

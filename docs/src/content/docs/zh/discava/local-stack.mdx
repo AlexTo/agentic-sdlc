@@ -1,0 +1,97 @@
+---
+title: 本地栈
+description: Discava 如何在本地运行每个 AWS 服务，让 CI 无需云账号就能测试真实的应用。
+sidebar:
+  order: 8
+---
+
+缺口 8：没有云访问权限，智能体就无法运行真实的栈，而你又不想给它云访问权限。Discava 的答案是
+constitution 原则 III：每个 AWS 服务都有一个本地替身，`pnpm dev` 用 Docker 启动所有这些替身。
+
+## 本地运行的内容
+
+| 服务 | 端口 | 替代 |
+| --- | --- | --- |
+| 学生、讲师和管理员门户 | 4201, 4200, 4202 | CloudFront |
+| core-api、instructor-api | 2022, 2023 | API Gateway 和 Lambda |
+| DynamoDB local | 8001 | DynamoDB |
+| S3Mock | 9090 | S3 |
+| ElasticMQ | 9324 | SQS |
+| OpenSearch（Docker） | | OpenSearch Serverless |
+| Event runner | 2024 | DynamoDB streams 和 stream router、MediaConvert（ffmpeg）、Transcribe（一条占位轨道）、SES（一个收件箱页面）、EventBridge、Scheduler、Cognito 触发器 |
+| 本地 OIDC 服务器 | 9400 | Cognito |
+
+后端代码根据 `LOCAL_DEV=true` 进行切换。共享设置位于一个包中（`common-server-utils/local-dev`），因此
+每个 Lambda 都以相同的方式解析端点。每个替身都是 `packages/common/scripts` 中的一个 Nx target，负责
+拉取并启动其容器。
+
+本地登录页提供固定的用户（一名讲师、两名学生、一名管理员），以及一个可填写任意 claim 的
+"Someone else" 表单。没有密码，也没有 Cognito。
+
+## 谁来运行它
+
+**实现智能体不运行它**。它的 issue 说明不要使用 `pnpm dev`、Docker 或 e2e runner。它编写场景，由
+**PR CI** 运行它们：每个 e2e 分片都会在一个全新的 runner 上启动自己的 `pnpm dev`。智能体的机器保持简单，
+它读到的结果也总是来自一个干净的栈。
+
+人会为了 **(human)** 任务以及复现失败而运行它。
+
+## E2E 场景
+
+`packages/e2e` 为每个用户流程提供一个 `src/scenarios/*.e2e.ts`，由共享 helper 构建而成。让它们能在共享
+栈上以任意顺序安全运行的规则：
+
+- 每个场景都创建自己的用户和名称唯一的数据。
+- 没有场景会重置本地数据。
+- 一个 worker，CI 上重试一次，两分钟超时。流程会等待诸如进度重新计算之类的后台工作。
+
+## 每个测试之后的不变式
+
+`packages/databases/core-table/src/helpers/invariants/` 包含针对整张表的检查，每个主题一个文件（课程体系、学生活动、媒体、分析等）："a course has an instructor"、"a student's activity count matches the students who used the
+item"、"sibling order is unique"，以及其他四十多条。
+
+一个 Playwright fixture（`packages/e2e/src/helpers/table-invariants.ts`）会在**每个 e2e 测试之后**运行
+它们。它会记录测试之前就已存在的违反情况，只在出现新的违反时才失败，因此旧的本地数据不会让一次运行失败。
+消息会写明不变式和出问题的记录。一个把计数器写错的智能体，会在写入它的那个测试中发现问题，而不是在三个
+功能之后。
+
+每条跨写入者的规则都通过一个所有写入者都会调用的共享 helper 写入（例如 `studentActivityWrites`），并且
+有一个不变式和一个会破坏它的测试。
+
+**Invariant coverage** PR 检查让这一点保持诚实。`core-table` 的 `entity-writers.json` 把每个实体映射到
+各个包中写入它的文件，它是用 TypeScript 编译器从代码生成的。与 `main` 相比，该检查会在以下情况让 PR
+失败：
+
+- 某个实体在原有写入包之外新增了一个写入包，
+- `core-table` 包之外的某个文件开始写入一个由多个包写入的实体，或者
+- 出现了一个新实体。
+
+一旦 PR 在 `helpers/invariants/` 下新增的行（测试和 fixture 不算）提到了这些实体中的每一个或其
+`TableSnapshot` 键（例如 `snapshot.enrolments`），检查就会重新通过。当 `entity-writers.json` 过时时，
+该检查也会失败。一个 pre-push hook 会重新生成它，并在它发生变化时阻止推送，因此智能体会在 CI 之前发现
+问题。
+
+### 豁免该检查
+
+该检查只能看到写入者集合发生了变化。它无法判断现在是否有一条规则横跨这些写入者，所以维护者可以豁免它：
+给 PR 加上 `no-new-invariant` 标签，然后重新运行该 job。
+
+当写入被移动或拆分、但没有新的规则受到影响时，就使用这个标签。通常的情况是重构。当 Discava 把 helper
+从其 API 过程中移到单独的文件里时，现有的写入出现在了新文件中并触发了检查，但它们维护的规则早已被覆盖。
+
+不要用它来让一个功能蒙混过关。如果一个新的写入者意味着另一个 API 或 handler 现在依赖于某条记录的正确性，
+那么这条规则就应该放在一个每个写入者都会调用的 `core-table` helper 中，并在 `helpers/invariants/` 中
+有一个检查。这个标签应由人来加，而不是智能体：判断没有规则受到影响，正是该检查存在所要强制做出的判断。
+
+## 并发测试
+
+`packages/e2e/src/concurrency/` 会在同一时刻直接向 API 发出请求，针对两个用户可能发生竞争的写入：签发
+证书、附加字幕、分析计数器。它们在同一个 e2e job 中运行。
+
+## 仍然只能在已部署 stage 上运行的内容
+
+替身并不完美，`CONTRIBUTING.md` 准确列出了它们的不足之处：CloudFront 签名、MediaConvert 的确切输出、
+真实的 Transcribe、Cognito Managed Login、EventBridge 重试以及失败队列。依赖这些的任务都是
+**(human)** 任务，在部署后于 `discava-development` 上检查。
+
+下一步：[部署与安全](../deploy-and-security/)。

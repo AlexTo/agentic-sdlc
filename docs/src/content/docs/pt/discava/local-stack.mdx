@@ -1,0 +1,105 @@
+---
+title: Stack local
+description: Como o Discava roda cada serviço da AWS localmente, para que o CI possa testar o app real sem conta de nuvem.
+sidebar:
+  order: 8
+---
+
+Lacuna 8: o agent não consegue rodar a stack real sem acesso à nuvem, e você não quer dar a ele
+acesso à nuvem. A resposta do Discava é o princípio III da constitution: todo serviço da AWS tem um substituto
+local, e o `pnpm dev` inicia todos eles com Docker.
+
+## O que roda localmente
+
+| Serviço | Porta | Substitui |
+| --- | --- | --- |
+| Portais do aluno, do instrutor e do admin | 4201, 4200, 4202 | CloudFront |
+| core-api, instructor-api | 2022, 2023 | API Gateway e Lambda |
+| DynamoDB local | 8001 | DynamoDB |
+| S3Mock | 9090 | S3 |
+| ElasticMQ | 9324 | SQS |
+| OpenSearch (Docker) | | OpenSearch Serverless |
+| Event runner | 2024 | DynamoDB streams e o stream router, MediaConvert (ffmpeg), Transcribe (uma faixa de placeholder), SES (uma página de caixa de entrada), EventBridge, Scheduler, triggers do Cognito |
+| Servidor OIDC local | 9400 | Cognito |
+
+O código de back end muda de comportamento com `LOCAL_DEV=true`. As configurações compartilhadas ficam em um pacote
+(`common-server-utils/local-dev`), para que toda Lambda resolva endpoints do mesmo jeito. Cada substituto
+é um target Nx em `packages/common/scripts`, que baixa e inicia o seu container.
+
+A página de login local oferece usuários fixos (um instrutor, dois alunos, um admin) e um
+formulário "Someone else" para quaisquer claims. Sem senhas, sem Cognito.
+
+## Quem a roda
+
+O **agent implementador não roda**. A issue dele diz para não usar `pnpm dev`, Docker nem o runner de e2e.
+Ele escreve os cenários, e o **CI do PR** os roda: cada shard de e2e inicia seu próprio `pnpm dev` em um
+runner novo. A máquina do agent continua simples, e o resultado que ele lê sempre vem de uma
+stack limpa.
+
+Pessoas a rodam para as tarefas **(human)** e para reproduzir uma falha.
+
+## Cenários E2E
+
+O `packages/e2e` tem um `src/scenarios/*.e2e.ts` por fluxo de usuário, construído a partir de helpers compartilhados.
+As regras que os tornam seguros para rodar em qualquer ordem, em uma stack compartilhada:
+
+- Cada cenário cria seus próprios usuários e dados com nomes únicos.
+- Nenhum cenário reinicia os dados locais.
+- Um worker, uma nova tentativa no CI, timeout de dois minutos. Os fluxos esperam por trabalho em segundo plano, como o recálculo
+  de progresso.
+
+## Invariantes depois de cada teste
+
+O `packages/databases/core-table/src/helpers/invariants/` contém verificações sobre a tabela inteira, um arquivo
+por tema (currículo, atividade dos alunos, mídia, analytics e assim por diante): "um curso tem um instrutor", "a contagem de atividade de um aluno corresponde aos alunos que usaram o
+item", "a ordem entre irmãos é única", e mais de quarenta outras.
+
+Uma fixture do Playwright (`packages/e2e/src/helpers/table-invariants.ts`) as roda **depois de cada teste
+e2e**. Ela registra as violações que já existiam antes do teste e só falha com as novas,
+para que dados locais antigos não reprovem uma execução. A mensagem nomeia a invariante e o registro problemático. Um
+agent que escreve um contador errado descobre isso no teste que o escreveu, não três features depois.
+
+Toda regra que abrange vários writers é escrita por meio de um helper compartilhado que todo writer chama (por
+exemplo `studentActivityWrites`), e tem uma invariante e um teste que a quebra.
+
+O PR check **Invariant coverage** mantém isso honesto. O `entity-writers.json` do `core-table` mapeia
+cada entidade para os arquivos de cada pacote que a escrevem, gerado a partir do código com o
+compilador do TypeScript. Em comparação com a `main`, o check reprova um PR quando:
+
+- uma entidade ganha um pacote que a escreve além dos que já tinha,
+- um arquivo fora do pacote `core-table` começa a escrever uma entidade que vários pacotes escrevem, ou
+- uma nova entidade aparece.
+
+Ele volta a passar quando as linhas que o PR adiciona em `helpers/invariants/` (testes e fixtures não
+contam) nomeiam cada uma dessas entidades ou a sua chave de `TableSnapshot`, como `snapshot.enrolments`. O
+check também falha enquanto o `entity-writers.json` estiver desatualizado. Um hook de pre-push o gera de novo e
+interrompe o push se ele mudou, para que o agent descubra antes do CI.
+
+### Dispensando o check
+
+O check só vê que o conjunto de writers mudou. Ele não sabe dizer se agora uma regra os abrange,
+então um mantenedor pode dispensá-lo: adicione o label `no-new-invariant` ao PR e rode o job de novo.
+
+Use o label quando as escritas foram movidas ou divididas, mas nenhuma regra nova está em jogo. O caso comum é um
+refactor. Quando o Discava tirou helpers de dentro das procedures da API e os colocou em arquivos próprios, escritas
+existentes apareceram em arquivos novos e dispararam o check, mas as regras que elas mantêm já estavam cobertas.
+
+Não o use para fazer uma feature passar. Se um novo writer significa que outra API ou outro handler agora depende de
+um registro estar correto, a regra pertence a um helper do `core-table` que todo writer chama, com uma verificação em
+`helpers/invariants/`. O label é para uma pessoa aplicar, não o agent: decidir que nenhuma regra está em
+jogo é justamente o julgamento que o check existe para forçar.
+
+## Testes de concorrência
+
+O `packages/e2e/src/concurrency/` dispara requisições de API no mesmo instante, direto nas APIs, para
+escritas em que dois usuários poderiam competir: emitir um certificado, anexar uma legenda, os contadores de analytics.
+Eles rodam no mesmo job de e2e.
+
+## O que ainda só roda em um stage com deploy
+
+Os substitutos não são perfeitos, e o `CONTRIBUTING.md` lista exatamente onde eles deixam a desejar: assinatura do CloudFront,
+a saída exata do MediaConvert, o Transcribe real, o Cognito Managed Login, as novas tentativas do EventBridge e as
+filas de falha. As tarefas que dependem disso são tarefas **(human)**, verificadas no `discava-development`
+depois do deploy.
+
+Próximo: [Deploy e segurança](../deploy-and-security/).

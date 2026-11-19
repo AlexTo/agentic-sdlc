@@ -1,0 +1,98 @@
+---
+title: Configuración de OpenHands
+description: Agent Canvas, los perfiles de agente y las dos automatizaciones exactamente como los usa Discava.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Los agentes de Discava se ejecutan en una estación de trabajo Linux, bajo OpenHands Agent Canvas. No
+hay despliegue de OpenHands en la nube ni webhooks. Todo es sondeo saliente hacia GitHub.
+
+## Agent Canvas
+
+Agent Canvas 1.41.0, instalado desde npm (`@openhands/agent-canvas`) y ejecutado como servicio de
+usuario. Su estado vive en `~/.openhands/`: ajustes, perfiles de agente, secretos y la base de datos
+SQLite de las automatizaciones.
+
+## Ajustes de las conversaciones
+
+Los ajustes que determinan cómo trabajan los agentes:
+
+| Ajuste | Valor | Por qué |
+| --- | --- | --- |
+| Agent | ACP, servidor `claude-code` | Un agente de programación externo, mediante el Agent Client Protocol |
+| ACP prompt timeout | 30 minutos | Un turno de implementación es largo |
+| Max iterations | 500 | Margen para una fase entera en una conversación |
+| Confirmation mode | desactivado | Sin supervisión. No hay nadie para confirmar |
+| Security analyzer | LLM | Los comandos se siguen filtrando por riesgo |
+| Runtime | local | Se ejecuta en el host, donde ya están Node, pnpm y git |
+| Worktree branch prefix | `openhands/` | Cada rama que crea un agente empieza así. El pegamento se basa en ello |
+
+## Perfiles de agente
+
+| Perfil | Agente | Modelo | Lo usa |
+| --- | --- | --- | --- |
+| `default` | Claude Code (ACP) | Sonnet | GitHub issue to PR |
+| `reviewer` | Claude Code (ACP) | Opus | GitHub code review |
+
+## Secretos
+
+Guardados en Agent Canvas (**Settings → Secrets**), por nombre:
+
+| Nombre | Se usa para |
+| --- | --- |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | Las automatizaciones leen GitHub con él. Las conversaciones lo reciben para clonar, hacer push y abrir PR |
+| `OPENHANDS_AUTOMATION_API_KEY` | La clave propia del backend de automatizaciones |
+
+El token de GitHub es un personal access token de la cuenta del mantenedor, con acceso de escritura
+a contenidos del repositorio, issues, pull requests y workflows.
+
+## Las dos automatizaciones
+
+Ambas se instalaron desde el catálogo de automatizaciones de Agent Canvas, no se escribieron a mano.
+Lo que hace cada una en un sondeo está en [El runtime del agente](../../concepts/the-agent-runtime/#las-dos-automatizaciones).
+
+### GitHub issue to PR
+
+| Campo | Valor |
+| --- | --- |
+| Plantilla | `github-issue-to-pr` 1.2.4 |
+| Repositorio | `AlexTo/discava` |
+| Label de disparo | `openhands` |
+| Prefijo de rama | `openhands/issue` → ramas `openhands/issue-<n>` |
+| Modo de pull request | Draft |
+| Secreto del token de GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+| Programación | `*/5 * * * *`, Australia/Sydney |
+| Perfil de agente | `default` |
+
+Un turno de revisión le dice al agente que vuelva a poner después la label `openhands-review`,
+para que se revise la nueva cabeza.
+
+### GitHub code review
+
+| Campo | Valor |
+| --- | --- |
+| Plantilla | `github-pr-reviewer` 1.11.2 |
+| Repositorio | `alexto/discava` |
+| Label de disparo | `openhands-review` |
+| Revisor solicitado | `all-hands-bot` (no se usa en la práctica: la label hace el trabajo) |
+| Revisiones nuevas por barrido | 2 |
+| Tono de la revisión | Concise |
+| Mantenedores | ninguno |
+| Programación | `*/5 * * * *`, Australia/Sydney |
+| Perfil de agente | `reviewer` |
+
+Mientras los checks siguen ejecutándose, el revisor publica un comentario "⏳ Review waiting on
+checks" y vuelve a intentarlo en un barrido posterior. Sus revisiones empiezan con "_This review was
+posted by an AI agent (OpenHands)._" y llevan un marcador oculto `<!-- openhands-review-run: <id> -->`.
+
+<Aside type="caution" title="Una sola cuenta para todo">
+En Discava, el agente implementador, el revisor y el mantenedor usan la misma cuenta de GitHub.
+GitHub no permite que una cuenta apruebe su propio PR, así que el veredicto del revisor se publica
+como una revisión `COMMENTED`, y el pegamento lee la línea del veredicto en lugar del estado de la
+revisión. Para un equipo, dale a las automatizaciones una cuenta de máquina aparte.
+</Aside>
+
+Siguiente: [De la spec a la issue](../spec-to-issue/).

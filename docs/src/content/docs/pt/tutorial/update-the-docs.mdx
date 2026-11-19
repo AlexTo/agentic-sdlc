@@ -1,0 +1,44 @@
+---
+title: 7. Atualize a documentação
+description: A documentação é a última fase da mesma cadeia, feita pelo agent e revisada por você.
+sidebar:
+  order: 7
+---
+
+**Você está aqui:** 🤖 agent, depois 🧑 gate humano #2 de novo. **Resultado:** a documentação descreve as tags.
+
+A documentação é código (este site é MDX em `docs/`), então a mesma cadeia cuida dela.
+
+## O que o agent faz
+
+Com a issue das tasks `T007` a `T008`, o agent:
+
+1. Lê a spec e o código mergeado das fases 1 e 2. A spec diz para que serve a feature; o código diz
+   o que ela faz.
+2. Atualiza a página do app de notas: o atributo `tags`, o novo input e o filtro da API, e as regras
+   (cinco tags, únicas, sem diferenciar maiúsculas e minúsculas), escritas exatamente como a spec as
+   define.
+3. Reaproveita os screenshots do cenário e2e em vez de inventar novos, para que a documentação
+   mostre o que o app realmente faz.
+4. Faz o build do site da documentação, para que um link quebrado ou um MDX malformado faça o PR
+   falhar como qualquer outro erro de build.
+
+## O que você confere
+
+- Toda regra na página bate com um requisito no `spec.md`?
+- Se a documentação e a spec discordam, **a spec vence.** Mude a spec, não a documentação à mão.
+- Há algo documentado que o código não faz?
+
+## Por que ela está na cadeia
+
+Documentação escrita depois, por outra pessoa, de memória, se desvia. Documentação gerada a partir
+da spec e do código mergeado, e revisada com os mesmos gates, não. O agent revisor também é um
+segundo leitor barato: ele aponta uma afirmação da documentação que nenhum teste ou código sustenta.
+
+## Pronto
+
+Faça o merge do PR da documentação. Sem tasks de agent restantes, nenhuma issue nova é aberta. A
+feature foi de uma frase até código e documentação mergeados, e você tomou dois tipos de decisão:
+aprovar a spec e aprovar cada resultado.
+
+De volta para [os princípios](../../concepts/principles/).

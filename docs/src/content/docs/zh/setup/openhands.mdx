@@ -1,0 +1,64 @@
+---
+title: 3. 安装 OpenHands
+description: 用 npm 安装 Agent Canvas，运行它，添加 GitHub token 并创建两个 agent profile。
+sidebar:
+  order: 3
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完成后你将拥有：** 在你的机器上运行的 OpenHands Agent Canvas、一个作为 secret 存储的 GitHub token，以及两个 agent profile：用于实现的 `default` 和用于评审的 `reviewer`。
+
+<Steps>
+
+1. **安装并启动 Agent Canvas。** Discava 使用的版本是 1.41.0：
+
+   ```bash
+   npm install -g @openhands/agent-canvas
+   agent-canvas
+   ```
+
+   打开 [http://127.0.0.1:8000](http://127.0.0.1:8000)。保持它运行：只有 Agent Canvas 在运行时，automation 才会轮询。
+
+2. 为智能体将要使用的账号**创建一个 GitHub token**：一个 fine-grained token，仅限于你的 fork，并把 **Contents**、**Issues**、**Pull requests** 和 **Workflows** 设为读写。
+
+   智能体从不编辑 workflow，但只要分支改动了 `.github/workflows/`（例如通过合并 `main`），GitHub 就会拒绝来自缺少 **Workflows** 权限的 token 的整次 push。
+
+3. 在 Agent Canvas 的 **Settings → Secrets** 下，**把 token 存为 secret**，命名为 `GITHUB_PERSONAL_ACCESS_TOKEN`。
+
+4. **选择智能体。** Discava 通过 ACP（Agent Client Protocol）运行 Claude Code，因此由你已经在用的编码智能体来完成工作。在智能体设置中设置：
+
+   | 设置 | 值 |
+   | --- | --- |
+   | Agent | ACP，server `claude-code` |
+   | Confirmation mode | 关闭（没有人在场确认） |
+   | Max iterations | 500（足够完成整个阶段） |
+
+   编码智能体必须以同一个用户身份安装在这台机器上并已登录。
+
+5. **创建两个 agent profile：**
+
+   | Profile | Agent | Model |
+   | --- | --- | --- |
+   | `default` | ACP，`claude-code` | `sonnet` |
+   | `reviewer` | ACP，`claude-code` | `opus` |
+
+   任何智能体和模型都可以。让评审者至少和实现者一样强：它是到你手上之前的最后一道检查。
+
+</Steps>
+
+## 检查是否成功
+
+在 Agent Canvas 中，用 `default` profile 启动一个对话，并把 `GITHUB_PERSONAL_ACCESS_TOKEN` secret 提供给它。问它：
+
+```text
+Run gh auth status using the GITHUB_PERSONAL_ACCESS_TOKEN secret, and list the open issues in <you>/agentic-sdlc.
+```
+
+它会报告智能体使用的账号，以及一个空的 issue 列表。
+
+<Aside type="caution">
+智能体以你的用户身份在这台机器上运行命令。不要在它的环境中保留云凭证，一旦超出试用范围，请使用单独的机器或虚拟机。
+</Aside>
+
+下一步：[4. 创建两个 automation](../automations/)。

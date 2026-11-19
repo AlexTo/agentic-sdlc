@@ -1,0 +1,27 @@
+---
+title: 标签
+description: 工作流读写的每个标签、由谁设置，以及它的含义。
+sidebar:
+  order: 1
+---
+
+| 标签 | 作用于 | 设置者 | 读取者 | 含义 |
+| --- | --- | --- | --- | --- |
+| `spec-ready` | Spec PR | 人 | Agent Issues | 合并这个 PR 即开始实现。给已经合并的 PR 加上它也一样 |
+| `openhands` | Issue | Agent Issues，或人 | Issue-to-PR automation | 实现这个 issue。移除后重新加上，会在新分支上重新尝试 |
+| `openhands-review` | PR | 负责实现的智能体，在开启或修订 PR 之后 | 代码评审 automation | 评审这个 PR 当前的 head |
+| `ci-fix-1` … `ci-fix-5` | 智能体 PR | Agent CI Status | Agent CI Status | 已用掉这么多次针对 CI 失败的自动修复 |
+| `ci-fix-exhausted` | 智能体 PR | Agent CI Status | Agent CI Status、人 | CI 修复次数已用完，由人接手 |
+| `review-fix-1` … `review-fix-5` | 智能体 PR | Agent Review Status | Agent Review Status | 已用掉这么多次针对“要求修改”的修复 |
+| `review-fix-exhausted` | 智能体 PR | Agent Review Status | Agent Review Status、人 | 评审修复次数已用完，由人接手 |
+| `no-ui-screenshots` | PR | 维护者 | UI Screenshots | 豁免截图规则：这次 UI 改动没有可看的东西。加上后重新运行该检查 |
+| `priority:high` | Issue | 人 | Issue-to-PR automation | 在同一次轮询中优先开始这个 issue |
+
+## 重置循环
+
+在补充了指引之后，若要让智能体再试一次，请同时移除计数标签和 `*-exhausted` 标签，然后：
+
+- **CI 循环**：重新运行失败的 PR Checks。
+- **评审循环**：重新请求评审，或重新加上 `openhands-review`。
+
+计数取的是 PR 上最大的 `*-fix-<n>` 标签，所以只移除 `exhausted` 标签是不够的。

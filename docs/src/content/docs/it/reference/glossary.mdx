@@ -1,0 +1,30 @@
+---
+title: Glossario
+description: I termini usati in tutta la guida.
+sidebar:
+  order: 6
+---
+
+| Termine | Significato |
+| --- | --- |
+| **ACP** | Agent Client Protocol. Il modo in cui OpenHands pilota un coding agent esterno come Claude Code |
+| **Agent Canvas** | L'app OpenHands self-hosted: server degli agenti, backend delle automazioni e interfaccia web |
+| **Profilo agente** | Un'impostazione di OpenHands che indica l'agente e il modello usati da una conversazione |
+| **`AGENTS.md`** | Il file di istruzioni per gli agenti nella radice del repository: comandi, architettura, convenzioni |
+| **Automazione** | Un worker OpenHands pianificato che legge GitHub e avvia conversazioni con gli agenti |
+| **Costituzione** | `.specify/memory/constitution.md`. Le regole del progetto rispetto a cui viene verificato ogni plan |
+| **Constitution Check** | La sezione di `plan.md` in cui il plan viene verificato rispetto alla costituzione |
+| **Tentativo di correzione** | Un giro automatico in cui l'agente viene rimandato indietro. Contato da `ci-fix-<n>` o `review-fix-<n>` |
+| **Collante** | I workflow e gli script che passano il lavoro tra Speckit, OpenHands e la CI |
+| **Gruppo** | Le fasi coperte da una issue di implementazione. Il gruppo 0 arriva fino alla prima user story |
+| **Gate umano** | Una decisione che prende solo una persona: approvare la spec, approvare la PR, fare il deploy in produzione |
+| **Task (human)** | Un task in `tasks.md` che ha bisogno di persone o di uno stack in esecuzione. L'agente lo salta |
+| **Invariante** | Una regola su tutti i dati, verificata dopo ogni test e2e |
+| **Marcatore** | Un commento HTML nascosto che il collante usa per trovare le proprie issue e i propri commenti |
+| **Issue padre** | La issue di tracciamento di una feature, indicata in `spec.md`, citata da ogni PR |
+| **Fase** | Una sezione `## Phase <n>: <title>` di `tasks.md` |
+| **Turno di revisione** | Un messaggio a una conversazione esistente con un agente, che gli chiede di correggere la sua PR |
+| **Cartella della spec** | `specs/<timestamp>-<name>/`, che contiene spec, plan e task di una feature |
+| **`software-factory/review`** | Lo status del commit che, nello stato `failure`, fa rivedere una PR a OpenHands |
+| **Speckit** | Il toolkit di GitHub per lo sviluppo guidato dalle spec (`specify-cli`) |
+| **Bloccato** | Un gruppo la cui issue esiste ma i cui task non sono tutti spuntati, quindi non si apre nessuna nuova issue |

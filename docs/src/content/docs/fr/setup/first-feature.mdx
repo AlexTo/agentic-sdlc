@@ -1,0 +1,99 @@
+---
+title: 5. Lancer votre première fonctionnalité
+description: Écrivez une spec pour l'application de notes dans votre fork, et regardez-la suivre le même workflow que Discava, de la PR de spec aux PR d'agents mergées.
+sidebar:
+  order: 5
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Résultat :** une fonctionnalité pour l'application de notes, menée de votre idée en une ligne jusqu'au code mergé par
+les agents, et la preuve que chaque passage de relais de la boucle fonctionne dans votre fork.
+
+La fonctionnalité : **des tags sur les notes**. *Un utilisateur peut ajouter jusqu'à cinq tags à une note, et filtrer la liste
+des notes par tag.* Elle est petite, mais elle touche la table, l'API et le site web, donc chaque étape a
+quelque chose de réel à faire. Le [tutoriel](../../tutorial/the-case/) couvre chaque étape plus en détail.
+
+<Steps>
+
+1. **Écrivez la spec** sur une branche de votre clone, avec votre agent de code :
+
+   ```bash
+   git switch -c spec/note-tags
+   ```
+
+   ```text
+   /speckit-specify Users can add up to five tags to a note and filter the note list by tag. Tags are case-insensitive and unique per note.
+   /speckit-clarify
+   /speckit-plan
+   /speckit-tasks
+   /speckit-analyze
+   ```
+
+2. **Ouvrez la PR de spec, ajoutez-lui le label `spec-ready`, mergez-la.** Poussez la branche :
+
+   ```bash
+   git add specs/ && git commit -m "docs(specs): add note tags spec"
+   git push -u origin spec/note-tags
+   ```
+
+   Sur GitHub, ouvrez la pull request, ajoutez le label `spec-ready`, et mergez une fois les checks
+   au vert. C'est vous qui avez ouvert la PR, donc GitHub ne vous laissera pas l'approuver : cochez **Merge without waiting for
+   requirements to be met**.
+
+   ✅ **Tasks format** passe sur la PR. Après le merge, **Agent Issues** ouvre une issue intitulée
+   `feat(<feature>): … (with setup and foundations)`, avec le label `openhands`, limitée au premier groupe de phases.
+
+3. **Attendez l'agent.** Vous ne faites rien.
+
+   ✅ Au passage suivant, une conversation pour l'issue démarre dans Agent Canvas. Quand elle se termine, une
+   PR draft apparaît sur `openhands/issue-<n>` avec `openhands-review`, et `tasks.md` coché pour
+   exactement ces phases.
+
+4. **Observez les contrôles.**
+
+   ✅ Les PR Checks tournent. Si l'un échoue, **Agent CI Status** ajoute `ci-fix-1` et l'agent révise la
+   même PR au passage suivant. Une fois tous les checks terminés, l'agent reviewer relit le head
+   et conclut par `✅ APPROVED` ou `🔄 CHANGES REQUESTED`. Une demande de modifications renvoie aussi l'agent
+   au travail, avec `review-fix-1`.
+
+5. **Relisez et mergez.** Lisez la description de la PR, les éventuelles tâches **(human)** qu'elle liste et, pour la
+   phase du site web, le commentaire **E2E screenshots**. Cliquez sur **Ready for review**, puis mergez. Si les
+   agents poussent avec votre propre token, contournez l'approbation comme à l'étape 2. Avec un compte
+   d'agent séparé, approuvez et mergez normalement.
+
+   ✅ **Agent Issues** tourne à nouveau et ouvre l'issue de la phase suivante. Les étapes 3 à 5 se répètent.
+
+6. **Mergez la dernière PR.**
+
+   ✅ Agent Issues journalise `No issue created: … no tasks left for the agent`. La fonctionnalité est terminée.
+
+</Steps>
+
+<Aside type="tip" title="Vous n'avez pas vu de boucle de correction ?">
+Si l'agent a tout réussi du premier coup, vous n'avez pas encore vu la boucle CI. Pour la tester, poussez
+sur une PR d'agent ouverte un commit qui casse l'un de ses tests unitaires. PR Checks échoue, `ci-fix-1`
+apparaît, et l'agent pousse un correctif au passage suivant. Il se peut qu'il annule simplement votre commit, ce qui est la
+bonne correction ici.
+</Aside>
+
+## Auto-vérification
+
+Vous avez le même workflow que Discava quand vous pouvez répondre oui à tout ceci :
+
+- [ ] Merger une PR de spec `spec-ready` a ouvert une issue, sans que personne ne l'ouvre à la main.
+- [ ] L'agent a ouvert une PR sur `openhands/issue-<n>` et a coché exactement ses tâches.
+- [ ] Une exécution CI en rouge a renvoyé l'agent au travail, et la PR porte `ci-fix-1`.
+- [ ] L'agent reviewer a relu le head de la PR une fois ses checks terminés.
+- [ ] Merger la PR de l'agent a ouvert l'issue de la phase suivante.
+- [ ] La modification du site web est arrivée avec des captures d'écran listées sur la PR.
+- [ ] Le dernier merge n'a rien ouvert.
+- [ ] À aucun moment vous n'avez collé une erreur ou écrit un prompt pour l'agent.
+
+Quelque chose ne s'est pas produit ? Voir [Dépannage](../../reference/troubleshooting/).
+
+## Suite
+
+- Essayez une fonctionnalité de votre cru sur l'application de notes, comme épingler une note ou trier la liste.
+- Prêt à appliquer cela à un dépôt produit ? Voir
+  [L'adopter dans votre propre dépôt](../../adopt/overview/).

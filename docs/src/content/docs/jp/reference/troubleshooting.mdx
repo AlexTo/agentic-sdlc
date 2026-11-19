@@ -1,0 +1,45 @@
+---
+title: トラブルシューティング
+description: 症状、何が起きているか、そしてどうすればよいか。
+sidebar:
+  order: 5
+---
+
+## チェーンが始まらない、または続かない
+
+| 症状 | 何が起きているか | どうするか |
+| --- | --- | --- |
+| spec の PR をマージしたが issue がない | マージした時点で PR に `spec-ready` ラベルがなかった | マージ済みの PR に `spec-ready` を付ける。Agent Issues は `labeled` でも実行される |
+| Agent Issues が実行された: `No issue created: it is not an agent branch and has no "spec-ready" label` | 上と同じ。または PR が人の PR で、仕様どおり無視された | 上と同じ。または spec フォルダを指定して Agent Issues を手動で実行する |
+| Agent Issues が失敗した: `tasks.md is not in the format the workflow reads` | spec の PR で形式チェックがスキップまたは無視された | PR で `tasks.md` を直し、Agent Issues を手動で実行する |
+| コメント: "the next implementation issue … was not opened: an issue for … already exists" | そのフェーズの issue はあるが、その中のエージェントのタスクの一部がチェックされていない | 完了していればチェックし、そうでなければ終わらせる。その後 Agent Issues を手動で実行する |
+| Agent Issues のログに `no spec folder with a tasks.md was found` | マージされたエージェントの PR の issue にマーカーがなく、PR が `specs/` のファイルを変更していない | spec フォルダを指定して Agent Issues を手動で実行する |
+| 最後のフェーズをマージしたが何も開かれない | 正しい動作。残っているタスクは **(human)** だけか、何もない | 完了 |
+
+## エージェントが着手しない、または修正しない
+
+| 症状 | 何が起きているか | どうするか |
+| --- | --- | --- |
+| ラベルを付けた issue に着手されない | Agent Canvas が停止している、automation が無効になっている、またはトークンがリポジトリを読めない | `agent-canvas` が動いていて automation が有効か確認する。automation の最後の実行ログを確認する |
+| PR が赤く、`ci-fix-1` が付いたが、エージェントが修正しない | ワーカーが修正するのは厳密に `openhands/issue-<n>` だけ。または issue がクローズされた | ブランチ名を確認する。issue を再オープンする |
+| 赤い実行の後に `ci-fix-*` ラベルがない | Agent CI Status が実行されなかった、または無視した（その notice を参照） | Agent CI Status の実行を開いて notice を読む。例: `the pull request has a newer commit than this run` |
+| エージェントが修正したが、新しい head を誰もレビューしない | エージェントが `openhands-review` を付け直さなかった | 手動で付け直す |
+| push が拒否された: `refusing to allow a Personal Access Token to create or update workflow` | トークンに workflows の権限がなく、ブランチが `.github/workflows/` に触れている（`main` のマージ経由が多い） | 権限を追加する。次のポーリングで再試行される |
+| `ci-fix-exhausted` | 5 回の修正で収束しなかった | 最後の失敗を読む。たいていは spec か plan があいまい。それを直し、ラベルを外して再実行する |
+
+## レビュー
+
+| 症状 | 何が起きているか | どうするか |
+| --- | --- | --- |
+| 「⏳ Review waiting on checks」と出てレビューがない | head のチェックが終わっていない、またはキューで止まっている | 保留中のチェックを見つける。実行されない必須チェックはレビューを永遠にブロックする |
+| レビューに `🔄 CHANGES REQUESTED` とあるが、`review-fix-*` ラベルがない | レビューに実行マーカーがない、書き込み権限のあるアカウントからではない、または PR が先に進んだ | Agent Review Status の notice を読む |
+| レビューが「Approved」ではなく「Commented」と表示される | レビュアーが PR を開いたのと同じアカウントで投稿しており、GitHub は自己承認を許可しない | アカウントが 1 つなら想定どおり。エージェントにはマシンアカウントを使う |
+
+## チェック
+
+| 症状 | 何が起きているか | どうするか |
+| --- | --- | --- |
+| リファクタリングで `UI Screenshots` が失敗する | ルールは見える変更と見えない変更を区別できない | メンテナーが `no-ui-screenshots` を付けてチェックを再実行する |
+| すべての PR の e2e ジョブが Chromium をダウンロードする | キャッシュは `main` でしか保存されない | PR Checks と同じキーで、CI の `playwright-cache` ジョブを残す |
+| `main` で `Check for mutations` が失敗する | 何かが、PR でコミットされていないファイルを生成した | ローカルで `pnpm build` を実行し、差分をコミットする |
+| ラベル付けのときに `Resource not accessible by integration` | workflow のトークンは issue には書き込めるが pull request には書き込めない | workflow に `pull-requests: write` を追加する |

@@ -1,0 +1,47 @@
+---
+title: 4. L'agente implementa
+description: OpenHands prende la issue e apre una PR, partendo dai test.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Sei qui:** 🤖 agente, senza supervisione. **Output:** una pull request per la fase 1 su un branch `openhands/...`.
+
+Al poll successivo, OpenHands trova la issue con l'label `openhands` e avvia una conversazione per essa.
+Non fai nulla.
+
+## Cosa fa l'agente
+
+1. Legge `AGENTS.md`, la costituzione e la cartella della spec.
+2. Scrive prima i test per la fase: le regole sui tag della spec, come unit test.
+3. Implementa finché non passano, spuntando ogni task in `tasks.md` nello stesso commit che lo completa.
+4. Esegue lint, typecheck, build e unit test su ciò che ha cambiato, una volta, non in watch mode.
+5. Apre una PR con un titolo in formato Conventional Commit, per esempio
+   `feat(notes): add tags to notes in the data and API layers`, con `Refs #<parent>` nel corpo.
+6. Elenca i task **(human)** che ha saltato.
+
+## Cosa gli viene detto di non fare
+
+La issue scrive i limiti nero su bianco:
+
+- Non lavorare mai fuori dall'intervallo di task.
+- Non indebolire mai un test per farlo passare.
+- Non modificare mai `.github/workflows/`, non fare mai il merge, non toccare mai le credenziali.
+- Se è bloccato, commenta la issue e si ferma. Non tira a indovinare.
+
+## Cosa controlli tu
+
+Apri la PR e leggila dall'inizio:
+
+- Il titolo e il corpo ti dicono cosa è cambiato e quali task sono fatti?
+- I test verificano le regole *della spec*, o le stranezze dell'implementazione?
+- `tasks.md` è spuntato esattamente per questa fase e non di più?
+
+<Aside type="tip">
+Non devi ancora fare la review. Prima tocca alla CI e all'agente reviewer, e la PR arriva a te solo quando
+sono soddisfatti. Vedi il passaggio successivo.
+</Aside>
+
+Avanti: [CI e review dell'agente](../ci-and-agent-review/).

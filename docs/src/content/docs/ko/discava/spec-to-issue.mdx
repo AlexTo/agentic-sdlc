@@ -1,0 +1,142 @@
+---
+title: spec에서 issue로
+description: merge된 spec과 그 뒤에 merge되는 각 에이전트 PR이 다음 구현 issue를 여는 방식.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+빈틈 1과 7: 완료된 spec을 에이전트의 일로 바꿔 주는 것이 없고, 에이전트의 PR을 merge해도 다음 phase가 시작되지
+않습니다. Discava는 workflow 하나, **Agent Issues**와 그 뒤의 스크립트로 둘 다 메웁니다.
+
+## 실행되는 때
+
+`.github/workflows/agent-issues.yml`은 `main`으로 향하는 pull request가 `closed`되거나 `labeled`되는 것을 감지하며,
+`spec_folder` 입력이 있는 수동 `workflow_dispatch`도 받습니다. job은 다음 경우에만 실행됩니다.
+
+| 이벤트 | 조건 | 의미 |
+| --- | --- | --- |
+| PR closed | merge되었고, `spec-ready` label이 있음 | spec이 승인되었습니다. 첫 issue를 엽니다 |
+| PR closed | merge되었고, 브랜치가 `openhands/`로 시작함 | 에이전트 PR이 들어왔습니다. 다음 issue를 엽니다 |
+| PR labeled | 이미 merge되었고, label이 `spec-ready`임 | 누군가 merge 전에 label을 잊었습니다 |
+| 수동 실행 | spec 폴더 이름 | 사슬을 직접 다시 시작합니다 |
+
+그 밖에 merge된 PR은 모두 무시되며, [`specs/`를 건드리는 PR도 마찬가지입니다](../../concepts/one-phase-at-a-time/#다음-issue를-여는-것).
+
+job은 **merge 커밋**을 checkout하므로, PR이 방금 한 체크를 볼 수 있습니다. concurrency 그룹은 전역이 아니라 PR마다
+있습니다. 전역 그룹은 가장 새로운 대기 실행만 남기므로, 가까운 시간에 일어난 두 merge가 서로를 취소하게 됩니다.
+
+## 스크립트가 하는 일
+
+```d2
+direction: right
+
+merged: merge된 PR {shape: page}
+gate: "에이전트 브랜치,\n또는 spec-ready?" {shape: diamond}
+ignore: 무시
+folder: spec 폴더 찾기
+valid: "tasks.md 유효?" {shape: diamond}
+fail: 실행 실패
+next: "에이전트 작업이 남은\n다음 그룹?" {shape: diamond}
+done: 완료
+exists: "그 issue가\n이미 있음?" {shape: diamond}
+stalled: PR에 댓글
+open: issue 열기 {shape: page}
+
+merged -> gate
+gate -> ignore: 아니요
+gate -> folder: 예
+folder -> valid
+valid -> fail: 아니요
+valid -> next: 예
+next -> done: 아니요
+next -> exists: 예
+exists -> stalled: 예
+exists -> open: 아니요
+```
+
+`src/agent-issues/`의 `pnpm nx run @discava/common-scripts:agent-issue`:
+
+1. **게이트** (`gate.ts`). `decide()`가 PR을 `spec`, `implementation`, `ignore` 중 하나로 분류합니다.
+2. **spec 폴더 찾기** (`discover.ts`). 에이전트 PR이면, PR이 닫는 issue를 읽고 그 issue의 숨겨진 마커에서 폴더를
+   가져옵니다. 그렇지 않으면 PR이 바꾼 `specs/<folder>/` 경로를 사용합니다.
+3. **검증** (`validate.ts`). 형식 검사에 실패한 `tasks.md`는 에이전트에게 잘못된 작업을 넘기는 대신 실행을
+   실패시킵니다.
+4. **phase 묶기** (`tasks.ts`): 첫 번째 `User Story` phase까지(포함)의 모든 것, 그다음 이후의 각 phase를 하나씩.
+5. **다음 그룹 고르기**: **(human)**이 아닌 체크되지 않은 작업이 있는 첫 그룹.
+6. **기존 issue 확인.** 모든 issue 본문은 `<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->` 같은
+   마커로 시작합니다. 이 그룹에 대한 issue가 이미 있으면(열려 있든 닫혀 있든) 스크립트는 또 하나를 열지 않습니다.
+   대신 PR에 댓글을 답니다. 예를 들면 다음과 같습니다.
+
+   > The next implementation issue for `specs/…/` was not opened: an issue for "Ratings in search"
+   > already exists, and these tasks in its `tasks.md` are not ticked: T017, T018.
+
+7. **issue 렌더링과 생성** (`issue.ts`), `openhands` label을 붙입니다.
+
+## 열리는 issue
+
+실제 issue [#466](https://github.com/AlexTo/discava/issues/466):
+
+```markdown
+<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->
+
+## Spec
+
+- Spec folder: `specs/20261116-013307-course-reviews/` (read `spec.md`, `plan.md`, `tasks.md`,
+  `data-model.md` and `contracts/`)
+- Parent issue: #279
+
+## Scope
+
+Tasks `T015` to `T019` of `tasks.md`: every task under Phase 4: Ratings in search (PR 4). Do not
+start tasks outside these phases.
+
+## Instructions for the agent
+
+- Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
+- …the rest of the template's bullets, with `#<parent>` filled in as `#279`
+```
+
+제목은 폴더와 phase로 만든 Conventional Commit 헤더입니다. `feat(course-reviews): ratings in search (PR 4)`. 제목의
+subject는 소문자이고 최대 100자이므로, 에이전트가 commitlint에 실패하지 않고 이를 PR에 재사용할 수 있습니다. 첫 그룹은
+` (with setup and foundations)`를 덧붙입니다.
+
+<Aside type="note">
+상시 지시 사항은 실행 시점에 issue 템플릿에서 읽으므로, 바꿀 곳이 한 곳뿐입니다.
+`.github/ISSUE_TEMPLATE/implement-phase.md`를 편집하면 앞으로의 모든 issue가 바뀝니다.
+</Aside>
+
+## Dry run
+
+```bash
+DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=workflow_dispatch \
+  SPEC_FOLDER=20261116-013307-course-reviews \
+  pnpm nx run @discava/common-scripts:agent-issue
+```
+
+이 명령은 열게 될 issue의 제목과 본문을 출력합니다. 그래도 `gh`로 기존 issue를 읽으므로, 로그인되어 있어야 합니다.
+
+## 완료된 spec 아카이브하기
+
+두 번째 workflow인 **Archive Specs**(`.github/workflows/archive-specs.yml`)가 사슬을 닫습니다. 활성 상태인
+`specs/*/tasks.md`를 바꾸는 `main` push에서, 그리고 수동으로 실행됩니다. 마지막 체크는 보통 Agent Issues가 무시하는
+PR 안의 **(human)** 작업이므로, 자체 트리거가 필요합니다.
+
+`src/agent-issues/archive-specs.ts`의 `pnpm nx run @discava/common-scripts:archive-specs`:
+
+1. **(human)** 작업을 포함해 모든 작업이 체크된 활성 spec을 각각 찾습니다.
+2. 열린 에이전트 issue가 있는 spec, 그리고 이미 아카이브 PR이 있었던 spec은 건너뜁니다. 그 PR을 merge하지 않고 닫으면
+   spec은 활성 상태로 남습니다.
+3. `archive-spec/<folder>` 브랜치에서 폴더를 `specs/_archive/`로 옮기고 그 폴더로 향하는 링크와 그 폴더에서 나가는
+   링크를 고쳐 쓰는 PR을 엽니다.
+
+Agent Issues는 `specs/_archive/`를 건너뛰므로, 아카이브 PR이 issue를 여는 일은 없습니다. `Tasks format` 검사는
+아카이브된 `tasks.md` 파일도 읽으며, 체크되지 않은 작업이 있으면 실패합니다.
+
+<Aside type="caution">
+이 workflow에는 저장소 설정 "Allow GitHub Actions to create and approve pull requests"가 필요합니다. workflow의
+토큰으로 연 PR은 PR Checks를 시작하지 않습니다. 실행하려면 각 PR을 닫았다가 다시 여세요.
+</Aside>
+
+다음: [피드백 루프](../feedback-loops/).

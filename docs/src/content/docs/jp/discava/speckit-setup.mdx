@@ -1,0 +1,96 @@
+---
+title: Speckit のセットアップ
+description: Discava での Speckit の設定と、その出力を機械で読めるようにするテンプレートの変更。
+sidebar:
+  order: 3
+---
+
+import { FileTree } from '@astrojs/starlight/components';
+
+Discava は Speckit 1.3.2 をほぼ出荷時のまま使っています。重要な変更は 2 つのテンプレートに対するもので、
+Speckit が書いたものを automation が読めるようにするためです。
+
+## 設定
+
+`specify init` が書き出す `.specify/init-options.json`:
+
+```json
+{
+  "ai": "claude",
+  "ai_skills": true,
+  "feature_numbering": "timestamp",
+  "here": true,
+  "integration": "claude",
+  "script": "sh",
+  "speckit_version": "1.3.2"
+}
+```
+
+- **skill としての統合。** コマンドはチームのコーディングエージェント向けに skill (`/speckit-specify`、
+  `/speckit-plan`、…) としてインストールされます。
+- **タイムスタンプによる番号付け。** spec フォルダーの名前は `001-<name>` ではなく `YYYYMMDD-HHMMSS-<name>` です。
+  同じ日に 2 人が 2 つのブランチで spec を書いても、番号が衝突することはありません。
+
+## git extension
+
+Speckit に同梱の `git` extension がインストールされています (`.specify/extensions.yml`)。そのフックは
+`/speckit-specify` の前に feature ブランチを作り、各ステップの後にコミットするので、spec を書く各ステップが
+spec PR の中でそれぞれ 1 つの Conventional Commit になります。
+
+## テンプレートの変更
+
+### `spec-template.md`: 親 issue の行
+
+```markdown
+**Parent issue**: [#<number>, or "none" if there is no tracking issue]
+```
+
+Agent Issues スクリプトはこの行を読み、すべての実装 issue に `Refs #<parent>` を書き込むので、
+機能のトラッキング issue がすべての PR にリンクされます。
+
+### `tasks-template.md`: 形式ブロックとテストタスク
+
+標準のテンプレートへの 3 つの追加です。
+
+1. **テストは任意ではない。** 標準のテンプレートではテストは任意とされています。Discava のテンプレートでは
+   constitution がテストを求めると書かれ、各ユーザーストーリーのフェーズには 3 つのテンプレートタスクがあります。
+   ユニットテスト、invariant とそれを破るテスト (ルールが複数のレコードにまたがる場合)、そして e2e シナリオ
+   (メインのフローを変更する場合) です。
+2. **誰が何を実行するか。** エージェントが Docker なしでこれらのタスクを実装すること、e2e と並行性のテストは
+   PR の CI で実行されること、そして **(human)** の意味を説明する段落です。そこには "not for
+   screenshots" も含まれます。UI の変更は e2e でスクリーンショットを撮ります。
+3. **automation が読む。** バリデーターが強制する [形式のルール](../../reference/tasks-format/) を
+   テンプレートに書いておくことで、`tasks.md` を書くエージェントがそれに従います。
+
+そして最後の注記に 1 行を追加しています。"Do not edit existing tests to make them pass. If one
+looks wrong, stop and raise it."
+
+各変更の正確な文面は
+[導入: constitution とテンプレート](../../adopt/constitution-and-templates/) にあります。
+
+## spec フォルダー
+
+<FileTree>
+- specs/20261116-013307-course-reviews/
+  - spec.md 何をなぜ作るか。明確化の内容と親 issue を含む
+  - plan.md どう作るか。Constitution Check を含む
+  - research.md 決定事項と却下した代替案
+  - data-model.md エンティティ、キー、インデックス
+  - contracts/ API の形
+  - quickstart.md レビュアーが手で試す方法
+  - tasks.md 8 フェーズ、36 タスク、うち 2 つは (human)
+  - checklists/ 要件の品質チェックリスト
+</FileTree>
+
+## spec の書き方
+
+1. 誰かが機能のトラッキング issue を開きます。たとえば #279 "course ratings and written
+   reviews" です。
+2. コーディングエージェントが issue のテキストで `/speckit-specify` を実行し、続いて `/speckit-clarify` を実行します。
+   答えられる人がいないときは、エージェントが推奨の回答を選び、spec の "Clarifications" に記録します。
+3. `/speckit-plan`、`/speckit-tasks`、`/speckit-analyze`。analyze の指摘は同じ PR で修正します。
+   Discava の履歴では "resolve analysis findings in the public pages spec" のようなコミットとして
+   見ることができます。
+4. spec PR に `spec-ready` ラベルを付けてマージします。
+
+次へ: [OpenHands のセットアップ](../openhands-setup/)。

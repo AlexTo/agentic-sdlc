@@ -1,0 +1,87 @@
+---
+title: 피드백 루프
+description: 빨간 CI 실행이나 "changes requested" 리뷰가 에이전트를 어떻게 돌려보내는지, 그리고 각 루프가 왜 다섯 번 시도 후에 멈추는지.
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**짧게 말하면:** 무언가 실패하면 workflow가 PR의 head 커밋에 실패 상태를 표시합니다. OpenHands worker가 다음
+폴링 때 이를 보고, 같은 에이전트 대화에게 같은 PR을 고치라고 요청합니다. 각 루프에는 label로 된 카운터가 있고,
+다섯 번에서 멈춥니다.
+
+## 두 개의 루프
+
+```d2
+direction: right
+
+pr: 에이전트가 push {shape: page}
+checks: PR Checks
+review: 리뷰어 에이전트
+you: 사람의 리뷰
+
+actions: GitHub Actions {
+  style.stroke-dash: 3
+  ci: Agent CI Status
+  rv: Agent Review Status
+}
+
+status: "software-factory/review\n= failure" {shape: document}
+worker: "issue-to-PR worker\n(다음 폴링)"
+
+pr -> checks
+checks -> review: 모두 완료
+checks -> actions.ci: 실패
+review -> actions.rv: 변경 요청
+review -> you: 승인됨
+actions.ci -> status: ci-fix-N
+actions.rv -> status: review-fix-N
+status -> worker
+worker -> pr: 같은 PR 수정
+```
+
+| | CI 루프 | 리뷰 루프 |
+| --- | --- | --- |
+| 트리거 | PR Checks workflow가 `failure` 또는 `timed_out`으로 끝남 | 리뷰어 에이전트가 작성한, `🔄 CHANGES REQUESTED`로 끝나는 PR 리뷰 |
+| Workflow | Agent CI Status | Agent Review Status |
+| 카운터 label | `ci-fix-1` … `ci-fix-5` | `review-fix-1` … `review-fix-5` |
+| 포기할 때 | `ci-fix-exhausted`, 그리고 댓글 | `review-fix-exhausted`, 그리고 댓글 |
+| 상태 설명 | `CI failed (fix attempt 2 of 5): E2E tests (3/4)` | `Review requested changes (fix attempt 1 of 5): see the review` |
+
+통과한 실행은 아무것도 남기지 않습니다. 다음 커밋은 상태 없이 시작하므로, worker는 그 PR을 건드리지 않습니다.
+
+## 에이전트를 돌려보내기 전의 확인
+
+각 스크립트는 다음이 모두 성립하지 않으면 동작하지 않습니다.
+
+1. 브랜치가 정확히 `openhands/issue-<n>`입니다. `openhands/issue-308-2` 같은 두 번째 시도 브랜치는 worker가
+   수정하지 않으므로, 이에 대한 응답도 하지 않습니다.
+2. PR이 열려 있습니다.
+3. 실행이나 리뷰가 PR의 **현재** head 커밋에 대한 것입니다. 이전 실행은 낡은 것입니다.
+4. 그 커밋이 아직 돌려보내진 적이 없습니다. 같은 검사를 다시 실행했다고 시도 횟수를 또 쓰면 안 됩니다.
+5. 리뷰의 경우: 리뷰에 리뷰어의 숨겨진 실행 마커가 있고, 쓰기 권한이 있는 계정에서 왔습니다. 그래서 판정을
+   인용한 사람 때문에 트리거되지 않습니다.
+6. 사용한 시도가 다섯 번 미만입니다.
+
+label은 상태가 게시되기 **전에** 붙습니다. 그 뒤 상태 게시가 실패하면, 다음 실패가 이번 시도를 끝없이 반복하는
+대신 시도를 하나 더 셉니다.
+
+## 왜 다섯 번인가
+
+재시도 한 번이면 대부분의 실수가 고쳐집니다. 불안정한 locator, 놓친 타입, lint 규칙 같은 것들입니다. 그다음 몇
+번은 수정이 두 번째 문제를 드러낸 경우나, CI 실행과 리뷰가 서로 다른 것을 요구하는 경우를 다룹니다. 다섯 번째
+실패쯤이면 에이전트는 보통 자신이 볼 수 없는 무언가에 막혀 있고, 시도를 더 해도 수렴하지 않고 비용만 듭니다.
+Discava는 상한을 세 번으로 시작했다가 다섯 번으로 올렸습니다.
+
+Discava에서 처음 merge된 에이전트 PR 67개 중 42개는 fix label이 없고(일부는 수정 workflow보다 먼저 만들어졌습니다),
+17개는 정확히 한 라운드가 필요했으며, 루프를 끝까지 소진한 것은 단 하나였습니다.
+
+<Aside type="caution">
+루프가 소진되면 무엇이든 고치기 전에 마지막 실패를 읽으세요. 반복되는 실패는 spec이나 plan이 모호해서 에이전트가
+두 가지 해석을 동시에 만족시키려 했다는 뜻인 경우가 많습니다. spec을 고친 다음 에이전트가 다시 시도하게 하세요.
+</Aside>
+
+그 뒤 에이전트에게 한 라운드를 더 주려면 [루프 초기화](../../reference/labels/#루프-초기화)를 참고하세요.
+
+다음: [신뢰의 계층](../layers-of-trust/).

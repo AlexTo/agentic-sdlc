@@ -1,0 +1,76 @@
+---
+title: 4. 智能体指引与 issue 模板
+description: 编写 AGENTS.md，并添加 issue 模板，其中的说明会进入每一个实现 issue。
+sidebar:
+  order: 4
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完成后你将拥有：** 每个智能体最先阅读的 `AGENTS.md`，以及 `.github/ISSUE_TEMPLATE/implement-phase.md`，它是每个实现 issue 中固定说明的来源。
+
+<Steps>
+
+1. 在仓库根目录**编写 `AGENTS.md`**。只写智能体每次运行都需要的内容，其余部分链接到 `CONTRIBUTING.md`。使用以下小节：
+
+   ```markdown
+   # AGENTS.md
+
+   Read CONTRIBUTING.md before opening a PR.
+
+   ## What this is
+   One paragraph: the product, the stack, the monorepo tool.
+
+   ## Commands
+   Install; build, lint, test everything; one project's tests, once (not watch mode);
+   one test file; `nx affected`; e2e; local dev; resetting local data.
+
+   ## Architecture
+   One bullet per package: what it is, what it may import, where new code of each kind goes.
+
+   ## Conventions
+   - Conventional Commits for commit and PR titles (enforced by commitlint).
+   - The formatter and linter, by name, so the agent doesn't add another.
+   - Where helpers go. Where shared code goes.
+   - Every rule a reviewer has had to repeat twice.
+   ```
+
+   <Aside type="tip">
+   命令这一节最重要。一个找不到“只运行一次某个测试文件”的智能体，会以 watch 模式运行整个测试套件，然后卡住。
+   </Aside>
+
+   当架构一节超出每个包一行的篇幅时，把每个包的细节移到其文件夹中嵌套的 `AGENTS.md` 里，在根文件中只留一行指向那里。智能体只有在某个文件夹中工作时才会加载那里的嵌套文件，所以一次运行只会读到它需要的细节。
+
+2. 从这个仓库**复制 issue 模板**到 `.github/ISSUE_TEMPLATE/implement-phase.md`。Agent Issues 脚本自己写 issue 的 spec 和范围两节，并在运行时从模板中读取 `## Instructions for the agent` 之下的全部内容：
+
+   ```markdown
+   ## Instructions for the agent
+
+   - Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
+   - Work through the scope in order, writing each story's tests first. Tick each task in `tasks.md` in the same commit that completes it.
+   - Do not use `pnpm dev`, Docker or the e2e runner locally. Run unit and component tests (once, not in watch mode), `pnpm lint`, typecheck and `pnpm build` on what you changed. E2E and concurrency tests run on PR CI: write them, then read CI's result.
+   - A change to what a user sees ships with `screenshot(page, 'name')` calls (`packages/e2e/src/helpers/screenshots.ts`) in the e2e scenario for that flow, at each state a reviewer would want to see: PR CI posts them as the `E2E screenshots` comment, and the `UI Screenshots` check fails without them. Don't leave screenshots to a **(human)** task.
+   - Skip tasks marked **(human)** and list them in the PR description for the reviewer.
+   - Use Conventional Commits for every commit. The PR title is a Conventional Commit too, for example `feat(assignments): submit work to an upload assignment`, not `[#n] ...`.
+   - In the PR description write `Refs #<parent>`. Never use `Closes` or `Fixes` against the parent issue; closing this issue is fine.
+   - Never weaken a test to make it pass, never edit `.github/workflows/`, never merge, and don't touch cloud credentials.
+   - If you are blocked, comment on this issue with what you tried and stop.
+   ```
+
+   `#<parent>` 要原样保留。脚本会把它替换为 spec 的父 issue；如果 spec 没有父 issue，就删掉这一条。`## Instructions for the agent` 这个标题必须一字不差，因为脚本会查找它，找不到就会失败。
+
+3. **按你的技术栈修改这些说明**：命令、截图辅助函数的路径，以及“cloud credentials”对你来说指什么。
+
+</Steps>
+
+## 检查是否成功
+
+```bash
+grep -c '^## Instructions for the agent$' .github/ISSUE_TEMPLATE/implement-phase.md
+```
+
+```text
+1
+```
+
+下一步：[5. 粘合脚本](../glue-scripts/)。

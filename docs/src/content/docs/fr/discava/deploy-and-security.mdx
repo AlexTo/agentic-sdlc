@@ -1,0 +1,103 @@
+---
+title: Déploiement et sécurité
+description: Comment un main vert se déploie de lui-même, et les analyses qui arrêtent un secret divulgué ou une dépendance vulnérable.
+sidebar:
+  order: 9
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Manques 9 et 10 : merger ne livre rien, et un agent peut commiter un secret ou introduire un package
+vulnérable. Discava gère les deux dans GitHub Actions, sans aucun identifiant cloud de longue durée
+nulle part.
+
+## Déploiement
+
+`.github/workflows/deploy.yml` s'exécute quand **CI** se termine en vert sur `main`, ou à la main pour
+n'importe quel stage. Chaque stage a son propre environnement GitHub et son propre groupe de
+concurrence, donc deux déploiements vers un même stage ne se chevauchent jamais. Une copie abrégée du
+workflow se trouve dans [Adopter : déploiement](../../adopt/deploy/).
+
+```d2
+direction: right
+
+ci: CI vert sur main
+manual: exécution manuelle
+approve: "relecteurs requis\n(production uniquement)" {shape: diamond}
+deploy: "workflow Deploy\nTrivy, rôle OIDC, synth,\ntoujours le dernier de main ?, cdk deploy"
+dev: stage de développement {shape: cylinder}
+prod: stage de production {shape: cylinder}
+
+ci -> deploy: AUTO_DEPLOY_STAGE
+manual -> approve -> deploy
+deploy -> dev
+deploy -> prod
+```
+
+Les étapes, dans l'ordre :
+
+1. **Récupérer le commit que la CI a vérifié** (`workflow_run.head_sha`), et non ce qu'est `main` à
+   ce moment-là.
+2. **Vérifier que le stage existe** dans `stages.config.ts`, pour qu'une faute de frappe échoue
+   clairement plutôt que sous la forme d'une erreur d'identifiants déroutante.
+3. **Transmettre les surcharges du stage.** Les variables de l'environnement GitHub nommées comme
+   `DISCAVA_DEVELOPMENT_*` deviennent des variables d'environnement pour la synthèse, pour des choses
+   comme des domaines personnalisés qui ne devraient pas être commités.
+4. **Analyse Trivy.** La même analyse qu'en CI, en guise de contrôle.
+5. **Assumer le rôle de déploiement** avec GitHub OIDC (`aws-actions/configure-aws-credentials`).
+   Aucune clé d'accès n'est stockée nulle part.
+6. **Synthétiser** avec la limite de permissions du stage appliquée.
+7. **Vérifier que le commit est toujours le dernier de `main`.** Cela s'exécute à l'intérieur du
+   créneau de concurrence. Une réexécution d'une ancienne CI, ou une exécution qui a attendu derrière
+   un déploiement plus récent, est sautée avec une notice au lieu de déployer du code périmé. Les
+   exécutions manuelles sautent cette vérification, pour que vous puissiez revenir en arrière.
+8. **Déployer** avec CDK, en confiant à CloudFormation un rôle d'exécution restreint (`--role-arn`).
+
+`AUTO_DEPLOY_STAGE` est une variable de dépôt. Discava la définit à `discava-development`, donc chaque
+`main` vert atteint le stage de développement. Laissez-la non définie et rien ne se déploie sans une
+personne.
+
+### Configurer un stage
+
+`scripts/setup-stage.sh` s'exécute une fois par stage, depuis un clone du dépôt qui exécute le
+workflow. Il demande tout ce dont il a besoin et propose par défaut ce qu'il peut détecter. Il crée :
+
+- le fournisseur OIDC GitHub dans le compte AWS
+- le **rôle de déploiement** qu'assume le workflow, approuvé uniquement pour ce dépôt et cet
+  environnement
+- le **rôle d'exécution CloudFormation** et ses politiques gérées, avec une limite de permissions pour
+  que les stacks ne puissent créer que des rôles qui la portent
+- les variables `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN` et `AWS_EXECUTION_ROLE_ARN` de l'environnement
+  GitHub, et éventuellement `AUTO_DEPLOY_STAGE`
+- éventuellement, des domaines personnalisés, à partir d'une seule question : un domaine racine.
+  Chaque composant reçoit un sous-domaine fixe de celui-ci, et le script trouve le certificat émis
+  pour chacun. S'il en manque un, il le liste et s'arrête avant de modifier quoi que ce soit. Les
+  domaines sont stockés comme surcharges du stage dans l'environnement GitHub (étape 3 ci-dessus)
+
+### La production attend une personne
+
+Chaque stage se déploie depuis l'environnement GitHub du même nom. Un stage de type production reçoit
+des **relecteurs requis** sur son environnement : le job se met en pause jusqu'à ce que quelqu'un
+l'approuve dans l'interface Actions. Discava n'est pas encore lancé, donc aujourd'hui seul
+`discava-development` a un environnement, et il se déploie automatiquement.
+
+## Analyses de sécurité
+
+| Analyse | Quand | Bloque |
+| --- | --- | --- |
+| `git-secrets` (motifs AWS) | Hook `pre-commit`, à chaque commit local | Un commit qui contient une clé AWS |
+| Trivy, vulnérabilités et secrets | Le job `trivy` de `ci.yml` à chaque push sur `main`, et `deploy.yml` avant chaque déploiement | Un déploiement avec une vulnérabilité CRITICAL corrigeable ou un secret HIGH/CRITICAL commité |
+| checkov | Fait partie de la cible `build` du projet d'infrastructure, donc de `Checks (build)` sur chaque PR | Des paramètres de ressources CDK non sécurisés |
+| Dependabot | Chaque semaine, npm et GitHub Actions, groupés | Les dépendances et les versions d'actions épinglées obsolètes |
+
+Trivy s'exécute dans son **propre** job de CI, pas dans `build`. Sa base de vulnérabilités change tous
+les jours, et une CVE nouvellement publiée doit signaler `main` sans bloquer le déploiement de la
+documentation. Les résultats acceptés sont listés, un ID par ligne, dans `.trivyignore`.
+
+<Aside type="note">
+Le hook pre-commit exécute aussi `lint-staged` (Biome), et fait échouer le commit si l'un des deux
+outils a modifié l'arbre de travail, donc l'agent remet les fichiers en staging et commite à nouveau.
+`commit-msg` exécute commitlint avec la configuration Conventional Commits.
+</Aside>
+
+Suite : [Une vraie fonctionnalité](../a-real-feature/).

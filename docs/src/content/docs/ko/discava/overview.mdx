@@ -1,0 +1,64 @@
+---
+title: Discava 한눈에 보기
+description: Discava가 무엇인지, 어떤 도구를 실행하는지, 그리고 각 빈틈을 메우는 파일.
+sidebar:
+  order: 1
+  label: 개요
+---
+
+[Discava](https://github.com/AlexTo/discava)는 AWS 기반의 서버리스 학습 관리 시스템입니다. React 포털 세 개,
+Lambda 위의 tRPC API 세 개, DynamoDB 테이블 하나, 미디어 파이프라인과 검색으로 이루어져 있으며, Nx 모노레포에서
+CDK로 배포됩니다. 누구도 전부를 머릿속에 담아 둘 수 없을 만큼 크고, 바로 그럴 때 이 워크플로가 효과를 냅니다.
+
+이 섹션은 2026년 11월 기준으로 Discava가 실행하는 것을, 각 구성 요소 뒤의 파일과 함께 설명합니다.
+
+## 도구와 버전
+
+| 도구 | 버전 | 역할 |
+| --- | --- | --- |
+| Speckit (`specify-cli`) | 1.3.2 | spec, plan, 작업 생성, `git` extension 포함 |
+| OpenHands Agent Canvas | 1.41.0 | 에이전트 런타임과 두 automation, Linux 머신 한 대의 사용자 서비스로 실행 |
+| `github-issue-to-pr` automation | 1.2.4 | label이 붙은 issue를 구현하고, 실패한 PR을 수정 |
+| `github-pr-reviewer` automation | 1.11.2 | 검사가 끝난 PR을 리뷰 |
+| 구현용 에이전트 | ACP를 통한 Claude Code, Sonnet | `default` agent profile |
+| 리뷰용 에이전트 | ACP를 통한 Claude Code, Opus | `reviewer` agent profile |
+| Nx + pnpm | Nx 23 | 모노레포, CI에서 `nx affected` |
+| Playwright | | 로컬 스택을 대상으로 한 E2E 테스트, CI에서 샤드 여섯 개 |
+| Trivy, git-secrets, commitlint | | 보안 스캔, pre-commit secret 검사, 커밋 메시지 형식 |
+
+## 빈틈과 파일
+
+| 빈틈 | Discava의 답 | 파일 |
+| --- | --- | --- |
+| spec에서 issue로 | Agent Issues workflow와 그 스크립트 | `.github/workflows/agent-issues.yml`, `packages/common/scripts/src/agent-issues/` |
+| CI 실패에서 에이전트로 | Agent CI Status | `.github/workflows/agent-ci.yml`, `src/agent-ci/` |
+| 리뷰에서 에이전트로 | Agent Review Status | `.github/workflows/agent-review.yml`, `src/agent-review/` |
+| 끝없는 루프 | label을 이용한 다섯 번 시도 상한 | `plan.ts`의 `MAX_CI_FIX_ATTEMPTS`와 `MAX_REVIEW_FIX_ATTEMPTS` |
+| 형식이 잘못된 `tasks.md` | Tasks format job | `pr-checks.yml` `tasks-format`, `src/agent-issues/validate.ts` |
+| 아무도 보지 않은 UI 변경 | UI Screenshots job, E2E screenshots 댓글 | `pr-checks.yml`, `src/ui-screenshots/`, `packages/e2e/src/helpers/screenshots.ts` |
+| merge 후 이어지지 않음 | merge된 `openhands/` 브랜치에 대한 Agent Issues | `src/agent-issues/gate.ts` |
+| 에이전트에게 클라우드 없음 | 모든 AWS 서비스의 로컬 대체물 | `pnpm dev`, `packages/common/scripts/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
+| merge해도 배포되지 않음 | `main`의 CI, 그다음 Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
+| secret과 취약한 의존성 | CI와 배포 전의 Trivy, 커밋 시 git-secrets | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
+
+그리고 모든 에이전트가 읽는 글은 다음과 같습니다.
+
+| 가이드 | 파일 |
+| --- | --- |
+| 모든 plan이 검사하는 프로젝트 규칙 | `.specify/memory/constitution.md` (버전 1.2.1) |
+| 명령, 아키텍처, 관례 | `AGENTS.md` |
+| PR 프로세스, 로컬 스택, 테스트 | `CONTRIBUTING.md` |
+| 모든 구현 issue에 담기는 지시 사항 | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| 자동화에 맞게 수정한 Speckit 템플릿 | `.specify/templates/tasks-template.md`, `spec-template.md` |
+
+## 숫자로 보기
+
+워크플로가 가동된 11월 14일부터 2026년 11월 18일까지:
+
+- Speckit으로 작성한 기능 spec 12개, `specs/` 아래에 있습니다.
+- 5분마다 한 번씩, 2,344번의 automation 스윕: issue-to-PR 폴링 1,304번과 리뷰 폴링 1,040번. 그중 149번이 일을
+  찾아 에이전트를 시작했습니다.
+- merge된 에이전트 PR 67개. 42개는 자동 수정이 필요 없었고, 17개는 한 라운드가 필요했으며, 하나는 루프를
+  소진했습니다.
+
+다음: [constitution과 가이드](../constitution-and-guidance/).

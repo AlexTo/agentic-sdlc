@@ -1,0 +1,60 @@
+---
+title: 1. Faça um fork do repositório
+description: Faça um fork deste repositório, ative o que o GitHub desliga em forks e confira se ele roda.
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**No final você terá:** seu próprio fork, com Issues e Actions ativados, clonado localmente, com os
+checks passando.
+
+<Steps>
+
+1. **Faça o fork e clone.**
+
+   ```bash
+   gh repo fork AlexTo/agentic-sdlc --clone
+   cd agentic-sdlc
+   ```
+
+2. **Torne seu fork o padrão do `gh`.** Caso contrário, os comandos `gh` apontam para o repositório
+   original, não para o seu.
+
+   ```bash
+   gh repo set-default <you>/agentic-sdlc
+   ```
+
+3. **Ative as Issues.** O GitHub desliga as Issues em forks, e todo o workflow roda em issues. No
+   seu fork, abra **Settings → General → Features** e marque **Issues**.
+
+4. **Ative as Actions.** Abra a aba **Actions** do seu fork e clique em **I understand my workflows, go
+   ahead and enable them**. O GitHub não roda workflows em um fork até você fazer isso.
+
+5. **Instale e rode os checks localmente**, os mesmos que o CI roda:
+
+   ```bash
+   pnpm install
+   pnpm nx run-many --target lint --all
+   pnpm nx run-many --target test --all
+   pnpm nx run-many --target build --all
+   ```
+
+   Para rodar o app de notas (precisa de Docker): `pnpm dev`, depois abra a URL que o site imprime.
+
+</Steps>
+
+## Confira se funcionou
+
+Seu fork mostra uma aba **Issues**, e a aba **Actions** lista os workflows. Localmente, os três
+comandos `nx run-many` passam.
+
+<Aside type="note">
+Duas coisas funcionam de forma diferente em um fork, e nenhuma bloqueia o workflow. Sem o secret
+`CODECOV_TOKEN`, o passo de upload de cobertura registra um erro e segue em frente. O job **Deploy Docs**
+no CI falha até você ativar o GitHub Pages (**Settings → Pages → Source: GitHub Actions**), ou você
+pode ignorá-lo.
+</Aside>
+
+Próximo: [2. Configure o repositório](../github-repository/).

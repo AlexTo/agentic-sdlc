@@ -1,0 +1,80 @@
+---
+title: El pegamento que falta
+description: Los diez huecos entre Speckit, OpenHands y el CI, y las reglas para cubrirlos.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Speckit termina con un `tasks.md`. OpenHands empieza con una issue etiquetada y se detiene en un pull
+request. El CI informa de un resultado y sigue adelante. Cada herramienta hace bien su trabajo, y
+ninguna le pasa el trabajo a la siguiente. Sin pegamento, el traspaso lo haces *tú*: copias tareas en
+una issue, te das cuenta de que el CI se ha puesto en rojo y le dices al agente que lo corrija.
+
+Estos son los huecos y lo que cubre cada uno:
+
+| # | El hueco | Qué lo cubre |
+| --- | --- | --- |
+| 1 | Nada convierte una spec terminada en trabajo para el agente | Un workflow lee `tasks.md` y abre la siguiente issue de implementación, un grupo de fases cada vez |
+| 2 | El agente no sabe que el CI ha fallado | Un workflow comunica al agente una ejecución fallida como el commit status que ya vigila |
+| 3 | El "changes requested" de un revisor no lo oye nadie | Un workflow hace lo mismo con el veredicto del agente revisor |
+| 4 | Nada impide que un agente atascado entre en un bucle infinito | Ambos bucles de corrección están limitados a cinco intentos, contados con labels, y después toma el relevo una persona |
+| 5 | `tasks.md` es solo una convención, así que uno mal formado estanca la cadena sin avisar | Un PR check valida su formato |
+| 6 | Los cambios de UI llegan a revisión sin que nadie los haya mirado | Un check exige capturas e2e, y el CI las publica en el PR |
+| 7 | Hacer merge del PR del agente no arranca la siguiente fase | El merge de una rama de agente abre la siguiente issue, hasta que la spec está terminada |
+| 8 | El agente no puede ejecutar el stack real sin acceso a la nube | Sustitutos locales de cada servicio, para que toda la app y sus tests e2e se ejecuten sin credenciales |
+| 9 | Hacer merge no publica nada | Un build en verde en `main` se despliega solo, omite un commit que ya no es el más reciente, y producción espera a una persona |
+| 10 | Un agente puede hacer commit de un secreto filtrado o de una dependencia vulnerable | Un escaneo de secretos y dependencias en cada build, y otra vez antes de cada despliegue |
+
+[Cómo lo hace Discava](../../discava/overview/) relaciona cada fila con sus archivos.
+
+## Reglas para escribir el pegamento
+
+Estas reglas salieron de construir y corregir el pegamento en Discava.
+
+### Decide en código, no en un prompt
+
+Cada decisión de "qué pasa después" es una función pura con tests unitarios: `decide()` en
+`gate.ts` para qué merges cuentan, `planCi()` para si devolver el trabajo al agente. El archivo del
+workflow solo conecta el evento con el script. Puedes probar una decisión sin GitHub, y el agente no
+puede esquivarla con palabras.
+
+### Guarda el estado en GitHub
+
+No hay base de datos. El número de intentos es una label (`ci-fix-2`). La issue de un grupo de
+fases se encuentra mediante un marcador oculto en su cuerpo (`<!-- agent-issue spec:<folder> group:2 -->`).
+"Ya devuelto" es un commit status. Cualquiera puede ver el estado, y una persona puede cambiarlo a
+mano, por ejemplo quitando una label para permitir otro intento.
+
+### Habla el idioma que el agente ya entiende
+
+OpenHands ya revisa un PR cuya cabeza lleva un status fallido `software-factory/review`. Así que el
+pegamento publica ese status en lugar de inventar un disparador nuevo. No hace falta ningún cambio en
+OpenHands.
+
+### Ejecuta código de confianza con el token
+
+Los workflows de pegamento tienen un token que puede escribir labels, status y comentarios.
+Hacen checkout de la **rama por defecto**, nunca del pull request, así que nada de lo que haya escrito
+un agente o un colaborador se ejecuta con ese token. Todo lo que se lee del PR (nombres de rama,
+cuerpos) se comprueba contra un patrón estricto antes de usarlo.
+
+### Sé idempotente
+
+GitHub entrega los eventos más de una vez, y la gente vuelve a ejecutar jobs. Cada script comprueba
+antes de actuar: ninguna segunda issue para el mismo grupo, ningún segundo intento para el mismo
+commit, ninguna reacción a una ejecución de un commit que ya no es la cabeza.
+
+### Falla de forma visible, donde mire una persona
+
+Un aviso de workflow no lo lee nadie. Cuando la cadena se estanque, dilo en el pull request: "the next
+issue was not opened because these tasks aren't ticked: T014, T015".
+
+<Aside type="note">
+El pegamento de este repositorio son unas 1.600 líneas de TypeScript, y otras tantas en tests
+unitarios, repartidas en cuatro carpetas de `packages/common/scripts/src/`. Léelo antes de adoptarlo.
+Lleva una tarde.
+</Aside>
+
+Siguiente: [Bucles de feedback](../feedback-loops/).

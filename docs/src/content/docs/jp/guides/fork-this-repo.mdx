@@ -1,0 +1,56 @@
+---
+title: このリポジトリを fork する
+description: このリポジトリの fork が Discava のセットアップそのものであり、小さなサンプルアプリですぐに試せる理由。
+sidebar:
+  order: 3
+---
+
+import { FileTree, LinkCard } from '@astrojs/starlight/components';
+
+このリポジトリ*そのもの*がワークフローです。Discava が動かしているのと同じ Speckit のセットアップ、issue
+テンプレート、PR チェック、エージェントのワークフロー、ユニットテスト済みのグルーを、小さなノートアプリの周りに組み込んでいます。
+
+**fork すれば、Discava のセットアップが手に入ります。** 自分の OpenHands を fork に向け、ノートアプリの spec を書けば、
+[仕組み](../how-it-works/)で説明しているループを通っていきます。
+
+## 手に入るもの
+
+<FileTree>
+- .specify/ Speckit のテンプレート、スクリプト、constitution
+- .github/
+  - ISSUE_TEMPLATE/implement-phase.md すべての実装 issue に含まれる指示
+  - actions/init-monorepo/ 共通の CI セットアップ
+  - workflows/
+    - pr-checks.yml lint、テスト、ビルド、tasks の形式、e2e、スクリーンショットのコメント
+    - ui-screenshots.yml スクリーンショットのルール
+    - ci.yml main でのチェック、Trivy、ドキュメントのデプロイ
+    - agent-issues.yml spec → issue、マージ → 次の issue
+    - archive-specs.yml 完了した spec → アーカイブ PR
+    - agent-ci.yml 赤い CI → エージェント
+    - agent-review.yml "changes requested" → エージェント
+- packages/
+  - common/scripts/src/ グルーのルールと 143 個のユニットテスト
+  - notes-table/ ElectroDB エンティティ、DynamoDB local
+  - notes-api/ tRPC プロシージャ
+  - notes-website/ React、Vite、TanStack Router、shadcn/ui
+  - e2e/ Playwright のシナリオと `screenshot()` ヘルパー
+- docs/ このサイト
+</FileTree>
+
+ノートアプリは完全にローカルで動きます (`pnpm dev`、DynamoDB local 用に Docker を使用)。そのため CI で
+e2e テストを実行でき、エージェントがクラウドの認証情報を必要とすることはありません。
+
+## 追加するもの
+
+リポジトリに置けないものだけです。
+
+1. **GitHub の設定**: Issues と Actions の有効化、ラベル、ブランチ保護。fork ではこれらはコピーされません。
+2. **OpenHands**: 自分のマシン上の Agent Canvas、GitHub トークン、そして fork に向けた 2 つの automation。
+
+## 含まれないもの
+
+Discava の AWS デプロイです。ノートアプリにはクラウドインフラがないため、マージしてもドキュメントサイト以外は何も
+出荷されません。[デプロイとセキュリティ](../../discava/deploy-and-security/)では Discava の
+パイプラインを説明し、[導入: デプロイ](../../adopt/deploy/)ではパイプラインの追加方法を示します。
+
+<LinkCard title="セットアップ: fork し、設定し、最初の機能を動かす" href="/agentic-sdlc/jp/setup/before-you-start/" />

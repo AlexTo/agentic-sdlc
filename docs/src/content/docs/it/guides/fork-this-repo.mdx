@@ -1,0 +1,59 @@
+---
+title: Fai il fork di questo repository
+description: Perché un fork di questo repository è la configurazione di Discava, pronta da provare su una piccola app di esempio.
+sidebar:
+  order: 3
+---
+
+import { FileTree, LinkCard } from '@astrojs/starlight/components';
+
+Questo repository *è* il workflow: la stessa configurazione di Speckit, lo stesso template di issue,
+gli stessi check delle PR, workflow degli agenti e collante testato con unit test che usa Discava,
+attorno a una piccola app di note.
+
+**Fai il fork e hai la configurazione di Discava.** Collega il tuo OpenHands al fork, scrivi una spec
+per l'app di note, e questa attraversa il loop descritto in [Come funziona](../how-it-works/).
+
+## Cosa ottieni
+
+<FileTree>
+- .specify/ template, script e constitution di Speckit
+- .github/
+  - ISSUE_TEMPLATE/implement-phase.md le istruzioni che ogni issue di implementazione porta con sé
+  - actions/init-monorepo/ setup condiviso della CI
+  - workflows/
+    - pr-checks.yml lint, test, build, formato dei task, e2e, commento con gli screenshot
+    - ui-screenshots.yml la regola degli screenshot
+    - ci.yml check, Trivy e il deploy della documentazione su main
+    - agent-issues.yml spec → issue, merge → issue successiva
+    - archive-specs.yml spec finita → PR di archiviazione
+    - agent-ci.yml CI rossa → agente
+    - agent-review.yml "changes requested" → agente
+- packages/
+  - common/scripts/src/ le regole del collante, con 143 unit test
+  - notes-table/ entità ElectroDB, DynamoDB local
+  - notes-api/ procedure tRPC
+  - notes-website/ React, Vite, TanStack Router, shadcn/ui
+  - e2e/ scenari Playwright e l'helper `screenshot()`
+- docs/ questo sito
+</FileTree>
+
+L'app di note gira interamente in locale (`pnpm dev`, con Docker per DynamoDB local), quindi la CI
+può eseguirne i test e2e e l'agente non ha mai bisogno di credenziali cloud.
+
+## Cosa aggiungi tu
+
+Solo ciò che non può stare in un repository:
+
+1. **Impostazioni di GitHub**: Issues e Actions attivi, le label, la branch protection. Un fork non
+   le copia.
+2. **OpenHands**: Agent Canvas sulla tua macchina, un token GitHub e le due automazioni puntate sul
+   tuo fork.
+
+## Cosa resta fuori
+
+Il deploy di Discava su AWS. L'app di note non ha infrastruttura cloud, quindi un merge non rilascia
+nulla oltre al sito della documentazione. [Deploy e sicurezza](../../discava/deploy-and-security/)
+descrive la pipeline di Discava, e [Adottalo: deploy](../../adopt/deploy/) mostra come aggiungerne una.
+
+<LinkCard title="Configuralo: fork, configurazione, la tua prima funzionalità" href="/agentic-sdlc/it/setup/before-you-start/" />

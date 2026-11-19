@@ -1,0 +1,63 @@
+---
+title: 2. Plan e tasks
+description: Derive o plano técnico e uma lista ordenada de tasks, depois confira os dois contra a spec.
+sidebar:
+  order: 2
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+**Você está aqui:** 🧑 você + 🤖 agent. **Resultado:** `plan.md`, `data-model.md`, `contracts/` e `tasks.md`.
+
+<Steps>
+
+1. Gere o plan.
+
+   ```text
+   /speckit-plan
+   ```
+
+   O plan lê a spec e a constitution do projeto (`.specify/memory/constitution.md`) e decide o
+   *como*: adicionar `tags` à entidade do ElectroDB, estender os schemas de input do tRPC, adicionar
+   um filtro `tag` ao `notes.list`.
+
+2. Gere as tasks.
+
+   ```text
+   /speckit-tasks
+   ```
+
+   O `tasks.md` é ordenado, marcável e agrupado por fase. Um script o lê depois, então o
+   [formato](../../reference/tasks-format/) dele é fixo, e um PR check o valida no próximo passo.
+
+   ```markdown
+   ## Phase 1: User Story 1 - Tags in the data and API (Priority: P1) 🎯 MVP
+   - [ ] T001 Add `tags` to the note entity in packages/notes-table/src/entities/note.ts
+   - [ ] T002 [P] Unit tests for tag rules (max five, unique, case-insensitive)
+   - [ ] T003 Extend create and update procedures in packages/notes-api/src/procedures/notes.ts
+
+   ## Phase 2: User Story 2 - Tags on the website (Priority: P2)
+   - [ ] T004 Tag input on the note form
+   - [ ] T005 Tag filter on the list page
+   - [ ] T006 e2e scenario with screenshots, invariant and concurrency tests
+
+   ## Phase 3: Docs
+   - [ ] T007 Describe tags on the notes app page in docs/
+   - [ ] T008 **(human)** Confirm the screenshots match the docs wording
+   ```
+
+3. Confira tudo antes de existir qualquer código.
+
+   ```text
+   /speckit-analyze
+   ```
+
+   Ele aponta requisitos sem task, tasks sem requisito, e contradições entre os três arquivos.
+   Corrija agora; custa uma frase. Depois da implementação, custa um PR.
+
+</Steps>
+
+As tasks marcadas como **(human)** são puladas pelo agent e listadas para você na descrição do PR
+dele.
+
+Próximo: [Aprove a spec](../approve-the-spec/).

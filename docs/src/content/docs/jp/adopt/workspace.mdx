@@ -1,0 +1,117 @@
+---
+title: 1. ワークスペースとコミットの衛生管理
+description: pnpm を使った Nx モノレポと、エージェントのコミットをきれいに保つコミットフック。
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**最終的に手に入るもの:** Nx と Biome を備えた pnpm ワークスペース、すべてのコミットで強制される
+Conventional Commits、そしてコミットのたびに行われるシークレットのチェック。
+
+グルーに Nx は必須ではありません。ただし、エージェントが繰り返し試せるほど PR チェックを速く保っているのは
+`nx affected` であり、グルースクリプトはすべて Nx のターゲットとして実行されます。別のモノレポツールを使う場合も、
+考え方は同じです。PR が影響する部分だけを実行し、すべてのスクリプトを名前付きのタスクとして公開してください。
+
+<Steps>
+
+1. まだない場合は、**ワークスペースを作成します**。Discava もこのリポジトリも、Nx Plugin for AWS で
+   作成されました。
+
+   ```bash
+   pnpm create @aws/nx-workspace your-project --iac=cdk --no-interactive
+   ```
+
+   これでステップ 4 で使う git-secrets の pre-commit フックもインストールされます。既存の Nx ワークスペースでも
+   構いません。CI とエージェントが同じバージョンを使うよう、ルートの `package.json` で pnpm を固定します。
+
+   ```json
+   { "packageManager": "pnpm@<version>" }
+   ```
+
+2. `AGENTS.md`、CI、エージェントが呼び出す**ルートのスクリプトを追加します**。
+
+   ```json
+   "scripts": {
+     "dev": "nx run-many --target dev",
+     "build": "nx run-many --target build",
+     "lint": "nx run-many --target lint --configuration=fix",
+     "test": "nx run-many --target test --all",
+     "trivy": "nx run-many --target trivy --all",
+     "prepare": "husky"
+   }
+   ```
+
+3. **commitlint で Conventional Commits を追加します。** グルーが書く issue のタイトルは Conventional
+   Commit のヘッダーで、エージェントはそれを再利用します。
+
+   ```bash
+   pnpm add -Dw @commitlint/config-conventional commitlint husky lint-staged
+   echo "export default { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
+   ```
+
+   `.husky/commit-msg`:
+
+   ```bash
+   FORCE_COLOR=1 pnpm commitlint --edit "$1"
+   ```
+
+4. **pre-commit フックを追加します。** AWS のシークレットパターンを一度だけ登録し、シークレットを含む
+   コミットを拒否し、ステージされたファイルに Biome を実行し、それで何かが変わった場合は失敗します。
+   そうするとエージェントはステージし直して再度コミットします。`.husky/pre-commit`:
+
+   ```bash
+   if ! git config --get-all secrets.patterns >/dev/null 2>&1; then
+     bash .git-secrets/git-secrets --register-aws
+   fi
+   bash .git-secrets/git-secrets --pre_commit_hook
+
+   PRE_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
+   FORCE_COLOR=1 pnpm lint-staged
+   POST_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
+
+   if [ "$PRE_SHA" != "$POST_SHA" ]; then
+     echo "Pre-commit modified your working directory"
+     echo "Please verify and stage changed, then retry git commit"
+     exit 1
+   fi
+   ```
+
+   Nx Plugin for AWS で作ったワークスペースには、`.git-secrets/git-secrets`、`.gitallowed`、そしてこのフックの
+   大部分がすでにあります。そうでない場合は、このリポジトリからコピーしてください。`lint-staged.config.js`:
+
+   ```js
+   export default {
+     'packages/**/*.{ts,tsx,js,jsx,json,css,scss}': ['biome check --write --no-errors-on-unmatched'],
+     '*.{js,json}': ['biome check --write --no-errors-on-unmatched'],
+   };
+   ```
+
+5. このリポジトリから**共有の CI セットアップ action をコピーします**: `.github/actions/init-monorepo/`。
+   pnpm を（3 回までリトライして。レジストリのタイムアウトでエージェントが修正の試行を 1 回失わないように）、
+   Node 24 と、必要に応じて uv をインストールし、pnpm のキャッシュを復元し、依存関係をインストールし、
+   `nx affected` 用に `NX_BASE`/`NX_HEAD` を設定します。
+
+</Steps>
+
+## 動作を確認する
+
+```bash
+git commit --allow-empty -m "not conventional"
+```
+
+```text
+⧗   input: not conventional
+✖   subject may not be empty [subject-empty]
+✖   type may not be empty [type-empty]
+```
+
+続いて `git commit --allow-empty -m "chore: check hooks"` は成功します。
+
+<Aside type="note">
+Discava は、対話的にコミットする人のために `prepare-commit-msg` から Commitizen も実行しています。
+`-m` でメッセージが渡されたときは自動でスキップされ、エージェントはそうやってコミットするので、これは任意です。
+</Aside>
+
+次へ: [2. Speckit をインストールする](../speckit/)。

@@ -1,0 +1,87 @@
+---
+title: 4. Crie as duas automações
+description: Instale "GitHub issue to PR" e "GitHub code review" do catálogo do Agent Canvas, com as configurações do Discava.
+sidebar:
+  order: 4
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**No final você terá:** o OpenHands consultando seu fork a cada cinco minutos. Ele implementa issues
+com o label `openhands`, revisa PRs marcados como falhando e faz review de PRs com o label
+`openhands-review`.
+
+As duas automações vêm do **automation catalog** do Agent Canvas. Você preenche um formulário, e o
+catálogo empacota um worker testado com as suas configurações. Você não escreve nem faz upload de
+nenhum código.
+
+<Steps>
+
+1. **Adicione "GitHub issue to PR"** do catálogo, com estas configurações:
+
+   | Campo | Valor |
+   | --- | --- |
+   | Repositories | `<you>/agentic-sdlc` |
+   | Trigger label | `openhands` |
+   | Branch prefix | `openhands/issue` |
+   | Pull request mode | Draft |
+   | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+   | Agent profile | `default` |
+   | Check frequency | `*/5 * * * *` |
+   | Timezone | o seu |
+
+   O Discava roda a versão 1.2.4 do template. O prompt do worker diz ao agent para adicionar o
+   label `openhands-review` depois de abrir um PR, então os PRs novos chegam ao revisor mesmo como
+   drafts.
+
+2. **Adicione "GitHub code review"** do catálogo:
+
+   | Campo | Valor |
+   | --- | --- |
+   | Repositories | `<you>/agentic-sdlc` |
+   | Trigger label | `openhands-review` |
+   | Requested reviewer | o login do GitHub dos agents |
+   | New reviews per scan | `2` |
+   | Review tone | Concise |
+   | Maintainers | vazio, ou dois ou mais logins (veja abaixo) |
+   | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+   | Agent profile | `reviewer` |
+   | Check frequency | `*/5 * * * *` |
+
+   O Discava roda a versão 1.11.2 do template. **New reviews per scan** limita quantas conversas de
+   review um polling inicia, para que um backlog não inicie dez agents de uma vez.
+
+   **Maintainers** é opcional. Quando definido, um PR aprovado é passado para um deles como revisor
+   solicitado, escolhido por quem já alterou esses arquivos antes. Isso só acontece quando a issue
+   do PR tem `priority:medium` ou `priority:high`. O Discava deixa vazio.
+
+3. **Rode cada automação uma vez manualmente** pela página dela no Agent Canvas e leia o log da
+   execução.
+
+</Steps>
+
+## Confira se funcionou
+
+Uma primeira execução sem nada para fazer registra uma varredura do repositório e termina em
+`COMPLETED`. Depois:
+
+1. Crie uma issue de teste: "Add a line to README.md saying hello", e adicione o label `openhands`.
+2. Dentro de um polling, uma conversa para a issue aparece no Agent Canvas.
+3. Quando o agent termina, um PR draft aparece em `openhands/issue-<n>`, com o título `[#<n>] <issue
+   title>`, com `openhands-review` adicionado.
+4. Quando os checks dele terminam, o revisor posta um review que começa com
+   "_This review was posted by an AI agent (OpenHands)._" e termina com `✅ APPROVED` ou
+   `🔄 CHANGES REQUESTED`.
+
+Depois, feche o PR e apague a branch.
+
+O que cada automação faz em um polling está em [O runtime do agent](../../concepts/the-agent-runtime/).
+
+<Aside type="note">
+Para dar ao agent uma segunda tentativa em uma issue do zero, remova e aplique de novo o label
+`openhands`. Para mandá-lo de volta a um PR aberto com um comentário seu, poste o status que os
+workflows de cola postam:
+`gh api repos/<you>/agentic-sdlc/statuses/<sha> -f state=failure -f context=software-factory/review -f description="See my comment"`.
+</Aside>
+
+Próximo: [5. Rode sua primeira feature](../first-feature/).

@@ -1,0 +1,47 @@
+---
+title: 4. O agent implementa
+description: O OpenHands pega a issue e abre um PR, com os testes primeiro.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Você está aqui:** 🤖 agent, sem supervisão. **Resultado:** um pull request para a fase 1 em uma branch `openhands/...`.
+
+No próximo polling, o OpenHands encontra a issue com o label `openhands` e inicia uma conversa para
+ela. Você não faz nada.
+
+## O que o agent faz
+
+1. Lê o `AGENTS.md`, a constitution e a pasta da spec.
+2. Escreve primeiro os testes da fase: as regras de tags da spec, como testes unitários.
+3. Implementa até eles passarem, marcando cada task no `tasks.md` no mesmo commit que a conclui.
+4. Roda lint, typecheck, build e testes unitários no que mudou, uma vez, não em watch mode.
+5. Abre um PR com título no formato Conventional Commit, por exemplo
+   `feat(notes): add tags to notes in the data and API layers`, com `Refs #<parent>` no corpo.
+6. Lista as tasks **(human)** que pulou.
+
+## O que ele é instruído a não fazer
+
+A issue deixa os limites explícitos:
+
+- Nunca trabalhar fora do intervalo de tasks.
+- Nunca enfraquecer um teste para fazê-lo passar.
+- Nunca editar `.github/workflows/`, nunca fazer merge, nunca mexer em credenciais.
+- Se estiver bloqueado, comentar na issue e parar. Ele não chuta.
+
+## O que você confere
+
+Abra o PR e leia do começo:
+
+- O título e o corpo dizem o que mudou e quais tasks estão concluídas?
+- Os testes testam as regras *da spec*, ou as peculiaridades da implementação?
+- O `tasks.md` está marcado exatamente para esta fase e nada mais?
+
+<Aside type="tip">
+Você ainda não precisa revisar. O CI e o agent revisor vêm primeiro, e o PR só chega a você quando
+eles estiverem satisfeitos. Veja o próximo passo.
+</Aside>
+
+Próximo: [CI e review do agent](../ci-and-agent-review/).

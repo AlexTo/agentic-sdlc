@@ -1,0 +1,73 @@
+---
+title: 2. リポジトリを設定する
+description: ラベルを作成し、main を保護します。fork ではどちらもコピーされません。
+sidebar:
+  order: 2
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完了時の状態:** workflow が使うすべてのラベルと、チェックがグリーンで承認済みの pull request だけを
+受け付ける `main` ブランチ。
+
+<Steps>
+
+1. **ラベルを作成します。** 16 個あるので、UI よりスクリプトのほうが早く済みます。クローンから実行します。
+   `--force` は既存のラベルを更新するので、再実行しても安全です。
+
+   ```bash
+   gh label create spec-ready           --force --description "Merging this spec PR starts the agent"
+   gh label create openhands            --force --description "OpenHands implements this issue"
+   gh label create openhands-review     --force --description "OpenHands reviews this PR's head"
+   gh label create no-ui-screenshots    --force --description "Waives the UI Screenshots check: a UI change with nothing to look at"
+   for n in 1 2 3 4 5; do
+     gh label create ci-fix-$n          --force --description "CI fix-up attempt $n of 5"
+     gh label create review-fix-$n      --force --description "Review fix-up attempt $n of 5"
+   done
+   gh label create ci-fix-exhausted     --force --description "CI fix-ups used up; a person takes over"
+   gh label create review-fix-exhausted --force --description "Review fix-ups used up; a person takes over"
+   ```
+
+2. **`main` を保護します。** fork で **Settings → Branches → Add classic branch protection
+   rule** を開き、次のように設定します:
+
+   | 設定 | 値 |
+   | --- | --- |
+   | Branch name pattern | `main` |
+   | Require a pull request before merging | オン、必要な承認は 1 件 |
+   | Dismiss stale pull request approvals when new commits are pushed | オン |
+   | Require status checks to pass before merging | オン、下記の 6 つのチェック |
+   | Do not allow bypassing the above settings | オフ |
+
+   6 つのチェック: `Checks (lint)`、`Checks (test)`、`Checks (build)`、`Tasks format`、`E2E tests`、
+   `UI Screenshots`。GitHub は一度実行されたチェックしか検索ボックスに表示しないので、見つからない場合は
+   先に何か PR を開いてください。
+
+   バイパスを許可したままにしておくと、オーナーであるあなたが、自分のトークンでエージェントが開いた PR を
+   マージできます(下の注意を参照)。
+
+   <Aside type="caution">
+   `software-factory/review` ステータスを必須にしないでください。これはエージェントへのシグナルで、
+   常に `failure` としてしか投稿されないため、必須にするとすべての PR がブロックされます。
+   </Aside>
+
+3. **Actions が pull request を開けるようにします。** **Settings → Actions → General** を開き、
+   **Workflow permissions** の下で **Allow GitHub Actions to create and approve pull requests** にチェックを入れます。
+   Archive Specs workflow は、完了した spec を `specs/_archive/` に移す PR を開くためにこれを必要とします。
+
+</Steps>
+
+<Aside type="caution" title="アカウントは 1 つか 2 つか">
+最初に試すときは、Discava と同じように、エージェントが自分のアカウントのトークンを使ってもかまいません。
+ただし GitHub では、アカウントが自分の PR を承認することはできません。その場合、あなたの承認とレビュアーエージェントの
+承認はコメントとして表示され、リポジトリの管理者としてマージすることになります。チームで使う場合は、書き込み権限を持つ
+エージェント用の別の GitHub アカウントを用意し、そのトークンを [手順 3](../openhands/) で使います。そうすれば、
+人がエージェントの PR を通常どおり承認できます。
+</Aside>
+
+## 動作を確認する
+
+fork の **Issues → Labels** ページに新しい 16 個のラベルが一覧され、**Settings → Branches** に
+6 つの必須チェックを持つ `main` のルールが表示されます。
+
+次へ: [3. OpenHands をインストールする](../openhands/)。

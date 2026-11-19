@@ -1,0 +1,99 @@
+---
+title: 5. Rode sua primeira feature
+description: Escreva uma spec para o app de notas no seu fork e acompanhe ela passar pelo mesmo workflow que o Discava usa, do PR de spec até os PRs dos agents mergeados.
+sidebar:
+  order: 5
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**No final você terá:** uma feature para o app de notas, levada pelos agents da sua ideia de uma
+linha até código mergeado, e a prova de que cada passagem de bastão do loop funciona no seu fork.
+
+A feature: **tags em notas**. *Um usuário pode adicionar até cinco tags a uma nota e filtrar a lista
+de notas por tag.* Ela é pequena, mas mexe na tabela, na API e no site, então cada etapa tem algo
+real para fazer. O [tutorial](../../tutorial/the-case/) cobre cada etapa com mais detalhes.
+
+<Steps>
+
+1. **Escreva a spec** em uma branch no seu clone, com o seu coding agent:
+
+   ```bash
+   git switch -c spec/note-tags
+   ```
+
+   ```text
+   /speckit-specify Users can add up to five tags to a note and filter the note list by tag. Tags are case-insensitive and unique per note.
+   /speckit-clarify
+   /speckit-plan
+   /speckit-tasks
+   /speckit-analyze
+   ```
+
+2. **Abra o PR de spec, adicione o label `spec-ready` e faça o merge.** Faça push da branch:
+
+   ```bash
+   git add specs/ && git commit -m "docs(specs): add note tags spec"
+   git push -u origin spec/note-tags
+   ```
+
+   No GitHub, abra o pull request, adicione o label `spec-ready` e faça o merge quando os checks
+   estiverem verdes. Foi você quem abriu o PR, então o GitHub não deixa você aprová-lo: marque
+   **Merge without waiting for requirements to be met**.
+
+   ✅ **Tasks format** passa no PR. Depois do merge, o **Agent Issues** abre uma issue com o título
+   `feat(<feature>): … (with setup and foundations)`, com o label `openhands`, limitada ao primeiro grupo de fases.
+
+3. **Espere o agent.** Você não faz nada.
+
+   ✅ No próximo polling, uma conversa para a issue começa no Agent Canvas. Quando ela termina, um
+   PR draft aparece em `openhands/issue-<n>` com `openhands-review`, e o `tasks.md` marcado
+   exatamente para essas fases.
+
+4. **Acompanhe os gates.**
+
+   ✅ Os PR Checks rodam. Se um falhar, o **Agent CI Status** adiciona `ci-fix-1` e o agent revisa
+   o mesmo PR no próximo polling. Quando todos os checks terminam, o agent revisor faz o review do
+   head e termina com `✅ APPROVED` ou `🔄 CHANGES REQUESTED`. Um pedido de mudanças também manda o
+   agent de volta, com `review-fix-1`.
+
+5. **Revise e faça o merge.** Leia a descrição do PR, as tasks **(human)** que ele listar e, para a
+   fase do site, o comentário **E2E screenshots**. Clique em **Ready for review** e faça o merge. Se
+   os agents fazem push com o seu próprio token, ignore a aprovação como no passo 2. Com uma conta
+   separada para os agents, aprove e faça o merge normalmente.
+
+   ✅ O **Agent Issues** roda de novo e abre a issue da próxima fase. Os passos 3 a 5 se repetem.
+
+6. **Faça o merge do último PR.**
+
+   ✅ O Agent Issues registra `No issue created: … no tasks left for the agent`. A feature está pronta.
+
+</Steps>
+
+<Aside type="tip" title="Não viu um loop de correção?">
+Se o agent acertou tudo de primeira, você ainda não viu o loop de CI. Para testá-lo, faça push
+em um PR aberto do agent de um commit que quebra um dos testes unitários dele. O PR Checks falha,
+`ci-fix-1` aparece, e o agent faz push de uma correção no próximo polling. Ele pode simplesmente
+reverter o seu commit, que é a correção certa aqui.
+</Aside>
+
+## Autoverificação
+
+Você tem o mesmo workflow do Discava quando consegue responder sim a todos estes:
+
+- [ ] O merge de um PR de spec com `spec-ready` abriu uma issue, sem ninguém abri-la manualmente.
+- [ ] O agent abriu um PR em `openhands/issue-<n>` e marcou exatamente as tasks dele.
+- [ ] Uma execução vermelha do CI mandou o agent de volta, e o PR tem `ci-fix-1`.
+- [ ] O agent revisor fez o review do head do PR quando os checks dele terminaram.
+- [ ] O merge do PR do agent abriu a issue da próxima fase.
+- [ ] A mudança no site veio com screenshots listados no PR.
+- [ ] O último merge não abriu nada.
+- [ ] Em nenhum momento você colou um erro ou escreveu um prompt para o agent.
+
+Algo não aconteceu? Veja [Solução de problemas](../../reference/troubleshooting/).
+
+## Próximo
+
+- Tente uma feature sua no app de notas, como fixar uma nota ou ordenar a lista.
+- Pronto para levar isso a um repositório de produto? Veja
+  [Adote no seu próprio repositório](../../adopt/overview/).

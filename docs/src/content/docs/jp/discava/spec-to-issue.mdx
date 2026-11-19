@@ -1,0 +1,149 @@
+---
+title: spec から issue へ
+description: マージされた spec と、その後にマージされる各エージェント PR が、次の実装 issue をどう開くか。
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+ギャップ 1 と 7: 完成した spec をエージェントの作業に変えるものは何もなく、エージェントの PR をマージしても
+次のフェーズは始まりません。Discava は 1 つのワークフロー **Agent Issues** と、その背後のスクリプトで両方を埋めます。
+
+## いつ実行されるか
+
+`.github/workflows/agent-issues.yml` は、`main` への pull request が `closed` または `labeled` になるのを待ち受け、
+さらに `spec_folder` 入力付きの手動の `workflow_dispatch` も受け付けます。ジョブは次の場合にだけ実行されます。
+
+| イベント | 条件 | 意味 |
+| --- | --- | --- |
+| PR closed | マージ済みで、`spec-ready` ラベル付き | spec が承認された: 最初の issue を開く |
+| PR closed | マージ済みで、ブランチが `openhands/` で始まる | エージェントの PR が入った: 次の issue を開く |
+| PR labelled | すでにマージ済みで、ラベルが `spec-ready` | 誰かがマージ前にラベルを付け忘れた |
+| 手動実行 | spec フォルダー名 | チェーンを手で再開する |
+
+それ以外のマージされた PR は無視されます。[`specs/` に触れるものであっても](../../concepts/one-phase-at-a-time/#次の-issue-を開くもの) です。
+
+ジョブは **マージコミット** をチェックアウトするので、PR が付けたばかりのチェックが見えます。concurrency
+グループは PR ごとで、決してグローバルにはしません。グローバルなグループは保留中の最新の実行しか残さないので、
+近いタイミングの 2 つのマージが互いをキャンセルしてしまいます。
+
+## スクリプトがすること
+
+```d2
+direction: right
+
+merged: マージされた PR {shape: page}
+gate: "エージェントのブランチ、\nまたは spec-ready?" {shape: diamond}
+ignore: 無視
+folder: spec フォルダーを探す
+valid: "tasks.md は有効?" {shape: diamond}
+fail: 実行を失敗させる
+next: "エージェントのタスクが\n残る次のグループは?" {shape: diamond}
+done: 完了
+exists: "その issue は\nすでにある?" {shape: diamond}
+stalled: PR にコメント
+open: issue を開く {shape: page}
+
+merged -> gate
+gate -> ignore: いいえ
+gate -> folder: はい
+folder -> valid
+valid -> fail: いいえ
+valid -> next: はい
+next -> done: いいえ
+next -> exists: はい
+exists -> stalled: はい
+exists -> open: いいえ
+```
+
+`src/agent-issues/` にある `pnpm nx run @discava/common-scripts:agent-issue`:
+
+1. **ゲート** (`gate.ts`)。`decide()` が PR を `spec`、`implementation`、`ignore` のいずれかに分類します。
+2. **spec フォルダーを探す** (`discover.ts`)。エージェントの PR なら、その PR が閉じる issue を読み、
+   その issue の隠しマーカーからフォルダーを取ります。それ以外なら、PR が変更した `specs/<folder>/`
+   のパスを使います。
+3. **検証** (`validate.ts`)。形式チェックに通らない `tasks.md` は、エージェントに間違ったタスクを渡すのではなく、
+   実行を失敗させます。
+4. **フェーズをグループ化** (`tasks.ts`): 最初の `User Story` フェーズまで (それを含む) のすべて、
+   その後は後続の各フェーズを単独で。
+5. **次のグループを選ぶ**: **(human)** ではない未チェックのタスクがある最初のグループ。
+6. **既存の issue を確認。** すべての issue 本文は
+   `<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->` のようなマーカーで始まります。このグループの
+   issue がすでにある (open でも closed でも) 場合、スクリプトは新しい issue を開きません。代わりに PR に
+   コメントします。たとえば次のようなものです。
+
+   > The next implementation issue for `specs/…/` was not opened: an issue for "Ratings in search"
+   > already exists, and these tasks in its `tasks.md` are not ticked: T017, T018.
+
+7. **issue を描画して作成** (`issue.ts`)。`openhands` ラベルを付けます。
+
+## 開かれる issue
+
+実際の例、[#466](https://github.com/AlexTo/discava/issues/466):
+
+```markdown
+<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->
+
+## Spec
+
+- Spec folder: `specs/20261116-013307-course-reviews/` (read `spec.md`, `plan.md`, `tasks.md`,
+  `data-model.md` and `contracts/`)
+- Parent issue: #279
+
+## Scope
+
+Tasks `T015` to `T019` of `tasks.md`: every task under Phase 4: Ratings in search (PR 4). Do not
+start tasks outside these phases.
+
+## Instructions for the agent
+
+- Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
+- …the rest of the template's bullets, with `#<parent>` filled in as `#279`
+```
+
+タイトルはフォルダーとフェーズから組み立てた Conventional Commit のヘッダーです:
+`feat(course-reviews): ratings in search (PR 4)`。subject は小文字で、長さは最大 100 文字なので、
+エージェントは commitlint に落ちることなくそれを PR に再利用できます。最初のグループには
+` (with setup and foundations)` が付きます。
+
+<Aside type="note">
+常設の指示は実行時に issue テンプレートから読み込まれるので、変更する場所は 1 か所です。
+`.github/ISSUE_TEMPLATE/implement-phase.md` を編集すると、今後のすべての issue が変わります。
+</Aside>
+
+## ドライラン
+
+```bash
+DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=workflow_dispatch \
+  SPEC_FOLDER=20261116-013307-course-reviews \
+  pnpm nx run @discava/common-scripts:agent-issue
+```
+
+これは開くことになる issue のタイトルと本文を出力します。既存の issue は引き続き `gh` で読むので、
+サインインしておく必要があります。
+
+## 完了した spec のアーカイブ
+
+2 つ目のワークフロー **Archive Specs** (`.github/workflows/archive-specs.yml`) がチェーンを閉じます。
+稼働中の `specs/*/tasks.md` を変更する `main` への push と、手動で実行されます。独自のトリガーが必要なのは、
+最後のチェックはたいてい **(human)** タスクで、Agent Issues が無視する PR の中にあるからです。
+
+`src/agent-issues/archive-specs.ts` にある `pnpm nx run @discava/common-scripts:archive-specs`:
+
+1. **(human)** のものも含め、すべてのタスクにチェックが付いた稼働中の spec を探します。
+2. open なエージェント issue がある spec と、すでにアーカイブ PR があった spec はスキップします。その PR を
+   マージせずに閉じれば、spec は稼働中のままです。
+3. ブランチ `archive-spec/<folder>` で PR を開き、フォルダーを `specs/_archive/` に移動して、
+   そのフォルダーへのリンクとそこからのリンクを書き換えます。
+
+Agent Issues は `specs/_archive/` をスキップするので、アーカイブ PR が issue を開くことはありません。`Tasks format`
+チェックはアーカイブされた `tasks.md` ファイルも読み、未チェックのタスクがあれば失敗します。
+
+<Aside type="caution">
+このワークフローにはリポジトリ設定 "Allow GitHub Actions to create and approve pull
+requests" が必要です。ワークフローのトークンで開かれた PR では PR Checks が始まりません。実行するには、
+それぞれをいったん閉じて開き直してください。
+</Aside>
+
+次へ: [フィードバックループ](../feedback-loops/)。

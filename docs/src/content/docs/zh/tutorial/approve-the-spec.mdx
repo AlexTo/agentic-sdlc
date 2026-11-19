@@ -1,0 +1,45 @@
+---
+title: 3. 批准 spec
+description: 像评审代码一样评审 spec PR，并加上 spec-ready 标签来启动智能体。
+sidebar:
+  order: 3
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**当前位置：** 🧑 人工关卡 #1。**产出：** 一个已合并的 spec PR，以及第一个实现 issue。
+
+<Steps>
+
+1. 推送分支，然后在 GitHub 上为它开一个 pull request。
+
+   ```bash
+   git add specs/ && git commit -m "docs(specs): add note tags spec"
+   git push -u origin spec/note-tags
+   ```
+
+2. 像评审代码一样评审它。先读 `spec.md`，再读 `plan.md`，然后浏览 `tasks.md`。问问自己：
+
+   - spec 说的是你真正想要的吗？
+   - 每个阶段是否足够小，能一次坐下来审完？
+   - 计划中有没有哪部分是你在代码评审中会拒绝的？
+
+   想修改什么，就在 PR 上评论。智能体也会读评论，所以你可以让它来修订。
+
+   在这里把你的业务分析师或产品负责人拉进来。`spec.md` 是平实的自然语言，所以在你检查计划的同时，他们可以在 PR 上评审它。见[人工关卡](../../concepts/human-gates/#这现在是主要瓶颈)。
+
+3. 给 PR 加上 `spec-ready` 标签，然后合并。
+
+   这个 PR 是你开的，所以 GitHub 不允许你批准它。开启了分支保护时，勾选 **Merge without waiting for requirements to be met**，以仓库管理员身份合并。
+
+</Steps>
+
+## 接下来会发生什么，无需任何人动手
+
+**Agent Issues** workflow 看到一个带 `spec-ready` 的已合并 PR。它读取 `tasks.md`，取出第一个未完成的阶段，并根据[实现模板](https://github.com/AlexTo/agentic-sdlc/blob/main/.github/ISSUE_TEMPLATE/implement-phase.md)开一个 issue：spec 文件夹、任务范围 `T001` 到 `T003`，以及智能体必须遵守的规则。它会加上 `openhands` 标签，这就是开工信号。
+
+<Aside type="note">
+忘了加标签？给已合并的 PR 加上 `spec-ready`。
+</Aside>
+
+在有东西需要评审之前，你的注意力都可以放在别处。下一步：[智能体实现](../agent-implements/)。

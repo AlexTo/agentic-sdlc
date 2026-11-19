@@ -1,0 +1,79 @@
+---
+title: 피드백 루프
+description: 에이전트를 돌려보내는 두 workflow, Agent CI Status와 Agent Review Status.
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+빈틈 2, 3, 4: 에이전트는 빨간 CI 실행이나 "changes requested" 리뷰에 대해 듣지 못하고, 듣는다 해도 계속 실패하는
+것을 막아 줄 것이 없습니다. 두 workflow 모두 이벤트를 OpenHands worker가 이미 반응하는 하나의 신호로 바꿉니다.
+PR의 head에 붙는, `failure` 상태의 `software-factory/review`라는 commit status입니다.
+
+## Agent CI Status
+
+`.github/workflows/agent-ci.yml`은 `openhands/issue-` 브랜치의 pull request에 대해 **PR Checks**가 `failure` 또는
+`timed_out`으로 끝날 때 `workflow_run`으로 실행됩니다. 기본 브랜치를 checkout하고 `agent-ci-status`를 실행합니다.
+
+`workflow_run`이 중요합니다. PR Checks는 읽기 전용 토큰으로 PR의 코드에서 실행되었더라도, 이것은 쓰기 권한이 있는
+토큰과 함께 기본 브랜치의 컨텍스트에서 실행됩니다.
+
+스크립트(`src/agent-ci/`)는 다음을 합니다.
+
+1. 브랜치 이름을 요청에 사용하기 **전에** `^openhands/issue-\d+$`와 대조해 검사합니다. 브랜치 이름은 PR 작성자에게서
+   옵니다.
+2. 열린 PR, 그 label과 현재 head, 그리고 실행된 커밋의 상태를 찾습니다.
+3. `E2E tests (3/4)`, `Checks (lint)`처럼 실패한 job을 나열합니다.
+4. `planCi()`를 호출하며, 이는 `ignore`, `send-back`, `give-up` 중 하나를 반환합니다.
+5. `send-back`의 경우: `ci-fix-<n>`을 추가한 다음, 설명에 실패한 job을 넣고 링크로 실행을 건 상태를 게시합니다.
+6. `give-up`의 경우: `ci-fix-exhausted`를 추가하고 댓글을 답니다. 예를 들면 다음과 같습니다.
+
+   > CI is still failing after 5 automatic fix attempts, so the agent will not be sent back again.
+   >
+   > Failing checks on `1a2b3c4`: E2E tests (2/4).
+   >
+   > A person needs to take over this pull request. To let the agent try again, remove the
+   > `ci-fix-*` and `ci-fix-exhausted` labels and re-run the checks.
+
+## Agent Review Status
+
+`.github/workflows/agent-review.yml`은 브랜치가 같은 저장소의 에이전트 브랜치이고 리뷰 본문에 `CHANGES REQUESTED`가
+들어 있을 때 `pull_request_review: submitted`로 실행됩니다. 기본 브랜치를 명시적으로 checkout하고
+`agent-review-status`를 실행합니다.
+
+`planReview()`는 에이전트를 돌려보내기 전에 자체 검사 세 가지를 추가합니다.
+
+| 검사 | 이유 |
+| --- | --- |
+| author association이 `OWNER`, `MEMBER`, `COLLABORATOR` 중 하나 | 쓰기 권한이 있는 사람만 트리거할 수 있습니다 |
+| 본문에 `<!-- openhands-review-run: … -->`가 있음 | 이를 인용한 사람이 아니라 리뷰어 에이전트의 리뷰입니다 |
+| 본문에 정확히 `🔄 CHANGES REQUESTED`인 줄이 있음 | 판정을 언급한 것이 아니라 판정 그 자체입니다 |
+
+그다음은 CI와 같은 단계입니다. `review-fix-<n>`, 리뷰에 링크된 실패 상태, 그리고 다섯 번 후의
+`review-fix-exhausted`입니다.
+
+에이전트가 push하면 리뷰어는 스스로 다시 리뷰합니다. revise 프롬프트가 에이전트에게 `openhands-review`를 다시
+붙이라고 지시하고, 새 head 커밋은 새 리뷰로 치기 때문입니다.
+
+## PR에서는 어떻게 보이는가
+
+[#470](https://github.com/AlexTo/discava/pull/470), "ratings in search"에서:
+
+1. 에이전트가 PR을 엽니다. `E2E tests (4/4)` 샤드가 실패합니다.
+2. Agent CI Status가 `ci-fix-1`을 추가하고 실패 상태를 게시합니다.
+3. 다음 폴링 때 에이전트가 수정하고, `94b9ee3`을 push하고, 댓글을 답니다. *"The only finding was the
+   failing `E2E tests (4/4)` shard: my new scenario […] hit a strict-mode violation, because
+   `getByText('4.5')` matched both the rating and the `4.5 and up` option […]. I fixed both
+   locators."*
+4. 리뷰어는 새 head에서 검사가 아직 실행 중인 것을 보고 "⏳ Review waiting on checks"라고 댓글을 답니다. 이후
+   스캔에서 모두 초록색이 됩니다. `94b9ee3`을 리뷰하고 `✅ APPROVED`로 마무리합니다.
+5. `main`이 브랜치에 merge됩니다. 리뷰어가 새 head를 다시 리뷰하고 승인합니다.
+6. 사람이 merge합니다.
+
+<Aside type="tip">
+두 스크립트 모두 `DRY_RUN=true`를 받으며, 이 경우 계획을 JSON으로 출력하고 아무것도 바꾸지 않습니다. 실제 사례를
+재현하려면 `GITHUB_EVENT_PATH`가 저장해 둔 이벤트 페이로드를 가리키게 하세요.
+</Aside>
+
+다음: [PR 검사](../pr-checks/).

@@ -1,0 +1,79 @@
+---
+title: A cola que falta
+description: As dez lacunas entre Speckit, OpenHands e CI, e as regras para preenchê-las.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+O Speckit termina com um `tasks.md`. O OpenHands começa a partir de uma issue com label e para em um pull request.
+O CI informa um resultado e segue em frente. Cada ferramenta faz bem o seu trabalho, e nenhuma delas passa o trabalho para
+a próxima. Sem cola, *você* faz a passagem: copia tarefas para uma issue, percebe que o CI ficou
+vermelho e diz ao agent para corrigir.
+
+Estas são as lacunas, e o que preenche cada uma:
+
+| # | A lacuna | O que a preenche |
+| --- | --- | --- |
+| 1 | Nada transforma uma spec concluída em trabalho para o agent | Um workflow lê o `tasks.md` e abre a próxima issue de implementação, um grupo de fases por vez |
+| 2 | O agent não sabe que o CI falhou | Um workflow informa uma execução com falha ao agent como o commit status que ele já observa |
+| 3 | O "changes requested" de um revisor não é ouvido | Um workflow faz o mesmo com o veredito do agent revisor |
+| 4 | Nada impede que um agent travado fique em loop para sempre | Os dois loops de correção são limitados a cinco tentativas, contadas com labels, e então uma pessoa assume |
+| 5 | O `tasks.md` é só uma convenção, então um malformado para a cadeia sem aviso | Um PR check valida o formato dele |
+| 6 | Mudanças de UI chegam ao review sem que ninguém tenha olhado para elas | Um check exige screenshots e2e, e o CI os publica no PR |
+| 7 | Fazer merge do PR do agent não inicia a próxima fase | O merge de uma branch de agent abre a próxima issue, até a spec estar pronta |
+| 8 | O agent não consegue rodar a stack real sem acesso à nuvem | Substitutos locais para cada serviço, para que o app inteiro e seus testes e2e rodem sem credenciais |
+| 9 | Fazer merge não entrega nada | Um build verde na `main` faz deploy sozinho, pula um commit que não é mais o mais recente, e a produção espera por uma pessoa |
+| 10 | Um agent pode commitar um segredo vazado ou uma dependência vulnerável | Uma varredura de segredos e dependências em todo build, e de novo antes de cada deploy |
+
+[Como o Discava faz](../../discava/overview/) mapeia cada linha para os seus arquivos.
+
+## Regras para escrever cola
+
+Estas regras surgiram ao construir e corrigir a cola no Discava.
+
+### Decida em código, não em um prompt
+
+Toda decisão de "o que acontece em seguida" é uma função pura com testes unitários: `decide()` em `gate.ts`
+para quais merges contam, `planCi()` para decidir se o agent volta. O arquivo de workflow só liga
+o evento ao script. Você pode testar uma decisão sem o GitHub, e o agent não consegue argumentar para
+contorná-la.
+
+### Mantenha o estado no GitHub
+
+Não há banco de dados. O número de tentativas é um label (`ci-fix-2`). A issue de um grupo de fases
+é encontrada por um marcador oculto no corpo dela (`<!-- agent-issue spec:<folder> group:2 -->`). "Já
+mandado de volta" é um commit status. Qualquer pessoa pode ver o estado, e uma pessoa pode alterá-lo à mão, por
+exemplo removendo um label para permitir mais uma tentativa.
+
+### Fale a língua que o agent já entende
+
+O OpenHands já revisa um PR cujo head tem um status `software-factory/review` com falha. Então
+a cola publica esse status em vez de inventar um novo gatilho. Nenhuma mudança no OpenHands é necessária.
+
+### Rode código confiável com o token
+
+Os workflows de cola têm um token que pode escrever labels, status e comentários. Eles fazem checkout da
+**branch padrão**, nunca do pull request, para que nada que um agent ou um contribuidor escreveu rode com
+esse token. Tudo o que é lido do PR (nomes de branch, corpos) é verificado contra um padrão estrito
+antes de ser usado.
+
+### Seja idempotente
+
+O GitHub entrega eventos mais de uma vez, e as pessoas rodam jobs de novo. Todo script verifica antes de agir:
+nenhuma segunda issue para o mesmo grupo, nenhuma segunda tentativa para o mesmo commit, nenhuma reação a uma execução
+de um commit que não é mais o head.
+
+### Falhe alto, onde uma pessoa olha
+
+Um notice de workflow não é lido por ninguém. Quando a cadeia parar, diga isso no pull request: "the next
+issue was not opened because these tasks aren't ticked: T014, T015".
+
+<Aside type="note">
+A cola deste repositório tem cerca de 1.600 linhas de TypeScript, e outro tanto em testes unitários,
+em quatro pastas em `packages/common/scripts/src/`. Leia antes de adotá-la. Leva uma
+tarde.
+</Aside>
+
+Próximo: [Feedback loops](../feedback-loops/).

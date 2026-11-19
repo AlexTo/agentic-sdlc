@@ -1,0 +1,104 @@
+---
+title: Despliegue y seguridad
+description: Cómo un main en verde se despliega solo, y los escaneos que detienen un secreto filtrado o una dependencia vulnerable.
+sidebar:
+  order: 9
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Huecos 9 y 10: hacer merge no publica nada, y un agente puede hacer commit de un secreto o incorporar
+un paquete vulnerable. Discava resuelve ambos en GitHub Actions, sin credenciales de la nube de larga
+duración en ningún sitio.
+
+## Despliegue
+
+`.github/workflows/deploy.yml` se ejecuta cuando **CI** termina en verde en `main`, o a mano para
+cualquier stage. Cada stage tiene su propio environment de GitHub y su propio grupo de concurrencia,
+así que dos despliegues al mismo stage nunca se solapan. Hay una copia abreviada del workflow en
+[Adoptar: despliegue](../../adopt/deploy/).
+
+```d2
+direction: right
+
+ci: CI en verde en main
+manual: ejecución manual
+approve: "revisores obligatorios\n(solo producción)" {shape: diamond}
+deploy: "workflow Deploy\nTrivy, rol OIDC, synth,\n¿sigue siendo lo último de main?, cdk deploy"
+dev: stage de desarrollo {shape: cylinder}
+prod: stage de producción {shape: cylinder}
+
+ci -> deploy: AUTO_DEPLOY_STAGE
+manual -> approve -> deploy
+deploy -> dev
+deploy -> prod
+```
+
+Los pasos, en orden:
+
+1. **Hacer checkout del commit que verificó el CI** (`workflow_run.head_sha`), no de lo que sea
+   `main` en ese momento.
+2. **Comprobar que el stage existe** en `stages.config.ts`, para que una errata falle con claridad
+   en lugar de como un confuso error de credenciales.
+3. **Reenviar los overrides del stage.** Las variables del environment de GitHub con nombres como
+   `DISCAVA_DEVELOPMENT_*` se convierten en variables de entorno para el synth, para cosas como
+   dominios personalizados que no deberían estar en un commit.
+4. **Escaneo de Trivy.** El mismo escaneo que en el CI, como control.
+5. **Asumir el rol de despliegue** con OIDC de GitHub (`aws-actions/configure-aws-credentials`). No
+   se guardan claves de acceso en ningún sitio.
+6. **Sintetizar** con el permissions boundary del stage aplicado.
+7. **Comprobar que el commit sigue siendo el último de `main`.** Esto se ejecuta dentro del hueco de
+   concurrencia. Una nueva ejecución de un CI antiguo, o una ejecución que esperó detrás de un
+   despliegue más reciente, se omite con un aviso en lugar de desplegar código obsoleto. Las
+   ejecuciones manuales se saltan esta comprobación, para que puedas volver atrás.
+8. **Desplegar** con CDK, entregando a CloudFormation un rol de ejecución acotado (`--role-arn`).
+
+`AUTO_DEPLOY_STAGE` es una variable del repositorio. Discava la pone a `discava-development`, así que
+cada `main` en verde llega al stage de desarrollo. Déjala sin definir y nada se desplegará sin una
+persona.
+
+### Preparar un stage
+
+`scripts/setup-stage.sh` se ejecuta una vez por stage, desde un clon del repositorio que ejecuta el
+workflow. Pregunta por todo y pone por defecto lo que puede detectar. Crea:
+
+- el proveedor OIDC de GitHub en la cuenta de AWS
+- el **rol de despliegue** que asume el workflow, de confianza solo para ese repositorio y ese
+  environment
+- el **rol de ejecución de CloudFormation** y sus políticas gestionadas, con un permissions boundary
+  para que los stacks solo puedan crear roles que lo lleven
+- las variables `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN` y `AWS_EXECUTION_ROLE_ARN` del environment de
+  GitHub y, opcionalmente, `AUTO_DEPLOY_STAGE`
+- opcionalmente, dominios personalizados, a partir de una sola pregunta: un dominio raíz. Cada
+  componente recibe un subdominio fijo de él, y el script encuentra el certificado emitido para cada
+  uno. Si falta alguno, lo lista y se detiene antes de cambiar nada. Los dominios se guardan como
+  overrides del stage en el environment de GitHub (paso 3 anterior)
+
+### Producción espera a una persona
+
+Cada stage se despliega desde el environment de GitHub del mismo nombre. Un stage tipo producción
+lleva **revisores obligatorios** en su environment: el job se pausa hasta que alguien lo aprueba en
+la interfaz de Actions. Discava aún no se ha lanzado, así que hoy solo `discava-development` tiene
+environment, y se despliega automáticamente.
+
+## Escaneos de seguridad
+
+| Escaneo | Cuándo | Bloquea |
+| --- | --- | --- |
+| `git-secrets` (patrones de AWS) | Hook `pre-commit`, en cada commit local | Un commit que contenga una clave de AWS |
+| Trivy, vulnerabilidades y secretos | El job `trivy` de `ci.yml` en cada push a `main`, y `deploy.yml` antes de cada despliegue | Un despliegue con una vulnerabilidad CRITICAL corregible o un secreto HIGH/CRITICAL en un commit |
+| checkov | Parte del target `build` del proyecto de infraestructura, así que en el `Checks (build)` de cada PR | Configuraciones inseguras de recursos de CDK |
+| Dependabot | Semanal, npm y GitHub Actions, agrupado | Dependencias y versiones fijadas de actions desactualizadas |
+
+Trivy se ejecuta como un job de CI **propio**, no como parte de `build`. Su base de datos de
+vulnerabilidades cambia a diario, y un CVE recién publicado debería marcar `main` sin bloquear el
+despliegue de la documentación. Los hallazgos aceptados se listan, un ID por línea, en
+`.trivyignore`.
+
+<Aside type="note">
+El hook pre-commit también ejecuta `lint-staged` (Biome), y hace fallar el commit si alguna de las
+herramientas cambió el árbol de trabajo, así que el agente vuelve a añadir los cambios y hace commit
+de nuevo. `commit-msg` ejecuta commitlint con la configuración de Conventional Commits.
+</Aside>
+
+Siguiente: [Una feature real](../a-real-feature/).

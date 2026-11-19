@@ -1,0 +1,87 @@
+---
+title: Bucles de feedback
+description: Agent CI Status y Agent Review Status, los dos workflows que devuelven el trabajo al agente.
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Huecos 2, 3 y 4: el agente no se entera de una ejecución de CI en rojo ni de una revisión con
+"changes requested", y nada lo detendría si se enterase y siguiera fallando. Ambos workflows
+convierten un evento en la única señal ante la que ya actúa el worker de OpenHands: un commit
+status llamado `software-factory/review` en estado `failure` en la cabeza del PR.
+
+## Agent CI Status
+
+`.github/workflows/agent-ci.yml` se ejecuta con `workflow_run`, cuando **PR Checks** termina con
+`failure` o `timed_out` para un pull request en una rama `openhands/issue-`. Hace checkout de la
+rama por defecto y ejecuta `agent-ci-status`.
+
+`workflow_run` es importante. Se ejecuta en el contexto de la rama por defecto, con un token que
+puede escribir, aunque PR Checks se haya ejecutado sobre el código del PR con un token de solo
+lectura.
+
+El script (`src/agent-ci/`):
+
+1. Comprueba el nombre de la rama contra `^openhands/issue-\d+$` **antes** de usarlo en cualquier
+   petición. Viene del autor del PR.
+2. Encuentra el PR abierto, sus labels y su cabeza actual, y los status del commit de la
+   ejecución.
+3. Lista los jobs que han fallado, como `E2E tests (3/4)` y `Checks (lint)`.
+4. Llama a `planCi()`, que devuelve `ignore`, `send-back` o `give-up`.
+5. Para `send-back`: añade `ci-fix-<n>` y después publica el status con los jobs fallidos en la
+   descripción y la ejecución como enlace.
+6. Para `give-up`: añade `ci-fix-exhausted` y comenta, por ejemplo:
+
+   > CI is still failing after 5 automatic fix attempts, so the agent will not be sent back again.
+   >
+   > Failing checks on `1a2b3c4`: E2E tests (2/4).
+   >
+   > A person needs to take over this pull request. To let the agent try again, remove the
+   > `ci-fix-*` and `ci-fix-exhausted` labels and re-run the checks.
+
+## Agent Review Status
+
+`.github/workflows/agent-review.yml` se ejecuta con `pull_request_review: submitted`, cuando la rama
+es una rama de agente en el mismo repositorio y el cuerpo de la revisión contiene
+`CHANGES REQUESTED`. Hace checkout de la rama por defecto de forma explícita y ejecuta
+`agent-review-status`.
+
+`planReview()` añade tres comprobaciones propias antes de devolver el trabajo al agente:
+
+| Comprobación | Por qué |
+| --- | --- |
+| La asociación del autor es `OWNER`, `MEMBER` o `COLLABORATOR` | Solo alguien con acceso de escritura puede dispararlo |
+| El cuerpo tiene `<!-- openhands-review-run: … -->` | Es la revisión del agente revisor, no una persona que la cita |
+| El cuerpo tiene una línea que es exactamente `🔄 CHANGES REQUESTED` | El veredicto, no una mención de él |
+
+Después, los mismos pasos que en el CI: `review-fix-<n>`, el status fallido enlazado a la revisión
+y `review-fix-exhausted` tras cinco.
+
+El revisor vuelve a revisar por sí solo después de que el agente haga push, porque el prompt de
+revisión le dice al agente que vuelva a poner `openhands-review`, y un nuevo commit de cabeza cuenta
+como una nueva revisión.
+
+## Cómo se ve en un PR
+
+De [#470](https://github.com/AlexTo/discava/pull/470), "valoraciones en la búsqueda":
+
+1. El agente abre el PR. Falla el shard `E2E tests (4/4)`.
+2. Agent CI Status añade `ci-fix-1` y publica el status fallido.
+3. En el siguiente sondeo, el agente revisa, hace push de `94b9ee3` y comenta: *"The only finding
+   was the failing `E2E tests (4/4)` shard: my new scenario […] hit a strict-mode violation,
+   because `getByText('4.5')` matched both the rating and the `4.5 and up` option […]. I fixed both
+   locators."*
+4. El revisor ve que los checks siguen ejecutándose en la nueva cabeza y comenta "⏳ Review waiting
+   on checks". En un barrido posterior todo está en verde. Revisa `94b9ee3` y termina con
+   `✅ APPROVED`.
+5. Se hace merge de `main` en la rama. El revisor vuelve a revisar la nueva cabeza y la aprueba.
+6. Una persona hace merge.
+
+<Aside type="tip">
+Ambos scripts aceptan `DRY_RUN=true`, que imprime el plan como JSON y no cambia nada. Apunta
+`GITHUB_EVENT_PATH` a un payload de evento guardado para reproducir un caso real.
+</Aside>
+
+Siguiente: [PR checks](../pr-checks/).

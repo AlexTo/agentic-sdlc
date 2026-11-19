@@ -1,0 +1,90 @@
+---
+title: "実際の機能: コースレビュー"
+description: Discava の 1 つの機能を、トラッキング issue から spec、そして 8 つのエージェント pull request まで、タイムスタンプ付きでたどる。
+sidebar:
+  order: 10
+  label: 実際の機能
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+このページでは、実際の Discava リポジトリで 1 つの機能をたどります: **コースの評価と文章によるレビュー**。
+数字とリンクはすべて GitHub からのものです。時刻は UTC で、特に記載がなければ 2026 年 11 月 18 日です。
+
+## アイデア
+
+人が書いた [Issue #279](https://github.com/AlexTo/discava/issues/279):
+
+> Enrolled students leave one 1-5 rating plus an optional text review per course (editable,
+> deletable). The course carries an aggregate rating and count, kept consistent through a
+> core-table helper. Shown on catalogue cards, the course page and as a search sort/boost. The
+> instructor can respond; an admin can remove abusive reviews. One review per student per course
+> under concurrency; an average/count invariant in `helpers/invariants.ts`.
+
+## spec
+
+ブランチ `spec/reviews` 上の [PR #358](https://github.com/AlexTo/discava/pull/358)、`docs(specs): course ratings and written
+reviews`: 14 コミット、923 行で、すべて `specs/20261116-013307-course-reviews/` の下にあります。
+
+- `/speckit-clarify` は尋ねる相手がいない状態で実行されたので、エージェントは回答を "Clarifications" に
+  記録しました。たとえば: *"Must a student have made progress before they may review? → No.
+  Any student whose enrolment is not dropped may review."* spec PR のレビュアーは、コードが存在する前に、
+  そのどれにでも異議を唱えることができました。
+- `tasks.md` は **8 フェーズ、36 タスク** になりました。フェーズ 1 は最初のユーザーストーリー (レコード、
+  サマリー、共有の書き込み処理) で、フェーズ 2 〜 8 はそれぞれ自分がどの PR かを示しています
+  ("core-api review procedures (PR 2)")。2 つのタスクは **(human)** です: ローカルスタックでの手動の通し確認と、
+  デプロイされたステージでのチェックです。
+
+11 月 15 日に開かれ、`spec-ready` ラベルが付けられ、11 月 18 日 06:47 にマージされました。
+
+## チェーン
+
+| フェーズ | issue の作成 | PR | マージ | サイズ | 修正 |
+| --- | --- | --- | --- | --- | --- |
+| 1. レビューのレコード、評価のサマリー、書き込み処理 | [#453](https://github.com/AlexTo/discava/issues/453) 07:09 | [#456](https://github.com/AlexTo/discava/pull/456) | 07:40 | +1,923 | なし |
+| 2. core-api のレビュープロシージャ | [#459](https://github.com/AlexTo/discava/issues/459) 07:41 | [#460](https://github.com/AlexTo/discava/pull/460) | 08:30 | +1,334 | なし |
+| 3. 受講者ポータルの評価とレビュー | [#461](https://github.com/AlexTo/discava/issues/461) 08:31 | [#464](https://github.com/AlexTo/discava/pull/464) | 09:55 | +1,357 | `review-fix-1` |
+| 4. 検索での評価 | [#466](https://github.com/AlexTo/discava/issues/466) 09:56 | [#470](https://github.com/AlexTo/discava/pull/470) | 11:24 | +900 | `ci-fix-1` |
+| 5. 講師の返信 | [#475](https://github.com/AlexTo/discava/issues/475) 11:25 | [#476](https://github.com/AlexTo/discava/pull/476) | 12:30 | +1,791 | `ci-fix-1` |
+| 6. 管理者による削除 | [#481](https://github.com/AlexTo/discava/issues/481) 12:31 | [#483](https://github.com/AlexTo/discava/pull/483) | 13:09 | +1,526 | なし |
+| 7. 講師への通知 | [#485](https://github.com/AlexTo/discava/issues/485) 13:10 | [#497](https://github.com/AlexTo/discava/pull/497) | 00:20、11 月 19 日 | +422 | `review-fix-1` |
+| 8. エンドツーエンド、docs、手動チェック | [#501](https://github.com/AlexTo/discava/issues/501) 00:21、11 月 19 日 | [#504](https://github.com/AlexTo/discava/pull/504) | 01:08、11 月 19 日 | +427 | `ci-fix-1` |
+
+PR は 8 つ、テストを含めて約 9,700 行です。最初の 6 つは 6 時間でマージされました。フェーズ 7 のエージェントの PR は
+issue の 10 時間後に開かれ、最後の 2 つはそこから 90 分以内にマージされました。各 issue は前の PR がマージされた
+約 1 分後に開かれ、最後の PR が #279 を閉じました。
+
+## 人がしたこと
+
+1. 1 段落のトラッキング issue を書いた。
+2. spec PR をレビューしてマージした。
+3. 8 つの PR それぞれについて: 説明とスクリーンショットのコメントを読み、マージした。
+
+issue を開いた人も、プロンプトを書いた人も、エラーを貼り付けた人もいません。
+
+## ループが捕まえたもの
+
+- **PR #464**: レビュアーエージェントが変更を求めました。Agent Review Status がエージェントを 1 回差し戻し、
+  次のレビューの後に PR はマージされました。
+- **PR #470**: 新しい e2e シナリオが 2 つの要素にマッチする locator を使っていたため、1 つのシャードが失敗しました。
+  Agent CI Status がエージェントを 1 回差し戻しました。エージェントは locator を直し、その理由をコメントで説明しました。
+  全体の経過は [フィードバックループ](../feedback-loops/) を参照してください。
+- **PR #476**: CI の失敗が 1 回、最初の試行で修正。
+- **PR #497**: レビューによる変更が 1 ラウンド。
+- **PR #504**: CI の失敗が 1 回、最初の試行で修正。
+
+<Aside type="note">
+issue はシンプルな Conventional Commit のタイトルを求めているのに、各 PR のタイトルは issue-to-PR automation
+独自の形式である `[#<issue>]` で始まります。ここに 2 つの層の働きが表れています。issue の指示は文章で、
+automation の形式はコードです。勝つのはコードなので、タイトルを気にするならチェックで強制してください。
+</Aside>
+
+## 人に残されたもの
+
+フェーズ 8 の 2 つの **(human)** タスクです: ローカルスタックでの手動の通し確認と、デプロイされたステージでの
+チェック。最後の PR は、`tasks.md` でその両方が未チェックのままマージされたので、automation はそれらを
+待たず、ほかの何も待ちませんでした。それらを追跡しているのは
+[Archive Specs](../spec-to-issue/#完了した-spec-のアーカイブ) ワークフローです。人が両方にチェックを付けるまで、
+spec フォルダーは稼働中のままです。
+
+次へ: [セットアップ: fork して動かす](../../setup/before-you-start/)。

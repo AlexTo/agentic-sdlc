@@ -1,0 +1,46 @@
+---
+title: 0. Antes de começar
+description: O que você precisa, e como fazer um fork deste repositório te dá o setup do Discava.
+sidebar:
+  order: 0
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Um [fork deste repositório](../../guides/fork-this-repo/) tem tudo o que o setup do Discava mantém
+no repositório. Estes passos adicionam a parte que fica fora dele: as configurações do GitHub e uma
+instalação do OpenHands apontada para o seu fork. Depois você escreve uma spec para o app de notas e
+acompanha o caminho dela, do PR de spec até os PRs dos agents mergeados.
+
+**Tempo:** cerca de uma hora, a maior parte esperando a primeira execução do agent.
+
+## O que você precisa
+
+| Item | Por quê |
+| --- | --- |
+| Uma conta no GitHub | Para fazer o fork e ser dono do token que os agents usam |
+| Node.js 24 e pnpm | Para rodar o repositório e o Agent Canvas |
+| `uv` | O Agent Canvas inicia o backend com `uvx` |
+| Docker | Só para rodar o app de notas e os testes e2e localmente. O CI roda eles para o agent |
+| GitHub CLI (`gh`), com login feito | A maioria dos passos usa ele |
+| Um coding agent, instalado e com login feito | Escreve specs com o Speckit e roda dentro do OpenHands. O Discava usa o Claude Code |
+
+<Aside type="note">
+O Agent Canvas roda na sua própria máquina e consulta o GitHub periodicamente, então não precisa de
+endereço público nem de webhook. Os agents só trabalham enquanto ele está rodando.
+</Aside>
+
+## Os passos
+
+| # | Passo | No final você terá |
+| --- | --- | --- |
+| 1 | [Faça um fork do repositório](../fork/) | Sua própria cópia, com Actions e Issues ativados |
+| 2 | [Configure o repositório](../github-repository/) | Labels e uma `main` protegida |
+| 3 | [Instale o OpenHands](../openhands/) | O Agent Canvas rodando, um token do GitHub, dois perfis de agent |
+| 4 | [Crie as duas automações](../automations/) | O OpenHands implementando e revisando no seu fork |
+| 5 | [Rode sua primeira feature](../first-feature/) | Uma spec para o app de notas, levada até código mergeado pelos agents |
+
+Quer o setup em um repositório existente? Veja
+[Adote no seu próprio repositório](../../adopt/overview/).
+
+Próximo: [1. Faça um fork do repositório](../fork/).

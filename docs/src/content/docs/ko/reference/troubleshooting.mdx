@@ -1,0 +1,45 @@
+---
+title: 문제 해결
+description: 증상, 무슨 일이 일어나고 있는지, 그리고 무엇을 해야 하는지.
+sidebar:
+  order: 5
+---
+
+## 체인이 시작되지 않거나 이어지지 않음
+
+| 증상 | 무슨 일인가 | 해야 할 일 |
+| --- | --- | --- |
+| Spec PR이 merge되었는데 issue가 없음 | merge될 때 PR에 `spec-ready` label이 없었습니다 | merge된 PR에 `spec-ready`를 추가합니다. Agent Issues는 `labeled`에서도 실행됩니다 |
+| Agent Issues 실행 결과: `No issue created: it is not an agent branch and has no "spec-ready" label` | 위와 같거나, 의도적으로 무시되는 사람의 PR이었습니다 | 위와 같이 하거나, spec 폴더로 Agent Issues를 수동 실행합니다 |
+| Agent Issues 실패: `tasks.md is not in the format the workflow reads` | spec PR에서 형식 검사를 건너뛰었거나 무시했습니다 | PR로 `tasks.md`를 고친 뒤 Agent Issues를 수동 실행합니다 |
+| 댓글: "the next implementation issue … was not opened: an issue for … already exists" | phase의 issue는 있지만 그 안의 일부 에이전트 task가 체크되지 않았습니다 | 끝났다면 체크하고, 아니면 끝냅니다. 그런 다음 Agent Issues를 수동 실행합니다 |
+| Agent Issues가 `no spec folder with a tasks.md was found`를 로그에 남김 | merge된 에이전트 PR의 issue에 마커가 없고, PR이 `specs/` 파일을 바꾸지 않았습니다 | spec 폴더로 Agent Issues를 수동 실행합니다 |
+| 마지막 phase가 merge되었는데 아무것도 열리지 않음 | 정상입니다. 남은 task는 **(human)**뿐이거나 없습니다 | 완료 |
+
+## 에이전트가 가져가지 않거나 수정하지 않음
+
+| 증상 | 무슨 일인가 | 해야 할 일 |
+| --- | --- | --- |
+| label이 붙은 issue를 아무도 가져가지 않음 | Agent Canvas가 꺼져 있거나, automation이 비활성화되었거나, 토큰이 저장소를 읽을 수 없습니다 | `agent-canvas`가 실행 중이고 automation이 활성화되어 있는지 확인합니다. automation의 마지막 실행 로그를 확인합니다 |
+| PR이 빨간색이고 `ci-fix-1`이 추가되었지만 에이전트가 수정하지 않음 | worker는 정확히 `openhands/issue-<n>`만 수정하거나, issue가 닫혔습니다 | 브랜치 이름을 확인합니다. issue를 다시 엽니다 |
+| 빨간 실행 후 `ci-fix-*` label이 없음 | Agent CI Status가 실행되지 않았거나, 실행을 무시했습니다 (notice 참고) | Agent CI Status 실행을 열고 notice를 읽습니다. 예: `the pull request has a newer commit than this run` |
+| 에이전트가 수정했는데 새 head를 아무도 리뷰하지 않음 | 에이전트가 `openhands-review`를 다시 붙이지 않았습니다 | 수동으로 다시 붙입니다 |
+| push 거부: `refusing to allow a Personal Access Token to create or update workflow` | 토큰에 workflows 권한이 없고, 브랜치가 `.github/workflows/`를 건드립니다 (흔히 `main`의 merge를 통해) | 권한을 추가합니다. 다음 폴링에서 다시 시도합니다 |
+| `ci-fix-exhausted` | 다섯 번의 수정으로 수렴하지 않았습니다 | 마지막 실패를 읽습니다. 보통 spec이나 plan이 모호합니다. 고치고, label을 제거하고, 다시 실행합니다 |
+
+## 리뷰
+
+| 증상 | 무슨 일인가 | 해야 할 일 |
+| --- | --- | --- |
+| "⏳ Review waiting on checks"만 있고 리뷰가 없음 | head의 검사가 끝나지 않았거나, queue에서 멈춰 있습니다 | 대기 중인 검사를 찾습니다. 절대 실행되지 않는 필수 검사는 리뷰를 영원히 막습니다 |
+| 리뷰가 `🔄 CHANGES REQUESTED`인데 `review-fix-*` label이 없음 | 리뷰에 run 마커가 없거나, write 권한이 있는 계정의 리뷰가 아니거나, PR이 이미 진행되었습니다 | Agent Review Status notice를 읽습니다 |
+| 리뷰가 "Approved"가 아니라 "Commented"로 표시됨 | 리뷰어가 PR을 연 것과 같은 계정으로 게시하는데, GitHub는 자기 승인을 허용하지 않습니다 | 계정이 하나라면 예상된 동작입니다. 에이전트에게 machine account를 사용하세요 |
+
+## Check
+
+| 증상 | 무슨 일인가 | 해야 할 일 |
+| --- | --- | --- |
+| refactor에서 `UI Screenshots`가 실패함 | 규칙은 눈에 보이는 변경과 보이지 않는 변경을 구분할 수 없습니다 | maintainer가 `no-ui-screenshots`를 추가하고 검사를 다시 실행합니다 |
+| 모든 PR의 e2e job이 Chromium을 다운로드함 | 캐시는 `main`에서만 저장됩니다 | PR Checks와 같은 key로 CI의 `playwright-cache` job을 유지합니다 |
+| `main`에서 `Check for mutations`가 실패함 | PR이 커밋하지 않은 파일을 무언가가 생성했습니다 | 로컬에서 `pnpm build`를 실행하고 diff를 커밋합니다 |
+| label을 붙일 때 `Resource not accessible by integration` | workflow 토큰이 issue에는 쓸 수 있지만 pull request에는 쓸 수 없습니다 | workflow에 `pull-requests: write`를 추가합니다 |

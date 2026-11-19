@@ -1,0 +1,98 @@
+---
+title: Couches de confiance
+description: Les vérifications par lesquelles passe chaque changement, des moins coûteuses aux plus coûteuses, et ce que chacune détecte.
+sidebar:
+  order: 7
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+L'automatisation ne vaut que si vous pouvez faire confiance à ce qui en sort. Chaque changement passe
+par des couches de vérifications : les vérifications automatiques et peu coûteuses s'exécutent en
+premier et détectent le plus de problèmes, et seul ce qu'elles ne peuvent pas juger arrive à une
+personne.
+
+<p>
+  <img alt="Triangle inversé de cinq couches, de la plus large à la plus étroite : Code, Analyse statique, Vérification, Texte, Revue humaine" src="/agentic-sdlc/diagrams/automation-trust.svg" width="640" />
+</p>
+
+| Niveau | Couche | Ce qu'elle détecte |
+| --- | --- | --- |
+| **Code** | Tests unitaires | Logique métier erronée et règles cassées |
+| | Invariants | Des données qui enfreignent une règle portant sur plusieurs enregistrements, vérifiées après chaque test e2e |
+| | Tests de concurrence | Les conditions de course quand deux requêtes arrivent au même moment |
+| **Analyse statique** | Lint, typecheck, build | Erreurs de style, de types et de build |
+| | Vérification du format des tâches | Un `tasks.md` mal formé qui bloquerait la chaîne sans bruit |
+| | Vérification des fichiers générés | La sortie du lint ou du build que l'agent a oublié de commiter |
+| **Vérification** | Tests de bout en bout | Des flux utilisateur cassés, dans un vrai navigateur contre la stack locale |
+| | Captures d'écran | Des changements d'UI que personne n'a regardés |
+| **Texte** | Constitution, `AGENTS.md`, skills | Des consignes que l'agent lit *avant* d'écrire, pour que les conventions soient suivies plutôt que rattrapées |
+| | Agent relecteur | Des problèmes qu'aucun test ne couvre, lus comme dans une revue de code |
+| **Revue humaine** | Revue finale | Tout ce que les couches ci-dessus ne peuvent pas juger. Une personne merge toujours |
+
+## C'est la vérification qui compte le plus
+
+Les tests unitaires, le lint et les types montrent que le code est cohérent avec lui-même. Seuls les
+tests e2e et les captures d'écran montrent que la fonctionnalité *marche*, telle que l'utilisateur la
+voit, contre la vraie stack. C'est le
+[principe 1](../principles/#1-la-vérification-dabord--donner-des-mains-et-des-yeux-à-lagent). C'est
+aussi la couche qu'une personne peut vérifier le plus vite : les captures d'écran vous permettent de
+juger une PR en quelques minutes, sans récupérer la branche.
+
+La CI en fait la règle par défaut :
+
+1. Chaque scénario e2e d'un flux d'UI appelle `screenshot(page, 'name')` à chaque état qu'un
+   relecteur voudrait voir.
+2. La CI publie un commentaire **E2E screenshots** sur la PR, qui liste les captures d'écran ajoutées
+   par la PR (séparément de celles qui existaient déjà) et renvoie vers les artefacts de l'exécution.
+3. Le check `UI Screenshots` échoue si un changement d'UI arrive sans captures d'écran.
+
+Tiré de Discava [#486](https://github.com/AlexTo/discava/pull/486#issuecomment-6980411897),
+paramètres de notification :
+
+<p>
+  <img alt="Un commentaire de github-actions intitulé E2E screenshots, qui liste les neuf captures d'écran ajoutées par la pull request, comme notification-settings/02-emails-stopped.png, et renvoie vers les artefacts de l'exécution" src="/agentic-sdlc/screenshots/e2e-screenshots-comment.png" width="620" />
+</p>
+
+Le relecteur ouvre les neuf nouvelles captures et vérifie chaque état : les paramètres avec chaque
+type listé, un interrupteur enregistré, les e-mails arrêtés puis réactivés, un lien de désinscription
+valide et un invalide, une erreur et « réessayer ». Chacun de ces états est une exigence de la spec,
+vue en fonctionnement.
+
+## Le texte guide, le code fait respecter
+
+Le texte (la constitution, `AGENTS.md`, les instructions de l'issue) coûte peu à écrire et évite la
+plupart des erreurs, mais un agent peut le lire de travers ou le sauter. Donc chaque règle qui compte
+a aussi un check qui échoue. Le [principe 5](../principles/#5-rendre-les-règles-et-les-skills-déterministes)
+liste ceux de Discava.
+
+Quand vous ajoutez une règle, demandez-vous : si l'agent l'ignore, qu'est-ce qui passe au rouge ?
+
+## Les tests sont une spécification
+
+La règle la plus importante de la constitution de Discava :
+
+> A failing test MUST be resolved by fixing the code, unless the spec or plan changes the behavior
+> it covers. Weakening an existing test (loosening an assertion, deleting a case, adding `skip` or
+> `only`, widening a mock or snapshot) is allowed only when a task names the behavior change that
+> justifies it, and the PR description says so.
+
+Un agent sous pression pour faire passer la CI au vert finira, tôt ou tard, par « corriger » le test.
+Cette règle, répétée dans le template d'issue et vérifiée par l'agent relecteur, est ce qui garde un
+sens à la suite de tests.
+
+## Les invariants : des tests pour les données
+
+Les tests unitaires vérifient une fonction. Les tests E2E vérifient un flux. Aucun ne remarque quand
+deux fonctionnalités, écrites dans des PR différentes par des exécutions d'agent différentes, laissent
+la base de données dans un état qui enfreint une règle portant sur les deux. Les invariants comblent
+ce manque. Ce sont une liste de vérifications sur l'ensemble des données, par exemple « le nombre de
+notes d'un cours est égal à son nombre d'avis visibles », exécutées après **chaque** test e2e. Un
+invariant violé fait échouer le test qui l'a provoqué.
+
+<Aside type="tip">
+Les invariants sont la couche la plus rentable à mesure que les agents écrivent une plus grande part
+du code. Ils détectent les erreurs qui viennent de deux agents ayant chacun raison localement.
+</Aside>
+
+Suite : [Contrôles humains](../human-gates/).

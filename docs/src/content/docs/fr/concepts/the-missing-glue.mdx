@@ -1,0 +1,82 @@
+---
+title: La glue manquante
+description: Les dix manques entre Speckit, OpenHands et la CI, et les règles pour les combler.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Speckit se termine par un `tasks.md`. OpenHands part d'une issue labellisée et s'arrête à une pull
+request. La CI rend un résultat et passe à autre chose. Chaque outil fait bien son propre travail, et
+aucun ne transmet le travail au suivant. Sans glue, c'est *vous* qui faites la transmission : vous
+copiez les tâches dans une issue, remarquez que la CI est passée au rouge, et dites à l'agent de
+corriger.
+
+Voici les manques, et ce qui comble chacun d'eux :
+
+| # | Le manque | Ce qui le comble |
+| --- | --- | --- |
+| 1 | Rien ne transforme une spec terminée en travail pour l'agent | Un workflow lit `tasks.md` et ouvre l'issue d'implémentation suivante, un groupe de phases à la fois |
+| 2 | L'agent ne sait pas que la CI a échoué | Un workflow signale une exécution en échec à l'agent sous la forme du statut de commit qu'il surveille déjà |
+| 3 | Le « changes requested » d'un relecteur reste sans suite | Un workflow fait de même pour le verdict de l'agent relecteur |
+| 4 | Rien n'empêche un agent bloqué de boucler indéfiniment | Les deux boucles de correction sont limitées à cinq tentatives, comptées par des labels, puis une personne prend le relais |
+| 5 | `tasks.md` n'est qu'une convention, donc un fichier mal formé bloque la chaîne sans bruit | Un check de PR valide son format |
+| 6 | Les changements d'UI arrivent en revue sans que personne ne les ait regardés | Un check exige des captures d'écran e2e, et la CI les publie sur la PR |
+| 7 | Merger la PR de l'agent ne lance pas la phase suivante | Le merge d'une branche d'agent ouvre l'issue suivante, jusqu'à ce que la spec soit terminée |
+| 8 | L'agent ne peut pas faire tourner la vraie stack sans accès au cloud | Des équivalents locaux pour chaque service, pour que toute l'application et ses tests e2e tournent sans identifiants |
+| 9 | Merger ne livre rien | Un build vert sur `main` se déploie de lui-même, saute un commit qui n'est plus le dernier, et la production attend une personne |
+| 10 | Un agent peut commiter un secret divulgué ou une dépendance vulnérable | Une analyse des secrets et des dépendances à chaque build, et de nouveau avant chaque déploiement |
+
+[Comment Discava procède](../../discava/overview/) associe chaque ligne à ses fichiers.
+
+## Règles pour écrire la glue
+
+Ces règles sont nées de la construction et de la correction de la glue sur Discava.
+
+### Décider dans le code, pas dans un prompt
+
+Chaque décision du type « que se passe-t-il ensuite » est une fonction pure avec des tests
+unitaires : `decide()` dans `gate.ts` pour savoir quels merges comptent, `planCi()` pour savoir s'il
+faut renvoyer l'agent au travail. Le fichier de workflow ne fait que relier l'événement au script.
+Vous pouvez tester une décision sans GitHub, et l'agent ne peut pas la contourner par la discussion.
+
+### Garder l'état sur GitHub
+
+Il n'y a pas de base de données. Le nombre de tentatives est un label (`ci-fix-2`). L'issue d'un
+groupe de phases est retrouvée grâce à un marqueur caché dans son corps
+(`<!-- agent-issue spec:<folder> group:2 -->`). « Déjà renvoyé » est un statut de commit. Tout le
+monde peut voir l'état, et une personne peut le modifier à la main, par exemple en retirant un label
+pour autoriser une tentative de plus.
+
+### Parler la langue que l'agent connaît déjà
+
+OpenHands révise déjà une PR dont la tête porte un statut `software-factory/review` en échec. La glue
+publie donc ce statut au lieu d'inventer un nouveau déclencheur. Aucune modification d'OpenHands n'est
+nécessaire.
+
+### Exécuter du code de confiance avec le token
+
+Les workflows de glue détiennent un token qui peut écrire des labels, des statuts et des
+commentaires. Ils récupèrent la **branche par défaut**, jamais la pull request, donc rien de ce qu'un
+agent ou un contributeur a écrit ne s'exécute avec ce token. Tout ce qui est lu depuis la PR (noms de
+branche, corps) est vérifié selon un motif strict avant d'être utilisé.
+
+### Être idempotent
+
+GitHub livre les événements plus d'une fois, et les gens relancent des jobs. Chaque script vérifie
+avant d'agir : pas de seconde issue pour le même groupe, pas de seconde tentative pour le même
+commit, pas de réaction à une exécution pour un commit qui n'est plus la tête.
+
+### Échouer bruyamment, là où une personne regarde
+
+Une notice de workflow, personne ne la lit. Quand la chaîne se bloque, dites-le sur la pull request :
+« the next issue was not opened because these tasks aren't ticked: T014, T015 ».
+
+<Aside type="note">
+La glue de ce dépôt représente environ 1 600 lignes de TypeScript, et autant en tests unitaires,
+réparties dans quatre dossiers de `packages/common/scripts/src/`. Lisez-la avant de l'adopter. Cela
+prend un après-midi.
+</Aside>
+
+Suite : [Boucles de retour](../feedback-loops/).

@@ -1,0 +1,93 @@
+---
+title: 배포와 보안
+description: 초록색 main이 스스로 배포되는 방식, 그리고 유출된 secret이나 취약한 의존성을 막는 스캔.
+sidebar:
+  order: 9
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+빈틈 9와 10: merge해도 아무것도 배포되지 않고, 에이전트가 secret을 커밋하거나 취약한 패키지를 끌어올 수 있습니다.
+Discava는 둘 다 GitHub Actions에서 처리하며, 어디에도 수명이 긴 클라우드 자격 증명이 없습니다.
+
+## 배포
+
+`.github/workflows/deploy.yml`은 `main`에서 **CI**가 초록색으로 끝나면 실행되거나, 어떤 stage든 직접 실행할 수
+있습니다. 각 stage에는 자체 GitHub environment와 자체 concurrency 그룹이 있으므로, 한 stage에 대한 배포 두 개가
+겹치는 일은 없습니다. workflow의 축약본은 [도입: 배포](../../adopt/deploy/)에 있습니다.
+
+```d2
+direction: right
+
+ci: main에서 CI 통과
+manual: 수동 실행
+approve: "required reviewers\n(프로덕션만)" {shape: diamond}
+deploy: "Deploy workflow\nTrivy, OIDC role, synth,\n아직 main의 최신인가?, cdk deploy"
+dev: development stage {shape: cylinder}
+prod: production stage {shape: cylinder}
+
+ci -> deploy: AUTO_DEPLOY_STAGE
+manual -> approve -> deploy
+deploy -> dev
+deploy -> prod
+```
+
+순서대로 단계는 다음과 같습니다.
+
+1. 지금의 `main`이 아니라 **CI가 검증한 커밋을 checkout**합니다(`workflow_run.head_sha`).
+2. `stages.config.ts`에 **stage가 있는지 확인**합니다. 그래서 오타가 헷갈리는 자격 증명 오류가 아니라 분명한
+   실패로 드러납니다.
+3. **stage override를 전달**합니다. GitHub environment에서 `DISCAVA_DEVELOPMENT_*` 같은 이름을 가진 변수는
+   synth를 위한 환경 변수가 됩니다. 커밋하면 안 되는 커스텀 도메인 같은 것들을 위한 것입니다.
+4. **Trivy 스캔.** CI와 같은 스캔을 게이트로 실행합니다.
+5. GitHub OIDC(`aws-actions/configure-aws-credentials`)로 **deploy role을 assume**합니다. 액세스 키는 어디에도
+   저장되지 않습니다.
+6. stage의 permissions boundary를 적용해 **synthesize**합니다.
+7. **커밋이 아직 `main`의 최신인지 확인**합니다. 이 단계는 concurrency 슬롯 안에서 실행됩니다. 오래된 CI의 재실행이나
+   더 새로운 배포 뒤에서 기다리던 실행은 낡은 코드를 배포하는 대신 notice와 함께 건너뜁니다. 수동 실행은 이
+   확인을 건너뛰므로 롤백할 수 있습니다.
+8. CloudFormation에 범위가 제한된 실행 role(`--role-arn`)을 넘겨 CDK로 **배포**합니다.
+
+`AUTO_DEPLOY_STAGE`는 저장소 변수입니다. Discava는 이를 `discava-development`로 설정하므로, 초록색 `main`은 모두
+development stage에 도달합니다. 설정하지 않으면 사람 없이는 아무것도 배포되지 않습니다.
+
+### stage 설정하기
+
+`scripts/setup-stage.sh`는 workflow를 실행하는 저장소의 clone에서 stage마다 한 번 실행합니다. 모든 것을 물어보며,
+감지할 수 있는 것은 기본값으로 채웁니다. 다음을 만듭니다.
+
+- AWS 계정의 GitHub OIDC provider
+- workflow가 assume하는 **deploy role**, 해당 저장소와 environment만 신뢰합니다
+- **CloudFormation 실행 role**과 그 관리형 정책, permissions boundary가 있어서 스택은 그 boundary를 가진 role만
+  만들 수 있습니다
+- GitHub environment의 `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `AWS_EXECUTION_ROLE_ARN` 변수, 그리고 선택적으로
+  `AUTO_DEPLOY_STAGE`
+- 선택적으로, 루트 도메인이라는 질문 하나로 커스텀 도메인. 모든 컴포넌트가 그 아래의 고정된 하위 도메인을 받고,
+  스크립트가 각각에 대해 발급된 인증서를 찾습니다. 하나라도 없으면 그것을 나열하고 아무것도 바꾸기 전에 멈춥니다.
+  도메인은 GitHub environment에 stage override로 저장됩니다(위의 3단계)
+
+### 프로덕션은 사람을 기다린다
+
+각 stage는 같은 이름의 GitHub environment에서 배포됩니다. 프로덕션과 같은 stage는 environment에 **required
+reviewers**를 둡니다. 누군가 Actions UI에서 승인할 때까지 job이 일시 정지됩니다. Discava는 아직 출시 전이므로,
+지금은 `discava-development`에만 environment가 있고 자동으로 배포됩니다.
+
+## 보안 스캔
+
+| 스캔 | 언제 | 막는 것 |
+| --- | --- | --- |
+| `git-secrets` (AWS 패턴) | 모든 로컬 커밋에서 `pre-commit` hook | AWS 키가 들어 있는 커밋 |
+| Trivy, 취약점과 secret | `main`에 push할 때마다 `ci.yml`의 `trivy` job, 그리고 배포 전마다 `deploy.yml` | 수정 가능한 CRITICAL 취약점이나 커밋된 HIGH/CRITICAL secret이 있는 배포 |
+| checkov | 인프라 프로젝트의 `build` target의 일부, 그래서 모든 PR의 `Checks (build)`에서 실행 | 안전하지 않은 CDK 리소스 설정 |
+| Dependabot | 매주, npm과 GitHub Actions, 그룹으로 묶음 | 오래된 의존성과 action 고정 버전 |
+
+Trivy는 `build`의 일부가 아니라 **별도의** CI job으로 실행됩니다. 취약점 데이터베이스가 매일 바뀌므로, 새로 공개된
+CVE는 문서 배포를 막지 않으면서 `main`에 표시되어야 합니다. 수용한 결과는 `.trivyignore`에 한 줄에 ID 하나씩
+나열합니다.
+
+<Aside type="note">
+pre-commit hook은 `lint-staged`(Biome)도 실행하며, 어느 도구든 작업 트리를 바꾸면 커밋을 실패시키므로 에이전트는
+다시 stage하고 커밋합니다. `commit-msg`는 Conventional Commits 설정으로 commitlint를 실행합니다.
+</Aside>
+
+다음: [실제 기능](../a-real-feature/).

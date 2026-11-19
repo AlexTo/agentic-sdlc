@@ -1,0 +1,65 @@
+---
+title: Discava の概要
+description: Discava とは何か、どのツールを動かしているか、そして各ギャップを埋めるファイル。
+sidebar:
+  order: 1
+  label: 概要
+---
+
+[Discava](https://github.com/AlexTo/discava) は AWS 上のサーバーレスな学習管理システムです。
+3 つの React ポータル、Lambda 上の 3 つの tRPC API、単一の DynamoDB テーブル、メディアパイプラインと
+検索で構成され、Nx monorepo から CDK でデプロイされます。誰も全体を頭に入れておけないほどの規模があり、
+まさにそういうときにこのワークフローが効果を発揮します。
+
+このセクションでは、2026 年 11 月時点で Discava が動かしているものを、各要素を支えるファイルとともに説明します。
+
+## ツールとバージョン
+
+| ツール | バージョン | 役割 |
+| --- | --- | --- |
+| Speckit (`specify-cli`) | 1.3.2 | spec、plan、task の生成。`git` extension 付き |
+| OpenHands Agent Canvas | 1.41.0 | エージェントのランタイムと 2 つの automation。1 台の Linux マシン上のユーザーサービスとして動作 |
+| `github-issue-to-pr` automation | 1.2.4 | ラベル付きの issue を実装し、失敗した PR を修正する |
+| `github-pr-reviewer` automation | 1.11.2 | チェックが終わった PR をレビューする |
+| 実装用のエージェント | ACP 経由の Claude Code、Sonnet | `default` エージェントプロファイル |
+| レビュー用のエージェント | ACP 経由の Claude Code、Opus | `reviewer` エージェントプロファイル |
+| Nx + pnpm | Nx 23 | monorepo、CI での `nx affected` |
+| Playwright | | ローカルスタックに対する E2E テスト。CI では 6 シャード |
+| Trivy, git-secrets, commitlint | | セキュリティスキャン、コミット前のシークレットチェック、コミットメッセージの形式 |
+
+## ギャップとファイル
+
+| ギャップ | Discava の答え | ファイル |
+| --- | --- | --- |
+| spec から issue へ | Agent Issues ワークフローとそのスクリプト | `.github/workflows/agent-issues.yml`, `packages/common/scripts/src/agent-issues/` |
+| CI の失敗をエージェントへ | Agent CI Status | `.github/workflows/agent-ci.yml`, `src/agent-ci/` |
+| レビューをエージェントへ | Agent Review Status | `.github/workflows/agent-review.yml`, `src/agent-review/` |
+| 終わらないループ | ラベルによる 5 回の試行上限 | `plan.ts` の `MAX_CI_FIX_ATTEMPTS` と `MAX_REVIEW_FIX_ATTEMPTS` |
+| 不正な形式の `tasks.md` | Tasks format ジョブ | `pr-checks.yml` `tasks-format`, `src/agent-issues/validate.ts` |
+| 見えない UI の変更 | UI Screenshots ジョブ、E2E スクリーンショットのコメント | `pr-checks.yml`, `src/ui-screenshots/`, `packages/e2e/src/helpers/screenshots.ts` |
+| マージしても先に進まない | マージされた `openhands/` ブランチに対する Agent Issues | `src/agent-issues/gate.ts` |
+| エージェントにクラウドがない | すべての AWS サービスのローカル代替 | `pnpm dev`, `packages/common/scripts/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
+| マージしてもリリースされない | `main` での CI、その後 Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
+| シークレットと脆弱な依存関係 | CI とデプロイ前の Trivy、コミット時の git-secrets | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
+
+そして、すべてのエージェントが読む文章です。
+
+| ガイダンス | ファイル |
+| --- | --- |
+| プロジェクトのルール。すべての plan でチェックされる | `.specify/memory/constitution.md` (バージョン 1.2.1) |
+| コマンド、アーキテクチャ、規約 | `AGENTS.md` |
+| PR のプロセス、ローカルスタック、テスト | `CONTRIBUTING.md` |
+| すべての実装 issue に付く指示 | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| automation 向けにカスタマイズした Speckit テンプレート | `.specify/templates/tasks-template.md`, `spec-template.md` |
+
+## 数字で見る
+
+ワークフローが稼働した 11 月 14 日から 2026 年 11 月 18 日まで。
+
+- Speckit で書かれた機能 spec は 12 件で、`specs/` の下にあります。
+- automation のスイープは 2,344 回で、5 分ごとに 1 回です。issue-to-PR のポーリングが 1,304 回、
+  レビューのポーリングが 1,040 回でした。そのうち 149 回で作業が見つかり、エージェントが起動しました。
+- マージされたエージェントの PR は 67 件です。42 件は自動修正が不要で、17 件は 1 ラウンドの修正が必要で、
+  1 件はループを使い切りました。
+
+次へ: [constitution とガイダンス](../constitution-and-guidance/)。

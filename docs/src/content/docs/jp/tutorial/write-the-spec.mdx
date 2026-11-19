@@ -1,0 +1,58 @@
+---
+title: 1. spec を書く
+description: Speckit でアイデアを spec.md にし、エージェントにそれを問い直させます。
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**現在地:** 🧑 あなた + 🤖 エージェント。**成果物:** `specs/<timestamp>-note-tags/spec.md`。
+
+spec は *何を* と *なぜ* を述べ、*どのように* は決して述べません。あなたが書くものの中で最も重要です。
+
+<Steps>
+
+1. ブランチから始めます。
+
+   ```bash
+   git switch -c spec/note-tags
+   ```
+
+2. Speckit に機能を説明します。
+
+   ```text
+   /speckit-specify Users can add up to five tags to a note and filter the note list by tag.
+   Tags are case-insensitive and unique per note.
+   ```
+
+   Speckit は、ユーザーストーリー、機能要件、受け入れ基準を含む `specs/<timestamp>-note-tags/spec.md` を作成します。
+
+3. エージェントに抜けを見つけさせます。
+
+   ```text
+   /speckit-clarify
+   ```
+
+   エージェントは的を絞った質問を最大 5 つ行い、あなたの回答を spec に書き戻します。この機能では、
+   次のような質問が予想されます:
+
+   - 6 つ目のタグを追加したらどうなるか: 拒否するか、最も古いものを外すか?
+   - `Work` と `work` は同じタグか?(spec では「はい」: 保存時に小文字にする。)
+   - タグの長さに上限はあるか?
+
+</Steps>
+
+## 良い spec とは
+
+- 各ユーザーストーリーが単独でテストでき、受け入れシナリオが Given/When/Then で書かれている。
+- すべてのルールが要件として述べられている。たとえば *"A note MUST NOT have more than five tags."*
+  これらのルールが後で invariant とテストになります。
+- spec に技術が登場しない。DynamoDB も tRPC も出てこない。
+
+<Aside type="tip">
+明確化の質問には、エージェントに推測させず自分で答えてください。あなたが答えるたびに、
+コードの中の誤った前提が 1 つ減ります。
+</Aside>
+
+次へ: [plan とタスク](../plan-and-tasks/)。

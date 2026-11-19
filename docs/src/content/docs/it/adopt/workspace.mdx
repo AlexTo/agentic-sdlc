@@ -1,0 +1,117 @@
+---
+title: 1. Workspace e igiene dei commit
+description: Un monorepo Nx con pnpm, e gli hook di commit che mantengono puliti i commit degli agenti.
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Alla fine avrai:** un workspace pnpm con Nx, Biome, Conventional Commits imposti su ogni
+commit, e un controllo dei secret prima di ogni commit.
+
+Il collante non ha bisogno di Nx. Ma `nx affected` è ciò che rende i check delle PR abbastanza veloci perché un agente possa
+iterare, e ogni script del collante gira come target Nx. Se usi un altro strumento per monorepo, mantieni
+l'idea: esegui solo ciò che la PR tocca, ed esponi ogni script come task con un nome.
+
+<Steps>
+
+1. **Crea il workspace**, se non ne hai uno. Discava e questo repository sono stati creati entrambi
+   con il Nx Plugin for AWS:
+
+   ```bash
+   pnpm create @aws/nx-workspace your-project --iac=cdk --no-interactive
+   ```
+
+   Questo installa anche l'hook pre-commit git-secrets usato al passaggio 4. Va bene anche un workspace Nx
+   esistente. Fissa pnpm nel `package.json` della radice, così la CI e l'agente usano la stessa versione:
+
+   ```json
+   { "packageManager": "pnpm@<version>" }
+   ```
+
+2. **Aggiungi gli script della radice** che chiameranno `AGENTS.md`, la CI e l'agente:
+
+   ```json
+   "scripts": {
+     "dev": "nx run-many --target dev",
+     "build": "nx run-many --target build",
+     "lint": "nx run-many --target lint --configuration=fix",
+     "test": "nx run-many --target test --all",
+     "trivy": "nx run-many --target trivy --all",
+     "prepare": "husky"
+   }
+   ```
+
+3. **Aggiungi Conventional Commits con commitlint.** I titoli delle issue che scrive il collante sono intestazioni
+   Conventional Commit, e l'agente li riusa.
+
+   ```bash
+   pnpm add -Dw @commitlint/config-conventional commitlint husky lint-staged
+   echo "export default { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
+   ```
+
+   `.husky/commit-msg`:
+
+   ```bash
+   FORCE_COLOR=1 pnpm commitlint --edit "$1"
+   ```
+
+4. **Aggiungi l'hook pre-commit.** Registra una volta i pattern dei secret AWS, rifiuta un commit che contiene un
+   secret, esegue Biome sui file in stage, e fallisce se questo ha cambiato qualcosa, così l'agente
+   rimette in stage e committa di nuovo. `.husky/pre-commit`:
+
+   ```bash
+   if ! git config --get-all secrets.patterns >/dev/null 2>&1; then
+     bash .git-secrets/git-secrets --register-aws
+   fi
+   bash .git-secrets/git-secrets --pre_commit_hook
+
+   PRE_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
+   FORCE_COLOR=1 pnpm lint-staged
+   POST_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
+
+   if [ "$PRE_SHA" != "$POST_SHA" ]; then
+     echo "Pre-commit modified your working directory"
+     echo "Please verify and stage changed, then retry git commit"
+     exit 1
+   fi
+   ```
+
+   Un workspace del Nx Plugin for AWS ha già `.git-secrets/git-secrets`, `.gitallowed`
+   e quasi tutto questo hook. Altrimenti, copiali da questo repository. `lint-staged.config.js`:
+
+   ```js
+   export default {
+     'packages/**/*.{ts,tsx,js,jsx,json,css,scss}': ['biome check --write --no-errors-on-unmatched'],
+     '*.{js,json}': ['biome check --write --no-errors-on-unmatched'],
+   };
+   ```
+
+5. **Copia l'action condivisa di setup della CI** da questo repository: `.github/actions/init-monorepo/`.
+   Installa pnpm (con tre tentativi, perché altrimenti un timeout del registry costerebbe all'agente un
+   tentativo di correzione), Node 24 e facoltativamente uv, ripristina la cache di pnpm, installa le dipendenze, e
+   imposta `NX_BASE`/`NX_HEAD` per `nx affected`.
+
+</Steps>
+
+## Verifica che funzioni
+
+```bash
+git commit --allow-empty -m "not conventional"
+```
+
+```text
+⧗   input: not conventional
+✖   subject may not be empty [subject-empty]
+✖   type may not be empty [type-empty]
+```
+
+Poi `git commit --allow-empty -m "chore: check hooks"` riesce.
+
+<Aside type="note">
+Discava esegue anche Commitizen da `prepare-commit-msg` per chi fa commit in modo interattivo. Si
+salta da solo quando un messaggio è dato con `-m`, che è il modo in cui committano gli agenti, quindi è facoltativo.
+</Aside>
+
+Avanti: [2. Installa Speckit](../speckit/).

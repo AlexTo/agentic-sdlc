@@ -1,0 +1,100 @@
+---
+title: 5. Les scripts de glue
+description: Ajoutez les scripts testés unitairement qui décident quelle issue s'ouvre, quand l'agent est renvoyé au travail, et quand il s'arrête.
+sidebar:
+  order: 5
+---
+
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
+
+**Résultat :** un projet `common-scripts` avec six cibles Nx et 143 tests unitaires qui passent.
+Les workflows des étapes 6 et 7 ne font qu'appeler ces cibles.
+
+<Steps>
+
+1. **Créez le projet.** Copiez `packages/common/scripts/` depuis ce dépôt (son
+   `package.json`, son `project.json`, ses `tsconfig*.json` et son `vitest.config.mts`), et supprimez
+   `src/dynamodb/`, qui appartient à l'application d'exemple. Renommez-le en `@your-scope/common-scripts` dans
+   `package.json` et `project.json`, ainsi que dans le `name` de `vitest.config.mts`. Un projet TypeScript
+   généré par le Nx Plugin for AWS a la même structure, si vous préférez en générer un.
+
+2. **Copiez les quatre dossiers de glue** depuis le dossier `packages/common/scripts/src/` de ce dépôt :
+
+   <FileTree>
+   - packages/common/scripts/src/
+     - agent-issues/ spec → issue : gate, discover, tasks, validate, issue, plan-issue, create-next-issue, main, validate-main, et archive, archive-specs, archive-main pour l'archivage
+     - agent-ci/ CI → agent : plan, run, main
+     - agent-review/ review → agent : plan, run, main
+     - ui-screenshots/ la règle des captures d'écran : check, main
+   </FileTree>
+
+   Ils ne dépendent que des modules intégrés de Node et du CLI `gh`. `tsx` les exécute.
+
+3. **Ajoutez les cibles** au `project.json` du projet, sous `targets` :
+
+   ```json
+   "agent-issue":         { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/main.ts",    "cwd": "{projectRoot}" } },
+   "archive-specs":       { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/archive-main.ts", "cwd": "{projectRoot}" } },
+   "agent-ci-status":     { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-ci/main.ts",        "cwd": "{projectRoot}" } },
+   "agent-review-status": { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-review/main.ts",    "cwd": "{projectRoot}" } },
+   "ui-screenshots":      { "executor": "nx:run-commands", "options": { "command": "tsx src/ui-screenshots/main.ts",  "cwd": "{projectRoot}" } },
+   "validate-tasks":      { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/validate-main.ts", "cwd": "{projectRoot}" } }
+   ```
+
+4. **Modifiez les constantes selon votre configuration**, si vous avez changé l'une des décisions de
+   [la vue d'ensemble](../overview/) :
+
+   | Constante | Fichier | Par défaut |
+   | --- | --- | --- |
+   | `SPEC_READY_LABEL`, `AGENT_BRANCH_PREFIX` | `agent-issues/gate.ts` | `spec-ready`, `openhands/` |
+   | `AGENT_LABEL` | `agent-issues/issue.ts` | `openhands` |
+   | `AGENT_BRANCH`, `REVIEW_STATUS_CONTEXT`, `MAX_CI_FIX_ATTEMPTS` | `agent-ci/plan.ts` | `^openhands\/issue-\d+$`, `software-factory/review`, `5` |
+   | `MAX_REVIEW_FIX_ATTEMPTS`, `CHANGES_REQUESTED` | `agent-review/plan.ts` | `5`, `🔄 CHANGES REQUESTED` |
+   | `UI_SOURCE`, `SCENARIO`, `WAIVER_LABEL` | `ui-screenshots/check.ts` | `.tsx`/`.css` du portail et de l'UI partagée, `packages/e2e/src/scenarios/*.e2e.ts`, `no-ui-screenshots` |
+
+   `UI_SOURCE` est celle que vous changerez presque à coup sûr. Faites-la pointer vers le code source de vos frontends.
+
+   <Aside type="caution">
+   Ne changez pas `REVIEW_STATUS_CONTEXT`. `software-factory/review` est le statut que cherche le worker
+   issue-to-PR d'OpenHands. Avec tout autre nom, l'agent n'est jamais renvoyé au travail.
+   </Aside>
+
+5. **Lancez les tests.**
+
+   ```bash
+   pnpm nx run @your-scope/common-scripts:test
+   ```
+
+</Steps>
+
+## Vérifier que ça marche
+
+```text
+ Test Files  10 passed (10)
+      Tests  143 passed (143)
+```
+
+## Essayer une exécution à blanc
+
+Chacun des trois scripts d'agent lit l'événement GitHub depuis `GITHUB_EVENT_PATH` et, avec
+`DRY_RUN=true`, affiche sa décision au lieu de l'appliquer. Pour rejouer un cas réel, enregistrez le payload
+d'une exécution de workflow passée et faites pointer le script dessus :
+
+```bash
+DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_PATH=./event.json \
+  pnpm nx run @your-scope/common-scripts:agent-ci-status
+```
+
+```json
+{
+  "pullRequest": 470,
+  "plan": {
+    "action": "send-back",
+    "attempt": 1,
+    "label": "ci-fix-1",
+    "description": "CI failed (fix attempt 1 of 5): E2E tests (4/4)"
+  }
+}
+```
+
+Suite : [6. Checks de PR et CI](../pr-checks-and-ci/).

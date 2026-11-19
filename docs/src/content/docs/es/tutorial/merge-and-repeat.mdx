@@ -1,0 +1,51 @@
+---
+title: 6. Fusiona y repite
+description: La review humana, y cómo el merge abre la siguiente fase.
+sidebar:
+  order: 6
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+**Estás aquí:** 🧑 control humano n.º 2. **Resultado:** fase 1 fusionada, issue de la fase 2 abierta.
+
+El PR te llega en verde y aprobado por el agente revisor. Tu trabajo es juzgar el resultado,
+no buscar problemas.
+
+<Steps>
+
+1. Lee la descripción del PR y el comentario **E2E screenshots**. Para la fase del sitio web, así es
+   como ves la feature sin descargar la rama: el campo de tags vacío, una nota con tres
+   tags, el filtro aplicado, el error que aparece con un sexto tag.
+
+2. Revisa las tareas **(human)** que listó el agente y hazlas.
+
+3. Aprueba y fusiona. Si los agentes suben cambios con tu propio token, GitHub te ve como autor del PR
+   y no acepta tu aprobación, así que sáltatela como hiciste con el PR de spec.
+
+   Si en cambio quieres pedir cambios, haz review del PR y añade la label `openhands-review`. El veredicto
+   del agente revisor devuelve entonces al agente implementador, bajo el mismo límite de cinco intentos.
+
+</Steps>
+
+## Qué hace el merge
+
+El workflow **Agent Issues** ve un PR fusionado en una rama `openhands/` y lee `tasks.md` tal como
+lo dejó el merge:
+
+1. **¿Están marcadas las tareas del agente de esta fase?** El agente marca cada tarea en el PR, en el commit que
+   la termina. Las tareas **(human)** no cuentan: las hiciste en el paso 2, y nunca detienen la
+   cadena.
+2. **Sí:** abre la issue de la siguiente fase. La fase 2 (el sitio web) se ejecuta ahora exactamente igual que la fase 1:
+   tests primero, PR, controles, correcciones, review.
+3. **No:** no se abre nada, y el PR fusionado recibe un comentario con los IDs de las tareas sin marcar. Márcalas o
+   termínalas, y después ejecuta **Agent Issues** a mano con el nombre de la carpeta de la spec.
+
+Solo las ramas propias del agente hacen avanzar la cadena. Un PR tuyo se ignora.
+
+```text
+spec PR merged ─► issue 1 ─► PR 1 merged ─► issue 2 ─► PR 2 merged ─► issue 3 ─► PR 3 merged ─► done
+   (you)                       (you)                      (you)                      (you)
+```
+
+Siguiente: [Actualiza la documentación](../update-the-docs/).

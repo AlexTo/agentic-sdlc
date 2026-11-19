@@ -1,0 +1,72 @@
+---
+title: Introduction
+description: Ce que couvre ce guide, à qui il s'adresse et comment le lire.
+sidebar:
+  order: 1
+---
+
+Ce guide vous montre comment faire tourner un cycle de vie logiciel dans lequel **les agents écrivent
+le code et les personnes prennent deux décisions** : approuver la spec, et approuver le résultat.
+Tout ce qui se passe entre les deux (ouvrir des issues, écrire le code et les tests, réagir à la CI,
+répondre à une revue) tourne tout seul, à travers le processus GitHub habituel.
+
+Le workflow tourne tous les jours sur [Discava](https://github.com/AlexTo/discava), un système de
+gestion de l'apprentissage serverless sur AWS. Dans les six jours qui ont suivi sa mise en service le
+14 novembre 2026, seize specs de fonctionnalités ont été écrites de cette façon et 105 pull requests
+d'agents ont été mergées pour les implémenter, chacune écrite, corrigée et relue par des agents. Sur
+la même période, 173 commits sont arrivés sur main. Tout cela avec un seul mainteneur, un papa avec
+un emploi à temps plein qui travaille sur Discava de temps en temps, sur son temps libre. 😅
+
+## La version courte
+
+Trois outils du marché font l'essentiel du travail :
+
+| Outil | Ce qu'il fait ici |
+| --- | --- |
+| [Speckit](https://github.com/github/spec-kit) | Transforme une idée en `spec.md`, `plan.md` et `tasks.md`, vérifiés par rapport à une constitution du projet |
+| [OpenHands](https://github.com/OpenHands/OpenHands) | Transforme une issue labellisée en pull request, et révise la pull request quand on lui signale un problème. Une seconde automatisation OpenHands la relit |
+| GitHub Actions | Exécute les checks, et contient la glue entre les deux autres |
+
+Aucun d'eux ne connaît les autres. **Ce guide parle surtout de la glue** : dix petites pièces
+d'automatisation testées qui relient une spec terminée à l'agent, la CI à l'agent, et le relecteur à
+l'agent, avec des limites pour que rien ne boucle indéfiniment.
+
+## À qui il s'adresse
+
+- **Les tech leads et staff engineers** qui décident d'adopter ou non le workflow. Commencez par
+  [Concepts](../../concepts/principles/).
+- **Toute personne qui veut l'essayer.** [Forkez ce dépôt](../fork-this-repo/), puis suivez
+  [Le mettre en place](../../setup/before-you-start/) pour faire passer une fonctionnalité par toute la boucle.
+- **L'ingénieur qui l'apporte dans un dépôt produit.** Lisez
+  [Comment Discava procède](../../discava/overview/), puis
+  [L'adopter dans votre propre dépôt](../../adopt/overview/).
+- **Les développeurs qui l'utiliseront au quotidien.** Le [tutoriel](../../tutorial/the-case/) suit
+  une fonctionnalité de l'idée au merge.
+
+Vous devez être à l'aise avec Git, les pull requests GitHub et GitHub Actions. Aucune expérience
+préalable de Speckit ou d'OpenHands n'est nécessaire.
+
+## Organisation de ce guide
+
+| Section | Répond à |
+| --- | --- |
+| **Commencer ici** | Qu'est-ce que c'est, et comment une fonctionnalité le traverse-t-elle ? |
+| **Concepts** | Pourquoi est-ce construit ainsi ? |
+| **Comment Discava procède** | Qu'est-ce qui comble exactement chaque manque, et dans quel fichier ? |
+| **Le mettre en place : forker et lancer** | Comment le faire tourner sur l'application d'exemple ? |
+| **L'adopter dans votre propre dépôt** | Comment ajouter chaque pièce à un dépôt existant ? |
+| **Tutoriel** | À quoi ressemble son utilisation, sur une petite fonctionnalité ? |
+| **Référence** | Labels, statuts, workflows, le format de `tasks.md`, dépannage, glossaire |
+
+## Conventions
+
+- `AGENTS.md` désigne le fichier de guidage des agents à la racine du dépôt. Nommez-le comme
+  le lit votre agent de code.
+- `<you>/agentic-sdlc` est votre fork, et `owner/repo` n'importe quel dépôt.
+- `@your-scope` est le scope npm de votre workspace. Ce dépôt utilise `@agentic-sdlc`, et Discava
+  utilise `@discava`.
+- Les commandes s'exécutent depuis la racine du dépôt, sauf indication contraire dans une étape.
+- **(human)** marque une tâche qu'un agent ne doit pas faire. C'est aussi le marqueur littéral
+  utilisé dans `tasks.md`.
+
+Suite : [Comment ça marche](../how-it-works/).

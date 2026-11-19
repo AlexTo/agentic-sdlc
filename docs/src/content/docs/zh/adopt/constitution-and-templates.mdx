@@ -1,0 +1,133 @@
+---
+title: 3. constitution 与模板
+description: 编写包含工作流所依赖条款的 constitution，并修改两个 Speckit 模板，让自动化能够读取它们的输出。
+sidebar:
+  order: 3
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完成后你将拥有：** 一份已批准的 constitution、一个生成 Agent Issues workflow 能读取的文件的 `tasks-template.md`，以及一个带父 issue 行的 `spec-template.md`。
+
+<Steps>
+
+1. **编写你的 constitution。** 在你的编码智能体中：
+
+   ```text
+   /speckit-constitution
+   ```
+
+   把你项目自己的原则告诉它：架构、数据模型、安全默认值、代码约定。[Discava 的 constitution](../../discava/constitution-and-guidance/)是一个完整的例子。然后确保其中包含以下条款，因为工作流的其余部分都依赖它们。根据你的技术栈调整其中的命令：
+
+   ```markdown
+   ### Layered tests
+   - **Unit tests.** New business logic MUST ship with unit tests covering its main behavior and
+     the rules it enforces.
+   - **End to end.** A change to a main user flow MUST add or extend an e2e scenario. Scenarios
+     MUST make their own users and uniquely named data.
+   - **Tests are a specification.** A failing test MUST be resolved by fixing the code, unless the
+     spec or plan changes the behavior it covers. Weakening an existing test (loosening an
+     assertion, deleting a case, adding `skip` or `only`, widening a mock or snapshot) is allowed
+     only when a task names the behavior change that justifies it, and the PR description says
+     so. Never edit a test just to turn it green.
+
+   ### Everything runs locally
+   A feature MUST work under `pnpm dev` with Docker and no cloud account. Any cloud service a
+   feature adds MUST get a local stand-in or a documented, justified exception.
+
+   ## Development Workflow
+   - Features are implemented by autonomous agents, each on its own branch and pull request, so a
+     task list MUST NOT require a local stack, Docker or `pnpm dev`. The agent runs unit tests,
+     lint, typecheck and build itself. It writes the e2e tests, but pull request CI runs them. A
+     task that needs a running local stack or people MUST be marked `(human)` in `tasks.md` and
+     is done by a reviewer before merge.
+   - Pull request CI is the gate. An agent MUST NOT merge, push to `main`, edit CI workflows, or
+     weaken a test to make CI pass.
+   - Plans MUST pass the Constitution Check, and any violation MUST be recorded in the plan's
+     Complexity Tracking with a justification.
+   ```
+
+2. **在 `tasks-template.md` 中把测试设为必需。** 把以 `**Tests**: The examples below include test tasks. Tests are OPTIONAL` 开头的原有那一行替换为：
+
+   ```markdown
+   **Tests**: The constitution requires tests, so include them. Unit tests cover new business
+   logic. A change to a main user flow needs an e2e scenario. Drop only the layers the feature
+   doesn't touch.
+
+   **Who runs what**: an automated agent implements these tasks without `pnpm dev` or Docker. It
+   runs unit and component tests, lint, typecheck and `build` locally. The e2e scenarios are
+   written by the agent but run on PR CI; a CI failure is the feedback for those. Mark a task
+   **(human)** when it needs a running local stack or people (manual checks, timing, screen
+   readers); a reviewer does those before merge.
+   ```
+
+   从每个 `### Tests for User Story <n>` 标题中删除 `(OPTIONAL - only if tests requested)`。
+
+3. 在格式图例（`[P]`、`[Story]`）之后，**向 `tasks-template.md` 添加格式规则**。在图例中加入这一行：
+
+   ```markdown
+   - **(human)**: needs a running local stack or people; not done by the agent. Not for
+     screenshots: a task that changes what a user sees adds `screenshot()` calls to its e2e
+     scenario, and CI posts them on the pull request (`UI Screenshots` fails without them)
+   ```
+
+   然后加入这一段：
+
+   ```markdown
+   **Read by automation**: the Agent Issues workflow reads this file to decide which tasks to hand
+   the implementing agent, so keep this structure (PR checks refuse a file that strays from it):
+
+   - every phase is a heading `## Phase <number>: <title>`, numbered upwards, with at least one
+     task;
+   - a user story's phase is titled `User Story <n> - <what it delivers>`; the first one ends the
+     first implementation issue (setup, foundations and that story);
+   - every task is a line `- [ ] T<3 digits> <description>` starting in the first column, under a
+     phase, with an id no other task has; a task added later takes the next unused id, wherever
+     it is placed;
+   - a finished task is ticked in place (`- [x]`), never deleted or renumbered.
+   ```
+
+4. 在 `tasks-template.md` 中，于 `### Tests for User Story 1`（以及 2、3）之下，**给每个用户故事加上测试任务**，这样 `/speckit-tasks` 总会生成它们：
+
+   ```markdown
+   - [ ] T01A [P] [US1] Unit tests for new procedures/access patterns in the API's `*.test.ts`
+   - [ ] T01C [US1] (If it changes a main user flow) E2E scenario in `packages/e2e/src/scenarios/[flow].e2e.ts`
+   ```
+
+   Discava 还为它的不变式加了第三条：*"(If a rule spans records or writers) Invariant in
+   `helpers/invariants/` and a test that breaks it, written before the shared write helper"*。
+
+5. 在 `tasks-template.md` **末尾的注意事项中加一行**：
+
+   ```markdown
+   - Do not edit existing tests to make them pass. If one looks wrong, stop and raise it. A task
+     that changes an existing test must cite the spec change behind it
+   ```
+
+6. 在 `spec-template.md` 的头部字段下方，**加入父 issue 行**：
+
+   ```markdown
+   **Parent issue**: [#<number>, or "none" if there is no tracking issue]
+   ```
+
+</Steps>
+
+## 检查是否成功
+
+为一个很小的功能生成一份用完即弃的 spec 和任务。然后，等粘合脚本就位后（[第 5 步](../glue-scripts/)）：
+
+```bash
+pnpm nx run @your-scope/common-scripts:validate-tasks
+```
+
+```text
+1 tasks.md file(s) are in the expected format.
+```
+
+之后删除这个临时的 spec 文件夹。
+
+<Aside type="caution">
+`/speckit-tasks` 有时会写出 `### Phase 2`，或者给任务加缩进。这正是校验器要捕获的问题，所以不要放宽校验器。修改模板措辞，直到生成的文件能够通过。
+</Aside>
+
+下一步：[4. 智能体指引与 issue 模板](../agent-guidance/)。

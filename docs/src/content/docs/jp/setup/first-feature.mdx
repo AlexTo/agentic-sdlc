@@ -1,0 +1,98 @@
+---
+title: 5. 最初の機能を実行する
+description: fork で notes アプリの spec を書き、Discava と同じ workflow を spec PR からマージされたエージェントの PR まで進むのを見届けます。
+sidebar:
+  order: 5
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完了時の状態:** 1 行のアイデアからエージェントによってマージ済みのコードまで運ばれた notes アプリの機能と、
+ループ内のすべての受け渡しが fork で動くことの確認。
+
+機能は **ノートへのタグ** です。*ユーザーはノートに最大 5 つのタグを付けられ、ノート一覧をタグで
+絞り込めます。* 小さな機能ですが、テーブル、API、ウェブサイトのすべてに関わるので、どの段階にも
+実際の作業があります。各段階の詳細は [チュートリアル](../../tutorial/the-case/) で説明しています。
+
+<Steps>
+
+1. クローンのブランチで、コーディングエージェントと一緒に **spec を書きます**:
+
+   ```bash
+   git switch -c spec/note-tags
+   ```
+
+   ```text
+   /speckit-specify Users can add up to five tags to a note and filter the note list by tag. Tags are case-insensitive and unique per note.
+   /speckit-clarify
+   /speckit-plan
+   /speckit-tasks
+   /speckit-analyze
+   ```
+
+2. **spec PR を開き、`spec-ready` ラベルを付けてマージします。** ブランチを push します:
+
+   ```bash
+   git add specs/ && git commit -m "docs(specs): add note tags spec"
+   git push -u origin spec/note-tags
+   ```
+
+   GitHub で pull request を開き、`spec-ready` ラベルを付け、チェックがグリーンになったらマージします。
+   PR を開いたのは自分なので、GitHub では承認できません。**Merge without waiting for
+   requirements to be met** にチェックを入れます。
+
+   ✅ PR で **Tasks format** が通ります。マージ後、**Agent Issues** が
+   `feat(<feature>): … (with setup and foundations)` というタイトルの issue を開きます。`openhands` ラベルが付き、範囲は最初のフェーズのグループです。
+
+3. **エージェントを待ちます。** 何もする必要はありません。
+
+   ✅ 次のポーリングで、その issue の会話が Agent Canvas で始まります。完了すると、
+   `openhands/issue-<n>` に `openhands-review` 付きのドラフト PR が作成され、`tasks.md` ではちょうどそのフェーズの分だけチェックが付いています。
+
+4. **ゲートを見守ります。**
+
+   ✅ PR Checks が実行されます。どれかが失敗すると、**Agent CI Status** が `ci-fix-1` を付け、次のポーリングで
+   エージェントが同じ PR を修正します。すべてのチェックが終わると、レビュアーエージェントが head をレビューし、
+   `✅ APPROVED` または `🔄 CHANGES REQUESTED` で終えます。変更要求があった場合も、`review-fix-1` 付きで
+   エージェントに差し戻されます。
+
+5. **レビューしてマージします。** PR の説明と、そこに挙げられた **(human)** タスク、そしてウェブサイトのフェーズでは
+   **E2E screenshots** コメントを読みます。**Ready for review** をクリックしてからマージします。エージェントが
+   自分のトークンで push している場合は、手順 2 と同様に承認をバイパスします。エージェント用の別アカウントがあれば、
+   通常どおり承認してマージします。
+
+   ✅ **Agent Issues** が再び実行され、次のフェーズの issue を開きます。手順 3 から 5 を繰り返します。
+
+6. **最後の PR をマージします。**
+
+   ✅ Agent Issues が `No issue created: … no tasks left for the agent` とログに出します。機能は完成です。
+
+</Steps>
+
+<Aside type="tip" title="修正ループを見なかった場合">
+エージェントが一度ですべて正しくこなした場合、CI ループはまだ見ていないことになります。試すには、
+開いているエージェントの PR に、ユニットテストの 1 つを壊すコミットを push します。PR Checks が失敗し、`ci-fix-1`
+が付き、エージェントが次のポーリングで修正を push します。単にあなたのコミットを revert することもあり、
+この場合はそれが正しい修正です。
+</Aside>
+
+## セルフチェック
+
+次のすべてに「はい」と言えれば、Discava と同じ workflow ができています:
+
+- [ ] `spec-ready` の spec PR をマージすると、誰も手で開かなくても issue が開かれた。
+- [ ] エージェントが `openhands/issue-<n>` に PR を開き、ちょうど自分のタスクだけにチェックを付けた。
+- [ ] 失敗した CI 実行でエージェントが差し戻され、PR に `ci-fix-1` が付いている。
+- [ ] チェックが終わった後、レビュアーエージェントが PR の head をレビューした。
+- [ ] エージェントの PR をマージすると、次のフェーズの issue が開かれた。
+- [ ] ウェブサイトの変更には、PR に一覧されたスクリーンショットが付いていた。
+- [ ] 最後のマージでは何も開かれなかった。
+- [ ] エラーを貼り付けたり、エージェント向けのプロンプトを書いたりすることは一度もなかった。
+
+何かが起きなかった場合は、[トラブルシューティング](../../reference/troubleshooting/) を参照してください。
+
+## 次へ
+
+- ノートのピン留めや一覧の並べ替えなど、notes アプリで自分の機能を試してみましょう。
+- これをプロダクトのリポジトリに持ち込む準備ができたら、
+  [自分のリポジトリに導入する](../../adopt/overview/) を参照してください。

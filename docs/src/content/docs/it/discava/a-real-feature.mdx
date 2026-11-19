@@ -1,0 +1,97 @@
+---
+title: "Una funzionalità reale: le recensioni dei corsi"
+description: Una funzionalità di Discava seguita dalla issue di tracciamento alla spec fino a otto pull request degli agenti, con gli orari.
+sidebar:
+  order: 10
+  label: Una funzionalità reale
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Questa pagina segue una funzionalità attraverso il vero repository di Discava: **valutazioni e
+recensioni scritte dei corsi**. Ogni numero e ogni link vengono da GitHub. Gli orari sono in UTC, il
+18 novembre 2026 salvo diversa indicazione.
+
+## L'idea
+
+[Issue #279](https://github.com/AlexTo/discava/issues/279), scritta da una persona:
+
+> Enrolled students leave one 1-5 rating plus an optional text review per course (editable,
+> deletable). The course carries an aggregate rating and count, kept consistent through a
+> core-table helper. Shown on catalogue cards, the course page and as a search sort/boost. The
+> instructor can respond; an admin can remove abusive reviews. One review per student per course
+> under concurrency; an average/count invariant in `helpers/invariants.ts`.
+
+## La spec
+
+[PR #358](https://github.com/AlexTo/discava/pull/358), `docs(specs): course ratings and written
+reviews`, sul branch `spec/reviews`: 14 commit, 923 righe, tutte in
+`specs/20261116-013307-course-reviews/`.
+
+- `/speckit-clarify` è stato eseguito senza una persona a cui chiedere, quindi l'agente ha registrato
+  le sue risposte sotto "Clarifications". Per esempio: *"Must a student have made progress before
+  they may review? → No. Any student whose enrolment is not dropped may review."* Il reviewer della
+  PR della spec poteva contestarne una qualsiasi prima che esistesse il codice.
+- `tasks.md` è venuto fuori con **otto fasi e 36 task**. La fase 1 è la prima user story (i record,
+  il riepilogo e lo scrittore condiviso), e le fasi da 2 a 8 dicono ciascuna quale PR sono
+  ("core-api review procedures (PR 2)"). Due task sono **(human)**: una prova manuale completa su uno
+  stack locale, e i controlli sullo stage di cui è stato fatto il deploy.
+
+Aperta il 15 novembre, con la label `spec-ready`, mergiata il 18 novembre alle 06:47.
+
+## La catena
+
+| Fase | Issue aperta | PR | Mergiata | Dimensione | Correzioni |
+| --- | --- | --- | --- | --- | --- |
+| 1. Record delle recensioni, riepilogo delle valutazioni e lo scrittore | [#453](https://github.com/AlexTo/discava/issues/453) 07:09 | [#456](https://github.com/AlexTo/discava/pull/456) | 07:40 | +1.923 | nessuna |
+| 2. Procedure di review di core-api | [#459](https://github.com/AlexTo/discava/issues/459) 07:41 | [#460](https://github.com/AlexTo/discava/pull/460) | 08:30 | +1.334 | nessuna |
+| 3. Valutazioni e recensioni nel portale degli studenti | [#461](https://github.com/AlexTo/discava/issues/461) 08:31 | [#464](https://github.com/AlexTo/discava/pull/464) | 09:55 | +1.357 | `review-fix-1` |
+| 4. Valutazioni nella ricerca | [#466](https://github.com/AlexTo/discava/issues/466) 09:56 | [#470](https://github.com/AlexTo/discava/pull/470) | 11:24 | +900 | `ci-fix-1` |
+| 5. Risposte degli istruttori | [#475](https://github.com/AlexTo/discava/issues/475) 11:25 | [#476](https://github.com/AlexTo/discava/pull/476) | 12:30 | +1.791 | `ci-fix-1` |
+| 6. Rimozione da parte dell'admin | [#481](https://github.com/AlexTo/discava/issues/481) 12:31 | [#483](https://github.com/AlexTo/discava/pull/483) | 13:09 | +1.526 | nessuna |
+| 7. Notifiche agli istruttori | [#485](https://github.com/AlexTo/discava/issues/485) 13:10 | [#497](https://github.com/AlexTo/discava/pull/497) | 00:20, 19 nov | +422 | `review-fix-1` |
+| 8. End-to-end, documentazione e controlli manuali | [#501](https://github.com/AlexTo/discava/issues/501) 00:21, 19 nov | [#504](https://github.com/AlexTo/discava/pull/504) | 01:08, 19 nov | +427 | `ci-fix-1` |
+
+Otto PR, circa 9.700 righe test inclusi. Le prime sei sono state mergiate in sei ore. La PR
+dell'agente per la fase 7 si è aperta dieci ore dopo la sua issue, e le ultime due sono state
+mergiate entro novanta minuti da quel momento. Ogni issue si è aperta circa un minuto dopo il merge
+della PR precedente, e l'ultima PR ha chiuso la #279.
+
+## Cosa ha fatto la persona
+
+1. Ha scritto la issue di tracciamento di un paragrafo.
+2. Ha revisionato e mergiato la PR della spec.
+3. Per ognuna delle otto PR: ha letto la descrizione e il commento con gli screenshot, e ha fatto il
+   merge.
+
+Nessuno ha aperto una issue, scritto un prompt o incollato un errore.
+
+## Cosa hanno intercettato i loop
+
+- **PR #464**: l'agente reviewer ha richiesto modifiche. Agent Review Status ha rimandato indietro
+  l'agente una volta, e la PR è stata mergiata dopo la review successiva.
+- **PR #470**: un nuovo scenario e2e usava un locator che corrispondeva a due elementi, quindi uno
+  shard è fallito. Agent CI Status ha rimandato indietro l'agente una volta. L'agente ha corretto il
+  locator e ha spiegato il motivo in un commento. Vedi [Loop di feedback](../feedback-loops/) per la
+  cronologia completa.
+- **PR #476**: un fallimento della CI, corretto al primo tentativo.
+- **PR #497**: un giro di modifiche dalla review.
+- **PR #504**: un fallimento della CI, corretto al primo tentativo.
+
+<Aside type="note">
+Il titolo di ogni PR inizia con `[#<issue>]`, il formato proprio dell'automazione issue-to-PR, anche
+se la issue chiede un semplice titolo Conventional Commit. Mostra i due livelli all'opera:
+l'istruzione nella issue è testo, e il formato dell'automazione è codice. Vince il codice, quindi se
+il titolo ti interessa, fallo rispettare con un check.
+</Aside>
+
+## Cosa resta a una persona
+
+I due task **(human)** della fase 8: una prova manuale completa su uno stack locale, e i controlli
+sullo stage di cui è stato fatto il deploy. L'ultima PR è stata mergiata con entrambi ancora non
+spuntati in `tasks.md`, quindi l'automazione non li ha aspettati, e nient'altro l'ha fatto. Chi li
+tiene d'occhio è il workflow
+[Archive Specs](../spec-to-issue/#archiviare-una-spec-finita): la cartella della spec resta attiva
+finché una persona non li spunta entrambi.
+
+Avanti: [Configuralo: fork ed esecuzione](../../setup/before-you-start/).

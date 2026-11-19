@@ -1,0 +1,87 @@
+---
+title: 信任的层次
+description: 每个变更都要经过的检查，从成本最低的开始，以及每一层能发现什么。
+sidebar:
+  order: 7
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+只有当你能信任产出的东西时，自动化才有价值。每个变更都要经过层层检查：成本低、自动化的检查最先
+运行，也发现最多的问题，只有它们无法判断的东西才会交到人手上。
+
+<p>
+  <img alt="由五层组成的倒三角形，从最宽到最窄：代码库、静态分析、验证、文字、人工评审" src="/agentic-sdlc/diagrams/automation-trust.svg" width="640" />
+</p>
+
+| 级别 | 层 | 能发现什么 |
+| --- | --- | --- |
+| **代码库** | 单元测试 | 错误的业务逻辑和被破坏的规则 |
+| | 不变式 | 违反跨记录规则的数据，在每个 e2e 测试之后检查 |
+| | 并发测试 | 两个请求同时到达时的竞态条件 |
+| **静态分析** | lint、类型检查、构建 | 风格、类型和构建错误 |
+| | tasks 格式检查 | 一个会让链条悄无声息停滞的格式错误的 `tasks.md` |
+| | 生成文件检查 | 智能体忘记提交的 lint 或构建输出 |
+| **验证** | 端到端测试 | 在真实浏览器中针对本地栈运行时被破坏的用户流程 |
+| | 截图 | 没有人看过的 UI 变更 |
+| **文字** | constitution、`AGENTS.md`、skill | 智能体在编写*之前*阅读的指导，使约定被遵循，而不是事后被发现 |
+| | 智能体评审者 | 没有测试覆盖、需要像代码评审那样阅读才能发现的问题 |
+| **人工评审** | 最终评审 | 以上各层无法判断的任何东西。合并的永远是人 |
+
+## 验证最重要
+
+单元测试、lint 和类型说明代码与其自身是一致的。只有 e2e 测试和截图能说明功能*真的能用*，以用户
+看到的方式，针对真实的栈。这就是[原则 1](../principles/#1-验证优先给智能体一双手和一双眼睛)。它也是人
+检查得最快的一层：有了截图，你几分钟内就能判断一个 PR，而不用拉取分支。
+
+CI 让它成为默认做法：
+
+1. 每个 UI 流程的 e2e 场景都会在评审者想看到的每个状态调用 `screenshot(page, 'name')`。
+2. CI 在 PR 上发布一条 **E2E screenshots** 评论，列出该 PR 新增的截图（与已有的截图分开），并链接
+   到这次运行的 artifact。
+3. 如果一个 UI 变更没有附带截图，`UI Screenshots` 检查就会失败。
+
+来自 Discava [#486](https://github.com/AlexTo/discava/pull/486#issuecomment-6980411897)，通知
+设置：
+
+<p>
+  <img alt="一条标题为 E2E screenshots 的 github-actions 评论，列出该 pull request 新增的九张截图（例如 notification-settings/02-emails-stopped.png），并链接到这次运行的 artifact" src="/agentic-sdlc/screenshots/e2e-screenshots-comment.png" width="620" />
+</p>
+
+评审者打开这九张新截图，逐一检查每个状态：列出所有类型的设置页、保存了一个开关、邮件被停止又重新
+开启、一个有效和一个无效的退订链接、一个错误以及"重试"。每一个都是 spec 中的一条需求，亲眼看到它
+在正常工作。
+
+## 文字负责引导，代码负责强制
+
+文字（constitution、`AGENTS.md`、issue 的指令）写起来成本低，能预防大多数错误，但智能体可能误读或
+跳过它。所以每条重要的规则也都有一个会失败的检查。[原则 5](../principles/#5-让规则和-skill-具有确定性)
+列出了 Discava 的这些检查。
+
+当你新增一条规则时，问问自己：如果智能体忽略了它，什么会变红？
+
+## 测试即规格
+
+Discava constitution 中最重要的一条规则：
+
+> A failing test MUST be resolved by fixing the code, unless the spec or plan changes the behavior
+> it covers. Weakening an existing test (loosening an assertion, deleting a case, adding `skip` or
+> `only`, widening a mock or snapshot) is allowed only when a task names the behavior change that
+> justifies it, and the PR description says so.
+
+一个急于让 CI 变绿的智能体迟早会去"修"测试。这条规则在 issue 模板中重复出现，并由评审智能体检查，
+正是它让测试套件始终有意义。
+
+## 不变式：针对数据的测试
+
+单元测试检查一个函数。E2E 测试检查一个流程。当两个由不同智能体运行在不同 PR 中写出的功能，让数据库
+处于违反横跨两者的规则的状态时，它们都察觉不到。不变式填补了这个空缺。它们是一组针对全部数据的检查，
+例如"一门课程的评分数等于其可见评价的数量"，在**每个** e2e 测试之后运行。被违反的不变式会让导致它的
+那个测试失败。
+
+<Aside type="tip">
+随着智能体编写的代码越来越多，不变式是回报最大的一层。它们能发现那些由两个各自局部正确的智能体
+造成的错误。
+</Aside>
+
+下一步：[人工关卡](../human-gates/)。

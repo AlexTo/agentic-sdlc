@@ -1,0 +1,58 @@
+---
+title: 2. 计划与任务
+description: 推导出技术计划和有序的任务列表，然后对照 spec 检查它们。
+sidebar:
+  order: 2
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+**当前位置：** 🧑 你 + 🤖 智能体。**产出：** `plan.md`、`data-model.md`、`contracts/` 和 `tasks.md`。
+
+<Steps>
+
+1. 生成计划。
+
+   ```text
+   /speckit-plan
+   ```
+
+   计划会读取 spec 和项目 constitution（`.specify/memory/constitution.md`），并决定*怎么做*：给 ElectroDB 实体加上 `tags`，扩展 tRPC 的输入 schema，给 `notes.list` 加上 `tag` 筛选。
+
+2. 生成任务。
+
+   ```text
+   /speckit-tasks
+   ```
+
+   `tasks.md` 是有序的、可勾选的，并按阶段分组。之后会有脚本读取它，所以它的[格式](../../reference/tasks-format/)是固定的，下一步中会有一项 PR 检查来校验它。
+
+   ```markdown
+   ## Phase 1: User Story 1 - Tags in the data and API (Priority: P1) 🎯 MVP
+   - [ ] T001 Add `tags` to the note entity in packages/notes-table/src/entities/note.ts
+   - [ ] T002 [P] Unit tests for tag rules (max five, unique, case-insensitive)
+   - [ ] T003 Extend create and update procedures in packages/notes-api/src/procedures/notes.ts
+
+   ## Phase 2: User Story 2 - Tags on the website (Priority: P2)
+   - [ ] T004 Tag input on the note form
+   - [ ] T005 Tag filter on the list page
+   - [ ] T006 e2e scenario with screenshots, invariant and concurrency tests
+
+   ## Phase 3: Docs
+   - [ ] T007 Describe tags on the notes app page in docs/
+   - [ ] T008 **(human)** Confirm the screenshots match the docs wording
+   ```
+
+3. 在写任何代码之前，交叉检查所有内容。
+
+   ```text
+   /speckit-analyze
+   ```
+
+   它会报告没有对应任务的需求、没有对应需求的任务，以及三个文件之间的矛盾。现在就修正它们，只需改一句话。等实现之后再改，就要花一个 PR。
+
+</Steps>
+
+标记为 **(human)** 的任务会被智能体跳过，并列在它的 PR 描述中留给你。
+
+下一步：[批准 spec](../approve-the-spec/)。

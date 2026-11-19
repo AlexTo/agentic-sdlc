@@ -1,0 +1,111 @@
+---
+title: Stack locale
+description: Come Discava esegue in locale ogni servizio AWS, così la CI può testare l'app reale senza un account cloud.
+sidebar:
+  order: 8
+---
+
+Lacuna 8: l'agente non può eseguire lo stack reale senza accesso al cloud, e tu non vuoi dargli
+accesso al cloud. La risposta di Discava è il principio III della constitution: ogni servizio AWS ha
+un sostituto locale, e `pnpm dev` li avvia tutti con Docker.
+
+## Cosa gira in locale
+
+| Servizio | Porta | Sostituisce |
+| --- | --- | --- |
+| Portali per studenti, istruttori e admin | 4201, 4200, 4202 | CloudFront |
+| core-api, instructor-api | 2022, 2023 | API Gateway e Lambda |
+| DynamoDB local | 8001 | DynamoDB |
+| S3Mock | 9090 | S3 |
+| ElasticMQ | 9324 | SQS |
+| OpenSearch (Docker) | | OpenSearch Serverless |
+| Event runner | 2024 | Gli stream di DynamoDB e lo stream router, MediaConvert (ffmpeg), Transcribe (una traccia segnaposto), SES (una pagina di posta in arrivo), EventBridge, Scheduler, i trigger di Cognito |
+| Server OIDC locale | 9400 | Cognito |
+
+Il codice di backend cambia comportamento con `LOCAL_DEV=true`. Le impostazioni condivise stanno in
+un solo package (`common-server-utils/local-dev`), così ogni Lambda risolve gli endpoint allo stesso
+modo. Ogni sostituto è un target Nx in `packages/common/scripts`, che scarica e avvia il suo
+container.
+
+La pagina di login locale offre utenti fissi (un istruttore, due studenti, un admin) e un form
+"Someone else" per qualsiasi claim. Niente password, niente Cognito.
+
+## Chi lo esegue
+
+L'**agente che implementa no**. La sua issue gli dice di non usare `pnpm dev`, Docker o il runner
+e2e. Scrive gli scenari, e la **CI della PR** li esegue: ogni shard e2e avvia il proprio `pnpm dev`
+su un runner nuovo. La macchina dell'agente resta semplice, e il risultato che legge viene sempre da
+uno stack pulito.
+
+Lo eseguono le persone per i task **(human)**, e per riprodurre un fallimento.
+
+## Scenari E2E
+
+`packages/e2e` ha un `src/scenarios/*.e2e.ts` per ogni flusso utente, costruito da helper condivisi.
+Le regole che li rendono sicuri da eseguire in qualsiasi ordine, su uno stack condiviso:
+
+- Ogni scenario crea i propri utenti e dati con nomi univoci.
+- Nessuno scenario azzera i dati locali.
+- Un worker, un nuovo tentativo nella CI, timeout di due minuti. I flussi aspettano il lavoro in
+  background, come il ricalcolo dei progressi.
+
+## Invarianti dopo ogni test
+
+`packages/databases/core-table/src/helpers/invariants/` contiene controlli sull'intera tabella, un
+file per argomento (curriculum, attività degli studenti, media, analytics e così via): "un corso ha un istruttore", "il conteggio delle attività di uno studente corrisponde agli
+studenti che hanno usato l'elemento", "l'ordine tra elementi fratelli è univoco", e più di quaranta
+altri.
+
+Una fixture di Playwright (`packages/e2e/src/helpers/table-invariants.ts`) li esegue **dopo ogni test
+e2e**. Registra le violazioni che esistevano già prima del test e fallisce solo per quelle nuove,
+così i vecchi dati locali non possono far fallire un'esecuzione. Il messaggio indica l'invariante e
+il record in difetto. Un agente che scrive male un contatore se ne accorge nel test che l'ha scritto,
+non tre funzionalità dopo.
+
+Ogni regola che riguarda più scrittori viene scritta tramite un unico helper condiviso che ogni
+scrittore chiama (per esempio `studentActivityWrites`), e ha un invariante e un test che la viola.
+
+Il check della PR **Invariant coverage** tiene tutto questo onesto. L'`entity-writers.json` di
+`core-table` associa ogni entità ai file che la scrivono in ogni package, ed è generato dal codice con
+il compilatore TypeScript. Rispetto a `main`, il check fa fallire una PR quando:
+
+- un'entità acquisisce un package che la scrive oltre a quelli che aveva,
+- un file fuori dal package `core-table` inizia a scrivere un'entità che scrivono più package, oppure
+- compare una nuova entità.
+
+Torna a passare quando le righe che la PR aggiunge sotto `helpers/invariants/` (test e fixture non
+contano) nominano ciascuna di quelle entità o la sua chiave di `TableSnapshot`, come
+`snapshot.enrolments`. Il check fallisce anche finché `entity-writers.json` non è aggiornato. Un hook
+pre-push lo rigenera e blocca il push se è cambiato, così l'agente lo scopre prima della CI.
+
+### Esentare dal check
+
+Il check vede solo che l'insieme degli scrittori è cambiato. Non può sapere se ora una regola li
+riguarda, quindi un maintainer può esentare la PR: aggiungi la label `no-new-invariant` alla PR e
+riesegui il job.
+
+Usa la label quando le scritture sono state spostate o divise, ma non c'è in gioco una nuova regola.
+Il caso tipico è un refactor. Quando Discava ha spostato degli helper dalle sue procedure API in file
+propri, le scritture esistenti sono comparse in file nuovi e hanno fatto scattare il check, ma le
+regole che rispettano erano già coperte.
+
+Non usarla per far passare una funzionalità. Se un nuovo scrittore significa che un'altra API o un
+altro handler ora dipende dalla correttezza di un record, la regola va in un helper di `core-table`
+che ogni scrittore chiama, con un controllo in `helpers/invariants/`. La label la applica una
+persona, non l'agente: decidere che non c'è in gioco nessuna regola è proprio il giudizio che il
+check esiste per imporre.
+
+## Test di concorrenza
+
+`packages/e2e/src/concurrency/` lancia richieste API nello stesso istante, direttamente sulle API,
+per le scritture su cui due utenti potrebbero entrare in competizione: l'emissione di un certificato,
+l'aggiunta di una didascalia, i contatori di analytics. Girano nello stesso job e2e.
+
+## Cosa gira ancora solo su uno stage distribuito
+
+I sostituti non sono perfetti, e `CONTRIBUTING.md` elenca esattamente dove non bastano: la firma di CloudFront,
+l'output esatto di MediaConvert, il vero Transcribe, Cognito Managed Login, i retry di EventBridge e
+le code dei fallimenti. I task che dipendono da questi sono task **(human)**, verificati su
+`discava-development` dopo il deploy.
+
+Avanti: [Deploy e sicurezza](../deploy-and-security/).

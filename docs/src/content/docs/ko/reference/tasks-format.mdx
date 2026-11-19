@@ -1,0 +1,73 @@
+---
+title: tasks.md 형식
+description: Agent Issues workflow가 읽는 정확한 형식, phase가 issue가 되는 방식, 그리고 모든 validator 메시지.
+sidebar:
+  order: 4
+---
+
+## 형식
+
+```markdown
+# Tasks: Course ratings and reviews
+
+Free text, legends and notes anywhere. Fenced code blocks are ignored.
+
+## Phase 1: Setup
+- [x] T001 Create the review entity
+- [ ] T002 [P] Add the rating summary entity
+
+## Phase 2: Foundational
+- [ ] T003 Shared review writer in core-table helpers
+
+## Phase 3: User Story 1 - Leave a rating (Priority: P1) 🎯 MVP
+### Tests for User Story 1
+- [ ] T004 [P] [US1] Unit tests for rating rules
+### Implementation for User Story 1
+- [ ] T005 [US1] review.upsert procedure
+- [ ] T006 (human) Check the layout on a phone-width window
+
+## Phase 4: User Story 2 - Instructor responds (Priority: P2)
+- [ ] T007 [US2] review.respond procedure
+- [ ] T037 [US2] Notify the student (added later: next unused id)
+```
+
+| 요소 | 패턴 | 참고 |
+| --- | --- | --- |
+| Phase | `^## Phase (\d+): (.+)$` | 파일 아래로 갈수록 번호가 커집니다. 각 phase에는 task가 하나 이상 있습니다 |
+| User story phase | 제목이 `User Story`로 시작 | 하나 이상 있어야 합니다 |
+| Task | `^- \[([ xX])\] (T\d{3})\b` | 첫 번째 열에서, phase 아래에. ID는 고유하며 번호를 다시 매기지 않습니다 |
+| 완료 | `[x]` 또는 `[X]` | 그 자리에서 체크하고, 삭제하지 않습니다 |
+| Human task | 줄 어디든 `(human)`, 굵게든 아니든 | 에이전트가 건너뛰고, 그룹 완료 여부를 판단할 때 세지 않습니다 |
+| 하위 제목 | `### …` | 허용되며, 무시됩니다 |
+
+## Phase가 issue가 되는 방식
+
+1. **그룹 0**은 첫 번째 `User Story` phase까지(그 phase 포함)의 모든 phase입니다. Setup, foundation,
+   MVP story가 하나의 PR로 나가며, 제목에 ` (with setup and foundations)`가 붙습니다.
+2. **그 이후의 각 phase**는 각각 자신의 그룹이자 자신의 issue입니다.
+3. **다음 그룹**은 **(human)**이 아닌, 체크되지 않은 task가 있는 첫 번째 그룹입니다.
+4. issue는 이미 있지만 에이전트 task가 모두 체크되지 않은 그룹은 **멈춘** 상태입니다.
+   새 issue가 열리지 않고, merge된 PR에 체크되지 않은 ID를 나열한 댓글이 달립니다.
+
+issue 제목은 `feat(<feature>): <last phase's title, shortened>`입니다. `<feature>`는 timestamp를 뺀
+폴더 이름입니다. 줄인 제목에서는 `User Story <n> - ` 접두사와 `(Priority: Pn)` 접미사가
+빠집니다. 제목은 소문자로 시작하며 최대 100자입니다.
+
+## Validator 메시지
+
+| 메시지 | 해결 방법 |
+| --- | --- |
+| `A phase heading must be written "## Phase <number>: <title>"` | 제목에 "Phase"가 언급되지만 형식에 맞지 않습니다. 예: `### Phase 2` 또는 `## Phase 2 - Setup` |
+| `A task must be written "- [ ] T<3 digits> <description>", starting in the first column` | 들여쓴 task, `* [ ]`, `- []`, 또는 `T12` 같은 ID |
+| `Phase <n> has no tasks` | task를 추가하거나 phase를 제거합니다 |
+| `Phase <n> comes after phase <m>; phase numbers must increase down the file` | phase의 번호를 다시 매깁니다 (task가 아니라) |
+| `T0xx is above the first phase heading, so it belongs to no phase` | phase 아래로 옮깁니다 |
+| `T0xx is used more than once` | 나중 것에 사용되지 않은 다음 ID를 줍니다 |
+| `No phase headings found; …` | 파일이 전혀 형식에 맞지 않습니다 |
+| `No phase is titled "User Story <n> - ..."; …` | phase 하나 이상의 제목을 user story로 지정합니다 |
+
+로컬에서 실행하기:
+
+```bash
+pnpm nx run @your-scope/common-scripts:validate-tasks
+```

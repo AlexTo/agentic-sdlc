@@ -1,0 +1,53 @@
+---
+title: 5. CI와 에이전트 리뷰
+description: 사람이 끼지 않는 자동 게이트와 횟수가 제한된 수정 루프.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**현재 위치:** ⚙️ 자동화, 무인 진행. **산출물:** 에이전트 리뷰의 승인을 받은 초록색 PR.
+
+에이전트의 PR에 push할 때마다 게이트가 실행됩니다. 실패는 여러분이 아니라 항상 에이전트에게 돌아갑니다.
+
+## 게이트
+
+| 게이트 | tag 사례에서 잡아내는 것 |
+| --- | --- |
+| Lint, typecheck, build | 더 이상 entity와 맞지 않는 API type |
+| 단위 테스트 | 여섯 번째 tag가 허용되거나, `Work`와 `work`가 두 개의 tag로 저장되는 경우 |
+| Invariant | 매 e2e 테스트 이후, 테이블에 tag가 다섯 개를 넘는 note가 있는 경우 |
+| e2e 테스트 | tag 입력이 저장되지 않거나, 필터가 잘못된 note를 보여 주는 경우 |
+| Concurrency test | 동시에 일어난 두 추가가 서로를 덮어써 tag 하나가 사라지는 경우 |
+| 스크린샷 | 새 UI를 아무도 보지 않은 경우: `UI Screenshots` 검사가 실패합니다 |
+| Tasks format 검사 | 체인을 멈추게 할 잘못된 형식의 `tasks.md` |
+
+## 게이트가 실패하면
+
+1. **Agent CI Status** workflow가 PR의 head 커밋을 실패로 표시합니다.
+2. 에이전트가 원래 대화에서 실패 출력을 사용해 *같은* PR을 수정합니다.
+3. CI가 다시 실행됩니다.
+
+예: tag 추가가 note를 읽고, 메모리에서 덧붙이고, 다시 쓰는 방식이라 두 요청이 경쟁하는 바람에
+동시성 테스트가 실패합니다. 에이전트는 이를 개수에 대한 조건이 붙은 atomic append로 바꾸고,
+테스트가 초록색이 됩니다. 여러분은 이 과정을 보지도 않았습니다.
+
+## 에이전트 리뷰
+
+CI가 초록색이 되면 두 번째 OpenHands 에이전트가 사람처럼 PR을 리뷰합니다: 정확성, 놓친
+edge case, 어떤 테스트도 다루지 않는 spec의 규칙. 승인하거나 변경을 요청하는데, 변경 요청은
+빨간 CI와 같은 방식으로 구현 에이전트를 되돌려 보냅니다.
+
+## 상한
+
+각 루프는 PR당 **다섯 번**의 시도로 제한되며, label로 횟수를 셉니다: CI는 `ci-fix-1`부터 `ci-fix-5`,
+리뷰는 `review-fix-1`부터 `review-fix-5`. 다섯 번째 이후에는 workflow가 댓글을 남기고,
+`ci-fix-exhausted` 또는 `review-fix-exhausted`를 추가하고 멈춥니다.
+
+<Aside type="caution">
+루프가 소진된 경우가 여러분이 일찍 불려 오는 유일한 때입니다.
+무엇을 해야 하는지는 [사람 게이트](../../concepts/human-gates/#일찍-불려-가는-경우)에 있습니다.
+</Aside>
+
+다음: [Merge와 반복](../merge-and-repeat/).

@@ -1,0 +1,87 @@
+---
+title: "一个真实的功能：课程评价"
+description: 一个 Discava 功能从跟踪 issue 到 spec，再到八个智能体 pull request 的全程追踪，附带时间戳。
+sidebar:
+  order: 10
+  label: 一个真实的功能
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+本页跟随真实 Discava 仓库中的一个功能：**课程评分和文字评价**。每个数字和链接都来自 GitHub。时间均为
+UTC，除非另有说明，日期都是 2026 年 11 月 18 日。
+
+## 想法
+
+[Issue #279](https://github.com/AlexTo/discava/issues/279)，由一个人撰写：
+
+> Enrolled students leave one 1-5 rating plus an optional text review per course (editable,
+> deletable). The course carries an aggregate rating and count, kept consistent through a
+> core-table helper. Shown on catalogue cards, the course page and as a search sort/boost. The
+> instructor can respond; an admin can remove abusive reviews. One review per student per course
+> under concurrency; an average/count invariant in `helpers/invariants.ts`.
+
+## spec
+
+[PR #358](https://github.com/AlexTo/discava/pull/358)，`docs(specs): course ratings and written
+reviews`，位于 `spec/reviews` 分支：14 个 commit，923 行，全部在
+`specs/20261116-013307-course-reviews/` 下。
+
+- `/speckit-clarify` 运行时没有可以提问的人，所以智能体把它的回答记录在 "Clarifications" 下。例如：
+  *"Must a student have made progress before they may review? → No. Any student whose enrolment
+  is not dropped may review."* spec PR 的评审者可以在代码出现之前对其中任何一条提出异议。
+- `tasks.md` 产出了**八个阶段、36 个任务**。阶段 1 是第一个用户故事（记录、汇总和共享的写入器），
+  阶段 2 到 8 各自写明它们是哪个 PR（"core-api review procedures (PR 2)"）。有两个任务是
+  **(human)**：在本地栈上手动走一遍，以及在已部署的 stage 上做检查。
+
+11 月 15 日打开，加上 `spec-ready` 标签，11 月 18 日 06:47 合并。
+
+## 链条
+
+| 阶段 | issue 打开 | PR | 合并 | 规模 | 修复 |
+| --- | --- | --- | --- | --- | --- |
+| 1. 评价记录、评分汇总和写入器 | [#453](https://github.com/AlexTo/discava/issues/453) 07:09 | [#456](https://github.com/AlexTo/discava/pull/456) | 07:40 | +1,923 | 无 |
+| 2. core-api 评价过程 | [#459](https://github.com/AlexTo/discava/issues/459) 07:41 | [#460](https://github.com/AlexTo/discava/pull/460) | 08:30 | +1,334 | 无 |
+| 3. 学生门户的评分和评价 | [#461](https://github.com/AlexTo/discava/issues/461) 08:31 | [#464](https://github.com/AlexTo/discava/pull/464) | 09:55 | +1,357 | `review-fix-1` |
+| 4. 搜索中的评分 | [#466](https://github.com/AlexTo/discava/issues/466) 09:56 | [#470](https://github.com/AlexTo/discava/pull/470) | 11:24 | +900 | `ci-fix-1` |
+| 5. 讲师回复 | [#475](https://github.com/AlexTo/discava/issues/475) 11:25 | [#476](https://github.com/AlexTo/discava/pull/476) | 12:30 | +1,791 | `ci-fix-1` |
+| 6. 管理员删除 | [#481](https://github.com/AlexTo/discava/issues/481) 12:31 | [#483](https://github.com/AlexTo/discava/pull/483) | 13:09 | +1,526 | 无 |
+| 7. 讲师通知 | [#485](https://github.com/AlexTo/discava/issues/485) 13:10 | [#497](https://github.com/AlexTo/discava/pull/497) | 11 月 19 日 00:20 | +422 | `review-fix-1` |
+| 8. 端到端、文档和手动检查 | [#501](https://github.com/AlexTo/discava/issues/501) 11 月 19 日 00:21 | [#504](https://github.com/AlexTo/discava/pull/504) | 11 月 19 日 01:08 | +427 | `ci-fix-1` |
+
+八个 PR，包括测试在内约 9,700 行。前六个在六小时内合并。阶段 7 的智能体 PR 在其 issue 打开十小时后
+才打开，最后两个在那之后九十分钟内合并。每个 issue 都在上一个 PR 合并约一分钟后打开，最后一个 PR
+关闭了 #279。
+
+## 人做了什么
+
+1. 写了一段话的跟踪 issue。
+2. 评审并合并了 spec PR。
+3. 对八个 PR 中的每一个：阅读描述和截图评论，然后合并。
+
+没有人开 issue、写 prompt 或粘贴错误信息。
+
+## 循环发现了什么
+
+- **PR #464**：评审智能体要求修改。Agent Review Status 把智能体送回去一次，PR 在下一次评审后合并。
+- **PR #470**：一个新的 e2e 场景使用了一个匹配到两个元素的定位器，因此一个分片失败了。Agent CI Status
+  把智能体送回去一次。智能体修好了定位器，并在评论中说明了原因。完整时间线见
+  [反馈循环](../feedback-loops/)。
+- **PR #476**：一次 CI 失败，第一次尝试就修好了。
+- **PR #497**：一轮评审修改。
+- **PR #504**：一次 CI 失败，第一次尝试就修好了。
+
+<Aside type="note">
+每个 PR 的标题都以 `[#<issue>]` 开头，这是 issue-to-PR 自动化自己的格式，尽管 issue 要求的是普通的
+Conventional Commit 标题。这展示了两层在同时起作用：issue 中的指令是文字，而自动化的格式是代码。
+代码胜出，所以如果你在意标题，就用一个检查来强制执行它。
+</Aside>
+
+## 留给人的事
+
+阶段 8 中的两个 **(human)** 任务：在本地栈上手动走一遍，以及在已部署的 stage 上做检查。最后一个 PR
+合并时，这两个任务在 `tasks.md` 中仍未勾选，所以自动化没有等它们，其他东西也没有等。真正跟踪它们的是
+[Archive Specs](../spec-to-issue/#归档已完成的-spec) workflow：在一个人勾选这两项之前，spec 文件夹会
+一直保持在活动状态。
+
+下一步：[动手搭建：fork 并运行](../../setup/before-you-start/)。

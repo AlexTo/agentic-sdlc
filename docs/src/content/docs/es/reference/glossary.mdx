@@ -1,0 +1,30 @@
+---
+title: Glosario
+description: Los términos que se usan en esta guía.
+sidebar:
+  order: 6
+---
+
+| Término | Significado |
+| --- | --- |
+| **ACP** | Agent Client Protocol. La forma en que OpenHands controla un agente de programación externo como Claude Code |
+| **Agent Canvas** | La app de OpenHands autoalojada: servidor de agentes, backend de automatizaciones e interfaz web |
+| **Perfil de agente** | Un ajuste de OpenHands que indica el agente y el modelo que usa una conversación |
+| **`AGENTS.md`** | El archivo de guía para agentes en la raíz del repositorio: comandos, arquitectura, convenciones |
+| **Automatización** | Un worker programado de OpenHands que lee GitHub e inicia conversaciones de agentes |
+| **Constitución** | `.specify/memory/constitution.md`. Las reglas del proyecto contra las que se comprueba cada plan |
+| **Constitution Check** | La sección de `plan.md` donde se comprueba el plan contra la constitución |
+| **Intento de corrección** | Una ronda automática de devolver el trabajo al agente. Se cuenta con `ci-fix-<n>` o `review-fix-<n>` |
+| **Pegamento** | Los workflows y scripts que pasan el trabajo entre Speckit, OpenHands y CI |
+| **Grupo** | Las fases que cubre una issue de implementación. El grupo 0 llega hasta la primera historia de usuario |
+| **Control humano** | Una decisión que solo toma una persona: aprobar la spec, aprobar el PR, desplegar a producción |
+| **Tarea (human)** | Una tarea de `tasks.md` que necesita personas o un stack en ejecución. El agente la omite |
+| **Invariante** | Una regla sobre todos los datos, comprobada después de cada test e2e |
+| **Marcador** | Un comentario HTML oculto que usa el pegamento para encontrar sus propias issues y comentarios |
+| **Issue padre** | La issue de seguimiento de una feature, indicada en `spec.md` y referenciada por cada PR |
+| **Fase** | Una sección `## Phase <n>: <title>` de `tasks.md` |
+| **Turno de revisión** | Un mensaje a una conversación de agente existente, pidiéndole que corrija su PR |
+| **Carpeta de spec** | `specs/<timestamp>-<name>/`, que contiene la spec, el plan y las tareas de una feature |
+| **`software-factory/review`** | El commit status que, en estado `failure`, hace que OpenHands revise un PR |
+| **Speckit** | El toolkit de desarrollo guiado por specs de GitHub (`specify-cli`) |
+| **Estancado** | Un grupo cuya issue existe pero cuyas tareas no están todas marcadas, así que no se abre ninguna issue nueva |

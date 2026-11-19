@@ -1,0 +1,114 @@
+---
+title: PR のチェック
+description: Discava でエージェントの PR が通らなければならないすべてのチェック。エージェントのために書かれた 2 つを含む。
+sidebar:
+  order: 7
+---
+
+`.github/workflows/pr-checks.yml` は `main` へのすべての pull request で実行されます。その失敗を Agent
+CI Status が修正の試行に変えるので、これはエージェントにとって主なフィードバック源でもあります。
+
+## ジョブ
+
+| ジョブ | 実行内容 | 検出するもの |
+| --- | --- | --- |
+| `Checks (lint)`, `Checks (test)`, `Checks (build)` | `pnpm nx affected --target <target>`。`fail-fast: false` の matrix として | スタイル、ユニットテスト、型、バンドル、CDK synth、インフラに対する checkov |
+| `Tasks format` | `validate-tasks`。`tasks.md` かその読み取り側が変わったときだけ | Agent Issues ワークフローが読み違える `tasks.md` (ギャップ 5) |
+| `UI Screenshots` | `ui-screenshots` | 新しいスクリーンショットのない UI の変更 (ギャップ 6) |
+| `Invariant coverage` | `invariant-coverage`。コアテーブルに書き込みうるコードが変わったときだけ | invariant の変更を伴わない、共有レコードの新しい書き込み元。[ローカルスタック](../local-stack/#各テストの後の-invariant) を参照 |
+| `E2E tests (1/6)` … `(6/6)` | `pnpm nx affected --target e2e`、シャード分割 | 壊れたユーザーフロー、壊れた invariant、競合 |
+| `E2E tests` | 6 つのシャードを 1 つの結果にまとめる | シャード数にかかわらず、ブランチ保護に 1 つの安定した名前を与える |
+| `E2E screenshots` | `screenshots-comment` | 画像を PR に投稿する |
+
+`fail-fast: false` はエージェントにとって重要です。lint *と* テストの両方が失敗したとき、エージェントは
+試行ごとに 1 つずつではなく、1 ラウンドで両方を知らされます。
+
+## Tasks format
+
+`src/agent-issues/validate.ts` は、すべての `specs/*/tasks.md` を読み取り側が期待する形式に保ちます。
+読み取り側は不正な行があっても失敗しません。その行をスキップするので、エージェントは黙って間違ったタスクを
+受け取ることになります。バリデーターは、読み取り側がスキップするものを検出します。
+
+- フェーズのように見えるが `## Phase <n>: <title>` ではない見出し
+- 1 列目から始まる `- [ ] T<3 digits> …` になっていないチェックボックスの行
+- タスクのないフェーズ、増加しないフェーズ番号、最初のフェーズより上にあるタスク
+- 2 回使われたタスク ID
+- `User Story` フェーズがまったくなく、最初の issue の終わりがどこにもない
+
+CI では GitHub のアノテーションを出力するので、各問題は PR の diff の該当行に表示されます。
+
+```text
+::error file=specs/…/tasks.md,line=42::A task must be written "- [ ] T<3 digits> <description>", starting in the first column
+```
+
+## UI Screenshots と E2E screenshots のコメント
+
+ルール (`src/ui-screenshots/check.ts`): PR がポータルや共有コンポーネントの `.tsx` または `.css` の
+ソース (テストや生成ファイルではないもの) を変更する場合、`packages/e2e/src/scenarios/` のいずれかのファイルが
+`screenshot(` を呼ぶ行を **追加** しなければなりません。見るものが何もない変更なら、メンテナーは
+`no-ui-screenshots` ラベルを付けてジョブを再実行し、このルールを免除できます。
+
+helper (`packages/e2e/src/helpers/screenshots.ts`) は、`search/01-search-results-with-ratings.png` のような
+番号付きの PNG をシナリオごとに、CI が artifact としてアップロードするフォルダーへ保存します。シャードが
+終わると、`E2E screenshots` ジョブが PR 上の 1 つのコメントを最新に保ちます。この PR が追加した画像を先に
+列挙し、すでにあったシナリオの画像は折りたたみます。
+
+```markdown
+### E2E screenshots
+
+Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifacts from the run.
+
+**Added by this pull request (3)**
+
+- `search/01-search-results-with-ratings.png`
+- `search/02-search-sorted-by-highest-rated.png`
+- `search/03-search-minimum-rating-4.png`
+```
+
+レビュアーエージェントも同じリストを読みます。artifact には公開 URL がないので、コメントは画像の名前を挙げ、
+それをダウンロードできる実行へのリンクを付けます。
+
+## 速さを保つ
+
+チェックの時間はエージェントのフィードバックの時間です。実行にかかる 1 分 1 分が、すべての修正ラウンドに
+加算されます。Discava は 4 つの方法で PR のチェックを短縮しました。
+
+- **Nx のタスクキャッシュを実行間で保持する。** `init-monorepo` action は `.nx/cache` を Actions のキャッシュに、
+  Checks の leg ごとに 1 つ保持します。コミットごとに保存され、同じブランチの最後の push から、それがなければ
+  `ci.yml` が保存する `main` のものから復元されます。前回の push から入力が変わっていないタスクは、もう一度
+  実行されるのではなく再生されます。
+- **キャッシュを容量内に収める。** リポジトリは Actions キャッシュの 10 GB に対して 12.3 GB に達し、GitHub は
+  open な PR のキャッシュを追い出しました。3 つの変更で解決しました: `NX_MAX_CACHE_SIZE=1GB` により、保存される
+  キャッシュが 1 週間分の古い出力を抱えなくなりました。lint の leg は `main` のキャッシュを復元しますが保存は
+  しません。Biome の lint はキャッシュの保存より速いからです。そして **Cache Cleanup** ワークフローが、PR が
+  閉じたときにその PR のキャッシュを削除します。
+- **遅いテストには専用の target を与える。** 1 つのテストファイルが build leg の 5 分のうち 4 分を占めていました。
+  入力がテスト対象のファイルだけである専用の target にしたことで、ほとんどの PR ではキャッシュから再生されます。
+- **並列度の調整。** `nx affected` は `nx.json` の 8 ではなく 4 つのタスクを同時に実行します。Vitest の各タスクは
+  自分の worker を起動するので、4 コアのランナーでは 4 のほうが約 12% 速かったのです。E2E は 4 シャードから
+  6 シャードになり、ファイルは実行時間に応じてシャードに分散されます。1 つのシャードは最初のテストまでに
+  約 2 分かかるので、各シャードのテストがそのくらいの時間になると、シャードを増やしても効果がなくなります。
+
+`Tasks format` と `Invariant coverage` が関係するのは一部のパスだけです。小さな `changed-paths` action が
+先に PR の diff を取り、関係するものが何も変わっていなければ、ジョブは依存関係のインストールをスキップします。
+
+## 構造的に安全
+
+PR に書き込めるジョブ (`E2E screenshots` とエージェントのワークフロー) は **デフォルトブランチ** を
+チェックアウトし、PR の diff は API 経由で読むだけです。すべての action はコミット SHA に固定され、
+Dependabot が毎週その固定を最新に保ちます。`pnpm/setup` ステップは最大 3 回までリトライされます。そうしないと、
+ジョブが始まる前のレジストリのタイムアウトでエージェントの試行が 1 回無駄になるからです。
+
+## `main` では
+
+`.github/workflows/ci.yml` は `main` へのすべての push で同じ lint、test、build を実行し、さらに次を行います。
+
+- **Check for mutations**: ビルドの後の `git diff --exit-code`。lint や sync generator がコミットされていない
+  ファイルを変更した場合に失敗します。
+- **Trivy**: 脆弱性とシークレットのスキャン。[デプロイとセキュリティ](../deploy-and-security/) を参照してください。
+- **Playwright cache**: PR の実行が探すキーで Chromium を保存します。PR が復元できるのは、自分の ref か `main` の
+  キャッシュだけです。同じ理由で、lint、test、build のステップは、各 PR の最初の実行の起点となる Nx キャッシュを
+  保存します。
+- **Deploy Docs**: GitHub Pages へ。その間に `main` に新しいコミットが入っていない場合だけです。
+
+次へ: [ローカルスタック](../local-stack/)。

@@ -1,0 +1,81 @@
+---
+title: Controles humanos
+description: Las dos decisiones que conservan las personas, lo que los agentes nunca pueden hacer y cuándo te llaman antes de tiempo.
+sidebar:
+  order: 8
+---
+
+Las personas no desaparecen del bucle. Se trasladan a los dos puntos donde más importa el criterio,
+y se mantienen alejadas de la espera y del tecleo que hay entre medias.
+
+## Control 1: aprobar la spec
+
+El PR de la spec se revisa como código. Hacer merge de él **con la label `spec-ready`** es lo único
+que pone en marcha la implementación.
+
+Qué buscar:
+
+- ¿Dice `spec.md` lo que realmente quieres, con cada regla expresada como un requisito?
+- ¿Es cada fase lo bastante pequeña como para revisarla de una sentada?
+- ¿Hay algo en `plan.md` que rechazarías en una revisión de código?
+
+### Esto es ahora el principal cuello de botella
+
+Una vez que los bucles funcionan solos, la revisión de código es pequeña: un PR en verde y aprobado
+por el agente por cada fase. El paso humano más lento es este. Cada feature espera aquí hasta
+que alguien da por buena la spec.
+
+No tiene por qué esperar a un desarrollador. `spec.md` está en lenguaje llano (historias de usuario,
+escenarios de aceptación, requisitos funcionales), así que un **analista de negocio** o un **product
+owner** puede revisarla en el PR de la spec, comentar y aprobar. Reparte la revisión por archivo:
+
+| Revisor | Lee | Pregunta |
+| --- | --- | --- |
+| Product owner, analista de negocio | `spec.md` | ¿Es esta la feature que queremos? ¿Son correctas las reglas y los casos límite? ¿Falta algo? |
+| Ingeniero | `plan.md`, `data-model.md`, `contracts/`, `tasks.md` | ¿Es sólido el diseño? ¿Son las fases lo bastante pequeñas para revisarlas? |
+
+Cualquiera que pueda leer el repositorio puede comentar. Para que su aprobación cuente para la
+protección de ramas, necesita acceso de escritura.
+
+## Control 2: aprobar el resultado
+
+Cada PR de un agente te llega cuando el CI está en verde y el agente revisor lo ha aprobado. Tu
+trabajo es juzgar el resultado, no buscar problemas:
+
+- Lee la descripción del PR: qué ha cambiado, qué tareas y qué tareas **(human)** te quedan a ti.
+- Mira el comentario **E2E screenshots** en lugar de descargar la rama. Muestra la feature
+  funcionando. Consulta [La verificación es lo que más importa](../layers-of-trust/#la-verificación-es-lo-que-más-importa)
+  para ver un ejemplo.
+- Haz las tareas **(human)**: comprobaciones manuales en un stack local o en un stage desplegado.
+- Haz merge o solicita cambios. Para que los haga el agente, añade la label `openhands-review`
+  después de tu revisión: el agente revisor vuelve a revisar el PR, y su veredicto "changes
+  requested" devuelve al agente implementador al bucle de corrección de la revisión, contado con las
+  mismas labels `review-fix-*`.
+
+## Lo que los agentes nunca pueden hacer
+
+| Nunca | Lo impide |
+| --- | --- |
+| Hacer merge o push a `main` | La protección de ramas, que exige una revisión aprobatoria. El token del agente solo se usa para su propia rama |
+| Editar `.github/workflows/` | La constitución y las instrucciones de la issue. El revisor y la revisión humana lo detectan. Los workflows de pegamento ejecutan el código de la rama por defecto, así que un workflow editado en un PR no puede cambiarlos |
+| Debilitar un test para que pase | La constitución ("tests are a specification"), las instrucciones de la issue, el agente revisor |
+| Tocar credenciales de la nube | Nunca se le dan a la conversación. El despliegue usa roles OIDC de corta duración desde un environment de GitHub |
+| Trabajar fuera de su rango de tareas | La issue indica el rango. La siguiente issue no se abre hasta que todas las tareas de agente estén marcadas |
+| Reintentar para siempre | Cinco intentos por bucle, contados en labels |
+
+## Cuándo te llaman antes de tiempo
+
+| Señal | Qué ha pasado | Qué hacer |
+| --- | --- | --- |
+| `ci-fix-exhausted` | El CI ha fallado cinco veces tras las correcciones automáticas | Lee el último fallo. Comenta con indicaciones, corrígelo tú o corrige la spec. Después [reinicia el bucle](../../reference/labels/#reiniciar-un-bucle) |
+| `review-fix-exhausted` | El revisor sigue pidiendo cambios tras cinco rondas | Decide si el revisor tiene razón. A menudo la spec es ambigua |
+| Un comentario del agente en la issue | Se quedó bloqueado y se detuvo, como se le indica | Respóndele y después quita y vuelve a poner la label `openhands` |
+| Un comentario en un PR fusionado: "the next implementation issue … was not opened" | No están marcadas todas las tareas de la fase | Márcalas o termínalas y después ejecuta Agent Issues a mano para la carpeta de la spec |
+
+## Producción es un tercer control, opcional
+
+El despliegue a un stage de desarrollo puede ser automático en cada `main` en verde. El despliegue a
+producción debería esperar a una persona, usando revisores obligatorios en un environment de GitHub.
+Consulta [Despliegue y seguridad](../../discava/deploy-and-security/).
+
+Siguiente: [Cómo lo hace Discava](../../discava/overview/).

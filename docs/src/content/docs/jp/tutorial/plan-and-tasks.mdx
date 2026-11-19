@@ -1,0 +1,62 @@
+---
+title: 2. plan とタスク
+description: 技術的な plan と順序付きのタスク一覧を導き出し、spec と照らし合わせます。
+sidebar:
+  order: 2
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+**現在地:** 🧑 あなた + 🤖 エージェント。**成果物:** `plan.md`、`data-model.md`、`contracts/`、`tasks.md`。
+
+<Steps>
+
+1. plan を生成します。
+
+   ```text
+   /speckit-plan
+   ```
+
+   plan は spec とプロジェクトの憲章(`.specify/memory/constitution.md`)を読み、*どのように* を
+   決めます: ElectroDB エンティティに `tags` を追加し、tRPC の入力スキーマを拡張し、`notes.list` に
+   `tag` フィルターを追加する、といった内容です。
+
+2. タスクを生成します。
+
+   ```text
+   /speckit-tasks
+   ```
+
+   `tasks.md` は順序付きで、チェック可能で、フェーズごとにまとめられています。後でスクリプトが読むので
+   [フォーマット](../../reference/tasks-format/) は固定されており、次の手順で PR チェックがそれを検証します。
+
+   ```markdown
+   ## Phase 1: User Story 1 - Tags in the data and API (Priority: P1) 🎯 MVP
+   - [ ] T001 Add `tags` to the note entity in packages/notes-table/src/entities/note.ts
+   - [ ] T002 [P] Unit tests for tag rules (max five, unique, case-insensitive)
+   - [ ] T003 Extend create and update procedures in packages/notes-api/src/procedures/notes.ts
+
+   ## Phase 2: User Story 2 - Tags on the website (Priority: P2)
+   - [ ] T004 Tag input on the note form
+   - [ ] T005 Tag filter on the list page
+   - [ ] T006 e2e scenario with screenshots, invariant and concurrency tests
+
+   ## Phase 3: Docs
+   - [ ] T007 Describe tags on the notes app page in docs/
+   - [ ] T008 **(human)** Confirm the screenshots match the docs wording
+   ```
+
+3. コードが存在する前に、すべてを照合します。
+
+   ```text
+   /speckit-analyze
+   ```
+
+   タスクのない要件、要件のないタスク、3 つのファイル間の矛盾が報告されます。今のうちに直しましょう。
+   今なら 1 文で済みます。実装後なら PR 1 つ分かかります。
+
+</Steps>
+
+**(human)** と付いたタスクはエージェントがスキップし、PR の説明にあなた向けに一覧されます。
+
+次へ: [spec を承認する](../approve-the-spec/)。

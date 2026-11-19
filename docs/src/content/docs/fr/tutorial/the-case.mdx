@@ -1,0 +1,44 @@
+---
+title: Le cas - les tags de notes
+description: La fonctionnalité que construit chaque étape du tutoriel, et pourquoi elle a été choisie.
+sidebar:
+  order: 0
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Le tutoriel suit une fonctionnalité de l'idée au code mergé : **des tags sur les notes**.
+
+> Un utilisateur peut ajouter jusqu'à cinq tags à une note, et filtrer la liste des notes par tag.
+
+Elle est assez petite pour être terminée en quelques PR, et elle touche chaque couche de l'application de notes d'exemple, donc
+chaque étape du workflow a quelque chose de réel à faire.
+
+| Couche | Ce qui change | Quel contrôle attrape les erreurs |
+| --- | --- | --- |
+| `notes-table` | Attribut `tags` sur l'entité `note` | Tests unitaires |
+| `notes-api` | `tags` à la création et à la mise à jour, filtre `tag` sur la liste | Tests unitaires, typecheck |
+| `notes-website` | Champ de tag dans le formulaire de note, puces de tag, filtre par tag | Captures d'écran, e2e |
+| Règle métier | Cinq tags au maximum, pas de doublons, insensible à la casse | Invariants, tests unitaires |
+| Concurrence | Deux onglets qui ajoutent des tags en même temps ne doivent perdre aucun des deux | Test de concurrence |
+| `docs/` | La page de l'application de notes décrit les tags | Review par l'agent, review humaine |
+
+## Les phases
+
+La spec est découpée en trois phases, donc trois issues et trois PR :
+
+1. **Données et API.** Entité, procédures, règles de validation, tests unitaires.
+2. **Site web.** Champ de tag, puces, filtre, scénario e2e avec captures d'écran, tests d'invariants et de concurrence.
+3. **Documentation.** Mettre à jour la documentation pour décrire les tags.
+
+<Aside type="note">
+Les phases de ce cas sont un exemple. Vos propres specs se découperont autrement. La seule règle est que
+chaque phase soit une PR relisible qui laisse `main` en état de marche.
+</Aside>
+
+## Avant de commencer
+
+- Vous avez un fork de ce dépôt, configuré comme dans
+  [Mise en place : forker et lancer](../../setup/before-you-start/).
+- OpenHands interroge GitHub à la recherche d'issues portant le label `openhands`.
+- Vous travaillez sur `main` avec un arbre de travail propre.

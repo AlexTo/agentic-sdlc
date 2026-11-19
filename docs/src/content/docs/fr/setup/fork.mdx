@@ -1,0 +1,59 @@
+---
+title: 1. Forker le dépôt
+description: Forkez ce dépôt, activez ce que GitHub désactive pour les forks, et vérifiez qu'il fonctionne.
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Résultat :** votre propre fork, avec Issues et Actions activés, cloné en local, avec ses
+checks qui passent.
+
+<Steps>
+
+1. **Forkez et clonez.**
+
+   ```bash
+   gh repo fork AlexTo/agentic-sdlc --clone
+   cd agentic-sdlc
+   ```
+
+2. **Faites de votre fork le dépôt par défaut de `gh`.** Sinon, les commandes `gh` ciblent le dépôt
+   d'origine, pas le vôtre.
+
+   ```bash
+   gh repo set-default <you>/agentic-sdlc
+   ```
+
+3. **Activez Issues.** GitHub les désactive pour les forks, et tout le workflow repose sur les issues. Dans
+   votre fork, ouvrez **Settings → General → Features** et cochez **Issues**.
+
+4. **Activez Actions.** Ouvrez l'onglet **Actions** de votre fork et cliquez sur **I understand my workflows, go
+   ahead and enable them**. GitHub n'exécute pas les workflows d'un fork tant que vous ne l'avez pas fait.
+
+5. **Installez et lancez les checks en local**, les mêmes que ceux de la CI :
+
+   ```bash
+   pnpm install
+   pnpm nx run-many --target lint --all
+   pnpm nx run-many --target test --all
+   pnpm nx run-many --target build --all
+   ```
+
+   Pour lancer l'application de notes (Docker requis) : `pnpm dev`, puis ouvrez l'URL qu'affiche le site web.
+
+</Steps>
+
+## Vérifier que ça marche
+
+Votre fork affiche un onglet **Issues**, et son onglet **Actions** liste les workflows. En local, les trois
+commandes `nx run-many` passent.
+
+<Aside type="note">
+Deux choses fonctionnent différemment dans un fork, et aucune ne bloque le workflow. Sans secret
+`CODECOV_TOKEN`, l'étape d'envoi de la couverture journalise une erreur et continue. Le job **Deploy Docs** de la CI échoue
+tant que vous n'activez pas GitHub Pages (**Settings → Pages → Source: GitHub Actions**), ou vous pouvez l'ignorer.
+</Aside>
+
+Suite : [2. Configurer le dépôt](../github-repository/).

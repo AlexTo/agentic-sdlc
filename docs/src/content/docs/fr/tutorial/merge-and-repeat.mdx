@@ -1,0 +1,51 @@
+---
+title: 6. Merger et recommencer
+description: La review humaine, et comment le merge ouvre la phase suivante.
+sidebar:
+  order: 6
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+**Vous êtes ici :** 🧑 contrôle humain n° 2. **Sortie :** la phase 1 mergée, l'issue de la phase 2 ouverte.
+
+La PR vous parvient au vert et approuvée par l'agent reviewer. Votre rôle est de juger le résultat,
+pas de traquer les problèmes.
+
+<Steps>
+
+1. Lisez la description de la PR et le commentaire **E2E screenshots**. Pour la phase du site web, c'est
+   ainsi que vous voyez la fonctionnalité sans récupérer la branche : le champ de tag vide, une note avec trois
+   tags, le filtre appliqué, l'erreur affichée pour un sixième tag.
+
+2. Vérifiez les tâches **(human)** que l'agent a listées et faites-les.
+
+3. Approuvez et mergez. Si les agents poussent avec votre propre token, GitHub vous voit comme l'auteur de la PR
+   et n'acceptera pas votre approbation, donc contournez-la comme vous l'avez fait pour la PR de spec.
+
+   Pour demander des modifications à la place, faites une review de la PR et ajoutez le label `openhands-review`. Le verdict de l'agent
+   reviewer renvoie alors l'agent d'implémentation au travail, sous le même plafond de cinq tentatives.
+
+</Steps>
+
+## Ce que fait le merge
+
+Le workflow **Agent Issues** voit une PR mergée sur une branche `openhands/` et lit `tasks.md` tel que
+le merge l'a laissé :
+
+1. **Les tâches d'agent de cette phase sont-elles cochées ?** L'agent coche chaque tâche dans la PR, dans le commit qui
+   la termine. Les tâches **(human)** ne comptent pas : vous les avez faites à l'étape 2, et elles ne bloquent jamais la
+   chaîne.
+2. **Oui :** il ouvre l'issue de la phase suivante. La phase 2 (le site web) se déroule maintenant exactement comme la phase 1 :
+   tests d'abord, PR, contrôles, corrections, review.
+3. **Non :** rien ne s'ouvre, et la PR mergée reçoit un commentaire listant les ID des tâches non cochées. Cochez-les ou
+   terminez-les, puis lancez **Agent Issues** à la main avec le nom du dossier de spec.
+
+Seules les branches propres à l'agent font avancer la chaîne. Une PR de votre part est ignorée.
+
+```text
+spec PR merged ─► issue 1 ─► PR 1 merged ─► issue 2 ─► PR 2 merged ─► issue 3 ─► PR 3 merged ─► done
+   (you)                       (you)                      (you)                      (you)
+```
+
+Suite : [Mettre à jour la documentation](../update-the-docs/).

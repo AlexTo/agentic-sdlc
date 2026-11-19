@@ -1,0 +1,95 @@
+---
+title: OpenHands 配置
+description: Agent Canvas、agent profile 和两个自动化，与 Discava 的实际运行方式完全一致。
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Discava 的智能体运行在一台 Linux 工作站上，由 OpenHands Agent Canvas 承载。OpenHands 没有云端部署，也
+没有 webhook。一切都是向 GitHub 发起的出站轮询。
+
+## Agent Canvas
+
+Agent Canvas 1.41.0，从 npm（`@openhands/agent-canvas`）安装，并作为用户服务运行。它的状态保存在
+`~/.openhands/` 中：设置、agent profile、secret 以及自动化的 SQLite 数据库。
+
+## 会话设置
+
+决定智能体工作方式的设置：
+
+| 设置 | 值 | 原因 |
+| --- | --- | --- |
+| Agent | ACP，服务器 `claude-code` | 通过 Agent Client Protocol 接入的外部编码智能体 |
+| ACP prompt timeout | 30 分钟 | 一个实现轮次很长 |
+| Max iterations | 500 | 足够在一个会话中完成整个阶段 |
+| Confirmation mode | 关闭 | 无人值守。没有人在那里确认 |
+| Security analyzer | LLM | 命令仍会经过风险筛查 |
+| Runtime | local | 运行在宿主机上，Node、pnpm 和 git 都已在那里 |
+| Worktree branch prefix | `openhands/` | 智能体创建的每个分支都以此开头。粘合层依据它来识别 |
+
+## Agent profile
+
+| Profile | 智能体 | 模型 | 使用者 |
+| --- | --- | --- | --- |
+| `default` | Claude Code（ACP） | Sonnet | GitHub issue to PR |
+| `reviewer` | Claude Code（ACP） | Opus | GitHub code review |
+
+## Secret
+
+按名称存储在 Agent Canvas 中（**Settings → Secrets**）：
+
+| 名称 | 用途 |
+| --- | --- |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | 自动化用它读取 GitHub。会话拿到它来克隆、推送和打开 PR |
+| `OPENHANDS_AUTOMATION_API_KEY` | 自动化后端自己的密钥 |
+
+GitHub token 是维护者账号上的一个 personal access token，具有仓库内容、issue、pull request 和
+workflow 的写权限。
+
+## 两个自动化
+
+两者都是从 Agent Canvas 自动化目录中安装的，而不是手写的。每个自动化在一次轮询中做什么，见
+[智能体运行时](../../concepts/the-agent-runtime/#两个自动化)。
+
+### GitHub issue to PR
+
+| 字段 | 值 |
+| --- | --- |
+| Template | `github-issue-to-pr` 1.2.4 |
+| Repository | `AlexTo/discava` |
+| Trigger label | `openhands` |
+| Branch prefix | `openhands/issue` → 分支 `openhands/issue-<n>` |
+| Pull request mode | Draft |
+| GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+| Schedule | `*/5 * * * *`，Australia/Sydney |
+| Agent profile | `default` |
+
+修改轮次会让智能体在之后重新加上 `openhands-review` 标签，以便新的 head 得到评审。
+
+### GitHub code review
+
+| 字段 | 值 |
+| --- | --- |
+| Template | `github-pr-reviewer` 1.11.2 |
+| Repository | `alexto/discava` |
+| Trigger label | `openhands-review` |
+| Requested reviewer | `all-hands-bot`（实际上未使用：由标签完成这项工作） |
+| New reviews per scan | 2 |
+| Review tone | Concise |
+| Maintainers | 无 |
+| Schedule | `*/5 * * * *`，Australia/Sydney |
+| Agent profile | `reviewer` |
+
+当检查仍在运行时，评审者会发布一条 "⏳ Review waiting on checks" 评论，并在之后的扫描中再次尝试。它的
+评审以 "_This review was posted by an AI agent (OpenHands)._" 开头，并带有一个隐藏的
+`<!-- openhands-review-run: <id> -->` 标记。
+
+<Aside type="caution" title="所有角色共用一个账号">
+在 Discava 中，实现智能体、评审者和维护者都使用同一个 GitHub 账号。GitHub 不允许一个账号批准自己的
+PR，因此评审者的结论以 `COMMENTED` 评审的形式发布，粘合层读取的是结论那一行，而不是评审状态。对于
+团队，请给自动化使用一个单独的机器账号。
+</Aside>
+
+下一步：[spec 到 issue](../spec-to-issue/)。

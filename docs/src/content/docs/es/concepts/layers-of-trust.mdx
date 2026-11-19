@@ -1,0 +1,97 @@
+---
+title: Capas de confianza
+description: Los checks por los que pasa cada cambio, del más barato al más caro, y qué detecta cada uno.
+sidebar:
+  order: 7
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+La automatización solo merece la pena si puedes confiar en lo que produce. Cada cambio pasa por capas
+de checks: los baratos y automáticos se ejecutan primero y detectan la mayor parte, y solo lo que no
+pueden juzgar llega a una persona.
+
+<p>
+  <img alt="Triángulo invertido de cinco capas, de la más ancha a la más estrecha: código, análisis estático, verificación, texto, revisión humana" src="/agentic-sdlc/diagrams/automation-trust.svg" width="640" />
+</p>
+
+| Nivel | Capa | Qué detecta |
+| --- | --- | --- |
+| **Código** | Tests unitarios | Lógica de negocio incorrecta y reglas rotas |
+| | Invariantes | Datos que rompen una regla que abarca varios registros, comprobados después de cada test e2e |
+| | Tests de concurrencia | Condiciones de carrera cuando dos peticiones llegan en el mismo instante |
+| **Análisis estático** | Lint, typecheck, build | Errores de estilo, de tipos y de build |
+| | Check de formato de tasks | Un `tasks.md` mal formado que estancaría la cadena sin avisar |
+| | Check de archivos generados | Salida de lint o de build que el agente olvidó hacer commit |
+| **Verificación** | Tests end-to-end | Flujos de usuario rotos, en un navegador real contra el stack local |
+| | Capturas | Cambios de UI que nadie ha mirado |
+| **Texto** | Constitución, `AGENTS.md`, skills | Guía que el agente lee *antes* de escribir, para que las convenciones se sigan en lugar de detectarse |
+| | Agente revisor | Problemas que ningún test cubre, leídos como en una revisión de código |
+| **Revisión humana** | Revisión final | Lo que las capas anteriores no pueden juzgar. Siempre hace merge una persona |
+
+## La verificación es lo que más importa
+
+Los tests unitarios, el lint y los tipos muestran que el código es coherente consigo mismo. Solo los
+tests e2e y las capturas muestran que la feature *funciona*, tal como la ve un usuario, contra
+el stack real. Este es el
+[principio 1](../principles/#1-la-verificación-primero-dale-al-agente-manos-y-ojos). También es la
+capa que una persona puede comprobar más rápido: las capturas te permiten juzgar un PR en minutos,
+sin descargar la rama.
+
+El CI lo convierte en lo habitual:
+
+1. Cada escenario e2e de un flujo de UI llama a `screenshot(page, 'name')` en cada estado que un
+   revisor querría ver.
+2. El CI publica un comentario **E2E screenshots** en el PR, que lista las capturas que añadió el PR
+   (aparte de las que ya existían) y enlaza a los artefactos de la ejecución.
+3. El check `UI Screenshots` falla si un cambio de UI llega sin capturas.
+
+De Discava [#486](https://github.com/AlexTo/discava/pull/486#issuecomment-6980411897), ajustes de
+notificaciones:
+
+<p>
+  <img alt="Un comentario de github-actions titulado E2E screenshots, que lista las nueve capturas añadidas por el pull request, como notification-settings/02-emails-stopped.png, y enlaza a los artefactos de la ejecución" src="/agentic-sdlc/screenshots/e2e-screenshots-comment.png" width="620" />
+</p>
+
+El revisor abre las nueve capturas nuevas y comprueba cada estado: los ajustes con todos los tipos
+listados, un interruptor guardado, los correos detenidos y vueltos a activar, un enlace de baja
+válido y otro no válido, un error y "volver a intentarlo". Cada uno de ellos es un requisito de la
+spec, visto funcionando.
+
+## El texto guía, el código obliga
+
+El texto (la constitución, `AGENTS.md`, las instrucciones de la issue) es barato de escribir y evita la
+mayoría de los errores, pero un agente puede malinterpretarlo u omitirlo. Por eso cada regla que
+importa tiene también un check que falla. El
+[principio 5](../principles/#5-haz-deterministas-las-reglas-y-las-skills) enumera los de Discava.
+
+Cuando añadas una regla, pregúntate: si el agente la ignora, ¿qué se pone en rojo?
+
+## Los tests son una especificación
+
+La regla más importante de la constitución de Discava:
+
+> A failing test MUST be resolved by fixing the code, unless the spec or plan changes the behavior
+> it covers. Weakening an existing test (loosening an assertion, deleting a case, adding `skip` or
+> `only`, widening a mock or snapshot) is allowed only when a task names the behavior change that
+> justifies it, and the PR description says so.
+
+Un agente presionado para poner el CI en verde acabará, tarde o temprano, "arreglando" el test. Esta
+regla, repetida en la plantilla de la issue y comprobada por el agente revisor, es lo que hace que la
+suite de tests siga significando algo.
+
+## Invariantes: tests para los datos
+
+Los tests unitarios comprueban una función. Los tests e2e comprueban un flujo. Ninguno se da cuenta
+cuando dos features, escritas en PR distintos por ejecuciones distintas de agentes, dejan la
+base de datos en un estado que rompe una regla que abarca ambas. Las invariantes cierran ese hueco.
+Son una lista de comprobaciones sobre todos los datos, por ejemplo "el número de valoraciones de un
+curso es igual a su número de reseñas visibles", que se ejecutan después de **cada** test e2e. Una
+invariante incumplida hace fallar el test que la provocó.
+
+<Aside type="tip">
+Las invariantes son la capa que más rinde a medida que los agentes escriben más código. Detectan los
+errores que surgen cuando dos agentes tienen razón cada uno en su parte.
+</Aside>
+
+Siguiente: [Controles humanos](../human-gates/).

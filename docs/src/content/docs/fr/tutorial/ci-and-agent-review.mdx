@@ -1,0 +1,53 @@
+---
+title: 5. CI et review par l'agent
+description: Des contrôles automatisés et des boucles de correction bornées, sans humain au milieu.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Vous êtes ici :** ⚙️ automatisation, sans surveillance. **Sortie :** une PR au vert avec une review approbatrice de l'agent.
+
+Chaque push sur la PR de l'agent lance les contrôles. Les échecs retournent à l'agent, jamais à vous.
+
+## Les contrôles
+
+| Contrôle | Ce qu'il attrape dans le cas des tags |
+| --- | --- |
+| Lint, typecheck, build | Un type d'API qui ne correspond plus à l'entité |
+| Tests unitaires | Un sixième tag accepté, ou `Work` et `work` stockés comme deux tags |
+| Invariants | Toute note de la table avec plus de cinq tags, après chaque test e2e |
+| Tests E2E | Le champ de tag n'enregistre pas, ou le filtre affiche les mauvaises notes |
+| Test de concurrence | Deux ajouts simultanés s'écrasent et un tag est perdu |
+| Captures d'écran | La nouvelle UI n'a jamais été regardée : le check `UI Screenshots` échoue |
+| Vérification du format des tâches | Un `tasks.md` mal formé qui bloquerait la chaîne |
+
+## Quand un contrôle échoue
+
+1. Le workflow **Agent CI Status** marque le commit de tête de la PR comme en échec.
+2. L'agent révise la *même* PR dans sa conversation d'origine, à partir de la sortie de l'échec.
+3. La CI tourne à nouveau.
+
+Un exemple : le test de concurrence échoue parce que l'ajout d'un tag lit la note, ajoute en mémoire et
+la réécrit, donc deux requêtes entrent en concurrence. L'agent le remplace par un ajout atomique avec une condition sur
+le nombre, et le test passe au vert. Vous ne l'avez jamais vu.
+
+## Review par l'agent
+
+Une fois la CI au vert, un second agent OpenHands relit la PR comme le ferait une personne : exactitude, cas limites
+oubliés, règles de la spec qu'aucun test ne couvre. Soit il approuve, soit il demande des modifications, ce qui
+renvoie l'agent d'implémentation au travail de la même façon qu'une CI en rouge.
+
+## Le plafond
+
+Chaque boucle est limitée à **cinq** tentatives par PR, comptées par labels : `ci-fix-1` à `ci-fix-5` pour
+la CI, `review-fix-1` à `review-fix-5` pour la review. Après la cinquième, le workflow commente, ajoute
+`ci-fix-exhausted` ou `review-fix-exhausted`, et s'arrête.
+
+<Aside type="caution">
+Une boucle épuisée est le seul cas où l'on vous sollicite plus tôt.
+[Contrôles humains](../../concepts/human-gates/#quand-on-vous-sollicite-plus-tôt) indique quoi faire.
+</Aside>
+
+Suite : [Merger et recommencer](../merge-and-repeat/).

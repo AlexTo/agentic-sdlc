@@ -1,0 +1,91 @@
+---
+title: 7. Os workflows dos agents
+description: Conecte os scripts de cola aos eventos do GitHub com Agent Issues, Agent CI Status e Agent Review Status.
+sidebar:
+  order: 7
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**No final você terá:** três workflows que abrem issues a partir de specs e mandam o agent de volta
+quando o CI fica vermelho ou um review pede mudanças, e um quarto que arquiva uma spec quando todas
+as tasks estão marcadas.
+
+<Steps>
+
+1. **Copie os três workflows** de `.github/workflows/` deste repositório: `agent-issues.yml`,
+   `agent-ci.yml` e `agent-review.yml`. Os gatilhos e as permissões deles estão listados em
+   [Referência: workflows](../../reference/workflows/).
+
+2. **Confira se as condições `if:` batem com as suas decisões.** Se você mudou o prefixo de branch
+   ou os labels, mude aqui também:
+
+   ```yaml
+   # agent-issues.yml
+   if: >-
+     github.event_name == 'workflow_dispatch' ||
+     (github.event.pull_request.merged == true &&
+     ((github.event.action == 'closed' &&
+     (contains(github.event.pull_request.labels.*.name, 'spec-ready') ||
+     startsWith(github.event.pull_request.head.ref, 'openhands/'))) ||
+     (github.event.action == 'labeled' &&
+     github.event.label.name == 'spec-ready')))
+
+   # agent-ci.yml
+   if: >-
+     github.event.workflow_run.event == 'pull_request' &&
+     startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
+     (github.event.workflow_run.conclusion == 'failure' ||
+     github.event.workflow_run.conclusion == 'timed_out')
+
+   # agent-review.yml
+   if: >-
+     startsWith(github.event.pull_request.head.ref, 'openhands/issue-') &&
+     github.event.pull_request.head.repo.full_name == github.repository &&
+     contains(github.event.review.body, 'CHANGES REQUESTED')
+   ```
+
+3. **Mantenha as permissões e o checkout exatamente como copiados.** Cada workflow pede só o que
+   escreve. `pull-requests: write` parece sobrar, mas não sobra: labels e comentários em um PR
+   passam pela API de issues, que recusa o token do workflow sem isso.
+
+   Os dois workflows de status fazem checkout da **branch padrão**. O Agent Issues faz checkout do
+   **merge commit**, para ver as marcações que o PR mergeado fez. Nunca mude nenhum deles para fazer
+   checkout do head do PR: esses jobs têm um token que pode escrever.
+
+4. **Mantenha os grupos de concurrency.** Cada um é por PR ou por branch, com
+   `cancel-in-progress: false`. Assim, dois eventos de um mesmo PR não podem contar cada um uma
+   tentativa, e merges de PRs diferentes nunca cancelam um ao outro.
+
+5. **Copie `archive-specs.yml`**, se você quiser que as specs concluídas saiam do caminho. Quando um
+   push na `main` muda um `specs/*/tasks.md` ativo, ele abre um PR na branch `archive-spec/<folder>`
+   para cada spec com todas as tasks marcadas, incluindo as **(human)**. O PR move a pasta para
+   `specs/_archive/` e reescreve os links para ela e a partir dela. O Agent Issues pula
+   `specs/_archive/`, e o `Tasks format` falha se um `tasks.md` arquivado tiver uma task não marcada.
+
+   Ele pula uma spec com uma issue de agent aberta, e uma que já teve um PR de arquivamento. Feche
+   esse PR sem merge para manter a spec ativa.
+
+   <Aside type="caution">
+   Ative **Settings → Actions → General → Allow GitHub Actions to create and approve pull
+   requests**, ou o workflow não consegue abrir os PRs dele. PRs abertos com o token do workflow não
+   disparam o PR Checks: feche e reabra cada um para rodá-los.
+   </Aside>
+
+</Steps>
+
+## Confira se funcionou
+
+Os workflows aparecem na aba **Actions** do repositório depois que chegam à `main`. Abra
+**Actions → Agent Issues → Run workflow** e informe uma pasta de spec que não existe, como
+`does-not-exist`.
+
+A execução termina com sucesso e um aviso: `No issue created: no spec folder with a tasks.md was found`.
+
+<Aside type="note">
+Workflows `workflow_run` e `pull_request_review` só rodam a partir da versão na branch padrão.
+Mudanças neles só valem depois do merge. É também por isso que um agent não consegue mudá-los no
+próprio PR.
+</Aside>
+
+Próximo: [8. Stack local, e2e e screenshots](../local-stack-and-e2e/).

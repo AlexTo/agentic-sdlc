@@ -1,0 +1,72 @@
+---
+title: 9. 部署与安全扫描（可选）
+description: 把每个全绿的 main 部署到开发 stage，让生产环境部署需要批准，并在每次部署前进行扫描。
+sidebar:
+  order: 9
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完成后你将拥有：** 每次推送到 `main` 时运行的 Trivy 扫描、一个把每个全绿的 `main` 发布到开发 stage 的 Deploy workflow，以及需要等人批准的生产部署。
+
+这一步的细节是 Discava 特有的（AWS、CDK），但整体形态适用于任何云。这个仓库中的示例笔记应用没有部署，所以请从 [Discava 的 `deploy.yml`](https://github.com/AlexTo/discava/blob/main/.github/workflows/deploy.yml) 复制。
+
+<Steps>
+
+1. 为你想扫描的项目**添加 `trivy` target**（根目录的 `pnpm trivy` 会运行 `nx run-many --target trivy --all`）。像这个仓库一样，在 `ci.yml` 中加入 `trivy` job。让它与 `build` 保持为独立的 job，这样新公布的 CVE 会标记 `main`，而不会阻塞其他任何东西。在 `.trivyignore` 中记录已接受的发现，每行一个 ID。
+
+2. **配置无密钥的云访问。** 在 AWS 上，Discava 的 `scripts/setup-stage.sh` 会为每个 stage 创建：GitHub OIDC provider、一个只信任 `repo:owner/repo:environment:<stage>` 的部署角色、一个带权限边界的 CloudFormation 执行角色，以及 GitHub environment 的变量（`AWS_REGION`、`AWS_DEPLOY_ROLE_ARN`、`AWS_EXECUTION_ROLE_ARN`）。在你的云上，以同样的方式使用面向 GitHub Actions 的 OIDC 联合。不要存储访问密钥。
+
+3. **添加 Deploy workflow**，由 `main` 上 CI 完成以及手动触发：
+
+   ```yaml
+   on:
+     workflow_run: { workflows: [CI], types: [completed], branches: [main] }
+     workflow_dispatch:
+       inputs: { stage: { type: string, required: true } }
+
+   jobs:
+     deploy:
+       if: ${{ github.event_name == 'workflow_dispatch' ||
+               (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
+       environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
+       concurrency: { group: 'deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}', cancel-in-progress: false }
+       steps:
+         - uses: actions/checkout@<sha>
+           with: { ref: '${{ github.event.workflow_run.head_sha || github.sha }}' }
+         # init, then: pnpm trivy, configure credentials (OIDC), synth
+         - name: Check commit is still main's latest
+           id: freshness
+           if: ${{ github.event_name == 'workflow_run' }}
+           run: |
+             main_sha="$(git ls-remote --exit-code origin refs/heads/main | cut -f1)"
+             if [[ "$main_sha" == "$(git rev-parse HEAD)" ]]; then
+               echo "current=true" >> "$GITHUB_OUTPUT"
+             else
+               echo "::notice::Skipping deploy: no longer main's latest commit"
+               echo "current=false" >> "$GITHUB_OUTPUT"
+             fi
+         - name: Deploy
+           if: ${{ github.event_name != 'workflow_run' || steps.freshness.outputs.current == 'true' }}
+           run: pnpm nx run @your-scope/infra:deploy-ci "$STAGE/*" --role-arn "$AWS_EXECUTION_ROLE_ARN"
+   ```
+
+   新鲜度检查位于并发槽位*之内*，所以即使这次运行排在另一次之后等待过，它反映的也是部署前一刻的 `main`。
+
+4. 为开发 stage **开启自动部署**。在 **Settings → Secrets and
+   variables → Actions → Variables** 下，添加一个仓库变量 `AUTO_DEPLOY_STAGE`，值为你的开发 stage 的名称。
+
+5. **保护生产环境。** 在 **Settings → Environments** 下，打开你的生产 stage 对应的 environment，添加 **Required reviewers**。要部署它，打开 **Actions → Deploy → Run
+   workflow** 并输入生产 stage。job 随后会等待批准。
+
+</Steps>
+
+## 检查是否成功
+
+合并任意一个 PR。CI 运行后，**Deploy** 会以开发 stage 自动启动。在一个较旧的 commit 上手动再运行一次 CI：Deploy 会记录 `Skipping deploy: no longer main's latest commit`，并且什么都不发布。
+
+<Aside type="note">
+智能体从不部署，也从不接触这些角色。它的对话只拥有 GitHub token。部署角色只会被从 `main` 运行、处于该 stage 的 environment 中的 workflow 所承担。
+</Aside>
+
+下一步：你的仓库现在已经拥有这个仓库的 fork 所拥有的一切。用你自己的仓库代替 fork，从 [2. 配置仓库](../../setup/github-repository/)继续。

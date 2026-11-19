@@ -1,0 +1,57 @@
+---
+title: Fork 本仓库
+description: 为什么 fork 本仓库就等于拿到了 Discava 的配置，并且可以直接在一个小示例应用上试用。
+sidebar:
+  order: 3
+---
+
+import { FileTree, LinkCard } from '@astrojs/starlight/components';
+
+本仓库*就是*这套工作流：与 Discava 运行的完全相同的 Speckit 配置、issue 模板、PR 检查、智能体
+workflow 以及经过单元测试的粘合代码，包裹着一个小小的笔记应用。
+
+**fork 它，你就拥有了 Discava 的配置。** 让你自己的 OpenHands 指向这个 fork，为笔记应用写一份
+spec，它就会走完[工作原理](../how-it-works/)中描述的循环。
+
+## 你会得到什么
+
+<FileTree>
+- .specify/ Speckit 模板、脚本和 constitution
+- .github/
+  - ISSUE_TEMPLATE/implement-phase.md 每个实现 issue 都携带的指令
+  - actions/init-monorepo/ 共享的 CI 配置
+  - workflows/
+    - pr-checks.yml lint、测试、构建、tasks 格式、e2e、截图评论
+    - ui-screenshots.yml 截图规则
+    - ci.yml main 上的检查、Trivy 和文档部署
+    - agent-issues.yml spec → issue，合并 → 下一个 issue
+    - archive-specs.yml 完成的 spec → 归档 PR
+    - agent-ci.yml 红色 CI → 智能体
+    - agent-review.yml "changes requested" → 智能体
+- packages/
+  - common/scripts/src/ 粘合代码的规则，带 143 个单元测试
+  - notes-table/ ElectroDB 实体，DynamoDB local
+  - notes-api/ tRPC 过程
+  - notes-website/ React、Vite、TanStack Router、shadcn/ui
+  - e2e/ Playwright 场景和 `screenshot()` 辅助函数
+- docs/ 本站点
+</FileTree>
+
+笔记应用完全在本地运行（`pnpm dev`，用 Docker 运行 DynamoDB local），因此 CI 可以运行它的
+e2e 测试，智能体也从不需要云凭证。
+
+## 你需要补充什么
+
+只有那些无法放进仓库的东西：
+
+1. **GitHub 设置**：开启 Issues 和 Actions、创建标签、配置分支保护。fork 不会复制这些。
+2. **OpenHands**：在你的机器上运行 Agent Canvas、一个 GitHub token，以及指向你的 fork 的
+   两个自动化。
+
+## 没有包含什么
+
+Discava 的 AWS 部署。笔记应用没有云基础设施，所以合并除了文档站点之外不会发布任何东西。
+[部署与安全](../../discava/deploy-and-security/)介绍了 Discava 的流水线，
+[采用：部署](../../adopt/deploy/)则展示了如何添加一条流水线。
+
+<LinkCard title="动手搭建：fork、配置、运行你的第一个功能" href="/agentic-sdlc/zh/setup/before-you-start/" />

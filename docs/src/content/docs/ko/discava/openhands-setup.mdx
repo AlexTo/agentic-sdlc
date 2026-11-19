@@ -1,0 +1,95 @@
+---
+title: OpenHands 설정
+description: Agent Canvas, agent profile, 두 automation을 Discava가 실행하는 그대로.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Discava의 에이전트는 Linux 워크스테이션 한 대에서 OpenHands Agent Canvas로 실행됩니다. OpenHands의 클라우드 배포도,
+webhook도 없습니다. 모든 것이 GitHub를 향한 아웃바운드 폴링입니다.
+
+## Agent Canvas
+
+Agent Canvas 1.41.0, npm(`@openhands/agent-canvas`)에서 설치하고 사용자 서비스로 실행합니다. 상태는
+`~/.openhands/`에 있습니다. 설정, agent profile, secret, automation의 SQLite 데이터베이스입니다.
+
+## 대화 설정
+
+에이전트의 작업 방식을 결정하는 설정입니다.
+
+| 설정 | 값 | 이유 |
+| --- | --- | --- |
+| Agent | ACP, 서버 `claude-code` | Agent Client Protocol을 통한 외부 코딩 에이전트 |
+| ACP prompt timeout | 30분 | 구현 턴은 깁니다 |
+| Max iterations | 500 | 대화 하나에서 phase 전체를 처리할 여유 |
+| Confirmation mode | off | 무인 실행. 확인해 줄 사람이 없습니다 |
+| Security analyzer | LLM | 명령은 여전히 위험성을 검사받습니다 |
+| Runtime | local | Node, pnpm, git이 이미 있는 호스트에서 실행됩니다 |
+| Worktree branch prefix | `openhands/` | 에이전트가 만드는 모든 브랜치는 이것으로 시작합니다. glue는 이를 기준으로 동작합니다 |
+
+## Agent profile
+
+| Profile | 에이전트 | 모델 | 사용처 |
+| --- | --- | --- | --- |
+| `default` | Claude Code (ACP) | Sonnet | GitHub issue to PR |
+| `reviewer` | Claude Code (ACP) | Opus | GitHub code review |
+
+## Secret
+
+Agent Canvas(**Settings → Secrets**)에 이름으로 저장됩니다.
+
+| 이름 | 용도 |
+| --- | --- |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | automation이 이것으로 GitHub를 읽습니다. 대화는 clone, push, PR 열기를 위해 이를 받습니다 |
+| `OPENHANDS_AUTOMATION_API_KEY` | automation 백엔드 자체의 키 |
+
+GitHub 토큰은 메인테이너 계정의 personal access token이며, 저장소 contents, issues, pull requests, workflows에 대한
+쓰기 권한이 있습니다.
+
+## 두 automation
+
+둘 다 직접 작성한 것이 아니라 Agent Canvas automation 카탈로그에서 설치했습니다. 각각이 폴링 때 하는 일은
+[에이전트 런타임](../../concepts/the-agent-runtime/#두-가지-automation)에 있습니다.
+
+### GitHub issue to PR
+
+| 필드 | 값 |
+| --- | --- |
+| Template | `github-issue-to-pr` 1.2.4 |
+| Repository | `AlexTo/discava` |
+| Trigger label | `openhands` |
+| Branch prefix | `openhands/issue` → 브랜치 `openhands/issue-<n>` |
+| Pull request mode | Draft |
+| GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+| Schedule | `*/5 * * * *`, Australia/Sydney |
+| Agent profile | `default` |
+
+revise 턴은 에이전트에게 끝난 뒤 `openhands-review` label을 다시 붙이라고 지시하므로, 새 head가 리뷰됩니다.
+
+### GitHub code review
+
+| 필드 | 값 |
+| --- | --- |
+| Template | `github-pr-reviewer` 1.11.2 |
+| Repository | `alexto/discava` |
+| Trigger label | `openhands-review` |
+| Requested reviewer | `all-hands-bot` (실제로는 쓰이지 않음: label이 그 일을 합니다) |
+| New reviews per scan | 2 |
+| Review tone | Concise |
+| Maintainers | 없음 |
+| Schedule | `*/5 * * * *`, Australia/Sydney |
+| Agent profile | `reviewer` |
+
+검사가 아직 실행 중이면 리뷰어는 "⏳ Review waiting on checks" 댓글을 남기고 이후 스캔에서 다시 시도합니다. 리뷰어의
+리뷰는 "_This review was posted by an AI agent (OpenHands)._"로 시작하며, 숨겨진
+`<!-- openhands-review-run: <id> -->` 마커를 담고 있습니다.
+
+<Aside type="caution" title="모든 것에 계정 하나">
+Discava에서는 구현 에이전트, 리뷰어, 메인테이너가 모두 같은 GitHub 계정을 사용합니다. GitHub는 계정이 자기 PR을
+승인하도록 허용하지 않으므로, 리뷰어의 판정은 `COMMENTED` 리뷰로 게시되고, glue는 리뷰 상태가 아니라 판정 줄을
+읽습니다. 팀이라면 automation에 별도의 머신 계정을 주세요.
+</Aside>
+
+다음: [spec에서 issue로](../spec-to-issue/).

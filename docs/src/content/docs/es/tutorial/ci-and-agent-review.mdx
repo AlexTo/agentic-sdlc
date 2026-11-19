@@ -1,0 +1,53 @@
+---
+title: 5. CI y review del agente
+description: Controles automáticos y bucles de corrección acotados, sin ninguna persona en medio.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Estás aquí:** ⚙️ automatización, sin supervisión. **Resultado:** un PR en verde con una review de aprobación del agente.
+
+Cada push al PR del agente ejecuta los controles. Los fallos vuelven al agente, nunca a ti.
+
+## Los controles
+
+| Control | Qué detecta en el caso de los tags |
+| --- | --- |
+| Lint, typecheck, build | Un tipo de la API que ya no coincide con la entidad |
+| Tests unitarios | Un sexto tag aceptado, o `Work` y `work` guardados como dos tags |
+| Invariantes | Cualquier nota de la tabla con más de cinco tags, después de cada test e2e |
+| Tests e2e | El campo de tags no guarda, o el filtro muestra las notas equivocadas |
+| Test de concurrencia | Dos añadidos simultáneos se sobrescriben y se pierde un tag |
+| Capturas de pantalla | Nadie miró nunca la nueva UI: el check `UI Screenshots` falla |
+| Check de formato de tareas | Un `tasks.md` mal formado que detendría la cadena |
+
+## Cuando un control falla
+
+1. El workflow **Agent CI Status** marca como fallido el head commit del PR.
+2. El agente revisa el *mismo* PR en su conversación original, usando la salida del fallo.
+3. CI se ejecuta de nuevo.
+
+Un ejemplo: el test de concurrencia falla porque añadir un tag lee la nota, añade en memoria y
+la vuelve a escribir, así que dos peticiones compiten. El agente lo cambia por un añadido atómico con una condición sobre
+el recuento, y el test pasa a verde. Tú nunca lo viste.
+
+## Review del agente
+
+Cuando CI está en verde, un segundo agente de OpenHands hace review del PR como lo haría una persona: corrección, casos
+límite olvidados, reglas de la spec que ningún test cubre. O lo aprueba, o pide cambios, lo que
+devuelve al agente implementador igual que un CI en rojo.
+
+## El límite
+
+Cada bucle está limitado a **cinco** intentos por PR, contados con labels: de `ci-fix-1` a `ci-fix-5` para
+CI, de `review-fix-1` a `review-fix-5` para la review. Tras el quinto, el workflow comenta, añade
+`ci-fix-exhausted` o `review-fix-exhausted`, y se detiene.
+
+<Aside type="caution">
+Un bucle agotado es la única vez que te llaman antes de tiempo.
+[Controles humanos](../../concepts/human-gates/#cuándo-te-llaman-antes-de-tiempo) explica qué hacer.
+</Aside>
+
+Siguiente: [Fusiona y repite](../merge-and-repeat/).

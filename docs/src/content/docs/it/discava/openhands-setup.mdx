@@ -1,0 +1,98 @@
+---
+title: Configurazione di OpenHands
+description: Agent Canvas, gli agent profile e le due automazioni esattamente come li usa Discava.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Gli agenti di Discava girano su una workstation Linux, sotto OpenHands Agent Canvas. Non c'è un
+deploy di OpenHands nel cloud e non c'è alcun webhook. Tutto è polling in uscita verso GitHub.
+
+## Agent Canvas
+
+Agent Canvas 1.41.0, installato da npm (`@openhands/agent-canvas`) ed eseguito come servizio utente.
+Il suo stato sta in `~/.openhands/`: impostazioni, agent profile, secret e il database SQLite delle
+automazioni.
+
+## Impostazioni delle conversazioni
+
+Le impostazioni che determinano come lavorano gli agenti:
+
+| Impostazione | Valore | Perché |
+| --- | --- | --- |
+| Agent | ACP, server `claude-code` | Un coding agent esterno, tramite l'Agent Client Protocol |
+| ACP prompt timeout | 30 minuti | Un turno di implementazione è lungo |
+| Max iterations | 500 | Spazio per un'intera fase in una sola conversazione |
+| Confirmation mode | off | Senza supervisione. Non c'è nessuno a confermare |
+| Security analyzer | LLM | I comandi vengono comunque vagliati per il rischio |
+| Runtime | local | Gira sull'host, dove ci sono già Node, pnpm e git |
+| Worktree branch prefix | `openhands/` | Ogni branch creato da un agente inizia così. Il collante si basa su questo |
+
+## Agent profile
+
+| Profilo | Agente | Modello | Usato da |
+| --- | --- | --- | --- |
+| `default` | Claude Code (ACP) | Sonnet | GitHub issue to PR |
+| `reviewer` | Claude Code (ACP) | Opus | GitHub code review |
+
+## Secret
+
+Salvati in Agent Canvas (**Settings → Secrets**), per nome:
+
+| Nome | Usato per |
+| --- | --- |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | Le automazioni lo usano per leggere GitHub. Le conversazioni lo ricevono per clonare, fare push e aprire PR |
+| `OPENHANDS_AUTOMATION_API_KEY` | La chiave propria del backend delle automazioni |
+
+Il token GitHub è un personal access token sull'account del maintainer, con accesso in scrittura a
+contenuti del repository, issue, pull request e workflow.
+
+## Le due automazioni
+
+Entrambe sono state installate dal catalogo delle automazioni di Agent Canvas, non scritte a mano.
+Cosa fa ciascuna a ogni polling è in [Il runtime dell'agente](../../concepts/the-agent-runtime/#le-due-automazioni).
+
+### GitHub issue to PR
+
+| Campo | Valore |
+| --- | --- |
+| Template | `github-issue-to-pr` 1.2.4 |
+| Repository | `AlexTo/discava` |
+| Trigger label | `openhands` |
+| Branch prefix | `openhands/issue` → branch `openhands/issue-<n>` |
+| Pull request mode | Draft |
+| GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+| Schedule | `*/5 * * * *`, Australia/Sydney |
+| Agent profile | `default` |
+
+Un turno di revisione dice all'agente di riapplicare dopo la label `openhands-review`, così il nuovo
+commit di testa viene revisionato.
+
+### GitHub code review
+
+| Campo | Valore |
+| --- | --- |
+| Template | `github-pr-reviewer` 1.11.2 |
+| Repository | `alexto/discava` |
+| Trigger label | `openhands-review` |
+| Requested reviewer | `all-hands-bot` (non usato in pratica: il lavoro lo fa la label) |
+| New reviews per scan | 2 |
+| Review tone | Concise |
+| Maintainers | nessuno |
+| Schedule | `*/5 * * * *`, Australia/Sydney |
+| Agent profile | `reviewer` |
+
+Mentre i check stanno ancora girando, il reviewer pubblica un commento "⏳ Review waiting on checks"
+e riprova a una scansione successiva. Le sue review iniziano con "_This review was posted by an AI
+agent (OpenHands)._" e contengono un marcatore nascosto `<!-- openhands-review-run: <id> -->`.
+
+<Aside type="caution" title="Un solo account per tutto">
+In Discava l'agente che implementa, il reviewer e il maintainer usano tutti lo stesso account GitHub.
+GitHub non permette a un account di approvare la propria PR, quindi il verdetto del reviewer viene
+pubblicato come review `COMMENTED`, e il collante legge la riga del verdetto invece dello stato della
+review. Per un team, dai alle automazioni un account macchina separato.
+</Aside>
+
+Avanti: [Da spec a issue](../spec-to-issue/).

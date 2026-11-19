@@ -1,0 +1,74 @@
+---
+title: 2. Configura el repositorio
+description: Crea las labels y protege main. Un fork no copia ninguna de las dos cosas.
+sidebar:
+  order: 2
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Al terminar tendrás:** todas las labels que usa el workflow y una rama `main` que solo acepta pull
+requests con checks en verde y una aprobación.
+
+<Steps>
+
+1. **Crea las labels.** Son 16, así que es más rápido con un script que desde la UI. Ejecútalo
+   desde tu clon. `--force` actualiza una label que ya existe, así que puedes volver a ejecutarlo sin problema.
+
+   ```bash
+   gh label create spec-ready           --force --description "Merging this spec PR starts the agent"
+   gh label create openhands            --force --description "OpenHands implements this issue"
+   gh label create openhands-review     --force --description "OpenHands reviews this PR's head"
+   gh label create no-ui-screenshots    --force --description "Waives the UI Screenshots check: a UI change with nothing to look at"
+   for n in 1 2 3 4 5; do
+     gh label create ci-fix-$n          --force --description "CI fix-up attempt $n of 5"
+     gh label create review-fix-$n      --force --description "Review fix-up attempt $n of 5"
+   done
+   gh label create ci-fix-exhausted     --force --description "CI fix-ups used up; a person takes over"
+   gh label create review-fix-exhausted --force --description "Review fix-ups used up; a person takes over"
+   ```
+
+2. **Protege `main`.** En tu fork, abre **Settings → Branches → Add classic branch protection
+   rule** y configura:
+
+   | Ajuste | Valor |
+   | --- | --- |
+   | Branch name pattern | `main` |
+   | Require a pull request before merging | activado, con 1 aprobación obligatoria |
+   | Dismiss stale pull request approvals when new commits are pushed | activado |
+   | Require status checks to pass before merging | activado, con los seis checks de abajo |
+   | Do not allow bypassing the above settings | desactivado |
+
+   Los seis checks: `Checks (lint)`, `Checks (test)`, `Checks (build)`, `Tasks format`, `E2E tests`
+   y `UI Screenshots`. GitHub solo ofrece un check en el cuadro de búsqueda después de que se haya ejecutado una vez, así que
+   abre antes cualquier PR si falta alguno.
+
+   Dejar permitido el bypass te permite, como propietario, fusionar PR que los agentes abrieron con tu propio
+   token (consulta la advertencia de abajo).
+
+   <Aside type="caution">
+   No hagas obligatorio el status `software-factory/review`. Es una señal para el agente, que solo se
+   publica como `failure`, y hacerlo obligatorio bloquearía todos los PR.
+   </Aside>
+
+3. **Deja que Actions abra pull requests.** Abre **Settings → Actions → General** y, en
+   **Workflow permissions**, marca **Allow GitHub Actions to create and approve pull requests**.
+   El workflow Archive Specs lo necesita para abrir el PR que mueve una spec terminada a
+   `specs/_archive/`.
+
+</Steps>
+
+<Aside type="caution" title="Una cuenta o dos">
+Para una primera prueba, los agentes pueden usar un token de tu propia cuenta, como hace Discava. Pero GitHub no
+deja que una cuenta apruebe su propio PR. Tu aprobación y la del agente revisor aparecen entonces como
+comentarios, y fusionas como administrador del repositorio. Para un equipo, dale a los agentes una cuenta de GitHub
+separada con permiso de escritura, y usa su token en el [paso 3](../openhands/). Así las personas pueden
+aprobar los PR de los agentes con normalidad.
+</Aside>
+
+## Comprueba que funciona
+
+La página **Issues → Labels** del fork lista las 16 labels nuevas, y **Settings → Branches** muestra la
+regla en `main` con seis checks obligatorios.
+
+Siguiente: [3. Instala OpenHands](../openhands/).

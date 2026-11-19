@@ -1,0 +1,53 @@
+---
+title: Workflow
+description: 循环中的每个 GitHub Actions workflow，及其触发条件、权限和 job 名称。
+sidebar:
+  order: 3
+---
+
+| Workflow | 文件 | 触发条件 | 权限 | 检出内容 |
+| --- | --- | --- | --- | --- |
+| PR Checks | `pr-checks.yml` | 针对 `main` 的 `pull_request` | `contents: read`，截图评论 job 另需 `pull-requests: write` | 该 PR |
+| UI Screenshots | `ui-screenshots.yml` | 针对 `main` 的 `pull_request`，包括 `labeled`/`unlabeled` | `contents: read`、`pull-requests: read` | 默认分支（通过 API 读取 diff） |
+| CI | `ci.yml` | 推送到 `main` 的 `push`、`workflow_dispatch` | `contents: read`、`pages: write`、`id-token: write` | `main` |
+| Agent Issues | `agent-issues.yml` | 针对 `main` 的 `pull_request: [closed, labeled]`、`workflow_dispatch(spec_folder)` | `contents: read`、`issues: write`、`pull-requests: write` | 合并 commit |
+| Archive Specs | `archive-specs.yml` | 推送到 `main` 且改动了 `specs/*/tasks.md` 的 `push`、`workflow_dispatch` | `contents: write`、`issues: read`、`pull-requests: write` | `main` |
+| Agent CI Status | `agent-ci.yml` | PR Checks 的 `workflow_run`，`completed` | `contents: read`、`actions: read`、`statuses: write`、`issues: write`、`pull-requests: write` | 默认分支 |
+| Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`、`statuses: write`、`issues: write`、`pull-requests: write` | 默认分支 |
+| Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | 无（把 PR 编号传给 `gh`） |
+| Deploy (Discava) | `deploy.yml` | `main` 上 CI 的 `workflow_run`、`workflow_dispatch(stage)` | `contents: read`、`id-token: write` | CI 验证过的 commit |
+
+## 在分支保护中设为必需的 job 名称
+
+| 检查 | 来源 |
+| --- | --- |
+| `Checks (lint)`、`Checks (test)`、`Checks (build)` | PR Checks |
+| `Tasks format` | PR Checks |
+| `E2E tests` | PR Checks（汇总各分片） |
+| `UI Screenshots` | UI Screenshots |
+
+## 并发组
+
+| Workflow | 组 | 取消进行中的运行 |
+| --- | --- | --- |
+| PR Checks | `pr-checks-<ref>` | 是：新的 push 让旧的运行失去意义 |
+| Agent Issues | `agent-issues-<PR number or folder>` | 否 |
+| Archive Specs | `archive-specs` | 否：一次只跑一个，因此不会有两个运行开出同一个 PR |
+| Agent CI Status | `agent-ci-<head branch>` | 否 |
+| Agent Review Status | `agent-review-<PR number>` | 否 |
+| Deploy | `deploy-<stage>` | 否 |
+
+智能体相关的 workflow 从不取消。每次运行都必须恰好一次地记下自己的尝试次数或开出自己的 issue，而按 PR 划分的组意味着互不相关的 PR 永远不会相互等待。
+
+## 它们运行的 Nx target
+
+全部位于 `@your-scope/common-scripts`：
+
+| Target | 入口 | 读取的环境变量 |
+| --- | --- | --- |
+| `agent-issue` | `src/agent-issues/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_NAME`、`GITHUB_EVENT_PATH`、`SPEC_FOLDER`、`DRY_RUN` |
+| `archive-specs` | `src/agent-issues/archive-main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_WORKSPACE`、`BASE_BRANCH`、`DRY_RUN` |
+| `agent-ci-status` | `src/agent-ci/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH`、`DRY_RUN` |
+| `agent-review-status` | `src/agent-review/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH`、`DRY_RUN` |
+| `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH` |
+| `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`、`GITHUB_ACTIONS`（用于 annotations） |

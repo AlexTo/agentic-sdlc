@@ -1,0 +1,30 @@
+---
+title: Glossário
+description: Os termos usados ao longo deste guia.
+sidebar:
+  order: 6
+---
+
+| Termo | Significado |
+| --- | --- |
+| **ACP** | Agent Client Protocol. Como o OpenHands controla um coding agent externo, como o Claude Code |
+| **Agent Canvas** | O app self-hosted do OpenHands: servidor de agents, backend de automações e UI web |
+| **Perfil de agent** | Uma configuração do OpenHands que define o agent e o modelo que uma conversa usa |
+| **`AGENTS.md`** | O arquivo de orientações para agents na raiz do repositório: comandos, arquitetura, convenções |
+| **Automação** | Um worker agendado do OpenHands que lê o GitHub e inicia conversas de agents |
+| **Constitution** | `.specify/memory/constitution.md`. As regras do projeto contra as quais todo plan é conferido |
+| **Constitution Check** | A seção do `plan.md` em que o plan é conferido contra a constitution |
+| **Tentativa de correção** | Uma rodada automática de mandar o agent de volta. Contada por `ci-fix-<n>` ou `review-fix-<n>` |
+| **Cola** | Os workflows e scripts que passam o trabalho entre o Speckit, o OpenHands e o CI |
+| **Grupo** | As fases que uma issue de implementação cobre. O grupo 0 vai até a primeira user story |
+| **Gate humano** | Uma decisão que só uma pessoa toma: aprovar a spec, aprovar o PR, fazer deploy em produção |
+| **Task (human)** | Uma task no `tasks.md` que precisa de pessoas ou de uma stack rodando. O agent a pula |
+| **Invariante** | Uma regra sobre todos os dados, verificada depois de cada teste e2e |
+| **Marcador** | Um comentário HTML oculto que a cola usa para encontrar suas próprias issues e comentários |
+| **Issue pai** | A issue de acompanhamento de uma feature, citada no `spec.md` e referenciada por todo PR |
+| **Fase** | Uma seção `## Phase <n>: <title>` do `tasks.md` |
+| **Turno de revisão** | Uma mensagem para uma conversa de agent existente, pedindo que ele corrija o PR |
+| **Pasta da spec** | `specs/<timestamp>-<name>/`, com a spec, o plan e as tasks de uma feature |
+| **`software-factory/review`** | O commit status que, no estado `failure`, faz o OpenHands revisar um PR |
+| **Speckit** | O toolkit de desenvolvimento orientado a specs do GitHub (`specify-cli`) |
+| **Travado** | Um grupo cuja issue existe mas cujas tasks não estão todas marcadas, então nenhuma issue nova é aberta |

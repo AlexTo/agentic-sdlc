@@ -1,0 +1,117 @@
+---
+title: PR checks
+description: Todo check pelo qual um PR de agent precisa passar no Discava, incluindo os dois escritos para agents.
+sidebar:
+  order: 7
+---
+
+O `.github/workflows/pr-checks.yml` roda em todo pull request para a `main`. A falha dele é o que o Agent
+CI Status transforma em uma tentativa de correção, então ele também é a principal fonte de feedback do agent.
+
+## Os jobs
+
+| Job | Roda | Pega |
+| --- | --- | --- |
+| `Checks (lint)`, `Checks (test)`, `Checks (build)` | `pnpm nx affected --target <target>`, como uma matrix com `fail-fast: false` | Estilo, testes unitários, tipos, bundling, synth do CDK e checkov na infraestrutura |
+| `Tasks format` | `validate-tasks`, só quando um `tasks.md` ou o seu leitor mudou | Um `tasks.md` que o workflow Agent Issues leria errado (lacuna 5) |
+| `UI Screenshots` | `ui-screenshots` | Uma mudança de UI sem screenshots novos (lacuna 6) |
+| `Invariant coverage` | `invariant-coverage`, só quando mudou código que poderia escrever na tabela principal | Um novo writer de um registro compartilhado sem mudança nas invariantes. Veja [Stack local](../local-stack/#invariantes-depois-de-cada-teste) |
+| `E2E tests (1/6)` … `(6/6)` | `pnpm nx affected --target e2e`, em shards | Fluxos de usuário quebrados, invariantes quebradas, race conditions |
+| `E2E tests` | Junta os seis shards em um resultado | Dá à branch protection um nome estável, qualquer que seja o número de shards |
+| `E2E screenshots` | `screenshots-comment` | Publica as imagens no PR |
+
+O `fail-fast: false` é importante para os agents. Quando o lint *e* um teste falham, o agent fica sabendo dos dois em
+uma rodada, e não de um por tentativa.
+
+## Tasks format
+
+O `src/agent-issues/validate.ts` exige que todo `specs/*/tasks.md` siga o formato que o leitor espera.
+O leitor não falha em uma linha malformada. Ele a pula, então o agent receberia as tarefas erradas
+sem aviso. O validador pega o que o leitor pularia:
+
+- um heading que parece uma fase mas não é `## Phase <n>: <title>`
+- uma linha de checkbox que não é `- [ ] T<3 digits> …` na primeira coluna
+- uma fase sem tarefas, números de fase que não aumentam, uma tarefa acima da primeira fase
+- um ID de tarefa usado duas vezes
+- nenhuma fase `User Story`, de modo que não há onde a primeira issue terminar
+
+No CI, ele imprime anotações do GitHub, então cada problema aparece na linha do diff do PR:
+
+```text
+::error file=specs/…/tasks.md,line=42::A task must be written "- [ ] T<3 digits> <description>", starting in the first column
+```
+
+## UI Screenshots e o comentário E2E screenshots
+
+A regra (`src/ui-screenshots/check.ts`): se um PR muda o código-fonte `.tsx` ou `.css` de um portal ou dos
+componentes compartilhados (não testes, não arquivos gerados), então algum arquivo em
+`packages/e2e/src/scenarios/` precisa **adicionar** uma linha que chame `screenshot(`. Um mantenedor pode dispensá-la
+com o label `no-ui-screenshots` e rodar o job de novo, para uma mudança sem nada para ver.
+
+O helper (`packages/e2e/src/helpers/screenshots.ts`) salva PNGs numerados por cenário, como
+`search/01-search-results-with-ratings.png`, em uma pasta que o CI envia como artifact. Depois que os
+shards terminam, o job `E2E screenshots` mantém um comentário atualizado no PR. Ele lista primeiro as
+imagens que este PR adicionou, e recolhe as de cenários que já existiam:
+
+```markdown
+### E2E screenshots
+
+Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifacts from the run.
+
+**Added by this pull request (3)**
+
+- `search/01-search-results-with-ratings.png`
+- `search/02-search-sorted-by-highest-rated.png`
+- `search/03-search-minimum-rating-4.png`
+```
+
+O agent revisor lê a mesma lista. Artifacts não têm URL pública, então o comentário nomeia as
+imagens e dá o link da execução de onde elas podem ser baixadas.
+
+## Mantendo tudo rápido
+
+O tempo dos checks é o tempo de feedback do agent: cada minuto que uma execução leva é somado a toda rodada de correção.
+O Discava reduziu o tempo dos seus PR checks de quatro formas:
+
+- **O cache de tasks do Nx é mantido entre execuções.** A action `init-monorepo` guarda o `.nx/cache` em um
+  cache do Actions, um por perna do Checks. Ele é salvo por commit e restaurado a partir do último push da mesma branch
+  ou, se não houver, do da `main`, que o `ci.yml` salva. Uma task cujos inputs não mudaram
+  desde o último push é reproduzida, não executada de novo.
+- **O cache fica dentro da cota.** O repositório chegou a 12,3 GB dos seus 10 GB de cache do Actions,
+  e o GitHub removeu os caches de PRs abertos. Três mudanças resolveram isso: `NX_MAX_CACHE_SIZE=1GB`, para que um
+  cache salvo não carregue mais uma semana de saídas antigas; a perna de lint restaura o cache da `main` mas
+  não salva nenhum, já que o Biome faz o lint mais rápido do que um cache é salvo; e um workflow **Cache Cleanup**
+  apaga os caches de um PR quando ele é fechado.
+- **Testes lentos ganham um target próprio.** Um arquivo de teste levava 4 dos 5 minutos da perna de build.
+  O target próprio dele, cujos inputs são só os arquivos que ele testa, é reproduzido a partir do cache na maioria dos
+  PRs.
+- **Paralelismo ajustado.** O `nx affected` roda quatro tasks por vez, e não as oito do `nx.json`: cada
+  task do Vitest inicia os próprios workers, e quatro foi cerca de 12% mais rápido em um runner de quatro núcleos. O E2E
+  passou de quatro para seis shards, com os arquivos distribuídos entre os shards pelo tempo de execução. Um shard custa cerca de
+  dois minutos antes do primeiro teste, então mais shards deixam de compensar quando os testes de cada um levam
+  mais ou menos isso.
+
+O `Tasks format` e o `Invariant coverage` só importam para alguns caminhos. Uma pequena action `changed-paths`
+faz primeiro o diff do PR, e o job pula a instalação de dependências quando nada relevante mudou.
+
+## Seguro por construção
+
+Os jobs que podem escrever no PR (`E2E screenshots` e os workflows de agent) fazem checkout da
+**branch padrão** e só leem o diff do PR pela API. Toda action é fixada em um SHA de
+commit, e o Dependabot mantém esses pins atualizados semanalmente. O passo `pnpm/setup` é tentado de novo até
+três vezes, porque um timeout do registry antes mesmo de o job começar custaria, de outra forma, uma
+tentativa ao agent.
+
+## Na `main`
+
+O `.github/workflows/ci.yml` roda o mesmo lint, test e build em todo push na `main`, mais:
+
+- **Check for mutations**: `git diff --exit-code` depois do build. Ele falha se o lint ou um sync
+  generator mudou arquivos que não foram commitados.
+- **Trivy**: a varredura de vulnerabilidades e segredos. Veja [Deploy e segurança](../deploy-and-security/).
+- **Playwright cache**: salva o Chromium sob a chave que as execuções de PR procuram. Um PR só pode restaurar caches
+  da sua própria ref ou da `main`. Pelo mesmo motivo, os passos de lint, test e build salvam o cache do Nx
+  a partir do qual começa a primeira execução de cada PR.
+- **Deploy Docs** no GitHub Pages, só se nenhum commit mais novo tiver entrado na `main` nesse meio-tempo.
+
+Próximo: [Stack local](../local-stack/).

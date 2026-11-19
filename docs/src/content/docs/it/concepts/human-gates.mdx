@@ -1,0 +1,82 @@
+---
+title: Gate umani
+description: Le due decisioni che restano alle persone, cosa agli agenti non è mai permesso fare, e quando vieni coinvolto prima.
+sidebar:
+  order: 8
+---
+
+Le persone non vengono tolte dal loop. Vengono spostate nei due punti in cui il giudizio conta di
+più, e tenute lontane dall'attesa e dalla digitazione che stanno in mezzo.
+
+## Gate 1: approvare la spec
+
+La PR della spec si revisiona come codice. Farne il merge **con la label `spec-ready`** è l'unica
+cosa che avvia l'implementazione.
+
+Cosa guardare:
+
+- `spec.md` dice ciò che vuoi davvero, con ogni regola espressa come requisito?
+- Ogni fase è abbastanza piccola da revisionare in una sola seduta?
+- C'è qualcosa in `plan.md` che rifiuteresti in una code review?
+
+### Questo è ora il collo di bottiglia principale
+
+Una volta che i loop girano da soli, la code review è piccola: una PR verde e approvata dall'agente
+per ogni fase. Il passo umano più lento è questo. Ogni funzionalità aspetta qui finché qualcuno non
+conferma che la spec è giusta.
+
+Non deve per forza aspettare uno sviluppatore. `spec.md` è in linguaggio semplice (user story,
+scenari di accettazione, requisiti funzionali), quindi un **business analyst** o un **product owner**
+può revisionarla sulla PR della spec, commentare e approvare. Dividi la review per file:
+
+| Reviewer | Legge | Si chiede |
+| --- | --- | --- |
+| Product owner, business analyst | `spec.md` | È questa la funzionalità che vogliamo? Le regole e i casi limite sono giusti? Manca qualcosa? |
+| Engineer | `plan.md`, `data-model.md`, `contracts/`, `tasks.md` | Il design è solido? Le fasi sono abbastanza piccole da revisionare? |
+
+Chiunque possa leggere il repository può commentare. Perché la sua approvazione conti ai fini della
+branch protection, gli serve l'accesso in scrittura.
+
+## Gate 2: approvare il risultato
+
+Ogni PR degli agenti ti arriva dopo che la CI è verde e l'agente reviewer ha approvato. Il tuo
+compito è giudicare il risultato, non andare a caccia di problemi:
+
+- Leggi la descrizione della PR: cosa è cambiato, quali task, quali task **(human)** restano a te.
+- Guarda il commento **E2E screenshots** invece di scaricare il branch. Mostra la funzionalità che
+  funziona. Vedi [La verifica conta più di tutto](../layers-of-trust/#la-verifica-conta-più-di-tutto)
+  per un esempio.
+- Svolgi i task **(human)**: controlli manuali su uno stack locale o su uno stage di cui è stato
+  fatto il deploy.
+- Fai il merge, o richiedi modifiche. Per farle fare all'agente, aggiungi la label `openhands-review`
+  dopo la tua review: l'agente reviewer rivede la PR, e il suo verdetto "changes requested" rimanda
+  l'agente che implementa nel loop di correzione della review, contato con le stesse label
+  `review-fix-*`.
+
+## Cosa gli agenti non possono mai fare
+
+| Mai | Garantito da |
+| --- | --- |
+| Fare merge, o push su `main` | Branch protection che richiede una review di approvazione. Il token dell'agente viene usato solo per il suo branch |
+| Modificare `.github/workflows/` | Constitution e istruzioni della issue. La review del reviewer e quella umana lo intercettano. I workflow del collante eseguono il codice del branch di default, quindi un workflow modificato in una PR non può cambiarli |
+| Indebolire un test per farlo passare | Constitution ("tests are a specification"), istruzioni della issue, agente reviewer |
+| Toccare le credenziali cloud | Non vengono mai date alla conversazione. Il deploy usa ruoli OIDC a breve durata da un environment di GitHub |
+| Lavorare fuori dal suo intervallo di task | La issue indica l'intervallo. La issue successiva non si apre finché ogni task degli agenti non è spuntato |
+| Riprovare all'infinito | Cinque tentativi per loop, contati nelle label |
+
+## Quando vieni coinvolto prima
+
+| Segnale | Cosa è successo | Cosa fare |
+| --- | --- | --- |
+| `ci-fix-exhausted` | La CI è fallita cinque volte dopo le correzioni automatiche | Leggi l'ultimo fallimento. Commenta con indicazioni, correggi tu stesso o correggi la spec. Poi [azzera il loop](../../reference/labels/#azzerare-un-loop) |
+| `review-fix-exhausted` | Il reviewer chiede ancora modifiche dopo cinque giri | Decidi se il reviewer ha ragione. Spesso la spec è ambigua |
+| Un commento dell'agente sulla issue | Era bloccato e si è fermato, come da istruzioni | Rispondi, poi rimuovi e riapplica la label `openhands` |
+| Un commento su una PR mergiata: "the next implementation issue … was not opened" | I task della fase non sono tutti spuntati | Spuntali o completali, poi esegui a mano Agent Issues per la cartella della spec |
+
+## La produzione è un terzo gate, facoltativo
+
+Il deploy su uno stage di sviluppo può essere automatico a ogni `main` verde. Il deploy in produzione
+dovrebbe aspettare una persona, usando i required reviewers su un environment di GitHub. Vedi
+[Deploy e sicurezza](../../discava/deploy-and-security/).
+
+Avanti: [Come fa Discava](../../discava/overview/).

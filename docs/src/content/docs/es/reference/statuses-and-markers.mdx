@@ -1,0 +1,52 @@
+---
+title: Status y marcadores
+description: El commit status y los marcadores ocultos que usan las piezas para comunicarse entre sí.
+sidebar:
+  order: 2
+---
+
+Las piezas nunca se llaman entre sí. Dejan en GitHub señales que la siguiente pieza busca.
+
+## El commit status
+
+| Campo | Valor |
+| --- | --- |
+| Contexto | `software-factory/review` |
+| Estado | `failure`, únicamente. Una ejecución que pasa o una aprobación no publica nada |
+| Publicado en | El head commit del PR en el momento del fallo |
+| Publicado por | Agent CI Status, Agent Review Status o una persona |
+| Descripción | `CI failed (fix attempt <n> of 5): <failed jobs>` o `Review requested changes (fix attempt <n> of 5): see the review`, como máximo 140 caracteres |
+| URL de destino | La ejecución fallida, o la review |
+| Lo lee | El worker issue-to-PR, que revisa el PR cuando su head tiene este status como `failure` o `error` |
+
+Un push nuevo empieza sin el status, así que el worker deja de revisar en cuanto el agente ha subido cambios.
+
+## Marcadores ocultos
+
+| Marcador | Dónde | Lo escribe | Sirve para |
+| --- | --- | --- | --- |
+| `<!-- agent-issue spec:<folder> group:<n> -->` | Primera línea de una issue de implementación | Agent Issues | Encontrar la carpeta de la spec a partir de un PR de agente fusionado (a través de su `Closes #n`), y no abrir nunca una segunda issue para el mismo grupo |
+| `<!-- openhands-review-run: <id> -->` | Cada review del agente revisor | Automatización de code review | Agent Review Status solo actúa sobre las reviews que lo llevan |
+| `<!-- openhands-review-gate:waiting:<sha> -->` | Comentario "Review waiting on checks" | Automatización de code review | El registro propio del revisor de que está esperando a ese head |
+| `<!-- e2e-screenshots -->` | El comentario E2E screenshots | PR Checks | Actualizar ese único comentario en lugar de añadir uno nuevo en cada ejecución |
+
+## Líneas de veredicto
+
+El revisor termina cada review con una de estas en su propia línea:
+
+```text
+✅ APPROVED
+🔄 CHANGES REQUESTED
+```
+
+Agent Review Status busca `^🔄 CHANGES REQUESTED\s*$` en una línea aislada. Una review que solo
+menciona la frase de pasada no cuenta.
+
+## Nombres de rama
+
+| Patrón | Quién | Importa porque |
+| --- | --- | --- |
+| `openhands/issue-<n>` | Automatización issue-to-PR | Es la única rama que revisa el worker, y la única a la que responden los workflows de corrección |
+| `openhands/issue-<n>-2`, … | Automatización issue-to-PR, en una issue con la label puesta de nuevo | Nunca se revisa automáticamente |
+| cualquiera que empiece por `openhands/` | Ramas de agente | Fusionar una hace avanzar la cadena |
+| `spec/<name>` (cualquier otro nombre) | Personas | Solo hace avanzar la cadena con `spec-ready` |

@@ -1,0 +1,44 @@
+---
+title: Il caso - tag sulle note
+description: La feature che costruisce ogni passaggio del tutorial, e perché è stata scelta.
+sidebar:
+  order: 0
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Il tutorial segue una feature dall'idea al codice unito: **tag sulle note**.
+
+> Un utente può aggiungere fino a cinque tag a una nota, e filtrare l'elenco delle note per tag.
+
+È abbastanza piccola da finire in poche PR, e tocca ogni livello dell'app di note di esempio, quindi
+ogni fase del workflow ha qualcosa di concreto da fare.
+
+| Livello | Cosa cambia | Quale controllo intercetta gli errori |
+| --- | --- | --- |
+| `notes-table` | Attributo `tags` sull'entità `note` | Unit test |
+| `notes-api` | `tags` in creazione e aggiornamento, filtro `tag` sull'elenco | Unit test, typecheck |
+| `notes-website` | Campo dei tag nel modulo della nota, chip dei tag, filtro per tag | Screenshot, e2e |
+| Regola di business | Massimo cinque tag, nessun duplicato, senza distinzione tra maiuscole e minuscole | Invarianti, unit test |
+| Concorrenza | Due schede che aggiungono tag insieme non devono perderne nessuno | Test di concorrenza |
+| `docs/` | La pagina dell'app di note descrive i tag | Review dell'agente, review umana |
+
+## Le fasi
+
+La spec è divisa in tre fasi, quindi tre issue e tre PR:
+
+1. **Dati e API.** Entità, procedure, regole di validazione, unit test.
+2. **Sito.** Campo dei tag, chip, filtro, scenario e2e con screenshot, test di invarianti e di concorrenza.
+3. **Documentazione.** Aggiorna la documentazione per descrivere i tag.
+
+<Aside type="note">
+Le fasi di questo caso sono un esempio. Le tue spec si divideranno in modo diverso. L'unica regola è che
+ogni fase sia una PR revisionabile che lascia `main` funzionante.
+</Aside>
+
+## Prima di iniziare
+
+- Hai un fork di questo repository, configurato come in
+  [Configuralo: fork ed esecuzione](../../setup/before-you-start/).
+- OpenHands sta facendo poll delle issue con l'label `openhands`.
+- Stai lavorando su `main` con un working tree pulito.

@@ -1,0 +1,72 @@
+---
+title: Introducción
+description: Qué cubre esta guía, a quién va dirigida y cómo leerla.
+sidebar:
+  order: 1
+---
+
+Esta guía te muestra cómo llevar un ciclo de vida de software en el que **los agentes escriben el
+código y las personas toman dos decisiones**: aprobar la spec y aprobar el resultado. Todo lo que
+ocurre entre medias (abrir issues, escribir código y tests, reaccionar al CI, responder a una
+revisión) funciona solo, mediante el proceso normal de GitHub.
+
+El workflow se usa a diario en [Discava](https://github.com/AlexTo/discava), un sistema de gestión
+del aprendizaje serverless en AWS. En los seis días posteriores a su puesta en marcha, el 14 de
+noviembre de 2026, se escribieron así dieciséis specs de features y se fusionaron 105 pull
+requests de agentes para implementarlas, cada uno escrito, corregido y revisado por agentes. En el
+mismo periodo llegaron 173 commits a main. Todo ello con un único mantenedor, un padre con un trabajo
+a tiempo completo que trabaja en Discava de forma ocasional en su tiempo libre. 😅
+
+## La versión corta
+
+Tres herramientas estándar hacen la mayor parte del trabajo:
+
+| Herramienta | Qué hace aquí |
+| --- | --- |
+| [Speckit](https://github.com/github/spec-kit) | Convierte una idea en `spec.md`, `plan.md` y `tasks.md`, comprobados contra una constitución del proyecto |
+| [OpenHands](https://github.com/OpenHands/OpenHands) | Convierte una issue etiquetada en un pull request y revisa el pull request cuando se le indica que algo está mal. Una segunda automatización de OpenHands lo revisa |
+| GitHub Actions | Ejecuta los checks y contiene el pegamento entre las otras dos |
+
+Ninguna de ellas sabe de las demás. **Esta guía trata sobre todo del pegamento**: diez pequeñas
+piezas de automatización, con tests, que conectan una spec terminada con el agente, el CI con el
+agente y el revisor con el agente, con límites para que nada entre en un bucle infinito.
+
+## A quién va dirigida
+
+- **Tech leads e ingenieros staff** que deciden si adoptar el workflow. Empieza por
+  [Conceptos](../../concepts/principles/).
+- **Cualquiera que quiera probarlo.** [Haz un fork de este repositorio](../fork-this-repo/) y sigue
+  [Configúralo](../../setup/before-you-start/) para llevar una feature por todo el bucle.
+- **El ingeniero que lo lleva a un repositorio de producto.** Lee
+  [Cómo lo hace Discava](../../discava/overview/) y después
+  [Adóptalo en tu propio repositorio](../../adopt/overview/).
+- **Los desarrolladores que lo usarán a diario.** El [tutorial](../../tutorial/the-case/) sigue una
+  feature desde la idea hasta el merge.
+
+Debes sentirte cómodo con Git, los pull requests de GitHub y GitHub Actions. No necesitas
+experiencia previa con Speckit ni con OpenHands.
+
+## Cómo está organizada esta guía
+
+| Sección | Responde a |
+| --- | --- |
+| **Empieza aquí** | ¿Qué es esto y cómo avanza una feature por él? |
+| **Conceptos** | ¿Por qué está construido así? |
+| **Cómo lo hace Discava** | ¿Qué cubre exactamente cada hueco, y en qué archivo? |
+| **Configúralo: fork y ejecución** | ¿Cómo lo pongo en marcha con la app de ejemplo? |
+| **Adóptalo en tu propio repositorio** | ¿Cómo añado cada pieza a un repositorio existente? |
+| **Tutorial** | ¿Qué se siente al usarlo, con una feature pequeña? |
+| **Referencia** | Labels, status, workflows, el formato de `tasks.md`, resolución de problemas, glosario |
+
+## Convenciones
+
+- `AGENTS.md` es el archivo de guía para agentes en la raíz del repositorio. Ponle el nombre que lea
+  tu agente de programación.
+- `<you>/agentic-sdlc` es tu fork, y `owner/repo` es cualquier repositorio.
+- `@your-scope` es el scope npm de tu workspace. Este repositorio usa `@agentic-sdlc`, y Discava usa
+  `@discava`.
+- Los comandos se ejecutan desde la raíz del repositorio salvo que un paso indique lo contrario.
+- **(human)** marca una tarea que un agente no debe hacer. También es el marcador literal que se usa
+  en `tasks.md`.
+
+Siguiente: [Cómo funciona](../how-it-works/).

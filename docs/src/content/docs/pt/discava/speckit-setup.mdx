@@ -1,0 +1,97 @@
+---
+title: Configuração do Speckit
+description: Como o Speckit é configurado no Discava, e as mudanças nos templates que tornam a saída dele legível por máquina.
+sidebar:
+  order: 3
+---
+
+import { FileTree } from '@astrojs/starlight/components';
+
+O Discava usa o Speckit 1.3.2 quase como ele vem. As mudanças importantes estão em dois templates, para que
+o que o Speckit escreve possa ser lido pela automação.
+
+## Configuração
+
+`.specify/init-options.json`, escrito pelo `specify init`:
+
+```json
+{
+  "ai": "claude",
+  "ai_skills": true,
+  "feature_numbering": "timestamp",
+  "here": true,
+  "integration": "claude",
+  "script": "sh",
+  "speckit_version": "1.3.2"
+}
+```
+
+- **Integração como skills.** Os comandos são instalados como skills (`/speckit-specify`,
+  `/speckit-plan`, …) para o coding agent da equipe.
+- **Numeração por timestamp.** As pastas de spec se chamam `YYYYMMDD-HHMMSS-<name>`, e não `001-<name>`. Duas
+  pessoas escrevendo specs em duas branches no mesmo dia nunca colidem em um número.
+
+## A extensão git
+
+A extensão `git` que vem com o Speckit está instalada (`.specify/extensions.yml`). Os hooks dela criam uma
+branch de feature antes do `/speckit-specify` e fazem commit depois de cada passo, então cada passo da escrita de uma
+spec é um Conventional Commit próprio no spec PR.
+
+## Mudanças nos templates
+
+### `spec-template.md`: uma linha de issue pai
+
+```markdown
+**Parent issue**: [#<number>, or "none" if there is no tracking issue]
+```
+
+O script do Agent Issues lê esta linha e escreve `Refs #<parent>` em toda issue de
+implementação, para que a issue de acompanhamento da feature tenha link para todos os PRs.
+
+### `tasks-template.md`: o bloco de formato e as tarefas de teste
+
+Três adições ao template original:
+
+1. **Testes não são opcionais.** O template original diz que os testes são opcionais. O do Discava diz que a
+   constitution os exige, e cada fase de história de usuário traz três tarefas de template: testes unitários,
+   uma invariante e um teste que a quebra (se uma regra abrange vários registros), e um cenário e2e (se ela
+   muda um fluxo principal).
+2. **Quem roda o quê.** Um parágrafo dizendo que um agent implementa essas tarefas sem Docker, que os testes e2e
+   e de concorrência rodam no CI do PR, e o que **(human)** significa. Isso inclui "not for
+   screenshots": uma mudança de UI tira seus screenshots no e2e.
+3. **Lido pela automação.** As [regras de formato](../../reference/tasks-format/) que o validador
+   garante, escritas no template para que o agent que escreve o `tasks.md` as siga.
+
+E uma linha adicionada às notas no final: "Do not edit existing tests to make them pass. If one
+looks wrong, stop and raise it."
+
+O texto exato de cada mudança está em
+[Adote: constitution e templates](../../adopt/constitution-and-templates/).
+
+## Uma pasta de spec
+
+<FileTree>
+- specs/20261116-013307-course-reviews/
+  - spec.md o quê e por quê, com os esclarecimentos e a issue pai
+  - plan.md como, com o Constitution Check
+  - research.md decisões e as alternativas rejeitadas
+  - data-model.md entidades, chaves, índices
+  - contracts/ formatos da API
+  - quickstart.md como um revisor testa à mão
+  - tasks.md oito fases, 36 tarefas, duas delas (human)
+  - checklists/ checklists de qualidade dos requisitos
+</FileTree>
+
+## Como uma spec é escrita
+
+1. Uma pessoa abre uma issue de acompanhamento para a feature, como a #279 "course ratings and written
+   reviews".
+2. Um coding agent roda `/speckit-specify` com o texto da issue, depois `/speckit-clarify`. Quando
+   não há ninguém disponível para responder, o agent escolhe a resposta recomendada e a registra em
+   "Clarifications" na spec.
+3. `/speckit-plan`, `/speckit-tasks`, `/speckit-analyze`. Os achados do analyze são corrigidos no
+   mesmo PR. Dá para ver isso no histórico do Discava em commits como "resolve analysis findings
+   in the public pages spec".
+4. O spec PR recebe o label `spec-ready` e é mergeado.
+
+Próximo: [Configuração do OpenHands](../openhands-setup/).

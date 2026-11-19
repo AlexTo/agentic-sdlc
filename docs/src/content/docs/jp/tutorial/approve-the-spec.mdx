@@ -1,0 +1,53 @@
+---
+title: 3. spec を承認する
+description: spec PR をコードと同じようにレビューし、spec-ready ラベルを付けてエージェントを始動させます。
+sidebar:
+  order: 3
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**現在地:** 🧑 人間のゲート #1。**成果物:** マージされた spec PR と、最初の実装 issue。
+
+<Steps>
+
+1. ブランチを push し、GitHub でそのブランチの pull request を開きます。
+
+   ```bash
+   git add specs/ && git commit -m "docs(specs): add note tags spec"
+   git push -u origin spec/note-tags
+   ```
+
+2. コードと同じようにレビューします。まず `spec.md`、次に `plan.md` を読み、`tasks.md` にざっと目を通します。
+   次のことを自問してください:
+
+   - spec は本当に望んでいることを述べているか?
+   - 各フェーズは一度にレビューできるほど小さいか?
+   - plan の中に、コードレビューなら却下するようなものはないか?
+
+   変更したいことがあれば PR にコメントします。エージェントもコメントを読むので、修正を依頼できます。
+
+   ここでビジネスアナリストやプロダクトオーナーに加わってもらいましょう。`spec.md` は平易な言葉で書かれているので、
+   あなたが plan を確認している間に、彼らは PR 上で spec をレビューできます。
+   [人間のゲート](../../concepts/human-gates/#これが今の主なボトルネック) を参照してください。
+
+3. PR に `spec-ready` ラベルを付け、マージします。
+
+   この PR を開いたのはあなたなので、GitHub では承認できません。ブランチ保護が有効な場合は、
+   **Merge without waiting for requirements to be met** にチェックを入れ、リポジトリの管理者としてマージします。
+
+</Steps>
+
+## 次に起きること(誰も何も触らずに)
+
+**Agent Issues** workflow は、`spec-ready` の付いたマージ済み PR を検知します。`tasks.md` を読み、
+最初の未完了フェーズを取り出して、
+[実装テンプレート](https://github.com/AlexTo/agentic-sdlc/blob/main/.github/ISSUE_TEMPLATE/implement-phase.md)
+から issue を開きます: spec フォルダー、タスク範囲 `T001` から `T003`、そしてエージェントが従うべきルールです。
+開始の合図である `openhands` ラベルを付けます。
+
+<Aside type="note">
+ラベルを付け忘れましたか? マージ済みの PR に `spec-ready` を付けてください。
+</Aside>
+
+これで、レビューすべきものが出てくるまで、あなたの注意は自由になります。次へ: [エージェントが実装する](../agent-implements/)。

@@ -1,0 +1,46 @@
+---
+title: 0. 시작하기 전에
+description: 필요한 것, 그리고 이 저장소를 fork하면 Discava의 설정을 얻는 방법.
+sidebar:
+  order: 0
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+[이 저장소의 fork](../../guides/fork-this-repo/)에는 Discava의 설정 중 저장소 안에 있는
+모든 것이 들어 있습니다. 이 단계들은 저장소 밖에 있는 부분, 즉 GitHub 설정과 fork를 가리키는
+OpenHands 설치를 추가합니다. 그런 다음 노트 앱의 spec을 작성하고, 그것이 spec PR에서 merge된
+에이전트 PR까지 진행되는 과정을 지켜봅니다.
+
+**소요 시간:** 약 한 시간. 대부분은 첫 에이전트 실행을 기다리는 시간입니다.
+
+## 필요한 것
+
+| 필요한 것 | 이유 |
+| --- | --- |
+| GitHub 계정 | fork하고, 에이전트가 사용하는 토큰을 소유하기 위해 |
+| Node.js 24와 pnpm | 저장소와 Agent Canvas를 실행하기 위해 |
+| `uv` | Agent Canvas는 `uvx`로 backend를 시작합니다 |
+| Docker | 노트 앱과 e2e 테스트를 로컬에서 실행할 때만 필요합니다. 에이전트를 위해서는 CI가 실행합니다 |
+| 로그인된 GitHub CLI (`gh`) | 대부분의 단계에서 사용합니다 |
+| 설치되고 로그인된 코딩 에이전트 | Speckit으로 spec을 작성하고, OpenHands 안에서 실행됩니다. Discava는 Claude Code를 사용합니다 |
+
+<Aside type="note">
+Agent Canvas는 여러분의 컴퓨터에서 실행되며 GitHub를 폴링하므로, 공개 주소나
+webhook이 필요 없습니다. 에이전트는 Agent Canvas가 실행 중일 때만 작업합니다.
+</Aside>
+
+## 단계
+
+| # | 단계 | 결과 |
+| --- | --- | --- |
+| 1 | [저장소 fork하기](../fork/) | Actions와 Issues가 켜진 나만의 사본 |
+| 2 | [저장소 설정하기](../github-repository/) | label과 보호된 `main` |
+| 3 | [OpenHands 설치하기](../openhands/) | 실행 중인 Agent Canvas, GitHub 토큰, 두 개의 agent profile |
+| 4 | [두 개의 automation 만들기](../automations/) | fork에서 구현과 리뷰를 하는 OpenHands |
+| 5 | [첫 기능 실행하기](../first-feature/) | 에이전트가 merge된 코드까지 이끌어 간 노트 앱의 spec |
+
+대신 기존 저장소에 이 설정을 적용하고 싶다면
+[여러분의 저장소에 도입하기](../../adopt/overview/)를 참고하세요.
+
+다음: [1. 저장소 fork하기](../fork/).

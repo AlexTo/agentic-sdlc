@@ -1,0 +1,89 @@
+---
+title: 4. Orientações para o agent e o template de issue
+description: Escreva o AGENTS.md e adicione o template de issue cujas instruções vão para toda issue de implementação.
+sidebar:
+  order: 4
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**No final você terá:** um `AGENTS.md` que todo agent lê primeiro, e
+`.github/ISSUE_TEMPLATE/implement-phase.md`, a fonte das instruções permanentes de toda issue de
+implementação.
+
+<Steps>
+
+1. **Escreva o `AGENTS.md`** na raiz do repositório. Limite-o ao que um agent precisa em toda
+   execução, e aponte para o `CONTRIBUTING.md` para o resto. Use estas seções:
+
+   ```markdown
+   # AGENTS.md
+
+   Read CONTRIBUTING.md before opening a PR.
+
+   ## What this is
+   One paragraph: the product, the stack, the monorepo tool.
+
+   ## Commands
+   Install; build, lint, test everything; one project's tests, once (not watch mode);
+   one test file; `nx affected`; e2e; local dev; resetting local data.
+
+   ## Architecture
+   One bullet per package: what it is, what it may import, where new code of each kind goes.
+
+   ## Conventions
+   - Conventional Commits for commit and PR titles (enforced by commitlint).
+   - The formatter and linter, by name, so the agent doesn't add another.
+   - Where helpers go. Where shared code goes.
+   - Every rule a reviewer has had to repeat twice.
+   ```
+
+   <Aside type="tip">
+   A seção de comandos é a que mais importa. Um agent que não encontra "rodar um arquivo de teste,
+   uma vez" vai rodar a suíte inteira em watch mode e travar.
+   </Aside>
+
+   Quando a seção de arquitetura passar de uma linha por pacote, mova o detalhe de cada pacote para
+   um `AGENTS.md` aninhado na pasta dele, e deixe na raiz uma linha apontando para lá. Um agent só
+   carrega um arquivo aninhado quando trabalha naquela pasta, então uma execução lê só o detalhe de
+   que precisa.
+
+2. **Copie o template de issue** deste repositório para
+   `.github/ISSUE_TEMPLATE/implement-phase.md`. O script do Agent Issues escreve sozinho as seções
+   de spec e de escopo da issue, e lê tudo abaixo de `## Instructions for the agent` do template em
+   tempo de execução:
+
+   ```markdown
+   ## Instructions for the agent
+
+   - Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
+   - Work through the scope in order, writing each story's tests first. Tick each task in `tasks.md` in the same commit that completes it.
+   - Do not use `pnpm dev`, Docker or the e2e runner locally. Run unit and component tests (once, not in watch mode), `pnpm lint`, typecheck and `pnpm build` on what you changed. E2E and concurrency tests run on PR CI: write them, then read CI's result.
+   - A change to what a user sees ships with `screenshot(page, 'name')` calls (`packages/e2e/src/helpers/screenshots.ts`) in the e2e scenario for that flow, at each state a reviewer would want to see: PR CI posts them as the `E2E screenshots` comment, and the `UI Screenshots` check fails without them. Don't leave screenshots to a **(human)** task.
+   - Skip tasks marked **(human)** and list them in the PR description for the reviewer.
+   - Use Conventional Commits for every commit. The PR title is a Conventional Commit too, for example `feat(assignments): submit work to an upload assignment`, not `[#n] ...`.
+   - In the PR description write `Refs #<parent>`. Never use `Closes` or `Fixes` against the parent issue; closing this issue is fine.
+   - Never weaken a test to make it pass, never edit `.github/workflows/`, never merge, and don't touch cloud credentials.
+   - If you are blocked, comment on this issue with what you tried and stop.
+   ```
+
+   Mantenha `#<parent>` literalmente. O script o substitui pela issue pai da spec, e remove o item
+   quando a spec não tem uma. Mantenha o heading `## Instructions for the agent` exatamente assim,
+   porque o script procura por ele e falha sem ele.
+
+3. **Edite as instruções para combinar com a sua stack**: os comandos, o caminho do helper de
+   screenshots, e o que "credenciais de cloud" significa para você.
+
+</Steps>
+
+## Confira se funcionou
+
+```bash
+grep -c '^## Instructions for the agent$' .github/ISSUE_TEMPLATE/implement-phase.md
+```
+
+```text
+1
+```
+
+Próximo: [5. Os scripts de cola](../glue-scripts/).

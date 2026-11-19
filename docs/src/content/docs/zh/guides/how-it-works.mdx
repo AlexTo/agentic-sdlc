@@ -1,0 +1,76 @@
+---
+title: 工作原理
+description: 一个功能从想法到代码合并的历程，共十一步。
+sidebar:
+  order: 2
+---
+
+本页跟随一个功能走完整个循环。每一步都会说明由谁行动、留下了什么。
+
+```d2
+grid-rows: 2
+grid-columns: 4
+horizontal-gap: 140
+vertical-gap: 90
+
+# Top row runs left to right, bottom row right to left, so the loop wraps.
+spec: "spec PR\n（你）" {shape: document}
+issues: "Agent Issues\n（GitHub Actions）"
+issue: issue {shape: page}
+implement: "实现\n（OpenHands）"
+merge: "合并\n（你）"
+review: "评审\n（OpenHands）"
+checks: "PR Checks\n（GitHub Actions）"
+pr: pull request {shape: page}
+
+spec -> issues: spec-ready
+issues -> issue
+issue -> implement
+implement -> pr
+pr -> checks
+checks -> review: 绿色
+review -> merge: 已批准
+merge -> issues: 下一阶段
+```
+
+## 步骤
+
+| # | 谁 | 发生了什么 | 产物 |
+| --- | --- | --- | --- |
+| 1 | 🧑🤖&nbsp;你 + 智能体 | `/speckit-specify` 把一段话的想法变成 spec。`/speckit-clarify` 最多提五个问题，并把你的回答写回去 | `specs/<timestamp>-<name>/spec.md` |
+| 2 | 🧑🤖&nbsp;你 + 智能体 | `/speckit-plan` 决定*怎么做*，并对照 constitution 检查计划 | `plan.md`、`data-model.md`、`contracts/` |
+| 3 | 🧑🤖&nbsp;你 + 智能体 | `/speckit-tasks` 写出一份按阶段分组的有序任务列表。`/speckit-analyze` 交叉检查这三个文件 | `tasks.md` |
+| 4 | 🧑&nbsp;**你** | 开 spec PR，像评审代码一样评审它，加上 `spec-ready` 标签，合并 | 一个已合并的 spec PR。**人工关卡 1** |
+| 5 | ⚙️&nbsp;自动化 | **Agent Issues** workflow 读取 `tasks.md`，为第一组阶段开一个带 `openhands` 标签的 issue | 一个实现 issue |
+| 6 | 🤖&nbsp;OpenHands | 在下一次轮询时，智能体领取该 issue，先写测试，再实现，勾选它的任务，并在 `openhands/issue-<n>` 上开 PR | 一个 pull request |
+| 7 | ⚙️&nbsp;CI | PR 检查运行 lint、单元测试、构建、`tasks.md` 格式检查、e2e 测试和截图检查 | 检查结果 |
+| 8 | ⚙️🤖&nbsp;自动化 + OpenHands | 运行变红时，**Agent CI Status** 将该 PR 标记为失败。智能体在下一次轮询时看到它，并修改同一个 PR | `ci-fix-1` 到 `ci-fix-5` 标签 |
+| 9 | 🤖&nbsp;OpenHands | 所有检查都结束后，评审智能体评审 head commit，并以 `✅ APPROVED` 或 `🔄 CHANGES REQUESTED` 结尾。遇到后者时，**Agent Review Status** 会把智能体送回去 | 一次评审，可能还有 `review-fix-N` 标签 |
+| 10 | 🧑&nbsp;**你** | 你阅读 PR 描述和 **E2E screenshots** 评论，完成所有 **(human)** 任务，然后合并 | 一个已合并的 PR。**人工关卡 2** |
+| 11 | ⚙️&nbsp;自动化 | 合并会再次运行 **Agent Issues**。它为下一个还有未勾选智能体任务的阶段开 issue，第 6 到 10 步不断重复，直到没有剩余任务 | 下一个 issue，或完成 |
+
+## 你实际要做的事
+
+每个功能，你编写并批准一次 spec。每个 pull request，你做一次评审并点击合并。只有当某个循环
+用完了尝试次数（`ci-fix-exhausted` 或 `review-fix-exhausted`），或者智能体评论说它被卡住时，
+你才会被提前拉进来。在智能体工作的同时，你可以去写下一份 spec。
+
+## 每个部分在哪里
+
+| 部分 | 文件 |
+| --- | --- |
+| spec 工具 | `.specify/`、`speckit-*` skill、`specs/` |
+| 每次智能体运行都遵循的项目规则 | `.specify/memory/constitution.md`、`AGENTS.md` |
+| 智能体收到的 issue | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| spec 到 issue | `.github/workflows/agent-issues.yml` |
+| 完成的 spec 到 `specs/_archive/` | `.github/workflows/archive-specs.yml` |
+| CI 到智能体 | `.github/workflows/agent-ci.yml` |
+| 评审者到智能体 | `.github/workflows/agent-review.yml` |
+| 检查 | `.github/workflows/pr-checks.yml`、`ui-screenshots.yml`、`ci.yml` |
+| 粘合代码背后的规则，经过单元测试 | `packages/common/scripts/src/agent-*`、`ui-screenshots/` |
+| 智能体运行时 | OpenHands Agent Canvas，位于仓库之外 |
+
+细节在核心概念中：[阶段如何变成 issue](../../concepts/one-phase-at-a-time/)，以及
+[失败如何把智能体送回去](../../concepts/feedback-loops/)。
+
+下一步：[Fork 本仓库](../fork-this-repo/)，或前往[核心概念](../../concepts/principles/)。

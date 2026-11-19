@@ -1,0 +1,66 @@
+---
+title: 6. PR 检查与 CI
+description: 添加 PR Checks workflow（lint、test、build、tasks 格式、e2e、截图）以及 main 上的 CI。
+sidebar:
+  order: 6
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完成后你将拥有：** 一个失败结果会进入 CI 循环的 **PR Checks** workflow、一项 **UI Screenshots** 检查，以及 `main` 上的 **CI**。
+
+<Steps>
+
+1. 从这个仓库**复制 `.github/workflows/pr-checks.yml`**。保持它的 `name: PR Checks` 一字不差：Agent CI Status 监听的就是这个名称的 workflow。它的 job：
+
+   | Job | 原样保留？ |
+   | --- | --- |
+   | `checks`，由 `lint`、`test`、`build` 组成的矩阵，`fail-fast: false` | 是 |
+   | `tasks-format` | 是 |
+   | `e2e`，分片运行，外加把各分片汇总成一项 `E2E tests` 检查的 `e2e-result` | 按你的测试套件设置分片数 |
+   | `e2e-screenshots` | 是，在完成[第 8 步](../local-stack-and-e2e/)之后 |
+
+2. **复制 `.github/workflows/ui-screenshots.yml`。** 在这个仓库中，截图规则是一个独立的 workflow，在 `opened, synchronize, reopened, labeled, unlabeled` 时触发。这样添加或移除 `no-ui-screenshots` 标签时，只会重新运行这一项检查，而不是整个 e2e 测试套件。Discava 则把同一条规则作为 PR Checks 中的一个 job 来运行。两种方式都可以。
+
+3. 为推送到 `main` **复制 `.github/workflows/ci.yml`**。保留 `Check for mutations` 步骤（构建之后执行 `git diff --ignore-space-at-eol --exit-code`）。它能发现智能体忘记提交的生成文件。如果你使用 Playwright，保留 `playwright-cache` job：PR 的运行只能恢复在 `main` 上保存的缓存。
+
+   `build` job 把 `nx-cache-scope: main` 传给 `init-monorepo`，由它保存 Nx 的任务缓存。PR 的第一次运行从这份缓存开始，所以输入已经在 `main` 上构建过的任务会被回放，而不是重新运行，智能体在每一轮修复中都能少等一些。PR Checks 中的每个 `checks` 分支也以同样的方式保留自己的缓存，只有 `lint` 例外，它只恢复缓存，因为 lint 比保存缓存还快。`init-monorepo` 把缓存上限设为 1 GB。
+
+4. **复制 `.github/workflows/cache-cleanup.yml`。** 它会在 PR 关闭时删除该 PR 的缓存。其他任何东西都读不到这些缓存，没有它的话，这些缓存会一直计入仓库 10 GB 的 Actions 缓存额度，直到 GitHub 将其清除，而清除会从仍在开启的 PR 的缓存开始。这为 Discava 节省了什么，见[保持快速](../../discava/pr-checks/#保持快速)。
+
+5. 像复制来的文件那样，**把每个 action 固定到一个 commit SHA**，并添加 `.github/dependabot.yml`，让这些固定版本保持最新：
+
+   ```yaml
+   version: 2
+   updates:
+     - package-ecosystem: 'npm'
+       directory: '/'
+       schedule: { interval: 'weekly' }
+       groups: { all: { patterns: ['*'] } }
+     - package-ecosystem: 'github-actions'
+       directories: ['/', '/.github/actions/*']
+       schedule: { interval: 'weekly' }
+       groups: { github-actions: { applies-to: version-updates, patterns: ['*'] } }
+   ```
+
+</Steps>
+
+## 检查是否成功
+
+开一个用完即弃的 PR，弄坏 `tasks.md` 中的某一行，例如给一个任务加缩进。**Tasks format** 检查会失败，并在那一行上给出 annotation：
+
+```text
+A task must be written "- [ ] T<3 digits> <description>", starting in the first column
+```
+
+再开一个修改了 UI 文件但没有改动任何场景的 PR。**UI Screenshots** 会失败：
+
+```text
+This pull request changes UI source (…) but no e2e scenario gained a `screenshot(page, 'name')` call.
+```
+
+<Aside type="note">
+复制来的文件中的 `codecov/codecov-action` 需要一个 `CODECOV_TOKEN` secret。如果你不使用 Codecov，就删掉这一步。
+</Aside>
+
+下一步：[7. 智能体 workflow](../agent-workflows/)。

@@ -1,0 +1,106 @@
+---
+title: 8. Stack locale, e2e e screenshot
+description: Fai girare l'intera app senza un account cloud, aggiungi test e2e con screenshot, e verifica gli invarianti dei dati dopo ogni test.
+sidebar:
+  order: 8
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Alla fine avrai:** `pnpm dev` che avvia l'intera app con sostituti locali, una suite Playwright che la CI
+esegue su ogni PR, screenshot pubblicati sulla PR, e invarianti verificati dopo ogni test.
+
+È il passaggio che dipende di più dal tuo stack. È anche ciò che permette alla CI di dare all'agente un
+feedback reale senza credenziali cloud.
+
+<Steps>
+
+1. **Dai a ogni servizio cloud un sostituto locale**, avviato da un target `dev`, così `pnpm dev` esegue
+   tutto. [I sostituti di Discava](../../discava/local-stack/#cosa-gira-in-locale) coprono DynamoDB,
+   S3, SQS, OpenSearch e Cognito, più un processo "event runner" che chiama gli stessi handler
+   che nel cloud chiamano i trigger Lambda, gli stream ed EventBridge.
+
+   Fai dipendere il codice backend da un solo flag (`LOCAL_DEV=true`), con gli endpoint in un unico modulo condiviso.
+   Elenca in `CONTRIBUTING.md` ciò che gira ancora solo nel cloud, e segna come **(human)** i task che ne hanno
+   bisogno.
+
+2. **Aggiungi un progetto Playwright** con un file di scenario per ogni flusso utente. `packages/e2e` di questo
+   repository è un esempio minimo. In `playwright.config.ts`, leggi lo shard dall'ambiente
+   così la matrice della CI può dividere la suite:
+
+   ```ts
+   const [shardCurrent, shardTotal] = (process.env.E2E_SHARD ?? '').split('/').map(Number);
+
+   export default defineConfig({
+     testDir: './src',
+     testMatch: ['scenarios/**/*.e2e.ts'],
+     workers: 1,
+     forbidOnly: !!process.env.CI,
+     retries: process.env.CI ? 1 : 0,
+     shard: shardCurrent && shardTotal ? { current: shardCurrent, total: shardTotal } : null,
+     webServer: { command: 'pnpm dev', reuseExistingServer: !process.env.CI /* … */ },
+   });
+   ```
+
+   Ogni scenario crea i propri utenti e dati con nomi univoci, e nessuno azzera i dati locali, quindi
+   girano in qualsiasi ordine.
+
+3. **Copia l'helper per gli screenshot** da questo repository: `packages/e2e/src/helpers/screenshots.ts`.
+   Salva `dist/packages/e2e/screenshots/<scenario>/<nn>-<name>.png`, la cartella che carica il job `e2e`
+   dei PR Checks. Chiamalo dove guarderebbe una persona, dopo un `expect` su ciò che viene mostrato:
+
+   ```ts
+   await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible();
+   await screenshot(page, 'reviews section with three reviews');
+   ```
+
+4. **Verifica gli invarianti dopo ogni test.** Per ogni regola che riguarda record scritti da codice
+   diverso (contatori, aggregati, ordinamento), scrivi una funzione che scansiona i dati e restituisce le
+   violazioni. Poi dai agli scenari un `test` che le verifica in automatico. Questo è lo schema di Discava,
+   ridotto:
+
+   ```ts
+   export const test = base.extend<{ tableInvariants: void }>({
+     tableInvariants: [
+       async ({}, use, testInfo) => {
+         const before = new Set((await findViolations()).map(violationId));
+         await use();
+         if (testInfo.status !== testInfo.expectedStatus) return;
+         await expect
+           .poll(async () => (await findViolations()).filter((v) => !before.has(violationId(v))), {
+             message: 'The scenario left the table breaking invariants',
+             timeout: 30_000,
+           })
+           .toEqual([]);
+       },
+       { auto: true },
+     ],
+   });
+   ```
+
+   Solo le violazioni *nuove* fanno fallire il test, quindi i vecchi dati locali non lo fanno mai. `expect.poll` dà
+   al lavoro in background (handler degli stream, ricalcoli) il tempo di mettersi in pari.
+
+5. **Aggiungi test di concorrenza** per le scritture su cui due utenti potrebbero entrare in conflitto: invia le stesse richieste API
+   nello stesso momento con `Promise.all`, poi fai asserzioni sul risultato e sugli invarianti.
+
+</Steps>
+
+## Verifica che funzioni
+
+```bash
+pnpm nx e2e @your-scope/e2e
+ls dist/packages/e2e/screenshots/*/
+```
+
+Poi apri una PR che modifica una pagina e aggiunge una chiamata `screenshot(`. Quando PR Checks termina, la PR
+ha un commento intitolato **E2E screenshots** che elenca la nuova immagine sotto "Added by this pull
+request".
+
+<Aside type="tip">
+Se la tua app non può ancora girare del tutto in locale, inizia da ciò che può. Anche una suite che copre solo
+l'API e il database intercetta la maggior parte degli errori degli agenti. Aggiungi i sostituti un servizio alla volta, e tieni
+il resto come task **(human)** fino ad allora.
+</Aside>
+
+Avanti: [9. Deploy e scansioni di sicurezza](../deploy/).

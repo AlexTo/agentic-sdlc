@@ -1,0 +1,92 @@
+---
+title: "Uma feature real: avaliações de cursos"
+description: Uma feature do Discava acompanhada da issue de acompanhamento à spec e a oito pull requests de agent, com horários.
+sidebar:
+  order: 10
+  label: Uma feature real
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Esta página acompanha uma feature no repositório real do Discava: **notas e avaliações escritas
+de cursos**. Todos os números e links vêm do GitHub. Os horários estão em UTC, em 18 de novembro de 2026, salvo indicação em contrário.
+
+## A ideia
+
+[Issue #279](https://github.com/AlexTo/discava/issues/279), escrita por uma pessoa:
+
+> Enrolled students leave one 1-5 rating plus an optional text review per course (editable,
+> deletable). The course carries an aggregate rating and count, kept consistent through a
+> core-table helper. Shown on catalogue cards, the course page and as a search sort/boost. The
+> instructor can respond; an admin can remove abusive reviews. One review per student per course
+> under concurrency; an average/count invariant in `helpers/invariants.ts`.
+
+## A spec
+
+[PR #358](https://github.com/AlexTo/discava/pull/358), `docs(specs): course ratings and written
+reviews`, na branch `spec/reviews`: 14 commits, 923 linhas, todas em
+`specs/20261116-013307-course-reviews/`.
+
+- O `/speckit-clarify` rodou sem uma pessoa a quem perguntar, então o agent registrou suas respostas em
+  "Clarifications". Por exemplo: *"Must a student have made progress before they may review? → No.
+  Any student whose enrolment is not dropped may review."* O revisor do spec PR podia
+  discordar de qualquer uma delas antes de existir código.
+- O `tasks.md` saiu com **oito fases e 36 tarefas**. A fase 1 é a primeira história de usuário (registros,
+  o resumo e o writer compartilhado), e as fases 2 a 8 dizem, cada uma, qual PR elas são
+  ("core-api review procedures (PR 2)"). Duas tarefas são **(human)**: um teste manual completo em uma stack
+  local e verificações no stage com deploy.
+
+Aberto em 15 de novembro, com o label `spec-ready`, mergeado em 18 de novembro às 06:47.
+
+## A cadeia
+
+| Fase | Issue aberta | PR | Mergeado | Tamanho | Correções |
+| --- | --- | --- | --- | --- | --- |
+| 1. Registros de avaliação, resumo das notas e o writer | [#453](https://github.com/AlexTo/discava/issues/453) 07:09 | [#456](https://github.com/AlexTo/discava/pull/456) | 07:40 | +1.923 | nenhuma |
+| 2. Procedures de avaliação no core-api | [#459](https://github.com/AlexTo/discava/issues/459) 07:41 | [#460](https://github.com/AlexTo/discava/pull/460) | 08:30 | +1.334 | nenhuma |
+| 3. Notas e avaliações no portal do aluno | [#461](https://github.com/AlexTo/discava/issues/461) 08:31 | [#464](https://github.com/AlexTo/discava/pull/464) | 09:55 | +1.357 | `review-fix-1` |
+| 4. Notas na busca | [#466](https://github.com/AlexTo/discava/issues/466) 09:56 | [#470](https://github.com/AlexTo/discava/pull/470) | 11:24 | +900 | `ci-fix-1` |
+| 5. Respostas do instrutor | [#475](https://github.com/AlexTo/discava/issues/475) 11:25 | [#476](https://github.com/AlexTo/discava/pull/476) | 12:30 | +1.791 | `ci-fix-1` |
+| 6. Remoção pelo admin | [#481](https://github.com/AlexTo/discava/issues/481) 12:31 | [#483](https://github.com/AlexTo/discava/pull/483) | 13:09 | +1.526 | nenhuma |
+| 7. Notificações para o instrutor | [#485](https://github.com/AlexTo/discava/issues/485) 13:10 | [#497](https://github.com/AlexTo/discava/pull/497) | 00:20, 19 nov | +422 | `review-fix-1` |
+| 8. End-to-end, documentação e verificações manuais | [#501](https://github.com/AlexTo/discava/issues/501) 00:21, 19 nov | [#504](https://github.com/AlexTo/discava/pull/504) | 01:08, 19 nov | +427 | `ci-fix-1` |
+
+Oito PRs, cerca de 9.700 linhas incluindo testes. Os seis primeiros foram mergeados em seis horas. O PR do agent para
+a fase 7 abriu dez horas depois da sua issue, e os dois últimos foram mergeados até noventa minutos depois disso.
+Cada issue abriu cerca de um minuto depois do merge do PR anterior, e o último PR fechou a #279.
+
+## O que a pessoa fez
+
+1. Escreveu a issue de acompanhamento de um parágrafo.
+2. Revisou e fez o merge do spec PR.
+3. Em cada um dos oito PRs: leu a descrição e o comentário de screenshots, e fez o merge.
+
+Ninguém abriu uma issue, escreveu um prompt ou colou um erro.
+
+## O que os loops pegaram
+
+- **PR #464**: o agent revisor pediu mudanças. O Agent Review Status mandou o agent de volta uma vez,
+  e o PR foi mergeado depois do review seguinte.
+- **PR #470**: um novo cenário e2e usou um locator que correspondia a dois elementos, então um shard falhou.
+  O Agent CI Status mandou o agent de volta uma vez. O agent corrigiu o locator e explicou o motivo em um comentário.
+  Veja [Feedback loops](../feedback-loops/) para a linha do tempo completa.
+- **PR #476**: uma falha de CI, corrigida na primeira tentativa.
+- **PR #497**: uma rodada de mudanças de review.
+- **PR #504**: uma falha de CI, corrigida na primeira tentativa.
+
+<Aside type="note">
+O título de cada PR começa com `[#<issue>]`, o formato próprio da automation issue-to-PR, mesmo que a
+issue peça um título simples de Conventional Commit. Isso mostra as duas camadas em ação: a instrução
+na issue é texto, e o formato da automation é código. O código vence, então, se o título importa para você,
+garanta-o com um check.
+</Aside>
+
+## O que fica para uma pessoa
+
+As duas tarefas **(human)** da fase 8: um teste manual completo em uma stack local e verificações no
+stage com deploy. O último PR foi mergeado com as duas ainda não marcadas no `tasks.md`, então a automação não
+esperou por elas, e nada mais esperou também. O que as acompanha é o workflow
+[Archive Specs](../spec-to-issue/#arquivando-uma-spec-concluída): a pasta da spec continua ativa
+até uma pessoa marcar as duas.
+
+Próximo: [Configuração: faça um fork e execute](../../setup/before-you-start/).

@@ -1,0 +1,53 @@
+---
+title: Adottalo nel tuo repository
+description: Quando non puoi fare un fork, come aggiungere ogni pezzo a un repository esistente, in ordine.
+sidebar:
+  order: 0
+  label: Panoramica
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Il modo più rapido per avere il workflow è [fare il fork di questo repository](../../setup/fork/). Questa sezione
+è per quando non puoi: hai un repository di prodotto esistente e vuoi la stessa configurazione al suo interno.
+
+Ogni passaggio aggiunge un pezzo, copiato da questo repository, e dice come verificarlo. Quando hai
+finito, il tuo repository ha ciò che ha un fork, e continui da
+[2. Configura il repository](../../setup/github-repository/).
+
+<Aside type="tip">
+Fai comunque il fork di questo repository ed esegui prima [la tua prima feature](../../setup/first-feature/) sull'app
+di note. Vedere l'intero loop funzionare una volta rende molto più facile seguire ogni passaggio qui.
+</Aside>
+
+## I passaggi
+
+| # | Passaggio | Lacuna che colma |
+| --- | --- | --- |
+| 1 | [Workspace e igiene dei commit](../workspace/) | |
+| 2 | [Installa Speckit](../speckit/) | |
+| 3 | [Costituzione e template](../constitution-and-templates/) | 5 (formato, in prosa) |
+| 4 | [Istruzioni per gli agenti e il template della issue](../agent-guidance/) | |
+| 5 | [Gli script del collante](../glue-scripts/) | da 1 a 7 (logica) |
+| 6 | [Check delle PR e CI](../pr-checks-and-ci/) | 5, 6 (imposte) |
+| 7 | [I workflow degli agenti](../agent-workflows/) | 1, 2, 3, 4, 7 (collegate) |
+| 8 | [Stack locale, e2e e screenshot](../local-stack-and-e2e/) | 6, 8 |
+| 9 | [Deploy e scansioni di sicurezza (facoltativo)](../deploy/) | 9, 10 |
+
+I numeri delle lacune si riferiscono a [Il collante mancante](../../concepts/the-missing-glue/).
+
+## Decidi prima queste cose
+
+| Decisione | Predefinito | Cambialo se |
+| --- | --- | --- |
+| Label che avvia l'implementazione | `openhands` | Usi già quell'label |
+| Prefisso dei branch | `openhands/issue` | Raramente. Il collante cerca esattamente `openhands/issue-<n>`. Se lo cambi, cambia anche `AGENT_BRANCH` e le condizioni dei workflow |
+| Label di review | `openhands-review` | Come sopra |
+| Intervallo di poll | ogni 5 minuti | Vuoi costi più bassi e puoi aspettare di più (il predefinito del catalogo è 15) |
+| Massimo di tentativi di correzione | 5 per loop | Raramente. È `MAX_*_FIX_ATTEMPTS` in due file `plan.ts` |
+| Numerazione delle cartelle delle spec | timestamp | Mai, con più di un autore di spec |
+
+In ogni comando e file copiato, sostituisci `@your-scope` o `@agentic-sdlc` con lo scope npm del tuo
+workspace.
+
+Avanti: [1. Workspace e igiene dei commit](../workspace/).

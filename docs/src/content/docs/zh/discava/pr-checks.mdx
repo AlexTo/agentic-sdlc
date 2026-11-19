@@ -1,0 +1,109 @@
+---
+title: PR 检查
+description: 在 Discava 中，智能体 PR 必须通过的每一项检查，包括专为智能体编写的两项。
+sidebar:
+  order: 7
+---
+
+`.github/workflows/pr-checks.yml` 在每个指向 `main` 的 pull request 上运行。Agent CI Status 正是把它的
+失败转换成一次修复尝试，所以它也是智能体反馈的主要来源。
+
+## 这些 job
+
+| Job | 运行 | 能发现 |
+| --- | --- | --- |
+| `Checks (lint)`、`Checks (test)`、`Checks (build)` | `pnpm nx affected --target <target>`，作为一个 `fail-fast: false` 的矩阵 | 风格、单元测试、类型、打包、CDK synth 以及基础设施上的 checkov |
+| `Tasks format` | `validate-tasks`，仅当某个 `tasks.md` 或其读取器发生变化时 | Agent Issues workflow 会误读的 `tasks.md`（缺口 5） |
+| `UI Screenshots` | `ui-screenshots` | 没有新截图的 UI 变更（缺口 6） |
+| `Invariant coverage` | `invariant-coverage`，仅当可能写入核心表的代码发生变化时 | 共享记录有了新的写入者，但不变式没有任何变化。参见[本地栈](../local-stack/#每个测试之后的不变式) |
+| `E2E tests (1/6)` … `(6/6)` | `pnpm nx affected --target e2e`，分片运行 | 被破坏的用户流程、被破坏的不变式、竞态 |
+| `E2E tests` | 把六个分片汇总为一个结果 | 无论分片数量多少，都给分支保护一个稳定的名称 |
+| `E2E screenshots` | `screenshots-comment` | 把图片发布到 PR 上 |
+
+`fail-fast: false` 对智能体很重要。当 lint *和*某个测试同时失败时，智能体会在一轮中得知两者，而不是每次
+尝试只知道一个。
+
+## Tasks format
+
+`src/agent-issues/validate.ts` 要求每个 `specs/*/tasks.md` 符合读取器所期望的格式。读取器遇到格式错误的
+行时不会失败，而是跳过它，于是智能体会悄无声息地拿到错误的任务。校验器会捕获读取器会跳过的内容：
+
+- 看起来像阶段、但不是 `## Phase <n>: <title>` 的标题
+- 不是从第一列开始的 `- [ ] T<3 digits> …` 的复选框行
+- 没有任务的阶段、没有递增的阶段编号、位于第一个阶段之上的任务
+- 被使用了两次的任务 ID
+- 完全没有 `User Story` 阶段，因此第一个 issue 没有可以结束的地方
+
+在 CI 中，它会打印 GitHub annotation，因此每个问题都会显示在 PR diff 中对应的行上：
+
+```text
+::error file=specs/…/tasks.md,line=42::A task must be written "- [ ] T<3 digits> <description>", starting in the first column
+```
+
+## UI Screenshots 与 E2E screenshots 评论
+
+规则（`src/ui-screenshots/check.ts`）：如果一个 PR 修改了某个门户或共享组件的 `.tsx` 或 `.css` 源文件
+（不包括测试和生成文件），那么 `packages/e2e/src/scenarios/` 中必须有某个文件**新增**一行调用
+`screenshot(` 的代码。对于没有什么可看的变更，维护者可以用 `no-ui-screenshots` 标签豁免它，并重新运行
+该 job。
+
+辅助函数（`packages/e2e/src/helpers/screenshots.ts`）为每个场景保存带编号的 PNG，例如
+`search/01-search-results-with-ratings.png`，保存到一个 CI 会作为 artifact 上传的文件夹中。分片完成后，
+`E2E screenshots` job 会让 PR 上的一条评论保持最新。它先列出这个 PR 新增的图片，并把来自已有场景的图片
+折叠起来：
+
+```markdown
+### E2E screenshots
+
+Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifacts from the run.
+
+**Added by this pull request (3)**
+
+- `search/01-search-results-with-ratings.png`
+- `search/02-search-sorted-by-highest-rated.png`
+- `search/03-search-minimum-rating-4.png`
+```
+
+评审智能体读取的是同一份列表。artifact 没有公开 URL，所以评论会写明图片名称，并链接到可以下载它们的
+那次运行。
+
+## 保持快速
+
+检查时间就是智能体的反馈时间：一次运行多花的每一分钟，都会加到每一轮修复上。Discava 从四个方面缩短了
+它的 PR 检查：
+
+- **在运行之间保留 Nx 的任务缓存。** `init-monorepo` action 把 `.nx/cache` 保存在 Actions 缓存中，每个
+  Checks 矩阵项一个。它按 commit 保存，并从同一分支上一次推送的缓存恢复，如果没有，则从 `ci.yml` 保存的
+  `main` 的缓存恢复。自上次推送以来输入没有变化的任务会被重放，而不是再次运行。
+- **缓存保持在配额以内。** 仓库的 Actions 缓存一度达到 12.3 GB（配额为 10 GB），GitHub 清除了打开 PR
+  的缓存。三项改动解决了这个问题：`NX_MAX_CACHE_SIZE=1GB`，使保存的缓存不再带着一周的旧输出；lint
+  矩阵项恢复 `main` 的缓存但不保存任何缓存，因为 Biome lint 的速度比保存缓存还快；以及一个
+  **Cache Cleanup** workflow，在 PR 关闭时删除它的缓存。
+- **慢测试有自己的 target。** 一个测试文件占用了 build 矩阵项 5 分钟中的 4 分钟。给它单独的 target，其
+  输入只有它所测试的文件，这样在大多数 PR 上都会从缓存中重放。
+- **调优并行度。** `nx affected` 一次运行四个任务，而不是 `nx.json` 中的八个：每个 Vitest 任务都会启动
+  自己的 worker，在四核 runner 上，四个并行大约快 12%。E2E 从四个分片增加到六个，文件按运行时间分布到
+  各个分片上。一个分片在运行第一个测试之前大约要花两分钟，所以一旦每个分片的测试也只需要大约这么长
+  时间，增加分片就不再划算。
+
+`Tasks format` 和 `Invariant coverage` 只与部分路径有关。一个小小的 `changed-paths` action 会先对 PR
+做 diff，当没有相关变更时，job 会跳过依赖安装。
+
+## 从构造上保证安全
+
+能写入 PR 的 job（`E2E screenshots` 以及智能体 workflow）检出的是**默认分支**，并且只通过 API 读取 PR
+的 diff。每个 action 都固定到一个 commit SHA，Dependabot 每周让这些固定版本保持最新。`pnpm/setup`
+步骤最多重试三次，因为如果在 job 真正开始之前就发生 registry 超时，否则会白白耗掉智能体的一次尝试。
+
+## 在 `main` 上
+
+`.github/workflows/ci.yml` 在每次推送到 `main` 时运行相同的 lint、测试和构建，此外还有：
+
+- **Check for mutations**：构建之后运行 `git diff --exit-code`。如果 lint 或某个同步 generator 修改了
+  未提交的文件，它就会失败。
+- **Trivy**：漏洞和密钥扫描。参见[部署与安全](../deploy-and-security/)。
+- **Playwright cache**：以 PR 运行会查找的键保存 Chromium。PR 只能从它自己的 ref 或 `main` 恢复缓存。
+  出于同样的原因，lint、测试和构建步骤会保存每个 PR 首次运行所基于的 Nx 缓存。
+- **Deploy Docs** 到 GitHub Pages，前提是在此期间 `main` 上没有更新的 commit 落地。
+
+下一步：[本地栈](../local-stack/)。

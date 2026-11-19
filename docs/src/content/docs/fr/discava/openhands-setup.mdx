@@ -1,0 +1,100 @@
+---
+title: Configuration d'OpenHands
+description: Agent Canvas, les profils d'agent et les deux automatisations exactement tels que Discava les utilise.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Les agents de Discava tournent sur une station de travail Linux, sous OpenHands Agent Canvas. Il n'y
+a ni déploiement cloud d'OpenHands ni webhook. Tout passe par une interrogation sortante de GitHub.
+
+## Agent Canvas
+
+Agent Canvas 1.41.0, installé depuis npm (`@openhands/agent-canvas`) et exécuté comme service
+utilisateur. Son état vit dans `~/.openhands/` : paramètres, profils d'agent, secrets et la base
+SQLite des automatisations.
+
+## Paramètres de conversation
+
+Les paramètres qui déterminent la façon dont les agents travaillent :
+
+| Paramètre | Valeur | Pourquoi |
+| --- | --- | --- |
+| Agent | ACP, serveur `claude-code` | Un agent de code externe, via l'Agent Client Protocol |
+| ACP prompt timeout | 30 minutes | Un tour d'implémentation est long |
+| Max iterations | 500 | De la place pour toute une phase dans une seule conversation |
+| Confirmation mode | désactivé | Sans surveillance. Personne n'est là pour confirmer |
+| Security analyzer | LLM | Les commandes sont tout de même filtrées selon leur risque |
+| Runtime | local | Tourne sur l'hôte, où Node, pnpm et git sont déjà installés |
+| Worktree branch prefix | `openhands/` | Chaque branche créée par un agent commence par ce préfixe. La glue s'appuie dessus |
+
+## Profils d'agent
+
+| Profil | Agent | Modèle | Utilisé par |
+| --- | --- | --- | --- |
+| `default` | Claude Code (ACP) | Sonnet | GitHub issue to PR |
+| `reviewer` | Claude Code (ACP) | Opus | GitHub code review |
+
+## Secrets
+
+Stockés dans Agent Canvas (**Settings → Secrets**), par nom :
+
+| Nom | Sert à |
+| --- | --- |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | Les automatisations lisent GitHub avec. Les conversations le reçoivent pour cloner, pousser et ouvrir des PR |
+| `OPENHANDS_AUTOMATION_API_KEY` | La clé propre du backend d'automatisation |
+
+Le token GitHub est un personal access token sur le compte du mainteneur, avec un accès en écriture
+au contenu du dépôt, aux issues, aux pull requests et aux workflows.
+
+## Les deux automatisations
+
+Les deux ont été installées depuis le catalogue d'automatisations d'Agent Canvas, pas écrites à la
+main. Ce que chacune fait à chaque passage est décrit dans
+[Le runtime de l'agent](../../concepts/the-agent-runtime/#les-deux-automatisations).
+
+### GitHub issue to PR
+
+| Champ | Valeur |
+| --- | --- |
+| Template | `github-issue-to-pr` 1.2.4 |
+| Dépôt | `AlexTo/discava` |
+| Label déclencheur | `openhands` |
+| Préfixe de branche | `openhands/issue` → branches `openhands/issue-<n>` |
+| Mode de pull request | Draft |
+| Secret du token GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+| Planning | `*/5 * * * *`, Australia/Sydney |
+| Profil d'agent | `default` |
+
+Un tour de révision dit à l'agent de remettre ensuite le label `openhands-review`, pour que la
+nouvelle tête soit relue.
+
+### GitHub code review
+
+| Champ | Valeur |
+| --- | --- |
+| Template | `github-pr-reviewer` 1.11.2 |
+| Dépôt | `alexto/discava` |
+| Label déclencheur | `openhands-review` |
+| Relecteur demandé | `all-hands-bot` (inutilisé en pratique : c'est le label qui fait le travail) |
+| Nouvelles revues par passage | 2 |
+| Ton de la revue | Concise |
+| Mainteneurs | aucun |
+| Planning | `*/5 * * * *`, Australia/Sydney |
+| Profil d'agent | `reviewer` |
+
+Tant que des checks tournent encore, le relecteur publie un commentaire « ⏳ Review waiting on
+checks » et réessaie lors d'un passage ultérieur. Ses revues commencent par « _This review was
+posted by an AI agent (OpenHands)._ » et portent un marqueur caché
+`<!-- openhands-review-run: <id> -->`.
+
+<Aside type="caution" title="Un seul compte pour tout">
+Dans Discava, l'agent d'implémentation, le relecteur et le mainteneur utilisent tous le même compte
+GitHub. GitHub ne permet pas à un compte d'approuver sa propre PR, donc le verdict du relecteur est
+publié sous forme de revue `COMMENTED`, et la glue lit la ligne du verdict plutôt que l'état de la
+revue. Pour une équipe, donnez aux automatisations un compte machine distinct.
+</Aside>
+
+Suite : [De la spec à l'issue](../spec-to-issue/).

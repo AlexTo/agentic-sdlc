@@ -1,0 +1,81 @@
+---
+title: 4. 2 つの automation を作成する
+description: Agent Canvas のカタログから「GitHub issue to PR」と「GitHub code review」を Discava の設定でインストールします。
+sidebar:
+  order: 4
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完了時の状態:** OpenHands が 5 分ごとに fork をポーリングします。`openhands` ラベルの付いた
+issue を実装し、失敗とマークされた PR を修正し、`openhands-review` ラベルの付いた PR をレビューします。
+
+どちらの automation も Agent Canvas の **automation catalog** から追加します。フォームに入力すると、
+カタログがテスト済みのワーカーを設定付きでパッケージ化します。コードを書いたりアップロードしたりする必要はありません。
+
+<Steps>
+
+1. カタログから **「GitHub issue to PR」を追加** し、次のように設定します:
+
+   | フィールド | 値 |
+   | --- | --- |
+   | Repositories | `<you>/agentic-sdlc` |
+   | Trigger label | `openhands` |
+   | Branch prefix | `openhands/issue` |
+   | Pull request mode | Draft |
+   | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+   | Agent profile | `default` |
+   | Check frequency | `*/5 * * * *` |
+   | Timezone | ご自身のタイムゾーン |
+
+   Discava はテンプレートのバージョン 1.2.4 を使っています。ワーカーのプロンプトは、PR を開いた後に
+   `openhands-review` ラベルを付けるようエージェントに指示するので、新しい PR はドラフトのままでもレビュアーに届きます。
+
+2. カタログから **「GitHub code review」を追加** します:
+
+   | フィールド | 値 |
+   | --- | --- |
+   | Repositories | `<you>/agentic-sdlc` |
+   | Trigger label | `openhands-review` |
+   | Requested reviewer | エージェントの GitHub ログイン |
+   | New reviews per scan | `2` |
+   | Review tone | Concise |
+   | Maintainers | 空、または 2 つ以上のログイン(下記参照) |
+   | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+   | Agent profile | `reviewer` |
+   | Check frequency | `*/5 * * * *` |
+
+   Discava はテンプレートのバージョン 1.11.2 を使っています。**New reviews per scan** は 1 回のポーリングで
+   開始するレビュー会話の数の上限で、溜まった作業があっても 10 個のエージェントが一度に起動しないようにします。
+
+   **Maintainers** は任意です。設定すると、承認された PR は、そのファイルを過去に変更した人を基準に選ばれた
+   メンテナーの 1 人に、レビュー依頼として渡されます。これは PR の issue に `priority:medium` または
+   `priority:high` が付いている場合にのみ行われます。Discava では空のままにしています。
+
+3. Agent Canvas の各 automation のページから **それぞれを一度手動で実行** し、実行ログを確認します。
+
+</Steps>
+
+## 動作を確認する
+
+やることがない状態での最初の実行では、リポジトリのスイープがログに記録され、`COMPLETED` で終わります。その後:
+
+1. テスト用の issue「Add a line to README.md saying hello」を作成し、`openhands` ラベルを付けます。
+2. 1 回のポーリング以内に、その issue の会話が Agent Canvas に表示されます。
+3. エージェントが完了すると、`openhands/issue-<n>` にドラフト PR が作成されます。タイトルは `[#<n>] <issue
+   title>` で、`openhands-review` が付いています。
+4. チェックが終わると、レビュアーが
+   「_This review was posted by an AI agent (OpenHands)._」で始まり、`✅ APPROVED` または
+   `🔄 CHANGES REQUESTED` で終わるレビューを投稿します。
+
+確認が終わったら PR を閉じ、ブランチを削除します。
+
+各 automation がポーリングごとに何をするかは [エージェントのランタイム](../../concepts/the-agent-runtime/) にあります。
+
+<Aside type="note">
+issue をエージェントに最初からやり直させるには、`openhands` ラベルを外して付け直します。
+自分のコメントを添えて開いている PR に差し戻すには、グルーの workflow が投稿するのと同じステータスを投稿します:
+`gh api repos/<you>/agentic-sdlc/statuses/<sha> -f state=failure -f context=software-factory/review -f description="See my comment"`。
+</Aside>
+
+次へ: [5. 最初の機能を実行する](../first-feature/)。

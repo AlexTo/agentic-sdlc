@@ -1,0 +1,94 @@
+---
+title: 한 번에 phase 하나씩
+description: spec의 phase가 issue와 pull request의 사슬이 되는 방식, 그리고 각 merge가 다음 issue를 여는 방식.
+sidebar:
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**짧게 말하면:** spec은 에이전트에게 한꺼번에 넘겨지지 않습니다. `tasks.md`는 phase로 나뉘고, 에이전트는
+**issue 하나에 phase 그룹 하나**를 받습니다. 각 issue는 pull request 하나가 됩니다. 그 pull request가 merge되면
+다음 issue가 저절로 열리고, 에이전트 작업이 남지 않을 때까지 계속됩니다.
+
+```d2
+direction: right
+
+spec: spec PR {shape: document}
+i1: "issue 1\nsetup부터 첫 스토리까지" {shape: page}
+p1: PR 1
+i2: "issue 2\n다음 phase" {shape: page}
+p2: PR 2
+i3: "issue 3\n마지막 phase" {shape: page}
+p3: PR 3
+done: 아무것도 열리지 않음
+
+spec -> i1: merge
+i1 -> p1
+p1 -> i2: merge
+i2 -> p2
+p2 -> i3: merge
+i3 -> p3
+p3 -> done: merge
+```
+
+## 왜 spec 전체를 한 번에 하지 않는가?
+
+- **리뷰가 가능한 상태로 유지됩니다.** 기능 전체를 PR 하나로 만들면 아무도 제대로 읽지 않는 수천 줄이 됩니다.
+  phase 하나는 한 번 앉은 자리에서 리뷰할 수 있는 PR입니다.
+- **각 단계가 merge된 코드 위에 쌓입니다.** phase 3은 에이전트 자신의 리뷰되지 않은 작업이 아니라, 리뷰와
+  테스트를 거친 phase 1과 2가 이미 들어 있는 `main`에서 시작합니다.
+- **실수가 작게 유지됩니다.** phase 하나가 잘못되면 기능 전체가 아니라 PR 하나만 버리면 됩니다.
+- **에이전트의 컨텍스트가 집중된 상태로 유지됩니다.** phase 하나는 에이전트가 첫 테스트부터 마지막 커밋까지
+  머릿속에 담아 둘 수 있는 범위입니다.
+
+## phase를 묶는 방식
+
+`tasks.md`는 `/speckit-tasks`가 phase 단위로 작성합니다. 보통 setup, foundations, 그다음 사용자 스토리마다
+phase 하나, 마지막으로 polish입니다. Agent Issues workflow는 이를 다음과 같이 묶습니다.
+
+| 그룹 | phase | 이유 |
+| --- | --- | --- |
+| 0 | **첫 번째** `User Story` phase까지(포함)의 모든 것 | setup과 foundations만으로는 누구도 써 볼 수 있는 것이 나오지 않습니다. MVP 스토리와 함께 내보내면 첫 PR이 동작하는 조각이 됩니다 |
+| 1, 2, … | 이후의 각 phase, 하나씩 | phase 하나, issue 하나, PR 하나 |
+
+issue는 작업 범위를 명시하고("Tasks `T015` to `T019` … Do not start tasks outside these
+phases"), 에이전트는 작업을 하나 끝낼 때마다 `tasks.md`에서 체크합니다.
+
+## 다음 issue를 여는 것
+
+Agent Issues는 pull request가 `main`에 merge될 때 실행되며, 두 종류의 merge에만 반응합니다.
+
+1. **`spec-ready` label이 붙은 spec PR.** 그룹 0을 엽니다.
+2. **에이전트 브랜치(`openhands/…`)에서 온 PR.** merge가 방금 업데이트한 `tasks.md`를 읽고, **(human)**이 아닌
+   체크되지 않은 작업이 있는 첫 그룹을 찾아 그 issue를 엽니다.
+
+그 밖의 merge는 모두 무시되며, `specs/`를 편집하는 merge도 마찬가지입니다. 에이전트 자신의 PR이 `tasks.md`를
+바꾸므로, "`specs/**`가 바뀌면 실행" 같은 규칙은 스스로를 트리거하게 됩니다.
+
+## 사슬을 멈추는 것
+
+| 상황 | 무슨 일이 일어나는가 |
+| --- | --- |
+| 모든 에이전트 작업이 체크됨 | 아무것도 열리지 않습니다. 기능이 완료된 것입니다. **(human)** 작업은 리뷰어에게 남겨집니다 |
+| merge된 PR이 자기 작업을 모두 체크하지 않음 | 해당 그룹의 다음 issue가 이미 있으므로 중복으로 열리지 않습니다. merge된 PR에 체크되지 않은 작업 ID를 나열한 댓글이 달립니다 |
+| `tasks.md`가 예상한 형식이 아님 | 에이전트에게 잘못된 작업을 넘기는 대신 실행이 실패합니다. 보통은 Tasks format PR 검사가 이보다 먼저 막습니다 |
+| spec PR이 `spec-ready` 없이 merge됨 | 아무것도 열리지 않습니다. merge된 PR에 label을 붙이면 시작됩니다 |
+
+멈춘 사슬을 다시 시작하려면 `tasks.md`를 고친 뒤(작업을 체크하거나 마무리) spec 폴더 이름으로 **Agent Issues**를
+직접 실행하세요.
+
+## 여러 기능을 동시에
+
+사슬은 spec 하나 **안에서는** 순차적입니다. 서로 다른 spec은 독립적입니다. 각자 자기 사슬을 가지며, 에이전트는
+열려 있는 모든 issue를 작업합니다. 처리량은 바로 여기서 나옵니다.
+
+<Aside type="tip">
+spec을 중간에 바꾸는 것은 흔한 일입니다. `spec.md`와 `plan.md`를 업데이트하고, 아직 쓰지 않은 다음 ID로 새 작업을
+`tasks.md`에 추가한 뒤 merge하세요. 다음 에이전트 PR이 merge될 때 다른 작업과 똑같이 이를 가져갑니다.
+</Aside>
+
+기능 하나에 issue 여섯 개가 쓰인 실제 예시는 [실제 기능: 강좌 리뷰](../../discava/a-real-feature/)에 있습니다.
+정확한 형식 규칙은 [레퍼런스: tasks.md 형식](../../reference/tasks-format/)에 있습니다.
+
+다음: [에이전트 런타임](../the-agent-runtime/).

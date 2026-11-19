@@ -1,0 +1,63 @@
+---
+title: Discava 概览
+description: Discava 是什么、它运行哪些工具，以及填补每处缺口的文件。
+sidebar:
+  order: 1
+  label: 概览
+---
+
+[Discava](https://github.com/AlexTo/discava) 是一个构建在 AWS 上的 serverless 学习管理系统：三个
+React 门户、三个运行在 Lambda 上的 tRPC API、一张 DynamoDB 表、一条媒体处理流水线和搜索，通过 CDK
+从一个 Nx monorepo 部署。它大到没有人能把全部内容记在脑子里，而这正是这套工作流发挥价值的时候。
+
+本节描述截至 2026 年 11 月 Discava 运行的内容，以及每个部分背后的文件。
+
+## 工具与版本
+
+| 工具 | 版本 | 角色 |
+| --- | --- | --- |
+| Speckit（`specify-cli`） | 1.3.2 | 生成 spec、计划和任务，带有它的 `git` 扩展 |
+| OpenHands Agent Canvas | 1.41.0 | 智能体运行时和两个自动化，作为一台 Linux 机器上的用户服务运行 |
+| `github-issue-to-pr` 自动化 | 1.2.4 | 实现带标签的 issue，修改失败的 PR |
+| `github-pr-reviewer` 自动化 | 1.11.2 | 在检查结束后评审 PR |
+| 用于实现的智能体 | 通过 ACP 接入的 Claude Code，Sonnet | `default` agent profile |
+| 用于评审的智能体 | 通过 ACP 接入的 Claude Code，Opus | `reviewer` agent profile |
+| Nx + pnpm | Nx 23 | monorepo，CI 中使用 `nx affected` |
+| Playwright | | 针对本地栈的 E2E 测试，CI 中分为六个分片 |
+| Trivy、git-secrets、commitlint | | 安全扫描、pre-commit 密钥检查、commit 消息格式 |
+
+## 缺口与文件
+
+| 缺口 | Discava 的方案 | 文件 |
+| --- | --- | --- |
+| spec 到 issue | Agent Issues workflow 及其脚本 | `.github/workflows/agent-issues.yml`、`packages/common/scripts/src/agent-issues/` |
+| CI 失败到智能体 | Agent CI Status | `.github/workflows/agent-ci.yml`、`src/agent-ci/` |
+| 评审到智能体 | Agent Review Status | `.github/workflows/agent-review.yml`、`src/agent-review/` |
+| 无限循环 | 用标签计数的五次尝试上限 | `plan.ts` 中的 `MAX_CI_FIX_ATTEMPTS` 和 `MAX_REVIEW_FIX_ATTEMPTS` |
+| 格式错误的 `tasks.md` | Tasks format job | `pr-checks.yml` 的 `tasks-format`、`src/agent-issues/validate.ts` |
+| 无人看过的 UI 变更 | UI Screenshots job、E2E screenshots 评论 | `pr-checks.yml`、`src/ui-screenshots/`、`packages/e2e/src/helpers/screenshots.ts` |
+| 合并后不继续 | 对已合并的 `openhands/` 分支运行 Agent Issues | `src/agent-issues/gate.ts` |
+| 智能体没有云环境 | 为每个 AWS 服务提供本地替身 | `pnpm dev`、`packages/common/scripts/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
+| 合并不发布 | `main` 上的 CI，然后是 Deploy | `.github/workflows/ci.yml`、`deploy.yml`、`scripts/setup-stage.sh` |
+| 密钥和有漏洞的依赖 | CI 中和部署前运行 Trivy，commit 时运行 git-secrets | `ci.yml` 的 `trivy`、`deploy.yml`、`.husky/pre-commit`、`.trivyignore` |
+
+以及每个智能体都会阅读的文字说明：
+
+| 指导 | 文件 |
+| --- | --- |
+| 项目规则，每份计划都会对照检查 | `.specify/memory/constitution.md`（版本 1.2.1） |
+| 命令、架构、约定 | `AGENTS.md` |
+| PR 流程、本地栈、测试 | `CONTRIBUTING.md` |
+| 每个实现 issue 上的指令 | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| 为自动化定制的 Speckit 模板 | `.specify/templates/tasks-template.md`、`spec-template.md` |
+
+## 数据一览
+
+从 11 月 14 日工作流上线，到 2026 年 11 月 18 日：
+
+- 用 Speckit 写了 12 份功能 spec，位于 `specs/` 下。
+- 2,344 次自动化扫描，每五分钟一次：1,304 次 issue-to-PR 轮询和 1,040 次评审轮询。其中 149 次发现了
+  工作并启动了一个智能体。
+- 合并了 67 个智能体 PR。42 个不需要自动修复，17 个需要一轮，一个用尽了循环。
+
+下一步：[constitution 与指导](../constitution-and-guidance/)。

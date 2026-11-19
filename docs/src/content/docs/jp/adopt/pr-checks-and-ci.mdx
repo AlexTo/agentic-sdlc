@@ -1,0 +1,84 @@
+---
+title: 6. PR チェックと CI
+description: PR Checks workflow（lint、test、build、tasks の形式、e2e、スクリーンショット）と main の CI を追加します。
+sidebar:
+  order: 6
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**最終的に手に入るもの:** 失敗が CI ループに渡される **PR Checks** workflow、**UI Screenshots**
+チェック、そして `main` の **CI**。
+
+<Steps>
+
+1. このリポジトリから **`.github/workflows/pr-checks.yml` をコピーします**。`name: PR Checks` は
+   そのまま残してください。Agent CI Status はその名前の workflow を待ち受けています。ジョブは次のとおりです。
+
+   | ジョブ | そのまま使う？ |
+   | --- | --- |
+   | `checks`。`lint`、`test`、`build` の matrix で、`fail-fast: false` | はい |
+   | `tasks-format` | はい |
+   | `e2e`。シャード分割され、`e2e-result` がシャードを 1 つの `E2E tests` チェックにまとめる | シャード数を自分のテストスイートに合わせる |
+   | `e2e-screenshots` | はい。[ステップ 8](../local-stack-and-e2e/) を終えたら |
+
+2. **`.github/workflows/ui-screenshots.yml` をコピーします。** このリポジトリでは、スクリーンショットのルールは
+   独立した workflow で、`opened, synchronize, reopened, labeled, unlabeled` でトリガーされます。そのため
+   `no-ui-screenshots` ラベルを付け外ししても、e2e スイート全体ではなくこのチェックだけが再実行されます。
+   Discava は同じルールを PR Checks のジョブとして実行しています。どちらでも構いません。
+
+3. `main` への push 用に **`.github/workflows/ci.yml` をコピーします**。`Check for mutations` ステップ
+   （build の後の `git diff --ignore-space-at-eol --exit-code`）は残してください。エージェントがコミットし忘れた
+   生成ファイルを見つけます。Playwright を使うなら `playwright-cache` ジョブも残してください。PR の実行は
+   `main` で保存されたキャッシュしか復元できません。
+
+   `build` ジョブは `init-monorepo` に `nx-cache-scope: main` を渡し、Nx のタスクキャッシュを保存します。
+   PR の最初の実行はそこから始まるので、`main` がすでにビルドした入力を持つタスクは再実行されずに再生され、
+   修正のたびにエージェントが待つ時間が減ります。PR Checks の各 `checks` レグも同じように自分のキャッシュを
+   保持しますが、`lint` だけは復元のみです。lint はキャッシュを保存するより速いからです。`init-monorepo` は
+   キャッシュを 1 GB までに制限します。
+
+4. **`.github/workflows/cache-cleanup.yml` をコピーします。** PR がクローズされたときに、その PR の
+   キャッシュを削除します。ほかからは読めないキャッシュですが、これがないと GitHub が追い出すまでリポジトリの
+   10 GB の Actions キャッシュにカウントされ、まだオープン中の PR のキャッシュから追い出されていきます。
+   これで Discava がどれだけ節約できたかは [速さを保つ](../../discava/pr-checks/#速さを保つ) を参照してください。
+
+5. コピーしたファイルと同じように、**すべての action をコミット SHA に固定し**、
+   `.github/dependabot.yml` を追加して固定を最新に保ちます。
+
+   ```yaml
+   version: 2
+   updates:
+     - package-ecosystem: 'npm'
+       directory: '/'
+       schedule: { interval: 'weekly' }
+       groups: { all: { patterns: ['*'] } }
+     - package-ecosystem: 'github-actions'
+       directories: ['/', '/.github/actions/*']
+       schedule: { interval: 'weekly' }
+       groups: { github-actions: { applies-to: version-updates, patterns: ['*'] } }
+   ```
+
+</Steps>
+
+## 動作を確認する
+
+たとえばタスクをインデントするなどして、`tasks.md` の 1 行を壊す使い捨ての PR を開きます。
+**Tasks format** チェックが、その行に注釈を付けて失敗します。
+
+```text
+A task must be written "- [ ] T<3 digits> <description>", starting in the first column
+```
+
+もう 1 つ、シナリオには触れずに UI ファイルを変更する PR を開きます。**UI Screenshots** が失敗します。
+
+```text
+This pull request changes UI source (…) but no e2e scenario gained a `screenshot(page, 'name')` call.
+```
+
+<Aside type="note">
+コピーしたファイルの `codecov/codecov-action` には `CODECOV_TOKEN` シークレットが必要です。Codecov を
+使わないなら、そのステップを削除してください。
+</Aside>
+
+次へ: [7. エージェントの workflow](../agent-workflows/)。

@@ -1,0 +1,42 @@
+---
+title: Agentic SDLC
+description: 一种由智能体编写代码、由人来掌舵的软件生命周期，已在 Discava 上实际构建并运行。
+template: splash
+hero:
+  title: Agentic SDLC
+  tagline: "别再事无巨细地盯着单个智能体了。沿着信任的阶梯向上爬：你在环境中构建的东西越多，就越能信任智能体做对事情，也就能同时运行越多的智能体。本指南讲解这一思路，展示 Discava 如何运行它，并带你亲手把它搭建起来。"
+  actions:
+    - text: 从这里开始
+      link: /agentic-sdlc/zh/guides/introduction/
+      icon: right-arrow
+    - text: 动手搭建
+      link: /agentic-sdlc/zh/setup/before-you-start/
+      icon: setting
+      variant: minimal
+---
+
+import { CardGrid, Card, LinkCard } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <Card title="一个值得信任的环境" icon="approve-check">
+    规则、测试和检查层层叠加，让错误暴露出来并回到智能体那里，而不是落到你身上。
+  </Card>
+  <Card title="编写 spec" icon="pencil">
+    每个功能都从一份经过评审的 spec、计划和任务列表开始。智能体依据它们来构建，而不是依据一段聊天。
+  </Card>
+  <Card title="其余的交给智能体" icon="rocket">
+    合并后的 spec 会为每个阶段开一个 issue。智能体自己开 PR，并自行修复红色的 CI 或评审意见，每个循环最多五次。
+  </Card>
+  <Card title="由你掌舵" icon="information">
+    人负责批准 spec，并在合并前拥有最终决定权。中间的一切都自动运行。
+  </Card>
+</CardGrid>
+
+## 选择你的路径
+
+<CardGrid>
+  <LinkCard title="理解核心概念" href="/agentic-sdlc/zh/concepts/principles/" description="基本原则，以及构成这套工作流的五个部分。" />
+  <LinkCard title="看看 Discava 是怎么做的" href="/agentic-sdlc/zh/discava/overview/" description="每一处缺口以及填补它的具体文件，外加一个从 spec 到合并全程追踪的真实功能。" />
+  <LinkCard title="复刻这套工作流" href="/agentic-sdlc/zh/setup/before-you-start/" description="fork 本仓库，让 OpenHands 指向它，然后让一个功能走完整个循环。" />
+  <LinkCard title="在一个功能上试一试" href="/agentic-sdlc/zh/tutorial/the-case/" description="跟随一个小功能（笔记标签）走过每个阶段。" />
+</CardGrid>

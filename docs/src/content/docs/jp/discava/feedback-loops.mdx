@@ -1,0 +1,81 @@
+---
+title: フィードバックループ
+description: エージェントを差し戻す 2 つのワークフロー、Agent CI Status と Agent Review Status。
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+ギャップ 2、3、4: エージェントは CI の失敗や "changes requested" のレビューを知らされず、知らされて失敗を
+続けたとしても、それを止めるものは何もありません。どちらのワークフローも、イベントを OpenHands の worker が
+すでに反応する 1 つのシグナルに変換します。PR の head に対する、状態が `failure` の `software-factory/review`
+という名前のコミットステータスです。
+
+## Agent CI Status
+
+`.github/workflows/agent-ci.yml` は `workflow_run` で実行されます。`openhands/issue-` ブランチの pull request に
+対して **PR Checks** が `failure` または `timed_out` で完了したときです。デフォルトブランチをチェックアウトし、
+`agent-ci-status` を実行します。
+
+`workflow_run` であることが重要です。PR Checks は PR のコード上で読み取り専用のトークンで実行されましたが、
+これはデフォルトブランチのコンテキストで、書き込みできるトークンを使って実行されます。
+
+スクリプト (`src/agent-ci/`):
+
+1. ブランチ名をリクエストで使う **前に** `^openhands/issue-\d+$` と照合します。ブランチ名は PR の作成者から
+   来るものだからです。
+2. open な PR、そのラベルと現在の head、そして実行のコミットに付いたステータスを探します。
+3. `E2E tests (3/4)` や `Checks (lint)` のような、失敗したジョブを列挙します。
+4. `planCi()` を呼び出します。これは `ignore`、`send-back`、`give-up` のいずれかを返します。
+5. `send-back` の場合: `ci-fix-<n>` を追加し、失敗したジョブを説明に、実行をリンクにしたステータスを投稿します。
+6. `give-up` の場合: `ci-fix-exhausted` を追加してコメントします。たとえば次のようなものです。
+
+   > CI is still failing after 5 automatic fix attempts, so the agent will not be sent back again.
+   >
+   > Failing checks on `1a2b3c4`: E2E tests (2/4).
+   >
+   > A person needs to take over this pull request. To let the agent try again, remove the
+   > `ci-fix-*` and `ci-fix-exhausted` labels and re-run the checks.
+
+## Agent Review Status
+
+`.github/workflows/agent-review.yml` は `pull_request_review: submitted` で実行されます。ブランチが同じリポジトリの
+エージェントのブランチで、レビュー本文に `CHANGES REQUESTED` が含まれるときです。デフォルトブランチを明示的に
+チェックアウトし、`agent-review-status` を実行します。
+
+`planReview()` は、エージェントを差し戻す前に独自のチェックを 3 つ加えます。
+
+| チェック | 理由 |
+| --- | --- |
+| author association が `OWNER`、`MEMBER`、`COLLABORATOR` のいずれか | 書き込み権限を持つ人だけがトリガーできる |
+| 本文に `<!-- openhands-review-run: … -->` がある | 人がそれを引用したのではなく、レビュアーエージェントのレビューである |
+| 本文にちょうど `🔄 CHANGES REQUESTED` である行がある | 判定そのものであって、判定への言及ではない |
+
+その後は CI と同じ手順です: `review-fix-<n>`、レビューにリンクした失敗のステータス、そして 5 回の後は
+`review-fix-exhausted`。
+
+レビュアーは、エージェントが push した後に自分で再レビューします。修正のプロンプトがエージェントに
+`openhands-review` を付け直すよう指示し、新しい head コミットは新しいレビューとして扱われるからです。
+
+## PR 上ではどう見えるか
+
+[#470](https://github.com/AlexTo/discava/pull/470)、"ratings in search" から:
+
+1. エージェントが PR を開きます。`E2E tests (4/4)` シャードが失敗します。
+2. Agent CI Status が `ci-fix-1` を追加し、失敗のステータスを投稿します。
+3. 次のポーリングで、エージェントは修正して `94b9ee3` を push し、コメントします: *"The only finding was the
+   failing `E2E tests (4/4)` shard: my new scenario […] hit a strict-mode violation, because
+   `getByText('4.5')` matched both the rating and the `4.5 and up` option […]. I fixed both
+   locators."*
+4. レビュアーは新しい head でまだチェックが実行中なのを見て、"⏳ Review waiting on
+   checks" とコメントします。後のスキャンではすべてグリーンです。`94b9ee3` をレビューし、`✅ APPROVED` で締めくくります。
+5. `main` がブランチにマージされます。レビュアーは新しい head を再びレビューし、承認します。
+6. 人がマージします。
+
+<Aside type="tip">
+どちらのスクリプトも `DRY_RUN=true` を受け付け、plan を JSON で出力して何も変更しません。
+`GITHUB_EVENT_PATH` を保存したイベントペイロードに向ければ、実際のケースを再現できます。
+</Aside>
+
+次へ: [PR のチェック](../pr-checks/)。

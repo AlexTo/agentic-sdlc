@@ -1,0 +1,88 @@
+---
+title: spec 駆動開発
+description: spec、plan、タスクリスト、それらを律する constitution、そしてエージェントがプロンプトではなくそれらをもとに実装する理由。
+sidebar:
+  order: 2
+---
+
+**要約:** コードが存在する前に、人とエージェントが、何を、どのように、どの順番で作るかを書き出します。書き出した結果は
+コードと同じようにレビューされ、マージされます。それ以降、すべてのエージェント実行は同じファイルを読むので、結果が
+誰がプロンプトを書いたかに左右されません。
+
+## なぜプロンプトだけではだめなのか?
+
+| プロンプト | spec |
+| --- | --- |
+| 1 人のチャット履歴の中にある | バージョン管理下の `specs/` にある |
+| 作業が始まる前に誰もレビューしない | pull request を通る |
+| 実行のたびに、少しずつ違う形で打ち直される | すべての実行で、一字一句そのまま読まれる |
+| 何を作るかは言うが、なぜかはめったに言わない | ユーザーストーリー、要件、受け入れ基準を述べる |
+
+## ドキュメント
+
+[Speckit](https://github.com/github/spec-kit) は、それらを 1 ステップずつ生成するエージェントのコマンドとテンプレートのセットです。
+
+| コマンド | 書き出すもの | 答える問い |
+| --- | --- | --- |
+| `/speckit-constitution` | `.specify/memory/constitution.md` | プロジェクト全体で、すべての plan が従わなければならないルール。一度書き、PR で修正する |
+| `/speckit-specify` | `spec.md` | **何を、なぜ。** ユーザーストーリー、機能要件、受け入れシナリオ。技術は含まない |
+| `/speckit-clarify` | `spec.md` を更新 | 最大 5 つの的を絞った質問と、spec に書き戻された回答 |
+| `/speckit-plan` | `plan.md`、`research.md`、`data-model.md`、`contracts/`、`quickstart.md` | **どのように。** constitution と照合された技術的なアプローチ |
+| `/speckit-tasks` | `tasks.md` | **どの順番で。** フェーズごとにまとめた、チェックできるタスク |
+| `/speckit-analyze` | レポート | タスクのない要件、要件のないタスク、ファイル間の矛盾 |
+
+機能ごとに専用のフォルダがあります。たとえば `specs/20261116-013307-course-reviews/` です。
+
+```d2
+direction: right
+
+idea: 1 段落のアイデア
+constitution: constitution.md {shape: document}
+
+folder: "specs/<timestamp>-<name>/" {
+  style.stroke-dash: 3
+  spec: spec.md {shape: document}
+  plan: "plan.md\ndata-model.md\ncontracts/" {shape: document}
+  tasks: tasks.md {shape: document}
+  spec -> plan: /speckit-plan
+  plan -> tasks: /speckit-tasks
+}
+
+idea -> folder.spec: "/speckit-specify\n/speckit-clarify"
+constitution -> folder.plan: Constitution Check
+```
+
+## constitution
+
+constitution には、プロジェクトの譲れないルールを、plan と照合できるように書きます。「a feature MUST work under `pnpm dev` with no cloud account」、
+「a failing test MUST be fixed in the code, not by weakening the test」といったものです。`/speckit-plan` を実行するたびに
+**Constitution Check** セクションが埋められ、違反があればその正当性を示さなければなりません。
+
+すべてのエージェントはコードを書く前にこれを読むので、エージェントの出力を信頼できるものにするルールはここに置きます。完全な例は
+[Discava の constitution](../../discava/constitution-and-guidance/) を参照してください。
+
+## `tasks.md` は自動化との契約
+
+Speckit は `tasks.md` を人向けのドキュメントとして扱います。このワークフローでは、スクリプトもそれを読み、エージェントに次に渡すタスクを
+決めます。そのため形式は固定されていて、すべての PR でチェックされます。
+
+```markdown
+## Phase 1: Setup
+- [ ] T001 Create the review entity in packages/databases/core-table/src/entities/review.ts
+
+## Phase 3: User Story 1 - Leave a rating (Priority: P1) 🎯 MVP
+- [ ] T010 [P] [US1] Unit tests for rating rules
+- [ ] T011 [US1] review.upsert procedure
+- [ ] T012 (human) Check the layout on a phone-width window
+```
+
+フェーズは番号付きの見出しで、タスクは固定の ID を持ち、その場でチェックが入れられます。**(human)** は、エージェントがスキップして
+レビュアーに残すタスクを示します。完全なルールは [リファレンス: tasks.md の形式](../../reference/tasks-format/)にあります。
+
+## コードではなく spec を変える
+
+振る舞いを変える必要があるときは、spec に戻って更新し、plan とタスクを再生成します。新しいタスクは次の未使用の ID を使うので、
+自動化は他のタスクと同じようにそれらの issue を開きます。代わりにコードを手で直すと、spec はプロダクトを表さなくなり、
+次にそれを読んだエージェントが古い振る舞いを作り直してしまいます。
+
+次へ: [一度に 1 フェーズ](../one-phase-at-a-time/)。

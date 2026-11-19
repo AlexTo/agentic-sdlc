@@ -1,0 +1,83 @@
+---
+title: Contrôles humains
+description: Les deux décisions que gardent les personnes, ce que les agents n'ont jamais le droit de faire, et quand on vous sollicite plus tôt.
+sidebar:
+  order: 8
+---
+
+Les personnes ne sont pas retirées de la boucle. Elles sont déplacées vers les deux points où le
+jugement compte le plus, et tenues à l'écart de l'attente et de la saisie entre les deux.
+
+## Contrôle 1 : approuver la spec
+
+La PR de spec est relue comme du code. La merger **avec le label `spec-ready`** est la seule chose qui
+lance l'implémentation.
+
+Ce qu'il faut regarder :
+
+- `spec.md` dit-il ce que vous voulez vraiment, avec chaque règle formulée comme une exigence ?
+- Chaque phase est-elle assez petite pour être relue d'une traite ?
+- Y a-t-il dans `plan.md` quelque chose que vous refuseriez en revue de code ?
+
+### C'est désormais le principal goulot d'étranglement
+
+Une fois que les boucles tournent seules, la revue de code est réduite : une PR verte, approuvée par
+l'agent, par phase. L'étape humaine la plus lente est celle-ci. Chaque fonctionnalité attend ici que
+quelqu'un confirme que la spec est juste.
+
+Elle n'a pas besoin d'attendre un développeur. `spec.md` est rédigé en langage courant (user stories,
+scénarios d'acceptation, exigences fonctionnelles), donc un **business analyst** ou un **product
+owner** peut le relire sur la PR de spec, commenter et approuver. Répartissez la revue par fichier :
+
+| Relecteur | Lit | Se demande |
+| --- | --- | --- |
+| Product owner, business analyst | `spec.md` | Est-ce la fonctionnalité que nous voulons ? Les règles et les cas limites sont-ils justes ? Manque-t-il quelque chose ? |
+| Ingénieur | `plan.md`, `data-model.md`, `contracts/`, `tasks.md` | La conception est-elle solide ? Les phases sont-elles assez petites pour être relues ? |
+
+Toute personne qui peut lire le dépôt peut commenter. Pour que son approbation compte vis-à-vis de la
+protection de branche, elle a besoin d'un accès en écriture.
+
+## Contrôle 2 : approuver le résultat
+
+Chaque PR d'agent vous parvient une fois la CI verte et l'agent relecteur d'accord. Votre rôle est de
+juger le résultat, pas de traquer les problèmes :
+
+- Lisez la description de la PR : ce qui a changé, quelles tâches, quelles tâches **(human)** vous
+  restent.
+- Regardez le commentaire **E2E screenshots** au lieu de récupérer la branche. Il montre la
+  fonctionnalité en marche. Voir [C'est la vérification qui compte le plus](../layers-of-trust/#cest-la-vérification-qui-compte-le-plus)
+  pour un exemple.
+- Faites les tâches **(human)** : des vérifications manuelles sur une stack locale ou un stage
+  déployé.
+- Mergez, ou demandez des changements. Pour que l'agent les fasse, ajoutez le label
+  `openhands-review` après votre revue : l'agent relecteur relit la PR, et son verdict « changes
+  requested » renvoie l'agent d'implémentation dans la boucle de correction de revue, comptée avec les
+  mêmes labels `review-fix-*`.
+
+## Ce que les agents ne doivent jamais faire
+
+| Jamais | Garanti par |
+| --- | --- |
+| Merger, ou pousser sur `main` | Une protection de branche qui exige une revue approbatrice. Le token de l'agent ne sert qu'à sa propre branche |
+| Modifier `.github/workflows/` | La constitution et les instructions de l'issue. Le relecteur et la revue humaine le repèrent. Les workflows de glue exécutent le code de la branche par défaut, donc un workflow modifié dans une PR ne peut pas les changer |
+| Affaiblir un test pour le faire passer | La constitution (« les tests sont une spécification »), les instructions de l'issue, l'agent relecteur |
+| Toucher aux identifiants cloud | La conversation ne les reçoit jamais. Le déploiement utilise des rôles OIDC de courte durée issus d'un environnement GitHub |
+| Travailler hors de sa plage de tâches | L'issue nomme la plage. L'issue suivante ne s'ouvre pas tant que toutes les tâches d'agent ne sont pas cochées |
+| Réessayer indéfiniment | Cinq tentatives par boucle, comptées dans des labels |
+
+## Quand on vous sollicite plus tôt
+
+| Signal | Ce qui s'est passé | Que faire |
+| --- | --- | --- |
+| `ci-fix-exhausted` | La CI a échoué cinq fois après les corrections automatiques | Lisez le dernier échec. Commentez avec des indications, corrigez vous-même, ou corrigez la spec. Puis [réinitialisez la boucle](../../reference/labels/#réinitialiser-une-boucle) |
+| `review-fix-exhausted` | Le relecteur demande encore des changements après cinq tours | Décidez si le relecteur a raison. Souvent, la spec est ambiguë |
+| Un commentaire de l'agent sur l'issue | Il était bloqué et s'est arrêté, comme demandé | Répondez-y, puis retirez et remettez le label `openhands` |
+| Un commentaire sur une PR mergée : « the next implementation issue … was not opened » | Les tâches de la phase ne sont pas toutes cochées | Cochez-les ou terminez-les, puis lancez Agent Issues à la main pour le dossier de spec |
+
+## La production est un troisième contrôle, facultatif
+
+Le déploiement vers un stage de développement peut être automatique à chaque `main` vert. Le
+déploiement en production devrait attendre une personne, grâce aux relecteurs requis d'un
+environnement GitHub. Voir [Déploiement et sécurité](../../discava/deploy-and-security/).
+
+Suite : [Comment Discava procède](../../discava/overview/).

@@ -1,0 +1,95 @@
+---
+title: Loop di feedback
+description: Come un'esecuzione rossa della CI o una review "changes requested" rimanda indietro l'agente, e perché ogni loop si ferma dopo cinque tentativi.
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**In breve:** quando qualcosa fallisce, un workflow segna il commit di testa della PR con uno status
+di fallimento. Il worker di OpenHands se ne accorge al polling successivo e chiede alla stessa
+conversazione dell'agente di correggere la stessa PR. Ogni loop ha un contatore in una label, e si
+ferma a cinque.
+
+## I due loop
+
+```d2
+direction: right
+
+pr: l'agente fa push {shape: page}
+checks: PR Checks
+review: agente reviewer
+you: review umana
+
+actions: GitHub Actions {
+  style.stroke-dash: 3
+  ci: Agent CI Status
+  rv: Agent Review Status
+}
+
+status: "software-factory/review\n= failure" {shape: document}
+worker: "worker issue-to-PR\n(polling successivo)"
+
+pr -> checks
+checks -> review: tutti finiti
+checks -> actions.ci: falliti
+review -> actions.rv: modifiche richieste
+review -> you: approvata
+actions.ci -> status: ci-fix-N
+actions.rv -> status: review-fix-N
+status -> worker
+worker -> pr: rivede la stessa PR
+```
+
+| | Loop della CI | Loop della review |
+| --- | --- | --- |
+| Attivato da | Il workflow PR Checks che termina con `failure` o `timed_out` | Una review sulla PR scritta dall'agente reviewer, che termina con `🔄 CHANGES REQUESTED` |
+| Workflow | Agent CI Status | Agent Review Status |
+| Label contatore | `ci-fix-1` … `ci-fix-5` | `review-fix-1` … `review-fix-5` |
+| Quando si arrende | `ci-fix-exhausted`, più un commento | `review-fix-exhausted`, più un commento |
+| Descrizione dello status | `CI failed (fix attempt 2 of 5): E2E tests (3/4)` | `Review requested changes (fix attempt 1 of 5): see the review` |
+
+Un'esecuzione riuscita non pubblica nulla. Il commit successivo parte senza status, quindi il worker
+lascia stare la PR.
+
+## I controlli prima di rimandare indietro l'agente
+
+Ogni script si rifiuta di agire a meno che valgano tutte queste condizioni:
+
+1. Il branch è esattamente `openhands/issue-<n>`. Un branch di secondo tentativo, come
+   `openhands/issue-308-2`, non viene mai rivisto dal worker, quindi non riceve nemmeno risposta.
+2. La PR è aperta.
+3. L'esecuzione o la review riguarda il commit di testa **attuale** della PR. Un'esecuzione più
+   vecchia è superata.
+4. Quel commit non è già stato rimandato indietro. Rieseguire gli stessi check non deve consumare un
+   altro tentativo.
+5. Per le review: la review contiene il marcatore nascosto dell'esecuzione del reviewer e proviene da
+   un account con accesso in scrittura, così una persona che cita il verdetto non la attiva.
+6. Sono stati usati meno di cinque tentativi.
+
+La label viene applicata **prima** che lo status sia pubblicato. Se poi la pubblicazione dello status
+fallisce, il fallimento successivo conta un tentativo in più invece di ripetere questo all'infinito.
+
+## Perché cinque
+
+Un solo nuovo tentativo corregge la maggior parte degli errori: un locator instabile, un tipo
+dimenticato, una regola di lint. I successivi coprono una correzione che ha fatto emergere un secondo
+problema, o un'esecuzione della CI e una review che chiedono ciascuna qualcosa di diverso. Al quinto
+fallimento, di solito l'agente è bloccato su qualcosa che non riesce a vedere, e altri tentativi
+costano soldi senza convergere. Discava è partito con un limite di tre e l'ha portato a cinque.
+
+Delle prime 67 PR degli agenti mergiate su Discava, 42 non hanno label di correzione (alcune sono
+precedenti ai workflow di correzione), 17 hanno avuto bisogno esattamente di un giro, e solo una ha
+portato un loop all'esaurimento.
+
+<Aside type="caution">
+Quando un loop è esaurito, leggi l'ultimo fallimento prima di correggere qualsiasi cosa. I
+fallimenti ripetuti spesso indicano che la spec o il piano erano ambigui, e l'agente cercava di
+soddisfare due interpretazioni insieme. Correggi la spec, poi lascia che l'agente riprovi.
+</Aside>
+
+Per dare all'agente un altro giro dopo, vedi
+[Azzerare un loop](../../reference/labels/#azzerare-un-loop).
+
+Avanti: [Livelli di fiducia](../layers-of-trust/).

@@ -1,0 +1,74 @@
+---
+title: Formato do tasks.md
+description: O formato exato que o workflow Agent Issues lê, como as fases viram issues, e todas as mensagens do validador.
+sidebar:
+  order: 4
+---
+
+## O formato
+
+```markdown
+# Tasks: Course ratings and reviews
+
+Free text, legends and notes anywhere. Fenced code blocks are ignored.
+
+## Phase 1: Setup
+- [x] T001 Create the review entity
+- [ ] T002 [P] Add the rating summary entity
+
+## Phase 2: Foundational
+- [ ] T003 Shared review writer in core-table helpers
+
+## Phase 3: User Story 1 - Leave a rating (Priority: P1) 🎯 MVP
+### Tests for User Story 1
+- [ ] T004 [P] [US1] Unit tests for rating rules
+### Implementation for User Story 1
+- [ ] T005 [US1] review.upsert procedure
+- [ ] T006 (human) Check the layout on a phone-width window
+
+## Phase 4: User Story 2 - Instructor responds (Priority: P2)
+- [ ] T007 [US2] review.respond procedure
+- [ ] T037 [US2] Notify the student (added later: next unused id)
+```
+
+| Elemento | Padrão | Observações |
+| --- | --- | --- |
+| Fase | `^## Phase (\d+): (.+)$` | Os números aumentam ao longo do arquivo. Cada fase tem pelo menos uma task |
+| Fase de user story | título começa com `User Story` | Pelo menos uma precisa existir |
+| Task | `^- \[([ xX])\] (T\d{3})\b` | Na primeira coluna, dentro de uma fase. Os IDs são únicos, nunca renumerados |
+| Concluída | `[x]` ou `[X]` | Marcada no lugar, nunca apagada |
+| Task humana | `(human)` em qualquer lugar da linha, em negrito ou não | Pulada pelo agent, e não contada ao decidir se um grupo está concluído |
+| Subtítulos | `### …` | Permitidos, ignorados |
+
+## Como as fases viram issues
+
+1. O **grupo 0** é cada fase até a primeira fase `User Story`, inclusive. Setup, fundações e a story
+   do MVP saem como um único PR, com ` (with setup and foundations)` no título.
+2. **Cada fase seguinte** é um grupo próprio, e uma issue própria.
+3. O **próximo grupo** é o primeiro com uma task não marcada que não seja **(human)**.
+4. Um grupo cuja issue já existe, mas cujas tasks de agent não estão todas marcadas, está
+   **travado**. Nenhuma issue nova é aberta, e o PR mergeado recebe um comentário que lista os IDs
+   não marcados.
+
+O título da issue é `feat(<feature>): <last phase's title, shortened>`. `<feature>` é o nome da
+pasta sem o timestamp. O título encurtado remove o prefixo `User Story <n> - ` e o sufixo
+`(Priority: Pn)`. O título começa com letra minúscula e tem no máximo 100 caracteres.
+
+## Mensagens do validador
+
+| Mensagem | Correção |
+| --- | --- |
+| `A phase heading must be written "## Phase <number>: <title>"` | Um heading menciona "Phase" mas não está no formato, por exemplo `### Phase 2` ou `## Phase 2 - Setup` |
+| `A task must be written "- [ ] T<3 digits> <description>", starting in the first column` | Uma task indentada, `* [ ]`, `- []`, ou um ID como `T12` |
+| `Phase <n> has no tasks` | Adicione uma task, ou remova a fase |
+| `Phase <n> comes after phase <m>; phase numbers must increase down the file` | Renumere as fases (não as tasks) |
+| `T0xx is above the first phase heading, so it belongs to no phase` | Mova-a para dentro de uma fase |
+| `T0xx is used more than once` | Dê à segunda o próximo ID não usado |
+| `No phase headings found; …` | O arquivo não está no formato de jeito nenhum |
+| `No phase is titled "User Story <n> - ..."; …` | Dê a pelo menos uma fase o título de user story |
+
+Rode localmente:
+
+```bash
+pnpm nx run @your-scope/common-scripts:validate-tasks
+```

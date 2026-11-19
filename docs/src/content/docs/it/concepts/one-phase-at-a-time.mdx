@@ -1,0 +1,98 @@
+---
+title: Una fase alla volta
+description: Come le fasi di una spec diventano una catena di issue e pull request, in cui ogni merge apre la issue successiva.
+sidebar:
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**In breve:** una spec non viene consegnata all'agente tutta insieme. `tasks.md` è diviso in fasi, e
+l'agente riceve **un gruppo di fasi per issue**. Ogni issue diventa una pull request. Quando quella
+pull request viene mergiata, la issue successiva si apre da sola, finché non restano task degli
+agenti.
+
+```d2
+direction: right
+
+spec: PR della spec {shape: document}
+i1: "issue 1\ndal setup alla prima story" {shape: page}
+p1: PR 1
+i2: "issue 2\nfase successiva" {shape: page}
+p2: PR 2
+i3: "issue 3\nultima fase" {shape: page}
+p3: PR 3
+done: non si apre nulla
+
+spec -> i1: merge
+i1 -> p1
+p1 -> i2: merge
+i2 -> p2
+p2 -> i3: merge
+i3 -> p3
+p3 -> done: merge
+```
+
+## Perché non l'intera spec in una volta?
+
+- **La review resta possibile.** Un'intera funzionalità in una sola PR sono migliaia di righe che
+  nessuno legge davvero. Una fase è una PR che puoi revisionare in una sola seduta.
+- **Ogni passo si basa su codice mergiato.** La fase 3 parte da `main` con le fasi 1 e 2 già dentro,
+  revisionate e testate, non dal lavoro non revisionato dell'agente stesso.
+- **Gli errori restano piccoli.** Se una fase va male, butti via una PR, non una funzionalità.
+- **Il contesto dell'agente resta concentrato.** Una fase è un perimetro che un agente riesce a tenere
+  a mente dal primo test all'ultimo commit.
+
+## Come vengono raggruppate le fasi
+
+`tasks.md` viene scritto da `/speckit-tasks` in fasi: di solito setup, fondamenta, poi una fase per
+ogni user story, poi rifinitura. Il workflow Agent Issues le raggruppa così:
+
+| Gruppo | Fasi | Perché |
+| --- | --- | --- |
+| 0 | Tutto fino alla **prima** fase `User Story` compresa | Setup e fondamenta da soli non consegnano nulla che qualcuno possa provare. Rilasciata insieme alla story MVP, la prima PR è una porzione funzionante |
+| 1, 2, … | Ogni fase successiva, da sola | Una fase, una issue, una PR |
+
+La issue indica il suo intervallo di task ("Tasks `T015` to `T019` … Do not start tasks outside these
+phases"), e l'agente spunta ogni task in `tasks.md` man mano che lo completa.
+
+## Cosa apre la issue successiva
+
+Agent Issues gira quando una pull request viene mergiata in `main`, e agisce solo su due tipi di
+merge:
+
+1. **Una PR della spec con la label `spec-ready`.** Apre il gruppo 0.
+2. **Una PR da un branch di un agente (`openhands/…`).** Legge il `tasks.md` appena aggiornato dal
+   merge, trova il primo gruppo con un task non spuntato che non sia **(human)**, e ne apre la issue.
+
+Ogni altro merge viene ignorato, anche uno che modifica `specs/`. Le PR dell'agente stesso cambiano
+`tasks.md`, quindi una regola come "esegui quando cambia `specs/**`" si attiverebbe da sola.
+
+## Cosa ferma la catena
+
+| Situazione | Cosa succede |
+| --- | --- |
+| Ogni task degli agenti è spuntato | Non si apre nulla. La funzionalità è finita. Gli eventuali task **(human)** restano al reviewer |
+| La PR mergiata non ha spuntato tutti i suoi task | La issue successiva per quel gruppo esiste già, quindi non se ne apre un duplicato. La PR mergiata riceve un commento che elenca gli ID dei task non spuntati |
+| `tasks.md` non è nel formato previsto | L'esecuzione fallisce invece di passare all'agente i task sbagliati. Di solito il check della PR Tasks format lo blocca prima |
+| La PR della spec è stata mergiata senza `spec-ready` | Non si apre nulla. Aggiungi la label alla PR mergiata e la catena parte |
+
+Per far ripartire una catena bloccata, sistema `tasks.md` (spunta o completa i task), poi esegui a
+mano **Agent Issues** con il nome della cartella della spec.
+
+## Molte funzionalità insieme
+
+La catena è sequenziale **all'interno** di una spec. Spec diverse sono indipendenti: ognuna ha la sua
+catena, e l'agente lavora su tutte le loro issue aperte. È da qui che viene il throughput.
+
+<Aside type="tip">
+Cambiare una spec a metà strada è normale. Aggiorna `spec.md` e `plan.md`, aggiungi i nuovi task a
+`tasks.md` con i successivi ID non usati, e fai il merge. Il merge successivo di una PR dell'agente li
+raccoglie come qualsiasi altro task.
+</Aside>
+
+Un esempio reale, sei issue per una funzionalità, è in
+[Una funzionalità reale: le recensioni dei corsi](../../discava/a-real-feature/). Le regole esatte del
+formato sono in [Riferimento: formato di tasks.md](../../reference/tasks-format/).
+
+Avanti: [Il runtime dell'agente](../the-agent-runtime/).

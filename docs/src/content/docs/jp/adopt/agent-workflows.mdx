@@ -1,0 +1,88 @@
+---
+title: 7. エージェントの workflow
+description: Agent Issues、Agent CI Status、Agent Review Status でグルースクリプトを GitHub のイベントにつなぎます。
+sidebar:
+  order: 7
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**このステップで得られるもの:** spec から issue を開き、CI が赤のときや「changes requested」のレビューのときに
+エージェントを差し戻す 3 つの workflow と、すべてのタスクにチェックが入った spec をアーカイブする 4 つ目の workflow。
+
+<Steps>
+
+1. このリポジトリの `.github/workflows/` から **3 つの workflow をコピーします**。`agent-issues.yml`、
+   `agent-ci.yml`、`agent-review.yml` です。トリガーと権限は
+   [リファレンス: workflow](../../reference/workflows/) に一覧があります。
+
+2. **`if:` の条件が自分の決定と合っているか確認します。** ブランチのプレフィックスやラベルを変えた場合は、
+   ここも変更します。
+
+   ```yaml
+   # agent-issues.yml
+   if: >-
+     github.event_name == 'workflow_dispatch' ||
+     (github.event.pull_request.merged == true &&
+     ((github.event.action == 'closed' &&
+     (contains(github.event.pull_request.labels.*.name, 'spec-ready') ||
+     startsWith(github.event.pull_request.head.ref, 'openhands/'))) ||
+     (github.event.action == 'labeled' &&
+     github.event.label.name == 'spec-ready')))
+
+   # agent-ci.yml
+   if: >-
+     github.event.workflow_run.event == 'pull_request' &&
+     startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
+     (github.event.workflow_run.conclusion == 'failure' ||
+     github.event.workflow_run.conclusion == 'timed_out')
+
+   # agent-review.yml
+   if: >-
+     startsWith(github.event.pull_request.head.ref, 'openhands/issue-') &&
+     github.event.pull_request.head.repo.full_name == github.repository &&
+     contains(github.event.review.body, 'CHANGES REQUESTED')
+   ```
+
+3. **権限とチェックアウトはコピーしたとおりに保ちます。** 各 workflow は自分が書き込むものだけを要求します。
+   `pull-requests: write` は不要に見えますが、そうではありません。PR へのラベルとコメントは issues API を通り、
+   この権限がないと issues API は workflow のトークンを拒否します。
+
+   2 つのステータス workflow は **デフォルトブランチ** をチェックアウトします。Agent Issues は
+   **マージコミット** をチェックアウトするので、マージされた PR が入れたチェックを見ることができます。
+   どちらも PR の head をチェックアウトするようには決して変更しないでください。これらのジョブは書き込みできるトークンを持っています。
+
+4. **concurrency グループを保ちます。** どれも PR ごとまたはブランチごとで、`cancel-in-progress: false` です。
+   これにより、1 つの PR に対する 2 つのイベントがそれぞれ試行を数えることはなく、
+   別々の PR のマージが互いをキャンセルすることもありません。
+
+5. 完了した spec を片付けたい場合は、**`archive-specs.yml` をコピーします**。`main` への push で
+   有効な `specs/*/tasks.md` が変わると、**(human)** を含むすべてのタスクにチェックが入った spec ごとに、
+   ブランチ `archive-spec/<folder>` で PR を開きます。この PR はフォルダーを `specs/_archive/` に移し、
+   そのフォルダーとの間のリンクを書き換えます。Agent Issues は `specs/_archive/` をスキップし、
+   アーカイブされた `tasks.md` にチェックのないタスクがあると `Tasks format` が失敗します。
+
+   エージェントの issue が開いている spec と、すでにアーカイブ PR があった spec はスキップします。
+   spec を有効なまま残すには、その PR をマージせずに閉じます。
+
+   <Aside type="caution">
+   **Settings → Actions → General → Allow GitHub Actions to create and approve pull
+   requests** をオンにしてください。そうしないと workflow は PR を開けません。workflow のトークンで開かれた PR では
+   PR Checks が始まりません。PR Checks を実行するには、それぞれの PR を閉じてから開き直します。
+   </Aside>
+
+</Steps>
+
+## 動作を確認する
+
+workflow は `main` に入ると、リポジトリの **Actions** タブに表示されます。
+**Actions → Agent Issues → Run workflow** を開き、`does-not-exist` のような存在しない spec フォルダーを入力します。
+
+実行は notice 付きで成功します: `No issue created: no spec folder with a tasks.md was found`。
+
+<Aside type="note">
+`workflow_run` と `pull_request_review` の workflow は、デフォルトブランチ上のバージョンからしか実行されません。
+変更はマージされてから有効になります。エージェントが自分の PR でこれらを変更できないのも、このためです。
+</Aside>
+
+次へ: [8. ローカルスタック、e2e、スクリーンショット](../local-stack-and-e2e/)。

@@ -1,0 +1,70 @@
+---
+title: 7. 智能体 workflow
+description: 用 Agent Issues、Agent CI Status 和 Agent Review Status 把粘合脚本接到 GitHub 事件上。
+sidebar:
+  order: 7
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完成后你将拥有：** 三个 workflow，它们根据 spec 开 issue，并在 CI 变红或评审“要求修改”时把智能体打回去；以及第四个 workflow，在所有任务都勾选后归档 spec。
+
+<Steps>
+
+1. 从这个仓库的 `.github/workflows/` **复制三个 workflow**：`agent-issues.yml`、`agent-ci.yml` 和 `agent-review.yml`。它们的触发条件和权限列在[参考：workflow](../../reference/workflows/) 中。
+
+2. **检查 `if:` 条件与你的决定一致。** 如果你改了分支前缀或标签，这里也要改：
+
+   ```yaml
+   # agent-issues.yml
+   if: >-
+     github.event_name == 'workflow_dispatch' ||
+     (github.event.pull_request.merged == true &&
+     ((github.event.action == 'closed' &&
+     (contains(github.event.pull_request.labels.*.name, 'spec-ready') ||
+     startsWith(github.event.pull_request.head.ref, 'openhands/'))) ||
+     (github.event.action == 'labeled' &&
+     github.event.label.name == 'spec-ready')))
+
+   # agent-ci.yml
+   if: >-
+     github.event.workflow_run.event == 'pull_request' &&
+     startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
+     (github.event.workflow_run.conclusion == 'failure' ||
+     github.event.workflow_run.conclusion == 'timed_out')
+
+   # agent-review.yml
+   if: >-
+     startsWith(github.event.pull_request.head.ref, 'openhands/issue-') &&
+     github.event.pull_request.head.repo.full_name == github.repository &&
+     contains(github.event.review.body, 'CHANGES REQUESTED')
+   ```
+
+3. **权限和检出方式要与复制来的完全一致。** 每个 workflow 只申请它要写入的权限。`pull-requests: write` 看起来多余，其实不然：PR 上的标签和评论走的是 issues API，没有这个权限时它会拒绝 workflow token。
+
+   两个 status workflow 检出的是**默认分支**。Agent Issues 检出的是**合并 commit**，这样它能看到已合并 PR 所做的勾选。永远不要把它们任何一个改成检出 PR 的 head：这些 job 持有一个可以写入的 token。
+
+4. **保留并发组。** 每个组都按 PR 或按分支划分，并设置 `cancel-in-progress: false`。这样同一个 PR 的两个事件不会各自记一次尝试，不同 PR 的合并也永远不会互相取消。
+
+5. 如果你希望把已完成的 spec 移开，**复制 `archive-specs.yml`**。当推送到 `main` 的改动涉及某个活跃的 `specs/*/tasks.md` 时，它会为每个所有任务都已勾选（包括 **(human)** 任务）的 spec，在分支 `archive-spec/<folder>` 上开一个 PR。这个 PR 把文件夹移到 `specs/_archive/`，并改写指向它和从它指出的链接。Agent Issues 会跳过 `specs/_archive/`，而如果某个已归档的 `tasks.md` 中有未勾选的任务，`Tasks format` 会失败。
+
+   它会跳过有未关闭的智能体 issue 的 spec，以及已经有过归档 PR 的 spec。如果想让 spec 保持活跃，不合并直接关闭那个 PR 即可。
+
+   <Aside type="caution">
+   打开 **Settings → Actions → General → Allow GitHub Actions to create and approve pull
+   requests**，否则这个 workflow 无法开启它的 PR。用 workflow 的 token 开启的 PR 不会启动 PR Checks：逐个关闭再重新打开即可运行它们。
+   </Aside>
+
+</Steps>
+
+## 检查是否成功
+
+这些 workflow 合入 `main` 后，会出现在仓库的 **Actions** 标签页下。打开 **Actions → Agent Issues → Run workflow**，输入一个不存在的 spec 文件夹，比如 `does-not-exist`。
+
+运行会成功，并带有一条 notice：`No issue created: no spec folder with a tasks.md was found`。
+
+<Aside type="note">
+`workflow_run` 和 `pull_request_review` workflow 只会运行默认分支上的版本。对它们的修改要等合并之后才会生效。这也是智能体无法在自己的 PR 中修改它们的原因。
+</Aside>
+
+下一步：[8. 本地环境、e2e 与截图](../local-stack-and-e2e/)。

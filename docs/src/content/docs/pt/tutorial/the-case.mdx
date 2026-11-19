@@ -1,0 +1,44 @@
+---
+title: O caso - tags em notas
+description: A feature que todo passo do tutorial constrói, e por que ela foi escolhida.
+sidebar:
+  order: 0
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+O tutorial acompanha uma feature da ideia até o código mergeado: **tags em notas**.
+
+> Um usuário pode adicionar até cinco tags a uma nota e filtrar a lista de notas por tag.
+
+Ela é pequena o bastante para terminar em poucos PRs, e mexe em todas as camadas do app de notas de
+exemplo, então cada etapa do workflow tem algo real para fazer.
+
+| Camada | O que muda | Qual gate pega os erros |
+| --- | --- | --- |
+| `notes-table` | Atributo `tags` na entidade `note` | Testes unitários |
+| `notes-api` | `tags` no create e no update, filtro `tag` no list | Testes unitários, typecheck |
+| `notes-website` | Campo de tags no formulário da nota, chips de tag, filtro por tag | Screenshots, e2e |
+| Regra de negócio | No máximo cinco tags, sem duplicatas, sem diferenciar maiúsculas e minúsculas | Invariantes, testes unitários |
+| Concorrência | Duas abas adicionando tags ao mesmo tempo não podem perder nenhuma | Teste de concorrência |
+| `docs/` | A página do app de notas descreve as tags | Review do agent, review humano |
+
+## As fases
+
+A spec é dividida em três fases, então três issues e três PRs:
+
+1. **Dados e API.** Entidade, procedures, regras de validação, testes unitários.
+2. **Site.** Campo de tags, chips, filtro, cenário e2e com screenshots, testes de invariantes e de concorrência.
+3. **Docs.** Atualizar a documentação para descrever as tags.
+
+<Aside type="note">
+As fases deste caso são um exemplo. Suas próprias specs vão se dividir de outro jeito. A única regra
+é que cada fase seja um PR revisável que deixa a `main` funcionando.
+</Aside>
+
+## Antes de começar
+
+- Você tem um fork deste repositório, configurado como em
+  [Configure: fork e execução](../../setup/before-you-start/).
+- O OpenHands está fazendo polling de issues com o label `openhands`.
+- Você está trabalhando na `main` com a árvore limpa.

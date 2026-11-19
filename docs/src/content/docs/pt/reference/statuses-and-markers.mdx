@@ -1,0 +1,52 @@
+---
+title: Statuses e marcadores
+description: O commit status e os marcadores ocultos que as peças usam para se comunicar.
+sidebar:
+  order: 2
+---
+
+As peças nunca chamam umas às outras. Elas deixam sinais no GitHub que a próxima peça procura.
+
+## O commit status
+
+| Campo | Valor |
+| --- | --- |
+| Context | `software-factory/review` |
+| State | `failure`, apenas. Uma execução que passa ou uma aprovação não posta nada |
+| Postado em | O head commit do PR no momento da falha |
+| Postado por | Agent CI Status, Agent Review Status, ou uma pessoa |
+| Description | `CI failed (fix attempt <n> of 5): <failed jobs>` ou `Review requested changes (fix attempt <n> of 5): see the review`, com no máximo 140 caracteres |
+| Target URL | A execução que falhou, ou o review |
+| Lido por | O worker issue-to-PR, que revisa o PR quando o head dele tem este status como `failure` ou `error` |
+
+Um novo push começa sem o status, então o worker para de revisar quando o agent faz push.
+
+## Marcadores ocultos
+
+| Marcador | Onde | Escrito por | Usado para |
+| --- | --- | --- | --- |
+| `<!-- agent-issue spec:<folder> group:<n> -->` | Primeira linha de uma issue de implementação | Agent Issues | Encontrar a pasta da spec a partir de um PR do agent mergeado (pelo `Closes #n` dele), e nunca abrir uma segunda issue para o mesmo grupo |
+| `<!-- openhands-review-run: <id> -->` | Cada review do agent revisor | Automação de code review | O Agent Review Status só age em reviews que o têm |
+| `<!-- openhands-review-gate:waiting:<sha> -->` | Comentário "Review waiting on checks" | Automação de code review | O registro do próprio revisor de que está esperando aquele head |
+| `<!-- e2e-screenshots -->` | O comentário E2E screenshots | PR Checks | Atualizar o mesmo comentário em vez de adicionar um novo a cada execução |
+
+## Linhas de veredito
+
+O revisor termina cada review com uma destas em uma linha própria:
+
+```text
+✅ APPROVED
+🔄 CHANGES REQUESTED
+```
+
+O Agent Review Status reconhece `^🔄 CHANGES REQUESTED\s*$` em uma linha sozinha. Um review que só
+menciona a frase de passagem não conta.
+
+## Nomes de branch
+
+| Padrão | Quem | Importa porque |
+| --- | --- | --- |
+| `openhands/issue-<n>` | Automação issue-to-PR | A única branch que o worker revisa, e a única a que os workflows de correção respondem |
+| `openhands/issue-<n>-2`, … | Automação issue-to-PR, em uma issue que recebeu o label de novo | Nunca é revisada automaticamente |
+| qualquer uma começando com `openhands/` | Branches de agent | O merge de uma delas avança a cadeia |
+| `spec/<name>` (qualquer outro nome) | Pessoas | Só avança a cadeia com `spec-ready` |

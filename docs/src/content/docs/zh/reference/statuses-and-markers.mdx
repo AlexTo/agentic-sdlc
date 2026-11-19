@@ -1,0 +1,51 @@
+---
+title: 状态与标记
+description: 各个部件之间用来通信的 commit status 和隐藏标记。
+sidebar:
+  order: 2
+---
+
+各个部件从不直接调用彼此。它们在 GitHub 上留下信号，由下一个部件去查找。
+
+## commit status
+
+| 字段 | 值 |
+| --- | --- |
+| Context | `software-factory/review` |
+| State | 只有 `failure`。运行通过或获得批准时什么都不发布 |
+| 发布在 | 失败发生时 PR 的 head commit |
+| 发布者 | Agent CI Status、Agent Review Status，或人 |
+| Description | `CI failed (fix attempt <n> of 5): <failed jobs>` 或 `Review requested changes (fix attempt <n> of 5): see the review`，最多 140 个字符 |
+| Target URL | 失败的运行，或该评审 |
+| 读取者 | issue-to-PR worker，当 PR 的 head 带有状态为 `failure` 或 `error` 的此 status 时，它会修订该 PR |
+
+新的 push 不带这个 status，所以智能体一旦 push，worker 就停止修订。
+
+## 隐藏标记
+
+| 标记 | 位置 | 写入者 | 用途 |
+| --- | --- | --- | --- |
+| `<!-- agent-issue spec:<folder> group:<n> -->` | 实现 issue 的第一行 | Agent Issues | 从已合并的智能体 PR（通过其 `Closes #n`）找到 spec 文件夹，并且绝不为同一组开第二个 issue |
+| `<!-- openhands-review-run: <id> -->` | 评审智能体的每条评审 | 代码评审 automation | Agent Review Status 只处理带有它的评审 |
+| `<!-- openhands-review-gate:waiting:<sha> -->` | “Review waiting on checks” 评论 | 代码评审 automation | 评审者自己记录它正在等待该 head |
+| `<!-- e2e-screenshots -->` | E2E 截图评论 | PR Checks | 每次运行都更新同一条评论，而不是新增一条 |
+
+## 结论行
+
+评审者在每条评审的末尾，单独一行写下以下之一：
+
+```text
+✅ APPROVED
+🔄 CHANGES REQUESTED
+```
+
+Agent Review Status 匹配单独成行的 `^🔄 CHANGES REQUESTED\s*$`。只是在行文中顺带提到这个短语的评审不算数。
+
+## 分支名
+
+| 模式 | 谁 | 重要原因 |
+| --- | --- | --- |
+| `openhands/issue-<n>` | Issue-to-PR automation | worker 唯一会修订的分支，也是修复 workflow 唯一会响应的分支 |
+| `openhands/issue-<n>-2`, … | Issue-to-PR automation，用于重新加标签的 issue | 从不自动修订 |
+| 任何以 `openhands/` 开头的分支 | 智能体分支 | 合并它会推进链条 |
+| `spec/<name>`（任何其他名称） | 人 | 只有带 `spec-ready` 时才会推进链条 |

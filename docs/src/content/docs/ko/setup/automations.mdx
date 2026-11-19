@@ -1,0 +1,81 @@
+---
+title: 4. 두 개의 automation 만들기
+description: Agent Canvas catalog에서 "GitHub issue to PR"과 "GitHub code review"를 Discava의 설정으로 설치합니다.
+sidebar:
+  order: 4
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**결과:** OpenHands가 5분마다 fork를 폴링합니다. `openhands` label이 붙은 issue를 구현하고,
+실패로 표시된 PR을 수정하고, `openhands-review` label이 붙은 PR을 리뷰합니다.
+
+두 automation 모두 Agent Canvas의 **automation catalog**에서 가져옵니다. form을 채우면
+catalog가 테스트를 거친 worker를 여러분의 설정과 함께 패키징합니다. 코드를 작성하거나 업로드할 필요가 없습니다.
+
+<Steps>
+
+1. catalog에서 **"GitHub issue to PR"을 추가**하고, 다음과 같이 설정합니다.
+
+   | 필드 | 값 |
+   | --- | --- |
+   | Repositories | `<you>/agentic-sdlc` |
+   | Trigger label | `openhands` |
+   | Branch prefix | `openhands/issue` |
+   | Pull request mode | Draft |
+   | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+   | Agent profile | `default` |
+   | Check frequency | `*/5 * * * *` |
+   | Timezone | 여러분의 시간대 |
+
+   Discava는 템플릿 버전 1.2.4를 사용합니다. worker prompt는 에이전트에게 PR을 연 뒤
+   `openhands-review` label을 추가하라고 지시하므로, 새 PR은 draft 상태여도 리뷰어에게 전달됩니다.
+
+2. catalog에서 **"GitHub code review"를 추가**합니다.
+
+   | 필드 | 값 |
+   | --- | --- |
+   | Repositories | `<you>/agentic-sdlc` |
+   | Trigger label | `openhands-review` |
+   | Requested reviewer | 에이전트의 GitHub login |
+   | New reviews per scan | `2` |
+   | Review tone | Concise |
+   | Maintainers | 비워 두거나, 두 개 이상의 login (아래 참고) |
+   | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+   | Agent profile | `reviewer` |
+   | Check frequency | `*/5 * * * *` |
+
+   Discava는 템플릿 버전 1.11.2를 사용합니다. **New reviews per scan**은 한 번의 폴링에서
+   시작하는 리뷰 대화 수를 제한하므로, 밀린 작업이 있어도 에이전트 열 개가 한꺼번에 시작되지 않습니다.
+
+   **Maintainers**는 선택 사항입니다. 설정하면 승인된 PR이 그중 한 명에게 requested 리뷰어로
+   넘겨지며, 해당 파일을 이전에 수정한 사람을 기준으로 선택됩니다. 이는 PR의 issue에
+   `priority:medium` 또는 `priority:high`가 붙어 있을 때만 일어납니다. Discava는 이 필드를 비워 둡니다.
+
+3. Agent Canvas의 각 automation 페이지에서 **각 automation을 한 번씩 수동으로 실행**하고, 실행 로그를 읽습니다.
+
+</Steps>
+
+## 동작 확인
+
+할 일이 없는 첫 실행은 저장소를 한 번 훑었다는 로그를 남기고 `COMPLETED`로 끝납니다. 그다음:
+
+1. 테스트 issue를 만듭니다: "Add a line to README.md saying hello". 그리고 `openhands` label을 추가합니다.
+2. 한 번의 폴링 안에 해당 issue의 대화가 Agent Canvas에 나타납니다.
+3. 에이전트가 끝나면 `openhands/issue-<n>`에 `[#<n>] <issue
+   title>` 제목의 draft PR이 나타나고, `openhands-review`가 추가되어 있습니다.
+4. 검사가 끝나면 리뷰어가 리뷰를 게시합니다. 리뷰는
+   "_This review was posted by an AI agent (OpenHands)._"로 시작하고 `✅ APPROVED` 또는
+   `🔄 CHANGES REQUESTED`로 끝납니다.
+
+확인이 끝나면 PR을 닫고 브랜치를 삭제합니다.
+
+각 automation이 폴링 때마다 무엇을 하는지는 [에이전트 런타임](../../concepts/the-agent-runtime/)에 있습니다.
+
+<Aside type="note">
+에이전트가 issue를 처음부터 다시 시도하게 하려면 `openhands` label을 제거했다가 다시 붙입니다.
+여러분의 댓글과 함께 열린 PR로 에이전트를 되돌려 보내려면, glue workflow가 게시하는 상태를 게시합니다:
+`gh api repos/<you>/agentic-sdlc/statuses/<sha> -f state=failure -f context=software-factory/review -f description="See my comment"`.
+</Aside>
+
+다음: [5. 첫 기능 실행하기](../first-feature/).

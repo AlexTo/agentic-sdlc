@@ -1,0 +1,73 @@
+---
+title: Format de tasks.md
+description: Le format exact que lit le workflow Agent Issues, comment les phases deviennent des issues, et chaque message du validateur.
+sidebar:
+  order: 4
+---
+
+## Le format
+
+```markdown
+# Tasks: Course ratings and reviews
+
+Free text, legends and notes anywhere. Fenced code blocks are ignored.
+
+## Phase 1: Setup
+- [x] T001 Create the review entity
+- [ ] T002 [P] Add the rating summary entity
+
+## Phase 2: Foundational
+- [ ] T003 Shared review writer in core-table helpers
+
+## Phase 3: User Story 1 - Leave a rating (Priority: P1) 🎯 MVP
+### Tests for User Story 1
+- [ ] T004 [P] [US1] Unit tests for rating rules
+### Implementation for User Story 1
+- [ ] T005 [US1] review.upsert procedure
+- [ ] T006 (human) Check the layout on a phone-width window
+
+## Phase 4: User Story 2 - Instructor responds (Priority: P2)
+- [ ] T007 [US2] review.respond procedure
+- [ ] T037 [US2] Notify the student (added later: next unused id)
+```
+
+| Élément | Motif | Remarques |
+| --- | --- | --- |
+| Phase | `^## Phase (\d+): (.+)$` | Les numéros augmentent en descendant dans le fichier. Chaque phase a au moins une tâche |
+| Phase de user story | le titre commence par `User Story` | Il doit en exister au moins une |
+| Tâche | `^- \[([ xX])\] (T\d{3})\b` | En première colonne, sous une phase. Les ID sont uniques, jamais renumérotés |
+| Terminée | `[x]` ou `[X]` | Cochée sur place, jamais supprimée |
+| Tâche humaine | `(human)` n'importe où dans la ligne, en gras ou non | Sautée par l'agent, et non comptée pour décider si un groupe est terminé |
+| Sous-titres | `### …` | Autorisés, ignorés |
+
+## Comment les phases deviennent des issues
+
+1. Le **groupe 0** comprend toutes les phases jusqu'à la première phase `User Story` incluse. Setup, fondations
+   et la story MVP sont livrés en une seule PR, dont le titre comporte ` (with setup and foundations)`.
+2. **Chaque phase suivante** forme son propre groupe, et sa propre issue.
+3. Le **groupe suivant** est le premier qui a une tâche non cochée qui n'est pas **(human)**.
+4. Un groupe dont l'issue existe déjà, mais dont toutes les tâches d'agent ne sont pas cochées, est **bloqué**. Aucune
+   nouvelle issue ne s'ouvre, et la PR mergée reçoit un commentaire qui liste les ID non cochés.
+
+Le titre de l'issue est `feat(<feature>): <last phase's title, shortened>`. `<feature>` est le nom du dossier
+sans son horodatage. Le titre raccourci retire le préfixe `User Story <n> - ` et le
+suffixe `(Priority: Pn)`. Le titre commence par une minuscule et fait au plus 100 caractères.
+
+## Messages du validateur
+
+| Message | Correction |
+| --- | --- |
+| `A phase heading must be written "## Phase <number>: <title>"` | Un titre mentionne « Phase » mais n'est pas au format, par ex. `### Phase 2` ou `## Phase 2 - Setup` |
+| `A task must be written "- [ ] T<3 digits> <description>", starting in the first column` | Une tâche indentée, `* [ ]`, `- []`, ou un ID comme `T12` |
+| `Phase <n> has no tasks` | Ajoutez une tâche, ou supprimez la phase |
+| `Phase <n> comes after phase <m>; phase numbers must increase down the file` | Renumérotez les phases (pas les tâches) |
+| `T0xx is above the first phase heading, so it belongs to no phase` | Déplacez-la sous une phase |
+| `T0xx is used more than once` | Donnez à la seconde le prochain ID inutilisé |
+| `No phase headings found; …` | Le fichier n'est pas du tout au format |
+| `No phase is titled "User Story <n> - ..."; …` | Intitulez au moins une phase comme une user story |
+
+Lancez-le en local :
+
+```bash
+pnpm nx run @your-scope/common-scripts:validate-tasks
+```

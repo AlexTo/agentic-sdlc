@@ -1,0 +1,44 @@
+---
+title: 4. 智能体实现
+description: OpenHands 接手 issue 并开一个 PR，测试先行。
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**当前位置：** 🤖 智能体，无人值守。**产出：** `openhands/...` 分支上第 1 阶段的 pull request。
+
+下一次轮询时，OpenHands 会找到带 `openhands` 标签的 issue，并为它启动一个对话。你什么都不用做。
+
+## 智能体做什么
+
+1. 阅读 `AGENTS.md`、constitution 和 spec 文件夹。
+2. 先编写该阶段的测试：把 spec 中的标签规则写成单元测试。
+3. 实现代码直到测试通过，并在完成每个任务的那个 commit 中勾选 `tasks.md` 里的对应任务。
+4. 对它改动的部分运行 lint、类型检查、构建和单元测试，只运行一次，不用 watch 模式。
+5. 开一个以 Conventional Commit 为标题的 PR，例如 `feat(notes): add tags to notes in the data and API layers`，正文中写上 `Refs #<parent>`。
+6. 列出它跳过的 **(human)** 任务。
+
+## 它被告知不要做什么
+
+issue 中把限制写得清清楚楚：
+
+- 绝不在任务范围之外工作。
+- 绝不为了让测试通过而削弱测试。
+- 绝不编辑 `.github/workflows/`，绝不合并，绝不碰凭证。
+- 如果遇到阻碍，就在 issue 上评论然后停下。它不会去猜。
+
+## 你要检查什么
+
+打开 PR，从头读起：
+
+- 标题和正文是否说明了改了什么、哪些任务已完成？
+- 测试测的是 *spec 的*规则，还是实现上的怪癖？
+- `tasks.md` 中勾选的是否恰好是这个阶段的任务，不多不少？
+
+<Aside type="tip">
+你现在还不必评审。CI 和评审智能体先上，只有它们都满意之后 PR 才会到你手上。见下一步。
+</Aside>
+
+下一步：[CI 与智能体评审](../ci-and-agent-review/)。

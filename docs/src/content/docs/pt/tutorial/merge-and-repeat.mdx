@@ -1,0 +1,52 @@
+---
+title: 6. Merge e repita
+description: O review humano, e como o merge abre a próxima fase.
+sidebar:
+  order: 6
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+**Você está aqui:** 🧑 gate humano #2. **Resultado:** fase 1 mergeada, issue da fase 2 aberta.
+
+O PR chega a você verde e aprovado pelo agent revisor. Seu trabalho é julgar o resultado, não caçar
+problemas.
+
+<Steps>
+
+1. Leia a descrição do PR e o comentário **E2E screenshots**. Na fase do site, é assim que você vê
+   a feature sem baixar a branch: o campo de tags vazio, uma nota com três tags, o filtro aplicado,
+   o erro mostrado em uma sexta tag.
+
+2. Confira as tasks **(human)** que o agent listou e faça-as.
+
+3. Aprove e faça o merge. Se os agents fazem push com o seu próprio token, o GitHub vê você como
+   autor do PR e não aceita sua aprovação, então ignore-a como você fez no PR de spec.
+
+   Para pedir mudanças, faça o review do PR e adicione o label `openhands-review`. O veredito do
+   agent revisor então manda o agent implementador de volta, com o mesmo limite de cinco
+   tentativas.
+
+</Steps>
+
+## O que o merge faz
+
+O workflow **Agent Issues** vê um PR mergeado em uma branch `openhands/` e lê o `tasks.md` do jeito
+que o merge o deixou:
+
+1. **As tasks de agent desta fase estão marcadas?** O agent marca cada task no PR, no commit que a
+   conclui. As tasks **(human)** não contam: você as fez no passo 2, e elas nunca seguram a cadeia.
+2. **Sim:** ele abre a issue da próxima fase. A fase 2 (o site) agora roda exatamente como a fase 1:
+   testes primeiro, PR, gates, correções, review.
+3. **Não:** nada é aberto, e o PR mergeado recebe um comentário listando os IDs das tasks não
+   marcadas. Marque ou conclua essas tasks, depois rode o **Agent Issues** manualmente com o nome da
+   pasta da spec.
+
+Só as branches do próprio agent avançam a cadeia. Um PR seu é ignorado.
+
+```text
+spec PR merged ─► issue 1 ─► PR 1 merged ─► issue 2 ─► PR 2 merged ─► issue 3 ─► PR 3 merged ─► done
+   (you)                       (you)                      (you)                      (you)
+```
+
+Próximo: [Atualize a documentação](../update-the-docs/).

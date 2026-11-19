@@ -1,0 +1,54 @@
+---
+title: Workflows
+description: Chaque workflow GitHub Actions de la boucle, son déclencheur, ses permissions et les noms de ses jobs.
+sidebar:
+  order: 3
+---
+
+| Workflow | Fichier | Déclencheur | Permissions | Checkout de |
+| --- | --- | --- | --- | --- |
+| PR Checks | `pr-checks.yml` | `pull_request` vers `main` | `contents: read`, plus `pull-requests: write` pour le job du commentaire de captures d'écran | La PR |
+| UI Screenshots | `ui-screenshots.yml` | `pull_request` vers `main`, y compris `labeled`/`unlabeled` | `contents: read`, `pull-requests: read` | La branche par défaut (lit le diff depuis l'API) |
+| CI | `ci.yml` | `push` sur `main`, `workflow_dispatch` | `contents: read`, `pages: write`, `id-token: write` | `main` |
+| Agent Issues | `agent-issues.yml` | `pull_request: [closed, labeled]` vers `main`, `workflow_dispatch(spec_folder)` | `contents: read`, `issues: write`, `pull-requests: write` | Le commit de merge |
+| Archive Specs | `archive-specs.yml` | `push` sur `main` modifiant `specs/*/tasks.md`, `workflow_dispatch` | `contents: write`, `issues: read`, `pull-requests: write` | `main` |
+| Agent CI Status | `agent-ci.yml` | `workflow_run` de PR Checks, `completed` | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` | La branche par défaut |
+| Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` | La branche par défaut |
+| Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | Rien (passe le numéro de la PR à `gh`) |
+| Deploy (Discava) | `deploy.yml` | `workflow_run` de CI sur `main`, `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | Le commit vérifié par la CI |
+
+## Noms de jobs à exiger dans la protection de branche
+
+| Check | Provenance |
+| --- | --- |
+| `Checks (lint)`, `Checks (test)`, `Checks (build)` | PR Checks |
+| `Tasks format` | PR Checks |
+| `E2E tests` | PR Checks (regroupe les shards) |
+| `UI Screenshots` | UI Screenshots |
+
+## Groupes de concurrence
+
+| Workflow | Groupe | Annulation en cours |
+| --- | --- | --- |
+| PR Checks | `pr-checks-<ref>` | oui : un nouveau push rend l'ancienne exécution inutile |
+| Agent Issues | `agent-issues-<PR number or folder>` | non |
+| Archive Specs | `archive-specs` | non : une exécution à la fois, pour que deux n'ouvrent jamais la même PR |
+| Agent CI Status | `agent-ci-<head branch>` | non |
+| Agent Review Status | `agent-review-<PR number>` | non |
+| Deploy | `deploy-<stage>` | non |
+
+Les workflows des agents n'annulent jamais. Chaque exécution doit compter sa tentative ou ouvrir son issue exactement une fois,
+et les groupes par PR font que des PR sans rapport ne s'attendent jamais entre elles.
+
+## Les cibles Nx qu'ils lancent
+
+Toutes dans `@your-scope/common-scripts` :
+
+| Cible | Point d'entrée | Variables d'environnement lues |
+| --- | --- | --- |
+| `agent-issue` | `src/agent-issues/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH`, `SPEC_FOLDER`, `DRY_RUN` |
+| `archive-specs` | `src/agent-issues/archive-main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_WORKSPACE`, `BASE_BRANCH`, `DRY_RUN` |
+| `agent-ci-status` | `src/agent-ci/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
+| `agent-review-status` | `src/agent-review/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
+| `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH` |
+| `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`, `GITHUB_ACTIONS` (pour les annotations) |

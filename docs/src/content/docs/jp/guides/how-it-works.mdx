@@ -1,0 +1,77 @@
+---
+title: 仕組み
+description: 1 つの機能がアイデアからマージされたコードになるまでの道のりを、11 のステップで。
+sidebar:
+  order: 2
+---
+
+このページでは、1 つの機能がループ全体を通る様子を追います。各ステップで、誰が動き、何が残るかを示します。
+
+```d2
+grid-rows: 2
+grid-columns: 4
+horizontal-gap: 140
+vertical-gap: 90
+
+# Top row runs left to right, bottom row right to left, so the loop wraps.
+spec: "spec PR\n(あなた)" {shape: document}
+issues: "Agent Issues\n(GitHub Actions)"
+issue: issue {shape: page}
+implement: "実装\n(OpenHands)"
+merge: "マージ\n(あなた)"
+review: "レビュー\n(OpenHands)"
+checks: "PR Checks\n(GitHub Actions)"
+pr: pull request {shape: page}
+
+spec -> issues: spec-ready
+issues -> issue
+issue -> implement
+implement -> pr
+pr -> checks
+checks -> review: 成功
+review -> merge: 承認
+merge -> issues: 次のフェーズ
+```
+
+## ステップ
+
+| # | 誰が | 何が起きるか | 成果物 |
+| --- | --- | --- | --- |
+| 1 | 🧑🤖&nbsp;あなた + エージェント | `/speckit-specify` が 1 段落のアイデアを spec にします。`/speckit-clarify` が最大 5 つの質問をし、あなたの回答を書き戻します | `specs/<timestamp>-<name>/spec.md` |
+| 2 | 🧑🤖&nbsp;あなた + エージェント | `/speckit-plan` が*どう作るか*を決め、plan を constitution と照合します | `plan.md`、`data-model.md`、`contracts/` |
+| 3 | 🧑🤖&nbsp;あなた + エージェント | `/speckit-tasks` がフェーズごとにまとめた順序付きのタスクリストを書きます。`/speckit-analyze` が 3 つのファイルすべてを相互チェックします | `tasks.md` |
+| 4 | 🧑&nbsp;**あなた** | spec PR を開き、コードと同じようにレビューし、`spec-ready` ラベルを付けてマージします | マージされた spec PR。**人間のゲート 1** |
+| 5 | ⚙️&nbsp;自動化 | **Agent Issues** ワークフローが `tasks.md` を読み、最初のフェーズのグループについて `openhands` ラベル付きの issue を開きます | 実装 issue |
+| 6 | 🤖&nbsp;OpenHands | 次のポーリングでエージェントが issue を拾い、まずテストを書き、実装し、タスクにチェックを入れ、`openhands/issue-<n>` で PR を開きます | pull request |
+| 7 | ⚙️&nbsp;CI | PR チェックが lint、ユニットテスト、ビルド、`tasks.md` の形式チェック、e2e テスト、スクリーンショットのチェックを実行します | チェック結果 |
+| 8 | ⚙️🤖&nbsp;自動化 + OpenHands | 実行が赤になると、**Agent CI Status** が PR を失敗としてマークします。エージェントは次のポーリングでそれを見て、同じ PR を修正します | `ci-fix-1` から `ci-fix-5` のラベル |
+| 9 | 🤖&nbsp;OpenHands | すべてのチェックが終わると、レビュー担当のエージェントが head コミットをレビューし、`✅ APPROVED` か `🔄 CHANGES REQUESTED` で締めくくります。後者の場合、**Agent Review Status** がエージェントを差し戻します | レビュー、場合によっては `review-fix-N` ラベル |
+| 10 | 🧑&nbsp;**あなた** | PR の説明と **E2E screenshots** コメントを読み、**(human)** タスクがあれば行い、マージします | マージされた PR。**人間のゲート 2** |
+| 11 | ⚙️&nbsp;自動化 | マージによって **Agent Issues** が再び実行されます。未チェックのエージェントタスクが残っている次のフェーズの issue を開き、残りがなくなるまでステップ 6 から 10 を繰り返します | 次の issue、または完了 |
+
+## あなたが実際にやること
+
+機能ごとに、spec を一度書いて承認します。pull request ごとに、レビューを一度行い、マージをクリックします。
+早い段階で呼ばれるのは、ループが試行回数を使い切ったとき (`ci-fix-exhausted` または
+`review-fix-exhausted`) か、エージェントがブロックされているとコメントしたときだけです。エージェントが作業している間に、
+次の spec を書けます。
+
+## 各要素の置き場所
+
+| 要素 | ファイル |
+| --- | --- |
+| spec のツール | `.specify/`、`speckit-*` スキル、`specs/` |
+| すべてのエージェント実行に適用されるプロジェクトのルール | `.specify/memory/constitution.md`、`AGENTS.md` |
+| エージェントが受け取る issue | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| spec から issue へ | `.github/workflows/agent-issues.yml` |
+| 完了した spec を `specs/_archive/` へ | `.github/workflows/archive-specs.yml` |
+| CI からエージェントへ | `.github/workflows/agent-ci.yml` |
+| レビュアーからエージェントへ | `.github/workflows/agent-review.yml` |
+| チェック | `.github/workflows/pr-checks.yml`、`ui-screenshots.yml`、`ci.yml` |
+| グルーの背後にあるユニットテスト済みのルール | `packages/common/scripts/src/agent-*`、`ui-screenshots/` |
+| エージェントのランタイム | OpenHands Agent Canvas (リポジトリの外) |
+
+詳細はコンセプトにあります。[フェーズがどのように issue になるか](../../concepts/one-phase-at-a-time/)、
+[失敗がどのようにエージェントを差し戻すか](../../concepts/feedback-loops/)。
+
+次へ: [このリポジトリを fork する](../fork-this-repo/)、または[コンセプト](../../concepts/principles/)へ。

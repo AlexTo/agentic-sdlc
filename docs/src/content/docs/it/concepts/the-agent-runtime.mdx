@@ -1,0 +1,100 @@
+---
+title: Il runtime dell'agente
+description: Come OpenHands trasforma una issue con label in una pull request, e come capisce quando rivederne una.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**In breve:** OpenHands esegue due automazioni pianificate sul tuo repository. Una implementa le issue
+con label e rivede le pull request segnate come fallite. L'altra revisiona le pull request quando i
+loro check finiscono. Entrambe avviano un normale coding agent con un prompt fisso. Nessuna delle due
+ha bisogno che tu apra una chat.
+
+```d2
+direction: right
+
+machine: La tua macchina {
+  style.stroke-dash: 3
+  canvas: Agent Canvas {
+    i2p: da issue a PR
+    review: code review
+  }
+  agent: coding agent
+  canvas.i2p -> agent: implementa o rivedi
+  canvas.review -> agent: revisiona
+}
+
+github: GitHub {
+  style.stroke-dash: 3
+  issues: issue {shape: page}
+  prs: pull request {shape: page}
+  statuses: commit status {shape: document}
+}
+
+machine.canvas -> github: polling ogni 5 minuti
+machine.agent -> github.prs: push, apertura, review
+```
+
+## Le parti
+
+| Parte | Cos'è |
+| --- | --- |
+| **Agent Canvas** | L'app OpenHands che esegui tu stesso (`npx @openhands/agent-canvas`). Include l'agent server, il backend delle automazioni e una UI web |
+| **Agent profile** | Quale agente gira, e con quale modello. Un profilo può essere l'agente di OpenHands con qualsiasi LLM, o un coding agent esterno tramite ACP (l'Agent Client Protocol) |
+| **Automazione** | Un piccolo worker Python che gira su una pianificazione cron. Legge GitHub, decide cosa fare, e avvia o riprende conversazioni con l'agente. Si installa dal catalogo di Agent Canvas |
+| **Secret** | Una credenziale con un nome, come il token GitHub. A una conversazione vengono dati solo i secret nella sua allow-list |
+
+## Le due automazioni
+
+### GitHub issue to PR
+
+A ogni polling, per ogni repository che osserva, il worker:
+
+1. Trova le PR aperte sui branch `openhands/issue-<n>` il cui commit di testa ha un commit status
+   chiamato `software-factory/review` in stato `failure` o `error`. Per ognuna invia un turno di
+   **revisione** alla conversazione di quella issue: leggi le review, i commenti e i check falliti,
+   correggili, e fai push sullo stesso branch.
+2. Trova le issue aperte con la label di attivazione (`openhands`) che non hanno ancora una PR, e
+   avvia un turno di **implementazione**: clona, crea `openhands/issue-<n>`, implementa, testa, fai
+   push, apri la PR e aggiungi la label `openhands-review`.
+
+Ogni issue è un *soggetto* con una conversazione stabile. Una revisione va alla stessa conversazione
+dell'implementazione originale, così l'agente mantiene il suo contesto.
+
+### GitHub code review
+
+A ogni polling, cerca le PR che hanno la label `openhands-review`, hanno una richiesta di review in
+sospeso per il suo account, oppure sono aperte, non in bozza, senza richieste e senza review. Per
+ognuna, aspetta che **ogni check sul commit di testa sia finito**, poi avvia una review di quel
+preciso commit. La review termina con un verdetto su una riga a sé: `✅ APPROVED` o
+`🔄 CHANGES REQUESTED`.
+
+<Aside type="caution">
+Il worker issue-to-PR rivede una PR solo quando vede lo status `software-factory/review` fallito. Né
+un'esecuzione rossa della CI né il "changes requested" del reviewer impostano quello status da soli.
+Colmare questa lacuna richiede due pezzi del [collante mancante](../the-missing-glue/).
+</Aside>
+
+## Perché polling e non webhook
+
+Le automazioni fanno polling (ogni 5 minuti in Discava, ogni 15 di default), così Agent Canvas può
+girare su un laptop o su un server di casa senza URL pubblico e senza secret per i webhook. Il costo
+è una latenza fino a un intervallo di polling, che è poca cosa rispetto al tempo che l'agente impiega
+a lavorare.
+
+## Cosa l'agente può e non può raggiungere
+
+La conversazione che implementa riceve un solo secret, il token GitHub, così può leggere la issue e
+fare push del suo branch. Non riceve credenziali cloud. Cos'altro non può mai fare, e cosa garantisce
+ogni limite, è in [Gate umani](../human-gates/#cosa-gli-agenti-non-possono-mai-fare).
+
+## Scegliere gli agenti
+
+Discava esegue entrambe le automazioni su **Claude Code tramite ACP**: Sonnet per implementare e Opus
+per revisionare. Un modello più forte per la review è una scelta voluta: il reviewer è l'ultimo
+controllo prima di una persona, e legge molto meno codice di quanto ne scriva chi implementa.
+Qualsiasi agente ACP, o l'agente di OpenHands con qualsiasi LLM, si collega agli stessi profili.
+
+Avanti: [Il collante mancante](../the-missing-glue/).

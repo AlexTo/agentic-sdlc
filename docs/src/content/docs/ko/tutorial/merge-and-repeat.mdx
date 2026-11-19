@@ -1,0 +1,51 @@
+---
+title: 6. Merge와 반복
+description: 사람의 리뷰, 그리고 merge가 다음 phase를 여는 방식.
+sidebar:
+  order: 6
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+**현재 위치:** 🧑 사람 게이트 #2. **산출물:** merge된 phase 1, 열린 phase 2의 issue.
+
+PR은 초록색이고 에이전트 리뷰어의 승인을 받은 상태로 여러분에게 옵니다. 여러분의 일은 문제를 찾아
+헤매는 것이 아니라 결과를 판단하는 것입니다.
+
+<Steps>
+
+1. PR 설명과 **E2E screenshots** 댓글을 읽습니다. 웹사이트 phase라면 이것이 브랜치를 pull하지
+   않고 기능을 보는 방법입니다: 비어 있는 tag 입력, tag가 세 개인 note, 적용된 필터,
+   여섯 번째 tag에서 표시되는 에러.
+
+2. 에이전트가 나열한 **(human)** task를 확인하고 수행합니다.
+
+3. 승인하고 merge합니다. 에이전트가 여러분의 토큰으로 push한다면 GitHub는 여러분을 PR의 작성자로 보고
+   승인을 받아들이지 않으므로, spec PR 때처럼 우회합니다.
+
+   대신 변경을 요청하려면 PR을 리뷰하고 `openhands-review` label을 추가합니다. 그러면 리뷰어
+   에이전트의 판정이 같은 다섯 번 시도 상한 안에서 구현 에이전트를 되돌려 보냅니다.
+
+</Steps>
+
+## Merge가 하는 일
+
+**Agent Issues** workflow가 `openhands/` 브랜치의 merge된 PR을 감지하고, merge 직후 상태의
+`tasks.md`를 읽습니다.
+
+1. **이 phase의 에이전트 task가 체크되어 있나요?** 에이전트는 PR 안에서, 각 task를 끝내는 커밋에서
+   그 task를 체크합니다. **(human)** task는 세지 않습니다. 여러분이 2단계에서 수행했고, 체인을 막지도
+   않습니다.
+2. **예:** 다음 phase의 issue를 엽니다. 이제 phase 2 (웹사이트)가 phase 1과 똑같이 진행됩니다:
+   테스트 먼저, PR, 게이트, 수정, 리뷰.
+3. **아니요:** 아무것도 열리지 않고, merge된 PR에 체크되지 않은 task ID를 나열한 댓글이 달립니다.
+   그 task를 체크하거나 끝낸 뒤, spec 폴더 이름으로 **Agent Issues**를 수동으로 실행합니다.
+
+체인을 진행시키는 것은 에이전트 자신의 브랜치뿐입니다. 여러분이 직접 연 PR은 무시됩니다.
+
+```text
+spec PR merged ─► issue 1 ─► PR 1 merged ─► issue 2 ─► PR 2 merged ─► issue 3 ─► PR 3 merged ─► done
+   (you)                       (you)                      (you)                      (you)
+```
+
+다음: [문서 업데이트](../update-the-docs/).

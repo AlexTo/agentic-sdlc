@@ -1,0 +1,65 @@
+---
+title: 简介
+description: 本指南涵盖什么内容、面向哪些读者，以及如何阅读。
+sidebar:
+  order: 1
+---
+
+本指南告诉你如何运行这样一种软件生命周期：**智能体编写代码，人只做两个决定**：批准 spec，
+以及批准结果。中间的一切（开 issue、编写代码和测试、响应 CI、回应评审）都通过常规的 GitHub
+流程自动运行。
+
+这套工作流每天都在 [Discava](https://github.com/AlexTo/discava) 上运行，这是一个构建在 AWS 上的
+serverless 学习管理系统。在 2026 年 11 月 14 日上线后的六天里，用这种方式写出了十六份功能
+spec，并合并了 105 个实现它们的智能体 pull request，每一个都由智能体编写、修复和评审。同一期间，
+main 上落地了 173 个 commit。这一切只靠一位维护者完成，他是一位有全职工作的父亲，只在业余时间
+随意地打理 Discava。😅
+
+## 简短版本
+
+三个现成的工具完成了大部分工作：
+
+| 工具 | 在这里的作用 |
+| --- | --- |
+| [Speckit](https://github.com/github/spec-kit) | 把一个想法变成 `spec.md`、`plan.md` 和 `tasks.md`，并对照项目 constitution 进行检查 |
+| [OpenHands](https://github.com/OpenHands/OpenHands) | 把一个带标签的 issue 变成 pull request，并在被告知有问题时修改该 pull request。另一个 OpenHands 自动化负责评审它 |
+| GitHub Actions | 运行检查，并承载另外两者之间的粘合代码 |
+
+它们彼此之间互不知晓。**本指南主要讲的就是这些粘合代码**：十个小而经过测试的自动化部件，把完成的
+spec 连到智能体、把 CI 连到智能体、把评审者连到智能体，并设有上限，确保没有什么会无限循环。
+
+## 面向哪些读者
+
+- **技术负责人和资深工程师**，正在决定是否采用这套工作流。从[核心概念](../../concepts/principles/)
+  开始。
+- **任何想试一试的人。** [Fork 本仓库](../fork-this-repo/)，然后按照
+  [动手搭建](../../setup/before-you-start/)让一个功能走完整个循环。
+- **要把它引入产品仓库的工程师。** 阅读
+  [Discava 的做法](../../discava/overview/)，然后阅读
+  [在你自己的仓库中采用](../../adopt/overview/)。
+- **将在日常工作中使用它的开发者。** [教程](../../tutorial/the-case/)跟随一个功能从想法走到
+  合并。
+
+你应该熟悉 Git、GitHub pull request 和 GitHub Actions。你不需要事先用过 Speckit 或 OpenHands。
+
+## 本指南的组织方式
+
+| 章节 | 回答的问题 |
+| --- | --- |
+| **从这里开始** | 这是什么？一个功能如何在其中流转？ |
+| **核心概念** | 为什么要这样构建？ |
+| **Discava 的做法** | 每处缺口具体由什么填补，在哪个文件里？ |
+| **动手搭建：fork 并运行** | 如何在示例应用上把它跑起来？ |
+| **在你自己的仓库中采用** | 如何把每个部分加入现有仓库？ |
+| **教程** | 在一个小功能上使用它是什么感觉？ |
+| **参考** | 标签、状态、workflow、`tasks.md` 格式、故障排查、术语表 |
+
+## 约定
+
+- `AGENTS.md` 指仓库根目录下的智能体指导文件。按你的编码智能体读取的文件名来命名即可。
+- `<you>/agentic-sdlc` 是你的 fork，`owner/repo` 是任意仓库。
+- `@your-scope` 是你的工作区的 npm scope。本仓库使用 `@agentic-sdlc`，Discava 使用 `@discava`。
+- 除非某个步骤另有说明，命令都从仓库根目录运行。
+- **(human)** 标记智能体不得执行的任务。它也是 `tasks.md` 中实际使用的标记。
+
+下一步：[工作原理](../how-it-works/)。

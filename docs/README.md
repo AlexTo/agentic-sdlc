@@ -28,7 +28,8 @@ Author English only, under `src/content/docs/en/`. The other locales (`jp`, `ko`
 Claude Code. Until a page is translated, its locale shows the English page with a "not
 translated yet" notice.
 
-Translated so far: `vi`.
+Translated so far: all of them, `jp` (Japanese), `ko` (Korean), `es` (Spanish), `pt` (Brazilian
+Portuguese), `fr` (French), `it` (Italian), `zh` (Simplified Chinese) and `vi` (Vietnamese).
 
 ### Finding pages that are out of date
 

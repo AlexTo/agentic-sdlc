@@ -1,0 +1,81 @@
+---
+title: 5. 运行你的第一个功能
+description: 在你的 fork 中为笔记应用编写一份 spec，看着它走过与 Discava 相同的工作流，从 spec PR 到已合并的智能体 PR。
+sidebar:
+  order: 5
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完成后你将拥有：** 笔记应用的一个功能，由智能体从你的一句话想法一路推进到已合并的代码，并证明循环中的每一次交接在你的 fork 中都能正常工作。
+
+这个功能是：**笔记标签**。*用户最多可以给一条笔记添加五个标签，并按标签筛选笔记列表。* 它很小，但涉及数据表、API 和网站，所以每个阶段都有真正的事情要做。[教程](../../tutorial/the-case/)会更详细地讲解每个阶段。
+
+<Steps>
+
+1. 在你的克隆中新建一个分支，用你的编码智能体**编写 spec**：
+
+   ```bash
+   git switch -c spec/note-tags
+   ```
+
+   ```text
+   /speckit-specify Users can add up to five tags to a note and filter the note list by tag. Tags are case-insensitive and unique per note.
+   /speckit-clarify
+   /speckit-plan
+   /speckit-tasks
+   /speckit-analyze
+   ```
+
+2. **开启 spec PR，加上 `spec-ready` 标签，然后合并。** 推送分支：
+
+   ```bash
+   git add specs/ && git commit -m "docs(specs): add note tags spec"
+   git push -u origin spec/note-tags
+   ```
+
+   在 GitHub 上开启 pull request，加上 `spec-ready` 标签，等检查变绿后合并。PR 是你开的，所以 GitHub 不允许你批准它：勾选 **Merge without waiting for requirements to be met**。
+
+   ✅ **Tasks format** 在 PR 上通过。合并后，**Agent Issues** 会开一个标题为 `feat(<feature>): … (with setup and foundations)` 的 issue，带有 `openhands` 标签，范围是第一组阶段。
+
+3. **等待智能体。** 你什么都不用做。
+
+   ✅ 下一次轮询时，Agent Canvas 中会为该 issue 启动一个对话。完成后，`openhands/issue-<n>` 上会出现一个带 `openhands-review` 的草稿 PR，`tasks.md` 中恰好勾选了这些阶段的任务。
+
+4. **观察各道关卡。**
+
+   ✅ PR Checks 开始运行。如果有一项失败，**Agent CI Status** 会加上 `ci-fix-1`，智能体会在下一次轮询时修订同一个 PR。所有检查都完成后，评审智能体会评审该 head，并以 `✅ APPROVED` 或 `🔄 CHANGES REQUESTED` 结尾。要求修改同样会把智能体打回去，并带上 `review-fix-1`。
+
+5. **评审并合并。** 阅读 PR 描述、其中列出的 **(human)** 任务，以及网站阶段的 **E2E screenshots** 评论。点击 **Ready for review**，然后合并。如果智能体用你自己的 token 推送，就像第 2 步那样绕过批准。如果智能体使用单独的账号，就正常批准并合并。
+
+   ✅ **Agent Issues** 再次运行，开出下一阶段的 issue。第 3 到第 5 步重复进行。
+
+6. **合并最后一个 PR。**
+
+   ✅ Agent Issues 记录 `No issue created: … no tasks left for the agent`。功能完成。
+
+</Steps>
+
+<Aside type="tip" title="没看到修复循环？">
+如果智能体第一次就全做对了，你还没见过 CI 循环。要测试它，向一个已开启的智能体 PR 推送一个会让其某个单元测试失败的 commit。PR Checks 失败，出现 `ci-fix-1`，智能体会在下一次轮询时推送修复。它可能直接 revert 你的 commit，在这里这正是正确的修复。
+</Aside>
+
+## 自查
+
+当你对下面每一项都能回答“是”时，你就拥有了与 Discava 相同的工作流：
+
+- [ ] 合并一个 `spec-ready` 的 spec PR 后开出了一个 issue，没有人手动去开。
+- [ ] 智能体在 `openhands/issue-<n>` 上开了一个 PR，并恰好勾选了它的任务。
+- [ ] 一次红色的 CI 运行把智能体打了回去，且 PR 带有 `ci-fix-1`。
+- [ ] 检查完成后，评审智能体评审了 PR 的 head。
+- [ ] 合并智能体的 PR 后开出了下一阶段的 issue。
+- [ ] 网站改动附带了列在 PR 上的截图。
+- [ ] 最后一次合并没有开出任何东西。
+- [ ] 你从头到尾都没有为智能体粘贴错误信息或编写提示词。
+
+有哪一步没有发生？见[故障排查](../../reference/troubleshooting/)。
+
+## 下一步
+
+- 在笔记应用上试一个你自己的功能，比如置顶笔记或给列表排序。
+- 准备把它带到一个产品仓库？见[在你自己的仓库中采用](../../adopt/overview/)。

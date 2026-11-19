@@ -1,0 +1,95 @@
+---
+title: "Una feature real: reseñas de cursos"
+description: Una feature de Discava seguida desde la issue de seguimiento hasta la spec y ocho pull requests de agentes, con marcas de tiempo.
+sidebar:
+  order: 10
+  label: Una feature real
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Esta página sigue una feature a través del repositorio real de Discava: **valoraciones y
+reseñas escritas de cursos**. Cada número y cada enlace proceden de GitHub. Las horas están en UTC,
+del 18 de noviembre de 2026 salvo que se indique otra cosa.
+
+## La idea
+
+[Issue #279](https://github.com/AlexTo/discava/issues/279), escrita por una persona:
+
+> Enrolled students leave one 1-5 rating plus an optional text review per course (editable,
+> deletable). The course carries an aggregate rating and count, kept consistent through a
+> core-table helper. Shown on catalogue cards, the course page and as a search sort/boost. The
+> instructor can respond; an admin can remove abusive reviews. One review per student per course
+> under concurrency; an average/count invariant in `helpers/invariants.ts`.
+
+## La spec
+
+[PR #358](https://github.com/AlexTo/discava/pull/358), `docs(specs): course ratings and written
+reviews`, en la rama `spec/reviews`: 14 commits, 923 líneas, todo bajo
+`specs/20261116-013307-course-reviews/`.
+
+- `/speckit-clarify` se ejecutó sin una persona a quien preguntar, así que el agente anotó sus
+  respuestas en "Clarifications". Por ejemplo: *"Must a student have made progress before they may
+  review? → No. Any student whose enrolment is not dropped may review."* Quien revisara el PR de la
+  spec podía discrepar de cualquiera de ellas antes de que existiera código.
+- `tasks.md` salió con **ocho fases y 36 tareas**. La fase 1 es la primera historia de usuario (los
+  registros, el resumen y el escritor compartido), y las fases 2 a 8 indican cada una qué PR son
+  ("core-api review procedures (PR 2)"). Dos tareas son **(human)**: una prueba manual completa en un
+  stack local y comprobaciones en el stage desplegado.
+
+Abierto el 15 de noviembre, etiquetado `spec-ready` y fusionado el 18 de noviembre a las 06:47.
+
+## La cadena
+
+| Fase | Issue abierta | PR | Fusionado | Tamaño | Correcciones |
+| --- | --- | --- | --- | --- | --- |
+| 1. Registros de reseñas, resumen de valoraciones y el escritor | [#453](https://github.com/AlexTo/discava/issues/453) 07:09 | [#456](https://github.com/AlexTo/discava/pull/456) | 07:40 | +1.923 | ninguna |
+| 2. Procedimientos de reseñas de core-api | [#459](https://github.com/AlexTo/discava/issues/459) 07:41 | [#460](https://github.com/AlexTo/discava/pull/460) | 08:30 | +1.334 | ninguna |
+| 3. Valoraciones y reseñas en el portal de estudiantes | [#461](https://github.com/AlexTo/discava/issues/461) 08:31 | [#464](https://github.com/AlexTo/discava/pull/464) | 09:55 | +1.357 | `review-fix-1` |
+| 4. Valoraciones en la búsqueda | [#466](https://github.com/AlexTo/discava/issues/466) 09:56 | [#470](https://github.com/AlexTo/discava/pull/470) | 11:24 | +900 | `ci-fix-1` |
+| 5. Respuestas de los instructores | [#475](https://github.com/AlexTo/discava/issues/475) 11:25 | [#476](https://github.com/AlexTo/discava/pull/476) | 12:30 | +1.791 | `ci-fix-1` |
+| 6. Retirada por un administrador | [#481](https://github.com/AlexTo/discava/issues/481) 12:31 | [#483](https://github.com/AlexTo/discava/pull/483) | 13:09 | +1.526 | ninguna |
+| 7. Notificaciones a los instructores | [#485](https://github.com/AlexTo/discava/issues/485) 13:10 | [#497](https://github.com/AlexTo/discava/pull/497) | 00:20, 19 nov | +422 | `review-fix-1` |
+| 8. End-to-end, documentación y comprobaciones manuales | [#501](https://github.com/AlexTo/discava/issues/501) 00:21, 19 nov | [#504](https://github.com/AlexTo/discava/pull/504) | 01:08, 19 nov | +427 | `ci-fix-1` |
+
+Ocho PR, unas 9.700 líneas incluidos los tests. Los seis primeros se fusionaron en seis horas. El PR
+del agente para la fase 7 se abrió diez horas después de su issue, y los dos últimos se fusionaron
+en los noventa minutos siguientes. Cada issue se abrió aproximadamente un minuto después de que se
+fusionara el PR anterior, y el último PR cerró #279.
+
+## Lo que hizo la persona
+
+1. Escribió la issue de seguimiento de un párrafo.
+2. Revisó el PR de la spec e hizo merge.
+3. Para cada uno de los ocho PR: leyó la descripción y el comentario de capturas, e hizo merge.
+
+Nadie abrió una issue, escribió un prompt ni pegó un error.
+
+## Lo que detectaron los bucles
+
+- **PR #464**: el agente revisor solicitó cambios. Agent Review Status devolvió el trabajo al agente
+  una vez, y el PR se fusionó tras la siguiente revisión.
+- **PR #470**: un nuevo escenario e2e usaba un localizador que coincidía con dos elementos, así que
+  falló un shard. Agent CI Status devolvió el trabajo al agente una vez. El agente corrigió el
+  localizador y explicó por qué en un comentario. Consulta [Bucles de feedback](../feedback-loops/)
+  para ver la cronología completa.
+- **PR #476**: un fallo de CI, corregido en el primer intento.
+- **PR #497**: una ronda de cambios de revisión.
+- **PR #504**: un fallo de CI, corregido en el primer intento.
+
+<Aside type="note">
+El título de cada PR empieza por `[#<issue>]`, el formato propio de la automatización de issue a PR,
+aunque la issue pide un título Conventional Commit normal. Muestra las dos capas en acción: la
+instrucción de la issue es texto, y el formato de la automatización es código. Gana el código, así que
+si te importa el título, hazlo cumplir con un check.
+</Aside>
+
+## Lo que queda para una persona
+
+Las dos tareas **(human)** de la fase 8: una prueba manual completa en un stack local y
+comprobaciones en el stage desplegado. El último PR se fusionó con ambas aún sin marcar en
+`tasks.md`, así que la automatización no las esperó, y nada más lo hizo tampoco. Lo que sí las
+sigue es el workflow [Archive Specs](../spec-to-issue/#archivar-una-spec-terminada): la carpeta de
+la spec sigue activa hasta que una persona marque ambas.
+
+Siguiente: [Configúralo: fork y ejecución](../../setup/before-you-start/).

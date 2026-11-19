@@ -1,0 +1,117 @@
+---
+title: 1. Workspace와 커밋 위생
+description: pnpm을 쓰는 Nx monorepo, 그리고 에이전트 커밋을 깔끔하게 유지하는 커밋 hook.
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**결과:** Nx와 Biome가 있고, 모든 커밋에 Conventional Commits가 강제되며, 매 커밋 전에
+secret 검사를 하는 pnpm workspace.
+
+glue는 Nx가 필요하지 않습니다. 하지만 `nx affected` 덕분에 PR 검사가 에이전트가 반복 작업할 수 있을
+만큼 빨라지고, 모든 glue script는 Nx target으로 실행됩니다. 다른 monorepo 도구를 쓴다면 아이디어를
+유지하세요: PR이 영향을 주는 것만 실행하고, 모든 script를 이름 있는 task로 노출합니다.
+
+<Steps>
+
+1. workspace가 없다면 **workspace를 만듭니다**. Discava와 이 저장소는 모두
+   Nx Plugin for AWS로 만들었습니다.
+
+   ```bash
+   pnpm create @aws/nx-workspace your-project --iac=cdk --no-interactive
+   ```
+
+   이 명령은 4단계에서 쓰는 git-secrets pre-commit hook도 설치합니다. 기존 Nx workspace도
+   됩니다. CI와 에이전트가 같은 버전을 쓰도록 루트 `package.json`에 pnpm 버전을 고정하세요.
+
+   ```json
+   { "packageManager": "pnpm@<version>" }
+   ```
+
+2. `AGENTS.md`, CI, 에이전트가 호출할 **루트 script를 추가**합니다.
+
+   ```json
+   "scripts": {
+     "dev": "nx run-many --target dev",
+     "build": "nx run-many --target build",
+     "lint": "nx run-many --target lint --configuration=fix",
+     "test": "nx run-many --target test --all",
+     "trivy": "nx run-many --target trivy --all",
+     "prepare": "husky"
+   }
+   ```
+
+3. **commitlint로 Conventional Commits를 추가**합니다. glue가 작성하는 issue 제목은 Conventional
+   Commit header이고, 에이전트가 이를 재사용합니다.
+
+   ```bash
+   pnpm add -Dw @commitlint/config-conventional commitlint husky lint-staged
+   echo "export default { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
+   ```
+
+   `.husky/commit-msg`:
+
+   ```bash
+   FORCE_COLOR=1 pnpm commitlint --edit "$1"
+   ```
+
+4. **pre-commit hook을 추가**합니다. 이 hook은 AWS secret 패턴을 한 번 등록하고, secret이 들어 있는
+   커밋을 거부하고, staged 파일에 Biome를 실행하며, 그것이 무언가를 바꿨다면 실패합니다. 그러면
+   에이전트가 다시 stage하고 다시 커밋합니다. `.husky/pre-commit`:
+
+   ```bash
+   if ! git config --get-all secrets.patterns >/dev/null 2>&1; then
+     bash .git-secrets/git-secrets --register-aws
+   fi
+   bash .git-secrets/git-secrets --pre_commit_hook
+
+   PRE_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
+   FORCE_COLOR=1 pnpm lint-staged
+   POST_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
+
+   if [ "$PRE_SHA" != "$POST_SHA" ]; then
+     echo "Pre-commit modified your working directory"
+     echo "Please verify and stage changed, then retry git commit"
+     exit 1
+   fi
+   ```
+
+   Nx Plugin for AWS로 만든 workspace에는 이미 `.git-secrets/git-secrets`, `.gitallowed`,
+   그리고 이 hook의 대부분이 있습니다. 그렇지 않다면 이 저장소에서 복사하세요. `lint-staged.config.js`:
+
+   ```js
+   export default {
+     'packages/**/*.{ts,tsx,js,jsx,json,css,scss}': ['biome check --write --no-errors-on-unmatched'],
+     '*.{js,json}': ['biome check --write --no-errors-on-unmatched'],
+   };
+   ```
+
+5. 이 저장소에서 **공유 CI setup action을 복사**합니다: `.github/actions/init-monorepo/`. 이 action은
+   pnpm을 설치하고 (registry timeout이 나면 에이전트가 수정 시도 한 번을 잃게 되므로 세 번 시도합니다),
+   Node 24와 선택적으로 uv를 설치하고, pnpm 캐시를 복원하고, 의존성을 설치하고,
+   `nx affected`를 위해 `NX_BASE`/`NX_HEAD`를 설정합니다.
+
+</Steps>
+
+## 동작 확인
+
+```bash
+git commit --allow-empty -m "not conventional"
+```
+
+```text
+⧗   input: not conventional
+✖   subject may not be empty [subject-empty]
+✖   type may not be empty [type-empty]
+```
+
+그다음 `git commit --allow-empty -m "chore: check hooks"`는 성공합니다.
+
+<Aside type="note">
+Discava는 대화형으로 커밋하는 사람들을 위해 `prepare-commit-msg`에서 Commitizen도 실행합니다.
+에이전트가 커밋하는 방식처럼 `-m`으로 메시지를 주면 스스로 건너뛰므로, 선택 사항입니다.
+</Aside>
+
+다음: [2. Speckit 설치하기](../speckit/).

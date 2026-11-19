@@ -1,0 +1,88 @@
+---
+title: 9. デプロイとセキュリティスキャン（任意）
+description: グリーンになった main をすべて開発ステージにデプロイし、本番は承認の後ろに置き、デプロイのたびにスキャンします。
+sidebar:
+  order: 9
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**このステップで得られるもの:** `main` への push ごとの Trivy スキャン、グリーンになった `main` を毎回
+開発ステージに出荷する Deploy workflow、そして人を待つ本番デプロイ。
+
+このステップの詳細は Discava 固有（AWS、CDK）ですが、全体の形はどのクラウドでも使えます。このリポジトリの
+ノートアプリの例にはデプロイがないので、[Discava の `deploy.yml`](https://github.com/AlexTo/discava/blob/main/.github/workflows/deploy.yml)
+からコピーします。
+
+<Steps>
+
+1. スキャンしたいプロジェクトに **`trivy` ターゲットを追加します**（ルートの `pnpm trivy` は
+   `nx run-many --target trivy --all` を実行します）。このリポジトリと同じように、`ci.yml` に `trivy` ジョブを追加します。
+   `build` とは別のジョブにしておくと、新たに公開された CVE が他を何もブロックせずに `main` にフラグを立てます。
+   受け入れた検出結果は、1 行に 1 つの ID で `.trivyignore` に記録します。
+
+2. **キーレスのクラウドアクセスを設定します。** AWS では、Discava の `scripts/setup-stage.sh` がステージごとに次を作成します:
+   GitHub OIDC プロバイダー、`repo:owner/repo:environment:<stage>` に対してのみ信頼されるデプロイロール、
+   permissions boundary 付きの CloudFormation 実行ロール、そして GitHub environment の変数
+   （`AWS_REGION`、`AWS_DEPLOY_ROLE_ARN`、`AWS_EXECUTION_ROLE_ARN`）。他のクラウドでも、
+   GitHub Actions 向けの OIDC フェデレーションを同じように使います。アクセスキーは保存しないでください。
+
+3. **Deploy workflow を追加します**。トリガーは `main` での CI の完了と手動実行です。
+
+   ```yaml
+   on:
+     workflow_run: { workflows: [CI], types: [completed], branches: [main] }
+     workflow_dispatch:
+       inputs: { stage: { type: string, required: true } }
+
+   jobs:
+     deploy:
+       if: ${{ github.event_name == 'workflow_dispatch' ||
+               (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
+       environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
+       concurrency: { group: 'deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}', cancel-in-progress: false }
+       steps:
+         - uses: actions/checkout@<sha>
+           with: { ref: '${{ github.event.workflow_run.head_sha || github.sha }}' }
+         # init, then: pnpm trivy, configure credentials (OIDC), synth
+         - name: Check commit is still main's latest
+           id: freshness
+           if: ${{ github.event_name == 'workflow_run' }}
+           run: |
+             main_sha="$(git ls-remote --exit-code origin refs/heads/main | cut -f1)"
+             if [[ "$main_sha" == "$(git rev-parse HEAD)" ]]; then
+               echo "current=true" >> "$GITHUB_OUTPUT"
+             else
+               echo "::notice::Skipping deploy: no longer main's latest commit"
+               echo "current=false" >> "$GITHUB_OUTPUT"
+             fi
+         - name: Deploy
+           if: ${{ github.event_name != 'workflow_run' || steps.freshness.outputs.current == 'true' }}
+           run: pnpm nx run @your-scope/infra:deploy-ci "$STAGE/*" --role-arn "$AWS_EXECUTION_ROLE_ARN"
+   ```
+
+   最新かどうかのチェックは concurrency のスロットの *内側* にあるので、実行が別の実行の後ろで待っていた場合でも、
+   デプロイ直前の `main` を反映します。
+
+4. 開発ステージの **自動デプロイをオンにします**。**Settings → Secrets and
+   variables → Actions → Variables** で、リポジトリ変数 `AUTO_DEPLOY_STAGE` を開発ステージの名前で追加します。
+
+5. **本番を保護します。** **Settings → Environments** で本番ステージの environment を開き、
+   **Required reviewers** を追加します。本番にデプロイするには、**Actions → Deploy → Run
+   workflow** を開いて本番ステージを入力します。するとジョブは承認を待ちます。
+
+</Steps>
+
+## 動作を確認する
+
+何か PR をマージします。CI が実行され、続いて **Deploy** が開発ステージで自動的に始まります。古いコミットで
+CI を手動でもう一度実行すると、Deploy は `Skipping deploy: no longer main's latest commit` とログに出し、
+何も出荷しません。
+
+<Aside type="note">
+エージェントがデプロイすることはなく、これらのロールを目にすることもありません。エージェントの会話が持っているのは GitHub のトークンだけです。
+デプロイロールを引き受けるのは、`main` から、そのステージの environment で実行される workflow だけです。
+</Aside>
+
+次へ: これで、あなたのリポジトリには、このリポジトリのフォークが持っているものがすべて揃いました。フォークの代わりに自分のリポジトリを使って、
+[2. リポジトリを設定する](../../setup/github-repository/) から続けてください。

@@ -1,0 +1,99 @@
+---
+title: 5. グルースクリプト
+description: どの issue を開くか、いつエージェントを差し戻すか、いつ止めるかを決める、ユニットテスト済みのスクリプトを追加します。
+sidebar:
+  order: 5
+---
+
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
+
+**このステップで得られるもの:** 6 つの Nx ターゲットと、通過する 143 件のユニットテストを持つ `common-scripts` プロジェクト。
+ステップ 6 と 7 の workflow は、これらのターゲットを呼び出すだけです。
+
+<Steps>
+
+1. **プロジェクトを作成します。** このリポジトリから `packages/common/scripts/`（その
+   `package.json`、`project.json`、`tsconfig*.json`、`vitest.config.mts`）をコピーし、
+   例のアプリに属する `src/dynamodb/` を削除します。`package.json` と `project.json`、そして
+   `vitest.config.mts` の `name` で、名前を `@your-scope/common-scripts` に変更します。生成したい場合は、
+   Nx Plugin for AWS で生成した TypeScript プロジェクトも同じ形をしています。
+
+2. このリポジトリの `packages/common/scripts/src/` から **4 つのグルーフォルダーをコピーします**。
+
+   <FileTree>
+   - packages/common/scripts/src/
+     - agent-issues/ spec → issue: gate, discover, tasks, validate, issue, plan-issue, create-next-issue, main, validate-main、そしてアーカイブ用の archive, archive-specs, archive-main
+     - agent-ci/ CI → agent: plan, run, main
+     - agent-review/ review → agent: plan, run, main
+     - ui-screenshots/ スクリーンショットのルール: check, main
+   </FileTree>
+
+   これらが依存するのは Node の組み込みモジュールと `gh` CLI だけです。実行には `tsx` を使います。
+
+3. プロジェクトの `project.json` の `targets` の下に **ターゲットを追加します**。
+
+   ```json
+   "agent-issue":         { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/main.ts",    "cwd": "{projectRoot}" } },
+   "archive-specs":       { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/archive-main.ts", "cwd": "{projectRoot}" } },
+   "agent-ci-status":     { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-ci/main.ts",        "cwd": "{projectRoot}" } },
+   "agent-review-status": { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-review/main.ts",    "cwd": "{projectRoot}" } },
+   "ui-screenshots":      { "executor": "nx:run-commands", "options": { "command": "tsx src/ui-screenshots/main.ts",  "cwd": "{projectRoot}" } },
+   "validate-tasks":      { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/validate-main.ts", "cwd": "{projectRoot}" } }
+   ```
+
+4. [概要](../overview/) の決定のどれかを変えた場合は、**自分の構成に合わせて定数を変更します**。
+
+   | 定数 | ファイル | デフォルト |
+   | --- | --- | --- |
+   | `SPEC_READY_LABEL`, `AGENT_BRANCH_PREFIX` | `agent-issues/gate.ts` | `spec-ready`, `openhands/` |
+   | `AGENT_LABEL` | `agent-issues/issue.ts` | `openhands` |
+   | `AGENT_BRANCH`, `REVIEW_STATUS_CONTEXT`, `MAX_CI_FIX_ATTEMPTS` | `agent-ci/plan.ts` | `^openhands\/issue-\d+$`, `software-factory/review`, `5` |
+   | `MAX_REVIEW_FIX_ATTEMPTS`, `CHANGES_REQUESTED` | `agent-review/plan.ts` | `5`, `🔄 CHANGES REQUESTED` |
+   | `UI_SOURCE`, `SCENARIO`, `WAIVER_LABEL` | `ui-screenshots/check.ts` | ポータルと共有 UI の `.tsx`/`.css`, `packages/e2e/src/scenarios/*.e2e.ts`, `no-ui-screenshots` |
+
+   ほぼ確実に変更することになるのは `UI_SOURCE` です。自分のフロントエンドのソースを指すようにします。
+
+   <Aside type="caution">
+   `REVIEW_STATUS_CONTEXT` は変更しないでください。`software-factory/review` は、OpenHands の
+   issue から PR を作るワーカーが探すステータスです。別の名前にすると、エージェントは決して差し戻されません。
+   </Aside>
+
+5. **テストを実行します。**
+
+   ```bash
+   pnpm nx run @your-scope/common-scripts:test
+   ```
+
+</Steps>
+
+## 動作を確認する
+
+```text
+ Test Files  10 passed (10)
+      Tests  143 passed (143)
+```
+
+## ドライランを試す
+
+3 つのエージェントスクリプトはそれぞれ `GITHUB_EVENT_PATH` から GitHub のイベントを読み、
+`DRY_RUN=true` のときは判断を実行する代わりに出力します。実際のケースを再現するには、過去の workflow 実行の
+ペイロードを保存し、スクリプトにそれを指定します。
+
+```bash
+DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_PATH=./event.json \
+  pnpm nx run @your-scope/common-scripts:agent-ci-status
+```
+
+```json
+{
+  "pullRequest": 470,
+  "plan": {
+    "action": "send-back",
+    "attempt": 1,
+    "label": "ci-fix-1",
+    "description": "CI failed (fix attempt 1 of 5): E2E tests (4/4)"
+  }
+}
+```
+
+次へ: [6. PR チェックと CI](../pr-checks-and-ci/)。

@@ -1,0 +1,143 @@
+---
+title: spec 到 issue
+description: 一份合并的 spec，以及此后每个合并的智能体 PR，如何打开下一个实现 issue。
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+缺口 1 和 7：没有东西把完成的 spec 变成智能体的工作，而合并智能体的 PR 也不会启动下一个阶段。Discava
+用一个 workflow（**Agent Issues**）及其背后的脚本同时填补了这两处缺口。
+
+## 何时运行
+
+`.github/workflows/agent-issues.yml` 监听指向 `main` 的 pull request 被 `closed` 或 `labeled`，外加一个带
+`spec_folder` 输入的手动 `workflow_dispatch`。job 只在以下情况运行：
+
+| 事件 | 条件 | 含义 |
+| --- | --- | --- |
+| PR 关闭 | 已合并，并且带有 `spec-ready` 标签 | 一份 spec 获得批准：打开第一个 issue |
+| PR 关闭 | 已合并，并且分支以 `openhands/` 开头 | 一个智能体 PR 落地了：打开下一个 issue |
+| PR 加标签 | 已经合并，并且标签是 `spec-ready` | 有人在合并前忘了加标签 |
+| 手动运行 | 一个 spec 文件夹名 | 手动重启一条链条 |
+
+其他任何已合并的 PR 都会被忽略，[即使它修改了 `specs/`](../../concepts/one-phase-at-a-time/#什么会打开下一个-issue)。
+
+job 检出的是**合并 commit**，因此它能看到这个 PR 刚刚做的勾选。它的并发组按 PR 划分，绝不是全局的：全局
+并发组只保留最新的一个待处理运行，因此两次时间接近的合并会相互取消。
+
+## 脚本做了什么
+
+```d2
+direction: right
+
+merged: 已合并的 PR {shape: page}
+gate: "智能体分支，\n或 spec-ready？" {shape: diamond}
+ignore: 忽略
+folder: 找到 spec 文件夹
+valid: "tasks.md 有效？" {shape: diamond}
+fail: 让运行失败
+next: "还有剩余智能体\n任务的下一组？" {shape: diamond}
+done: 完成
+exists: "它的 issue\n已经存在？" {shape: diamond}
+stalled: 在 PR 上评论
+open: 打开 issue {shape: page}
+
+merged -> gate
+gate -> ignore: 否
+gate -> folder: 是
+folder -> valid
+valid -> fail: 否
+valid -> next: 是
+next -> done: 否
+next -> exists: 是
+exists -> stalled: 是
+exists -> open: 否
+```
+
+`pnpm nx run @discava/common-scripts:agent-issue`，位于 `src/agent-issues/`：
+
+1. **关卡**（`gate.ts`）。`decide()` 把 PR 分类为 `spec`、`implementation` 或 `ignore`。
+2. **找到 spec 文件夹**（`discover.ts`）。对于智能体 PR，它读取该 PR 关闭的 issue，并从该 issue 的隐藏
+   标记中取得文件夹。否则，它使用 PR 修改过的 `specs/<folder>/` 路径。
+3. **校验**（`validate.ts`）。未通过格式检查的 `tasks.md` 会让运行失败，而不是把错误的任务交给智能体。
+4. **对阶段分组**（`tasks.ts`）：直到并包括第一个 `User Story` 阶段的所有内容为一组，之后的每个阶段
+   各自单独一组。
+5. **选出下一组**：第一个含有未勾选且不是 **(human)** 的任务的组。
+6. **检查是否已有 issue。** 每个 issue 正文都以一个标记开头，例如
+   `<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->`。如果该组的 issue 已经存在（无论
+   打开还是关闭），脚本就不会再打开一个，而是在 PR 上评论，例如：
+
+   > The next implementation issue for `specs/…/` was not opened: an issue for "Ratings in search"
+   > already exists, and these tasks in its `tasks.md` are not ticked: T017, T018.
+
+7. **渲染并创建 issue**（`issue.ts`），带有 `openhands` 标签。
+
+## 它打开的 issue
+
+一个真实的例子，[#466](https://github.com/AlexTo/discava/issues/466)：
+
+```markdown
+<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->
+
+## Spec
+
+- Spec folder: `specs/20261116-013307-course-reviews/` (read `spec.md`, `plan.md`, `tasks.md`,
+  `data-model.md` and `contracts/`)
+- Parent issue: #279
+
+## Scope
+
+Tasks `T015` to `T019` of `tasks.md`: every task under Phase 4: Ratings in search (PR 4). Do not
+start tasks outside these phases.
+
+## Instructions for the agent
+
+- Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
+- …the rest of the template's bullets, with `#<parent>` filled in as `#279`
+```
+
+标题是一个由文件夹和阶段构建出的 Conventional Commit 头部：
+`feat(course-reviews): ratings in search (PR 4)`。它的主题是小写的，并且最多 100 个字符，因此智能体
+可以把它复用为自己 PR 的标题，而不会让 commitlint 失败。第一组会加上
+` (with setup and foundations)`。
+
+<Aside type="note">
+常驻指令是在运行时从 issue 模板中读取的，所以修改它们只有一个地方。编辑
+`.github/ISSUE_TEMPLATE/implement-phase.md` 会改变今后的每一个 issue。
+</Aside>
+
+## 试运行
+
+```bash
+DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=workflow_dispatch \
+  SPEC_FOLDER=20261116-013307-course-reviews \
+  pnpm nx run @discava/common-scripts:agent-issue
+```
+
+这会打印它将要打开的 issue 的标题和正文。它仍然会通过 `gh` 读取已有的 issue，所以你需要先登录。
+
+## 归档已完成的 spec
+
+第二个 workflow **Archive Specs**（`.github/workflows/archive-specs.yml`）为链条收尾。它在推送到 `main`
+并修改了某个活动中的 `specs/*/tasks.md` 时运行，也可以手动运行。它需要自己的触发条件，因为最后一个勾选
+通常是一个 **(human)** 任务，出现在一个被 Agent Issues 忽略的 PR 中。
+
+`pnpm nx run @discava/common-scripts:archive-specs`，位于 `src/agent-issues/archive-specs.ts`：
+
+1. 找出每个所有任务（包括 **(human)** 任务）都已勾选的活动 spec。
+2. 跳过有打开中的智能体 issue 的 spec，以及已经有过归档 PR 的 spec。不合并就关闭那个 PR，spec 就会
+   保持活动状态。
+3. 在分支 `archive-spec/<folder>` 上打开一个 PR，把该文件夹移到 `specs/_archive/`，并重写指向它以及
+   从它指出的链接。
+
+Agent Issues 会跳过 `specs/_archive/`，因此归档 PR 永远不会打开 issue。`Tasks format` 检查也会读取已归档
+的 `tasks.md` 文件，如果其中有未勾选的任务就会失败。
+
+<Aside type="caution">
+该 workflow 需要开启仓库设置 "Allow GitHub Actions to create and approve pull
+requests"。用该 workflow 的 token 打开的 PR 不会启动 PR Checks：把每个 PR 关闭再重新打开即可运行它们。
+</Aside>
+
+下一步：[反馈循环](../feedback-loops/)。

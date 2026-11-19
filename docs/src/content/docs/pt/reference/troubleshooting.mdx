@@ -1,0 +1,45 @@
+---
+title: Solução de problemas
+description: Sintomas, o que está acontecendo e o que fazer.
+sidebar:
+  order: 5
+---
+
+## A cadeia não começa ou não continua
+
+| Sintoma | O que está acontecendo | O que fazer |
+| --- | --- | --- |
+| PR de spec mergeado, nenhuma issue | O PR não tinha o label `spec-ready` quando foi mergeado | Adicione `spec-ready` ao PR mergeado. O Agent Issues também roda em `labeled` |
+| O Agent Issues rodou: `No issue created: it is not an agent branch and has no "spec-ready" label` | O mesmo, ou o PR era um PR humano, que é ignorado de propósito | Como acima, ou rode o Agent Issues manualmente com a pasta da spec |
+| O Agent Issues falhou: `tasks.md is not in the format the workflow reads` | O check de formato foi pulado ou ignorado no PR de spec | Corrija o `tasks.md` em um PR, depois rode o Agent Issues manualmente |
+| Um comentário: "the next implementation issue … was not opened: an issue for … already exists" | A issue da fase existe, mas algumas tasks de agent dela não estão marcadas | Marque-as se estiverem feitas, ou conclua-as. Depois rode o Agent Issues manualmente |
+| O Agent Issues registrou `no spec folder with a tasks.md was found` | A issue do PR do agent mergeado não tem marcador, e o PR não mudou nenhum arquivo em `specs/` | Rode o Agent Issues manualmente com a pasta da spec |
+| A última fase foi mergeada e nada foi aberto | Correto. As únicas tasks restantes são **(human)**, ou não há nenhuma | Pronto |
+
+## O agent não pega a issue ou não revisa
+
+| Sintoma | O que está acontecendo | O que fazer |
+| --- | --- | --- |
+| Issue com label nunca é pega | O Agent Canvas está fora do ar, a automação está desativada, ou o token não consegue ler o repositório | Confira se o `agent-canvas` está rodando e a automação está ativada. Confira o log da última execução da automação |
+| PR vermelho, `ci-fix-1` adicionado, o agent nunca revisa | O worker só revisa exatamente `openhands/issue-<n>`, ou a issue foi fechada | Confira o nome da branch. Reabra a issue |
+| Nenhum label `ci-fix-*` depois de uma execução vermelha | O Agent CI Status não rodou, ou o ignorou (veja o aviso dele) | Abra a execução do Agent CI Status e leia o aviso, por exemplo `the pull request has a newer commit than this run` |
+| O agent revisa, depois nada faz review do novo head | O agent não aplicou de novo `openhands-review` | Aplique de novo manualmente |
+| Push rejeitado: `refusing to allow a Personal Access Token to create or update workflow` | O token não tem a permissão de workflows, e a branch mexe em `.github/workflows/` (muitas vezes por um merge da `main`) | Adicione a permissão. O próximo polling tenta de novo |
+| `ci-fix-exhausted` | Cinco correções não convergiram | Leia a última falha. Geralmente a spec ou o plan está ambíguo. Corrija, remova os labels, rode de novo |
+
+## Reviews
+
+| Sintoma | O que está acontecendo | O que fazer |
+| --- | --- | --- |
+| "⏳ Review waiting on checks" e nenhum review | Um check no head não terminou, ou está preso na fila | Encontre o check pendente. Um check obrigatório que nunca roda bloqueia o review para sempre |
+| O review diz `🔄 CHANGES REQUESTED`, nenhum label `review-fix-*` | O review não tem o marcador da execução, não é de uma conta com acesso de escrita, ou o PR já avançou | Leia o aviso do Agent Review Status |
+| Os reviews aparecem como "Commented", não "Approved" | O revisor posta com a mesma conta que abriu o PR, e o GitHub não permite autoaprovação | Esperado com uma só conta. Use uma conta de máquina para os agents |
+
+## Checks
+
+| Sintoma | O que está acontecendo | O que fazer |
+| --- | --- | --- |
+| `UI Screenshots` falha em um refactor | A regra não consegue distinguir uma mudança visível de uma invisível | Um maintainer adiciona `no-ui-screenshots` e roda o check de novo |
+| O job e2e de todo PR baixa o Chromium | O cache só é salvo na `main` | Mantenha o job `playwright-cache` do CI, com a mesma key do PR Checks |
+| `Check for mutations` falha na `main` | Algo gerou arquivos que o PR não commitou | Rode `pnpm build` localmente e faça commit do diff |
+| `Resource not accessible by integration` ao adicionar labels | O token do workflow pode escrever em issues mas não em pull requests | Adicione `pull-requests: write` ao workflow |

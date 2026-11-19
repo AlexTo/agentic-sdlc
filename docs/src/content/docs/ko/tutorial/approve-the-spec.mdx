@@ -1,0 +1,53 @@
+---
+title: 3. Spec 승인하기
+description: spec PR을 코드처럼 리뷰하고, spec-ready label을 붙여 에이전트를 시작합니다.
+sidebar:
+  order: 3
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**현재 위치:** 🧑 사람 게이트 #1. **산출물:** merge된 spec PR과 첫 번째 구현 issue.
+
+<Steps>
+
+1. 브랜치를 push한 뒤 GitHub에서 해당 브랜치의 pull request를 엽니다.
+
+   ```bash
+   git add specs/ && git commit -m "docs(specs): add note tags spec"
+   git push -u origin spec/note-tags
+   ```
+
+2. 코드를 리뷰하듯 리뷰합니다. `spec.md`를 먼저 읽고, 그다음 `plan.md`를 읽고, `tasks.md`는 훑어봅니다.
+   스스로 물어보세요.
+
+   - spec이 실제로 원하는 것을 말하고 있나요?
+   - 각 phase가 한 번에 리뷰할 수 있을 만큼 작나요?
+   - plan에 코드 리뷰였다면 거절했을 내용이 있나요?
+
+   무언가를 바꾸려면 PR에 댓글을 남깁니다. 에이전트도 댓글을 읽으므로 수정을 요청할 수 있습니다.
+
+   여기서 business analyst나 product owner를 참여시키세요. `spec.md`는 평이한 언어로 쓰여 있으므로,
+   여러분이 plan을 확인하는 동안 그들은 PR에서 spec을 리뷰할 수 있습니다.
+   [사람 게이트](../../concepts/human-gates/#이제-이것이-주된-병목이다)를 참고하세요.
+
+3. PR에 `spec-ready` label을 추가한 뒤 merge합니다.
+
+   이 PR은 여러분이 열었으므로 GitHub는 승인을 허용하지 않습니다. branch protection이 켜져 있다면
+   **Merge without waiting for requirements to be met**에 체크해 저장소 admin으로 merge합니다.
+
+</Steps>
+
+## 아무도 손대지 않아도 다음에 일어나는 일
+
+**Agent Issues** workflow가 `spec-ready`가 붙은 merge된 PR을 감지합니다. `tasks.md`를 읽고,
+완료되지 않은 첫 번째 phase를 가져와
+[구현 템플릿](https://github.com/AlexTo/agentic-sdlc/blob/main/.github/ISSUE_TEMPLATE/implement-phase.md)으로 issue를 엽니다.
+issue에는 spec 폴더, task 범위 `T001`부터 `T003`, 그리고 에이전트가 따라야 할 규칙이 들어갑니다. 그리고
+시작 신호인 `openhands` label을 추가합니다.
+
+<Aside type="note">
+label을 깜빡했나요? 이미 merge된 PR에 `spec-ready`를 추가하세요.
+</Aside>
+
+이제 리뷰할 것이 생길 때까지 여러분은 신경 쓸 필요가 없습니다. 다음: [에이전트의 구현](../agent-implements/).

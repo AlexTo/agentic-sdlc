@@ -1,0 +1,114 @@
+---
+title: Les principes
+description: Les neuf idées sur lesquelles repose le workflow, de la plus importante à la moins importante.
+sidebar:
+  order: 1
+---
+
+import { Icon } from '@astrojs/starlight/components';
+
+Tout dans ce workflow découle d'un seul geste : **sortir le développeur de la boucle et le placer à
+ses deux extrémités.** Les humains décident *quoi* construire et *si c'est bon*. Les agents font tout
+ce qui se trouve entre les deux, à travers le processus GitHub habituel.
+
+Les principes sont classés par ordre d'importance. Si vous ne pouvez en appliquer que quelques-uns,
+commencez par le haut.
+
+## 1. La vérification d'abord : donner des mains et des yeux à l'agent<Icon name="magnifier" class="heading-icon" />
+
+Un agent qui ne peut pas lancer l'application et voir ce qu'il a construit devine, et tous les autres
+principes ne font qu'organiser ses suppositions. Du code qui compile et passe ses tests unitaires peut
+quand même échouer pour l'utilisateur, donc l'agent doit **exécuter ce qu'il a construit, du back end
+au front end**, comme le ferait une personne :
+
+- **Les mains :** démarrer toute l'application sur une stack locale sans compte cloud, appeler l'API,
+  se connecter, parcourir le flux dans un vrai navigateur, et déclencher le travail en arrière-plan
+  qui se trouve derrière.
+- **Les yeux :** lire ce qui revient : les réponses, les logs, les données laissées dans la base, et
+  des captures d'écran de chaque état qu'un relecteur voudrait voir.
+
+L'agent ne fait pas cela sur sa propre machine. Il écrit les scénarios e2e, et la CI les exécute sur
+chaque PR contre une stack locale neuve. Les résultats, les échecs d'invariants et les captures
+d'écran reviennent sur la PR, donc l'agent détecte ses propres erreurs et chaque PR arrive avec des
+preuves.
+
+Prévoyez cela dès le premier jour : chaque service cloud a besoin d'un équivalent local, chaque flux
+utilisateur d'un scénario e2e, et chaque état de l'UI d'une capture d'écran. Tout ce que l'agent ne
+peut pas exécuter est une tâche qu'une personne doit vérifier.
+
+## 2. La spec est la source de vérité<Icon name="document" class="heading-icon" />
+
+Une fonctionnalité commence par `spec.md`, `plan.md` et `tasks.md`, relus comme du code. L'agent
+construit à partir d'eux. Pour changer un comportement, changez la spec et régénérez le plan et les
+tâches. Ne corrigez pas le code à la main en laissant la spec devenir obsolète.
+
+## 3. Ce sont les contrôles automatisés qui font les retours, pas vous<Icon name="approve-check-circle" class="heading-icon" />
+
+Lint, typecheck, tests unitaires, invariants, tests e2e, tests de concurrence, captures d'écran et un
+agent relecteur s'exécutent sur chaque PR. Un résultat rouge retourne directement à l'agent qui a
+écrit le changement. Personne ne copie-colle de message d'erreur.
+
+## 4. Les humains gardent les deux décisions qui comptent<Icon name="star" class="heading-icon" />
+
+1. **Approuver la spec.** Merger la PR de spec avec le label `spec-ready` donne le feu vert.
+2. **Approuver le résultat.** Une personne fait la revue finale et merge chaque PR.
+
+## 5. Rendre les règles et les skills déterministes<Icon name="setting" class="heading-icon" />
+
+Une règle écrite seulement dans `AGENTS.md` ou dans la constitution est une demande. L'agent peut la
+manquer, la comprendre de deux façons, ou l'oublier au cours d'une longue session. Partout où un
+script peut vérifier une règle, écrivez le script, exécutez-le dans un hook ou un check de PR, et
+gardez le texte comme explication. Un check en échec dit à l'agent exactement ce qui ne va pas et où,
+par la même boucle de retour que n'importe quel autre résultat rouge.
+
+Discava procède ainsi partout :
+
+| Règle écrite | Ce qui la fait respecter |
+| --- | --- |
+| `tasks.md` suit un format fixe | Le check de PR `Tasks format`. Sans lui, une phase mal formée est ignorée sans bruit |
+| Un changement d'UI prend des captures d'écran dans son scénario e2e | Le check `UI Screenshots` échoue si le balisage ou les styles ont changé et qu'aucun scénario n'a gagné d'appel `screenshot(`. Un mainteneur peut l'en dispenser avec `no-ui-screenshots` |
+| Une règle qui porte sur plusieurs enregistrements a besoin d'un invariant | Le check `Invariant coverage` fait échouer une PR qui change qui écrit dans la table principale sans toucher aux vérifications d'invariants dans `helpers/invariants/`. Un hook pre-push tient sa carte des écrivains à jour. Un mainteneur peut l'en dispenser avec `no-new-invariant` |
+| Conventional Commits, aucun secret commité | commitlint dans un hook `commit-msg`, `git-secrets` à chaque commit |
+| Chaque étape Speckit a sa propre branche et son propre commit | Les skills exécutent des scripts pour cela, depuis les hooks d'extension de Speckit, que l'agent s'en souvienne ou non |
+
+Si vous écrivez deux fois la même correction en revue, il manque probablement un check.
+
+## 6. La glue est du code, pas des prompts<Icon name="puzzle" class="heading-icon" />
+
+Il en va de même entre les étapes. Tout ce qui décide de *ce qui se passe ensuite* (quelle issue
+s'ouvre, si l'agent repart au travail, quand s'arrêter) est un script avec des tests unitaires,
+exécuté par un workflow. On ne demande à l'agent que ce qui exige du jugement : écrire le code, et le
+relire. Un prompt peut être ignoré. Un workflow, non.
+
+## 7. Une autonomie bornée<Icon name="padlock" class="heading-icon" />
+
+L'agent ne peut pas merger, ne peut pas modifier les workflows, ne peut pas toucher aux identifiants
+cloud, et ne peut pas affaiblir un test pour passer au vert. Chaque boucle de correction est limitée à
+cinq tentatives. Ensuite, elle s'arrête et demande à une personne.
+
+## 8. De petites unités de travail bien délimitées<Icon name="list-format" class="heading-icon" />
+
+Une spec se découpe en phases. Chaque groupe de phases correspond à une issue et à une pull request,
+avec une plage de tâches dont l'agent ne doit pas sortir. Les petites PR coûtent peu à relire et peu à
+jeter.
+
+## 9. Chaque étape laisse un artefact<Icon name="notes" class="heading-icon" />
+
+L'intention vit dans la spec, le périmètre dans l'issue, l'historique dans la pull request, et la
+raison de l'arrêt d'une exécution dans un label ou un commentaire. Rien ne vit seulement dans une
+fenêtre de chat ou dans la tête de quelqu'un, donc un nouveau coéquipier ou un nouvel agent peut
+reprendre là où le précédent s'est arrêté.
+
+## Pour aller plus loin
+
+| Principe | Page |
+| --- | --- |
+| 1. Vérification | [Couches de confiance](../layers-of-trust/#cest-la-vérification-qui-compte-le-plus), [La stack locale dans Discava](../../discava/local-stack/) |
+| 2. La spec comme source de vérité | [Développement piloté par les specs](../spec-driven-development/) |
+| 3. Contrôles automatisés | [Couches de confiance](../layers-of-trust/), [Boucles de retour](../feedback-loops/) |
+| 4. Décisions humaines | [Contrôles humains](../human-gates/) |
+| 5. Règles et skills déterministes | [Checks de PR dans Discava](../../discava/pr-checks/), [Constitution et consignes](../../discava/constitution-and-guidance/) |
+| 6. La glue est du code | [La glue manquante](../the-missing-glue/) |
+| 7. Autonomie bornée | [Boucles de retour](../feedback-loops/), [Contrôles humains](../human-gates/#ce-que-les-agents-ne-doivent-jamais-faire) |
+| 8. Petites unités | [Une phase à la fois](../one-phase-at-a-time/) |
+| 9. Artefacts | [Référence : labels](../../reference/labels/), [statuts et marqueurs](../../reference/statuses-and-markers/) |

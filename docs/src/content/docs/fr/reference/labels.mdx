@@ -1,0 +1,29 @@
+---
+title: Labels
+description: Chaque label que le workflow lit ou écrit, qui le pose, et ce qu'il signifie.
+sidebar:
+  order: 1
+---
+
+| Label | Sur | Posé par | Lu par | Signification |
+| --- | --- | --- | --- | --- |
+| `spec-ready` | PR de spec | Une personne | Agent Issues | Merger cette PR démarre l'implémentation. L'ajouter à une PR déjà mergée aussi |
+| `openhands` | Issue | Agent Issues, ou une personne | Automatisation issue-to-PR | Implémenter cette issue. Retirez-le et remettez-le pour un nouvel essai sur une nouvelle branche |
+| `openhands-review` | PR | L'agent d'implémentation, après avoir ouvert ou révisé | Automatisation de code review | Relire le head actuel de cette PR |
+| `ci-fix-1` … `ci-fix-5` | PR d'agent | Agent CI Status | Agent CI Status | Ce nombre de corrections automatiques pour une CI en rouge a été utilisé |
+| `ci-fix-exhausted` | PR d'agent | Agent CI Status | Agent CI Status, personnes | Les corrections CI sont épuisées. Une personne prend le relais |
+| `review-fix-1` … `review-fix-5` | PR d'agent | Agent Review Status | Agent Review Status | Ce nombre de corrections pour « changes requested » a été utilisé |
+| `review-fix-exhausted` | PR d'agent | Agent Review Status | Agent Review Status, personnes | Les corrections de review sont épuisées. Une personne prend le relais |
+| `no-ui-screenshots` | PR | Un mainteneur | UI Screenshots | Lever la règle des captures d'écran : la modification d'UI n'a rien à montrer. Relancez le check après l'avoir ajouté |
+| `priority:high` | Issue | Une personne | Automatisation issue-to-PR | Démarrer cette issue avant les autres du même passage |
+
+## Réinitialiser une boucle
+
+Pour laisser l'agent réessayer après avoir ajouté des indications, retirez à la fois les labels de compteur et le
+label `*-exhausted`, puis :
+
+- **Boucle CI :** relancez l'exécution de PR Checks qui a échoué.
+- **Boucle de review :** redemandez une review, ou remettez `openhands-review`.
+
+Le compte est le label `*-fix-<n>` le plus élevé de la PR, donc retirer seulement le label `exhausted` ne
+suffit pas.

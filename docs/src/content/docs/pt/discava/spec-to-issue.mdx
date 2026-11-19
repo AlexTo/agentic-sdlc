@@ -1,0 +1,150 @@
+---
+title: Da spec à issue
+description: Como uma spec mergeada, e cada PR de agent mergeado depois dela, abre a próxima issue de implementação.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Lacunas 1 e 7: nada transforma uma spec concluída em trabalho para o agent, e fazer merge do PR do agent
+não inicia a próxima fase. O Discava preenche as duas com um workflow, o **Agent Issues**, e o
+script por trás dele.
+
+## Quando ele roda
+
+O `.github/workflows/agent-issues.yml` escuta pull requests para a `main` sendo `closed` ou
+`labeled`, além de um `workflow_dispatch` manual com um input `spec_folder`. O job só roda quando:
+
+| Evento | Condição | Significado |
+| --- | --- | --- |
+| PR fechado | mergeado, e com o label `spec-ready` | Uma spec foi aprovada: abrir a primeira issue |
+| PR fechado | mergeado, e a branch começa com `openhands/` | Um PR de agent entrou: abrir a próxima issue |
+| PR com label | já mergeado, e o label é `spec-ready` | Alguém esqueceu o label antes do merge |
+| Execução manual | um nome de pasta de spec | Reiniciar uma cadeia à mão |
+
+Qualquer outro PR mergeado é ignorado, [mesmo um que mexa em `specs/`](../../concepts/one-phase-at-a-time/#o-que-abre-a-próxima-issue).
+
+O job faz checkout do **merge commit**, então vê as marcações que o PR acabou de fazer. O grupo de concorrência
+dele é por PR, nunca global: um grupo global mantém só a execução pendente mais nova, então dois merges
+próximos um do outro cancelariam um ao outro.
+
+## O que o script faz
+
+```d2
+direction: right
+
+merged: PR mergeado {shape: page}
+gate: "branch de agent,\nou spec-ready?" {shape: diamond}
+ignore: ignorar
+folder: encontrar a pasta da spec
+valid: "tasks.md válido?" {shape: diamond}
+fail: reprovar a execução
+next: "próximo grupo com\ntarefas de agent?" {shape: diamond}
+done: pronto
+exists: "já existe issue\npara ele?" {shape: diamond}
+stalled: comentar no PR
+open: abrir a issue {shape: page}
+
+merged -> gate
+gate -> ignore: não
+gate -> folder: sim
+folder -> valid
+valid -> fail: não
+valid -> next: sim
+next -> done: não
+next -> exists: sim
+exists -> stalled: sim
+exists -> open: não
+```
+
+`pnpm nx run @discava/common-scripts:agent-issue`, em `src/agent-issues/`:
+
+1. **Gate** (`gate.ts`). O `decide()` classifica o PR como `spec`, `implementation` ou `ignore`.
+2. **Encontrar a pasta da spec** (`discover.ts`). Para um PR de agent, ele lê a issue que o PR fecha
+   e pega a pasta do marcador oculto dessa issue. Caso contrário, usa os caminhos `specs/<folder>/`
+   que o PR alterou.
+3. **Validar** (`validate.ts`). Um `tasks.md` que não passa no check de formato reprova a execução, em vez
+   de entregar as tarefas erradas ao agent.
+4. **Agrupar as fases** (`tasks.ts`): tudo até e incluindo a primeira fase `User Story`,
+   depois cada fase seguinte sozinha.
+5. **Escolher o próximo grupo**: o primeiro com uma tarefa não marcada que não seja **(human)**.
+6. **Verificar se já existe uma issue.** Todo corpo de issue começa com um marcador como
+   `<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->`. Se uma issue para esse grupo
+   já existe (aberta ou fechada), o script não abre outra. Em vez disso, ele comenta no PR,
+   por exemplo:
+
+   > The next implementation issue for `specs/…/` was not opened: an issue for "Ratings in search"
+   > already exists, and these tasks in its `tasks.md` are not ticked: T017, T018.
+
+7. **Renderizar e criar a issue** (`issue.ts`), com o label `openhands`.
+
+## A issue que ele abre
+
+Uma real, a [#466](https://github.com/AlexTo/discava/issues/466):
+
+```markdown
+<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->
+
+## Spec
+
+- Spec folder: `specs/20261116-013307-course-reviews/` (read `spec.md`, `plan.md`, `tasks.md`,
+  `data-model.md` and `contracts/`)
+- Parent issue: #279
+
+## Scope
+
+Tasks `T015` to `T019` of `tasks.md`: every task under Phase 4: Ratings in search (PR 4). Do not
+start tasks outside these phases.
+
+## Instructions for the agent
+
+- Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
+- …the rest of the template's bullets, with `#<parent>` filled in as `#279`
+```
+
+O título é um cabeçalho de Conventional Commit montado a partir da pasta e da fase:
+`feat(course-reviews): ratings in search (PR 4)`. Ele tem o assunto em minúsculas e no máximo 100
+caracteres, para que o agent possa reutilizá-lo no seu PR sem falhar no commitlint. O primeiro grupo acrescenta
+` (with setup and foundations)`.
+
+<Aside type="note">
+As instruções permanentes são lidas do template de issue no momento da execução, então há um só lugar para
+mudá-las. Editar o `.github/ISSUE_TEMPLATE/implement-phase.md` muda todas as issues futuras.
+</Aside>
+
+## Dry run
+
+```bash
+DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=workflow_dispatch \
+  SPEC_FOLDER=20261116-013307-course-reviews \
+  pnpm nx run @discava/common-scripts:agent-issue
+```
+
+Isso imprime o título e o corpo da issue que ele abriria. Ele ainda lê as issues existentes pelo
+`gh`, então você precisa estar autenticado.
+
+## Arquivando uma spec concluída
+
+Um segundo workflow, o **Archive Specs** (`.github/workflows/archive-specs.yml`), fecha a cadeia. Ele
+roda em um push na `main` que muda um `specs/*/tasks.md` ativo, e à mão. Ele precisa de um gatilho
+próprio porque a última marcação geralmente é de uma tarefa **(human)**, em um PR que o Agent Issues ignora.
+
+`pnpm nx run @discava/common-scripts:archive-specs`, em `src/agent-issues/archive-specs.ts`:
+
+1. Encontra cada spec ativa com todas as tarefas marcadas, incluindo as **(human)**.
+2. Pula uma spec com uma issue de agent aberta, e uma que já teve um PR de arquivamento. Fechar esse PR
+   sem merge mantém a spec ativa.
+3. Abre um PR na branch `archive-spec/<folder>` que move a pasta para `specs/_archive/` e
+   reescreve os links para ela e a partir dela.
+
+O Agent Issues ignora `specs/_archive/`, então um PR de arquivamento nunca abre uma issue. O check `Tasks format`
+também lê os arquivos `tasks.md` arquivados, e falha se algum tiver uma tarefa não marcada.
+
+<Aside type="caution">
+O workflow precisa da configuração do repositório "Allow GitHub Actions to create and approve pull
+requests". PRs abertos com o token do workflow não iniciam o PR Checks: feche e reabra cada um
+para rodá-los.
+</Aside>
+
+Próximo: [Feedback loops](../feedback-loops/).

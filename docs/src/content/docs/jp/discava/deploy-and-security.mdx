@@ -1,0 +1,95 @@
+---
+title: デプロイとセキュリティ
+description: グリーンの main がひとりでにデプロイされる仕組みと、漏れたシークレットや脆弱な依存関係を止めるスキャン。
+sidebar:
+  order: 9
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+ギャップ 9 と 10: マージしても何もリリースされず、エージェントはシークレットをコミットしたり、脆弱なパッケージを
+取り込んだりしかねません。Discava はどちらも GitHub Actions で扱い、長期間有効なクラウドの認証情報はどこにも
+ありません。
+
+## デプロイ
+
+`.github/workflows/deploy.yml` は、`main` で **CI** がグリーンで完了したとき、または任意のステージに対して手動で
+実行されます。各ステージには専用の GitHub environment と専用の concurrency グループがあるので、1 つのステージへの
+2 つのデプロイが重なることはありません。ワークフローの抜粋は [導入: デプロイ](../../adopt/deploy/) にあります。
+
+```d2
+direction: right
+
+ci: main で CI がグリーン
+manual: 手動実行
+approve: "必須レビュアー\n(本番のみ)" {shape: diamond}
+deploy: "Deploy ワークフロー\nTrivy、OIDC ロール、synth、\nまだ main の最新?、cdk deploy"
+dev: 開発ステージ {shape: cylinder}
+prod: 本番ステージ {shape: cylinder}
+
+ci -> deploy: AUTO_DEPLOY_STAGE
+manual -> approve -> deploy
+deploy -> dev
+deploy -> prod
+```
+
+手順を順に示します。
+
+1. **CI が検証したコミットをチェックアウトする** (`workflow_run.head_sha`)。今の `main` が何であるかは関係ありません。
+2. **ステージが存在することを確認する**。`stages.config.ts` にあるかを確認し、タイプミスがわかりにくい
+   認証情報エラーではなく、はっきりと失敗するようにします。
+3. **ステージの上書きを渡す。** `DISCAVA_DEVELOPMENT_*` のような名前の GitHub environment の変数は、synth の
+   環境変数になります。コミットすべきでないカスタムドメインなどのためです。
+4. **Trivy スキャン。** CI と同じスキャンを、ゲートとして実行します。
+5. **デプロイロールを引き受ける**。GitHub OIDC (`aws-actions/configure-aws-credentials`) を使います。アクセス
+   キーはどこにも保存されません。
+6. **synth する**。ステージの permissions boundary を適用します。
+7. **そのコミットがまだ `main` の最新かを確認する。** これは concurrency のスロット内で実行されます。古い CI の
+   再実行や、新しいデプロイの後ろで待っていた実行は、古いコードをデプロイする代わりに通知付きでスキップされます。
+   手動実行はこのチェックをスキップするので、ロールバックができます。
+8. **デプロイする**。CDK で、CloudFormation にスコープを絞った実行ロール (`--role-arn`) を渡します。
+
+`AUTO_DEPLOY_STAGE` はリポジトリ変数です。Discava はこれを `discava-development` に設定しているので、グリーンの
+`main` はすべて開発ステージに届きます。設定しなければ、人の操作なしには何もデプロイされません。
+
+### ステージのセットアップ
+
+`scripts/setup-stage.sh` は、ワークフローを実行するリポジトリのクローンから、ステージごとに 1 回実行します。
+すべてを対話的に尋ね、検出できるものはデフォルト値にします。作成するものは次のとおりです。
+
+- AWS アカウント内の GitHub OIDC プロバイダー
+- ワークフローが引き受ける **デプロイロール**。そのリポジトリと environment だけを信頼します
+- **CloudFormation の実行ロール** とそのマネージドポリシー。permissions boundary 付きで、スタックはそれを持つ
+  ロールしか作成できません
+- GitHub environment の `AWS_REGION`、`AWS_DEPLOY_ROLE_ARN`、`AWS_EXECUTION_ROLE_ARN` 変数、および任意で
+  `AUTO_DEPLOY_STAGE`
+- 任意で、カスタムドメイン。質問は 1 つだけで、ルートドメインです。各コンポーネントはその固定のサブドメインを
+  受け取り、スクリプトはそれぞれの発行済み証明書を探します。見つからないものがあれば、それを列挙し、何かを
+  変更する前に止まります。ドメインは GitHub environment にステージの上書きとして保存されます (上の手順 3)
+
+### 本番は人を待つ
+
+各ステージは、同じ名前の GitHub environment からデプロイされます。本番相当のステージでは、その environment に
+**required reviewers** を設定します。誰かが Actions の UI で承認するまでジョブは一時停止します。Discava はまだ
+ローンチしていないので、現在 environment があるのは `discava-development` だけで、自動的にデプロイされます。
+
+## セキュリティスキャン
+
+| スキャン | タイミング | ブロックするもの |
+| --- | --- | --- |
+| `git-secrets` (AWS のパターン) | `pre-commit` フック、ローカルのすべてのコミットで | AWS のキーを含むコミット |
+| Trivy、脆弱性とシークレット | `main` へのすべての push での `ci.yml` の `trivy` ジョブと、すべてのデプロイ前の `deploy.yml` | 修正可能な CRITICAL の脆弱性や、コミットされた HIGH/CRITICAL のシークレットを含むデプロイ |
+| checkov | インフラプロジェクトの `build` target の一部なので、すべての PR の `Checks (build)` で | 安全でない CDK リソースの設定 |
+| Dependabot | 毎週、npm と GitHub Actions、グループ化 | 古い依存関係と action の固定 |
+
+Trivy は `build` の一部ではなく、**独立した** CI ジョブとして実行されます。脆弱性データベースは毎日変わり、
+新しく公開された CVE は docs のデプロイをブロックせずに `main` に警告を出すべきだからです。受け入れた指摘は
+`.trivyignore` に 1 行 1 ID で列挙します。
+
+<Aside type="note">
+pre-commit フックは `lint-staged` (Biome) も実行し、どちらかのツールが作業ツリーを変更した場合はコミットを
+失敗させるので、エージェントはステージし直して再度コミットします。`commit-msg` は Conventional Commits の設定で
+commitlint を実行します。
+</Aside>
+
+次へ: [実際の機能](../a-real-feature/)。

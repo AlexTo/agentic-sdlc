@@ -1,0 +1,73 @@
+---
+title: tasks.md の形式
+description: Agent Issues workflow が読む厳密な形式、フェーズが issue になる仕組み、そしてすべての検証メッセージ。
+sidebar:
+  order: 4
+---
+
+## 形式
+
+```markdown
+# Tasks: Course ratings and reviews
+
+Free text, legends and notes anywhere. Fenced code blocks are ignored.
+
+## Phase 1: Setup
+- [x] T001 Create the review entity
+- [ ] T002 [P] Add the rating summary entity
+
+## Phase 2: Foundational
+- [ ] T003 Shared review writer in core-table helpers
+
+## Phase 3: User Story 1 - Leave a rating (Priority: P1) 🎯 MVP
+### Tests for User Story 1
+- [ ] T004 [P] [US1] Unit tests for rating rules
+### Implementation for User Story 1
+- [ ] T005 [US1] review.upsert procedure
+- [ ] T006 (human) Check the layout on a phone-width window
+
+## Phase 4: User Story 2 - Instructor responds (Priority: P2)
+- [ ] T007 [US2] review.respond procedure
+- [ ] T037 [US2] Notify the student (added later: next unused id)
+```
+
+| 要素 | パターン | 補足 |
+| --- | --- | --- |
+| フェーズ | `^## Phase (\d+): (.+)$` | 番号はファイルの下に向かって増える。各フェーズには少なくとも 1 つのタスクがある |
+| ユーザーストーリーのフェーズ | タイトルが `User Story` で始まる | 少なくとも 1 つ必要 |
+| タスク | `^- \[([ xX])\] (T\d{3})\b` | 1 列目から、フェーズの下に書く。ID は一意で、振り直さない |
+| 完了 | `[x]` または `[X]` | その場でチェックし、削除しない |
+| 人のタスク | 行のどこかに `(human)`。太字かどうかは問わない | エージェントはスキップし、グループが完了したかの判断でも数えない |
+| 小見出し | `### …` | 使ってよい。無視される |
+
+## フェーズが issue になる仕組み
+
+1. **グループ 0** は、最初の `User Story` フェーズまで（そのフェーズを含む）のすべてのフェーズです。セットアップ、
+   基盤、MVP のストーリーは 1 つの PR として出荷され、タイトルに ` (with setup and foundations)` が付きます。
+2. **それ以降の各フェーズ**は、それぞれが独自のグループで、独自の issue になります。
+3. **次のグループ**は、**(human)** ではない未チェックのタスクを持つ最初のグループです。
+4. issue はすでにあるのに、エージェントのタスクがすべてはチェックされていないグループは**停滞**しています。
+   新しい issue は開かれず、マージされた PR に未チェックの ID を列挙したコメントが付きます。
+
+issue のタイトルは `feat(<feature>): <last phase's title, shortened>` です。`<feature>` はタイムスタンプを除いた
+フォルダ名です。短縮したタイトルでは、`User Story <n> - ` プレフィックスと `(Priority: Pn)` サフィックスが
+取り除かれます。タイトルは小文字で始まり、最大 100 文字です。
+
+## 検証メッセージ
+
+| メッセージ | 直し方 |
+| --- | --- |
+| `A phase heading must be written "## Phase <number>: <title>"` | 見出しに「Phase」が含まれているが形式どおりでない。例: `### Phase 2` や `## Phase 2 - Setup` |
+| `A task must be written "- [ ] T<3 digits> <description>", starting in the first column` | インデントされたタスク、`* [ ]`、`- []`、または `T12` のような ID |
+| `Phase <n> has no tasks` | タスクを追加するか、フェーズを削除する |
+| `Phase <n> comes after phase <m>; phase numbers must increase down the file` | フェーズの番号を振り直す（タスクではなく） |
+| `T0xx is above the first phase heading, so it belongs to no phase` | フェーズの下に移動する |
+| `T0xx is used more than once` | 後のほうに、まだ使われていない次の ID を付ける |
+| `No phase headings found; …` | ファイルがまったく形式に沿っていない |
+| `No phase is titled "User Story <n> - ..."; …` | 少なくとも 1 つのフェーズにユーザーストーリーのタイトルを付ける |
+
+ローカルで実行するには、次のようにします。
+
+```bash
+pnpm nx run @your-scope/common-scripts:validate-tasks
+```

@@ -1,0 +1,95 @@
+---
+title: 에이전트 런타임
+description: OpenHands가 label이 붙은 issue를 pull request로 바꾸는 방식, 그리고 언제 수정해야 하는지 아는 방식.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**짧게 말하면:** OpenHands는 여러분의 저장소를 대상으로 예약된 automation 두 개를 실행합니다. 하나는 label이 붙은
+issue를 구현하고 실패로 표시된 pull request를 수정합니다. 다른 하나는 검사가 끝난 pull request를 리뷰합니다. 둘 다
+고정된 프롬프트로 일반적인 코딩 에이전트를 시작합니다. 어느 쪽도 여러분이 채팅을 열 필요가 없습니다.
+
+```d2
+direction: right
+
+machine: 여러분의 컴퓨터 {
+  style.stroke-dash: 3
+  canvas: Agent Canvas {
+    i2p: issue에서 PR로
+    review: 코드 리뷰
+  }
+  agent: 코딩 에이전트
+  canvas.i2p -> agent: 구현 또는 수정
+  canvas.review -> agent: 리뷰
+}
+
+github: GitHub {
+  style.stroke-dash: 3
+  issues: issues {shape: page}
+  prs: pull requests {shape: page}
+  statuses: commit statuses {shape: document}
+}
+
+machine.canvas -> github: 5분마다 폴링
+machine.agent -> github.prs: push, 열기, 리뷰
+```
+
+## 구성 요소
+
+| 구성 요소 | 무엇인가 |
+| --- | --- |
+| **Agent Canvas** | 여러분이 직접 실행하는 OpenHands 앱(`npx @openhands/agent-canvas`). 에이전트 서버, automation 백엔드, 웹 UI를 함께 담고 있습니다 |
+| **Agent profile** | 어떤 에이전트를 어떤 모델로 실행할지. profile은 임의의 LLM을 쓰는 OpenHands 자체 에이전트일 수도 있고, ACP(Agent Client Protocol)로 연결한 외부 코딩 에이전트일 수도 있습니다 |
+| **Automation** | cron 일정에 따라 실행되는 작은 Python worker. GitHub를 읽고, 무엇을 할지 결정하고, 에이전트 대화를 시작하거나 재개합니다. Agent Canvas 카탈로그에서 설치합니다 |
+| **Secret** | GitHub 토큰처럼 이름이 붙은 자격 증명. 대화에는 허용 목록에 있는 secret만 주어집니다 |
+
+## 두 가지 automation
+
+### GitHub issue to PR
+
+폴링할 때마다 worker는 감시하는 각 저장소에 대해 다음을 합니다.
+
+1. head 커밋에 `software-factory/review`라는 이름의 commit status가 `failure` 또는 `error` 상태로 붙어 있는
+   `openhands/issue-<n>` 브랜치의 열린 PR을 찾습니다. 각 PR에 대해 그 issue의 대화로 **revise** 턴을 보냅니다.
+   리뷰, 댓글, 실패한 검사를 읽고, 고치고, 같은 브랜치에 push하라는 것입니다.
+2. 트리거 label(`openhands`)이 붙어 있고 아직 PR이 없는 열린 issue를 찾아 **implement** 턴을 시작합니다. clone,
+   `openhands/issue-<n>` 생성, 구현, 테스트, push, PR 열기, `openhands-review` label 추가입니다.
+
+각 issue는 안정적인 대화를 가진 하나의 *subject*입니다. revise는 원래 구현과 같은 대화로 가므로, 에이전트는
+컨텍스트를 유지합니다.
+
+### GitHub code review
+
+폴링할 때마다 `openhands-review` label이 붙어 있거나, 자기 계정에 대한 대기 중인 리뷰 요청이 있거나, 열려 있고
+draft가 아니며 리뷰 요청도 리뷰도 없는 PR을 찾습니다. 각 PR에 대해 **head 커밋의 모든 검사가 끝날 때까지**
+기다린 다음, 바로 그 커밋에 대한 리뷰를 시작합니다. 리뷰는 별도의 줄에 판정을 적어 마무리합니다. `✅ APPROVED`
+또는 `🔄 CHANGES REQUESTED`입니다.
+
+<Aside type="caution">
+issue-to-PR worker는 실패한 `software-factory/review` 상태를 볼 때만 PR을 수정합니다. 빨간 CI 실행도, 리뷰어의
+"changes requested"도 그 자체로는 이 상태를 설정하지 않습니다. 그 빈틈을 메우는 것이 [빠진 glue](../the-missing-glue/)의
+두 조각입니다.
+</Aside>
+
+## 왜 webhook이 아니라 폴링인가
+
+automation은 폴링하므로(Discava에서는 5분마다, 기본값은 15분마다) Agent Canvas는 공개 URL도 webhook secret도 없는
+노트북이나 홈 서버에서 실행할 수 있습니다. 대가는 최대 폴링 간격 하나만큼의 지연인데, 에이전트가 일하는 데 걸리는
+시간에 비하면 작습니다.
+
+## 에이전트가 접근할 수 있는 것과 없는 것
+
+구현 대화는 issue를 읽고 브랜치를 push할 수 있도록 secret 하나, GitHub 토큰을 받습니다. 클라우드 자격 증명은 받지
+않습니다. 그 밖에 절대 하면 안 되는 일과 각 제한을 강제하는 것은 [사람 게이트](../human-gates/#에이전트가-절대-하면-안-되는-것)에
+있습니다.
+
+## 에이전트 선택
+
+Discava는 두 automation 모두 **ACP를 통한 Claude Code**로 실행합니다. 구현에는 Sonnet을, 리뷰에는 Opus를 씁니다.
+리뷰에 더 강한 모델을 쓰는 것은 의도적입니다. 리뷰어는 사람 앞의 마지막 검사이고, 구현자가 작성하는 것보다 훨씬
+적은 코드를 읽습니다. 어떤 ACP 에이전트든, 또는 임의의 LLM을 쓰는 OpenHands 자체 에이전트든 같은 profile에 연결할
+수 있습니다.
+
+다음: [빠진 glue](../the-missing-glue/).

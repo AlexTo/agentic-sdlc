@@ -1,0 +1,42 @@
+---
+title: Agentic SDLC
+description: Un ciclo di vita del software in cui gli agenti scrivono il codice e le persone guidano, costruito e usato in pratica su Discava.
+template: splash
+hero:
+  title: Agentic SDLC
+  tagline: "Smetti di fare micromanagement su un singolo agente. Sali la scala della fiducia: più costruisci nell'ambiente, più puoi fidarti che gli agenti facciano la cosa giusta, e più agenti puoi far lavorare insieme. Questa guida spiega l'idea, mostra come la applica Discava e ti accompagna nel metterla in piedi tu stesso."
+  actions:
+    - text: Inizia da qui
+      link: /agentic-sdlc/it/guides/introduction/
+      icon: right-arrow
+    - text: Configuralo
+      link: /agentic-sdlc/it/setup/before-you-start/
+      icon: setting
+      variant: minimal
+---
+
+import { CardGrid, Card, LinkCard } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <Card title="Un ambiente di cui fidarti" icon="approve-check">
+    Regole, test e check sono disposti a strati, così un errore viene a galla e torna all'agente, non a te.
+  </Card>
+  <Card title="Scrivi la spec" icon="pencil">
+    Ogni funzionalità parte da una spec, un piano e una lista di task revisionati. L'agente costruisce da questi, non da una chat.
+  </Card>
+  <Card title="Gli agenti fanno il resto" icon="rocket">
+    Una spec mergiata apre una issue per fase. Un agente apre la PR e sistema da solo la CI rossa o il feedback della review, fino a cinque volte per loop.
+  </Card>
+  <Card title="Tu guidi" icon="information">
+    Le persone approvano la spec e hanno l'ultima parola prima del merge. Tutto ciò che sta in mezzo va avanti da solo.
+  </Card>
+</CardGrid>
+
+## Scegli il tuo percorso
+
+<CardGrid>
+  <LinkCard title="Capisci i concetti" href="/agentic-sdlc/it/concepts/principles/" description="I principi, e i cinque pezzi su cui è costruito il workflow." />
+  <LinkCard title="Guarda come fa Discava" href="/agentic-sdlc/it/discava/overview/" description="Ogni lacuna e il file esatto che la colma, più una funzionalità reale seguita dalla spec al merge." />
+  <LinkCard title="Replica il workflow" href="/agentic-sdlc/it/setup/before-you-start/" description="Fai il fork di questo repository, collegaci OpenHands e porta una funzionalità attraverso tutto il loop." />
+  <LinkCard title="Provalo su una funzionalità" href="/agentic-sdlc/it/tutorial/the-case/" description="Segui una piccola funzionalità, i tag sulle note, in ogni fase." />
+</CardGrid>

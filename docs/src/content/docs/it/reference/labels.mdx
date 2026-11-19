@@ -1,0 +1,29 @@
+---
+title: Label
+description: Ogni label che il workflow legge o scrive, chi la imposta, e cosa significa.
+sidebar:
+  order: 1
+---
+
+| Label | Su | Impostata da | Letta da | Significa |
+| --- | --- | --- | --- | --- |
+| `spec-ready` | PR della spec | Una persona | Agent Issues | Il merge di questa PR avvia l'implementazione. Anche aggiungerla a una PR già unita |
+| `openhands` | Issue | Agent Issues, o una persona | Automazione issue-to-PR | Implementa questa issue. Rimuovila e riapplicala per un nuovo tentativo su un nuovo branch |
+| `openhands-review` | PR | L'agente che implementa, dopo aver aperto o rivisto | Automazione di code review | Fai la review dell'head attuale di questa PR |
+| `ci-fix-1` … `ci-fix-5` | PR dell'agente | Agent CI Status | Agent CI Status | Sono state usate tante correzioni automatiche per la CI rossa |
+| `ci-fix-exhausted` | PR dell'agente | Agent CI Status | Agent CI Status, persone | Le correzioni della CI sono esaurite. Subentra una persona |
+| `review-fix-1` … `review-fix-5` | PR dell'agente | Agent Review Status | Agent Review Status | Sono state usate tante correzioni per "changes requested" |
+| `review-fix-exhausted` | PR dell'agente | Agent Review Status | Agent Review Status, persone | Le correzioni della review sono esaurite. Subentra una persona |
+| `no-ui-screenshots` | PR | Un maintainer | UI Screenshots | Esenta dalla regola degli screenshot: la modifica alla UI non ha nulla da guardare. Riesegui il check dopo averla aggiunta |
+| `priority:high` | Issue | Una persona | Automazione issue-to-PR | Avvia questa issue prima delle altre nello stesso poll |
+
+## Azzerare un loop
+
+Per lasciare che l'agente riprovi dopo che hai aggiunto indicazioni, rimuovi sia le label contatore sia
+l'label `*-exhausted`, poi:
+
+- **Loop della CI:** riesegui l'esecuzione di PR Checks fallita.
+- **Loop della review:** richiedi di nuovo una review, o riapplica `openhands-review`.
+
+Il conteggio è la più alta label `*-fix-<n>` sulla PR, quindi rimuovere solo l'label `exhausted` non
+basta.

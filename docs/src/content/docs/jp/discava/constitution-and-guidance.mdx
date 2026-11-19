@@ -1,0 +1,115 @@
+---
+title: constitution とガイダンス
+description: Discava のエージェントが毎回の実行前に読むルールと、それぞれが存在する理由。
+sidebar:
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Discava のエージェントは、コードを書く前に 3 つの層の文章を読みます。各層の役割は異なり、1 つのルールは
+そのうちちょうど 1 つの層にだけ置かれます。
+
+| 層 | 内容 | 変更 |
+| --- | --- | --- |
+| **constitution** | plan が破ってはならないルール | まれに、PR で、セマンティックバージョン付きで |
+| **`AGENTS.md`** | ここでの作業の仕方: コマンド、アーキテクチャ、規約 | コードベースが変わるたびに |
+| **issue の指示** | *今回の* 実行でのふるまい方: スコープ、何を実行するか、決してしてはならないこと | ワークフローが変わるときに |
+
+## constitution
+
+`.specify/memory/constitution.md`、バージョン 1.2.1、2026 年 11 月 7 日に批准。8 つの原則があり、それぞれに
+短い根拠が付いています。エージェントにとって特に重要なものは次のとおりです。
+
+### III. すべてがローカルで動く
+
+> A feature MUST work under `pnpm dev` with Docker and no AWS account. Any AWS service a feature
+> adds MUST get a local stand-in or a documented, justified exception.
+
+これによって CI はアプリ全体を動かして e2e テストができ、クラウドの認証情報をエージェントから遠ざけておけます。
+[ローカルスタック](../local-stack/) を参照してください。
+
+### IV. 層になったテスト: ユニット、invariant、エンドツーエンド
+
+5 つのサブルールがあります。特に重要なのは 2 つです。
+
+- **影響チェック。** plan は、機能が書き込む、または新しい方法で読む共有レコードを列挙し、それぞれについて、
+  すでにそれをカバーしている既存の invariant とテストを挙げなければなりません。機能がレコードの意味を変える場合、
+  plan はそれらのチェックを拡張しなければならず、`tasks.md` にはそれぞれのタスクがなければなりません。
+- **テストは仕様である。** 失敗したテストはコードで直し、テストを弱めて直すことはしません。
+  invariant もテストに含まれます。ルールの全文は [信頼の層](../../concepts/layers-of-trust/#テストは-spec-である) に引用されています。
+
+影響チェックがあるのは、エージェントは新しいチェックを喜んで追加しても、古いチェックを見直すことはめったにないからです。
+"an active student" の意味を変える新機能は、古い invariant の意味を黙って壊してしまいます。
+
+### V. single-table のデータモデル
+
+アクセスパターンはコードより先に、plan の中で設計します。ユーザー向けのリクエストはキーか宣言済みのインデックスを
+使わなければならず、決して scan を使ってはいけません。これは **plan** の時点でチェックされるからこそ機能するルールの
+良い例です。あとからキーを後付けするのはデータの移行を意味します。
+
+### VII. ローンチ前は自由に変更する
+
+> Until production is live, routes, APIs and data shapes MUST be changed outright: no redirects,
+> deprecated aliases or fallbacks for old data.
+
+このルールがないと、エージェントは用心のために、あらゆる変更に互換性のための shim を追加します。
+
+### 開発ワークフローのセクション
+
+エージェントのために特別に書かれた部分です。
+
+> Features are implemented by autonomous agents, each on its own branch and pull request, so a task
+> list MUST NOT require a local stack, Docker or `pnpm dev`. […] A task that needs a running local
+> stack or people MUST be marked `(human)` in `tasks.md`. […] An agent MUST NOT merge, push to
+> `main`, edit CI workflows, or weaken a test to make CI pass.
+
+## `AGENTS.md`
+
+Discava のルートの `AGENTS.md` は約 110 行です。内容は次のとおりです。
+
+- **コマンド。** インストール、ビルド、lint、1 つのプロジェクトや 1 つのファイルのテスト、e2e、ローカル開発、デプロイ。
+- **アーキテクチャ。** パッケージごとに 1 行: それが何で、詳細がどこにあるか。
+- **規約。** そうしなければレビュアーがすべての PR で繰り返すことになるルール: Conventional Commits、
+  ESLint ではなく Biome、`helpers/` フォルダーのルール、"buttons carry text labels only, no arrow
+  icons"、共有コードの置き場所、そして命名: ファイル名は kebab-case、バックエンドのパッケージでは `helpers/` を使い
+  決して `lib/` を使わない、`*Writes` 関数はトランザクションの item を返し、動詞の名前の関数は自分で I/O を実行する。
+
+1 つのパッケージの詳細は、そのパッケージのフォルダー内のネストされた `AGENTS.md` にあります。API、データベース
+パッケージ、events、infrastructure などに 7 つあり、それぞれ 5 〜 28 行です。エージェントはそのフォルダーで作業する
+ときだけそれを読み込みます。ルートのファイルがパッケージごとに 1 段落あるほど大きくなったとき、Discava は詳細を
+下の階層へ移したので、毎回の実行で触らないパッケージについて読むことはなくなりました。たとえばデータベース
+パッケージのファイルには、共有の書き込みがそれぞれどの helper を通るか、そしてテーブルに誰が書き込むかを変える
+場合は `Invariant coverage` チェックが読むマップを再生成する必要があることが書かれています。
+
+<Aside type="tip">
+Discava の `AGENTS.md` は、レビューで同じミスが 2 回見つかるたびに 1 行ずつ増えてきました。
+あなたのファイルもそうやって育てるのが正しいやり方です。
+</Aside>
+
+## skill
+
+Discava は 3 つのコミュニティ skill を `.agents/skills/` にインストールしています (`skills-lock.json` でコミットに
+固定)。React のベストプラクティス、Web インターフェースのガイドライン、文章のガイドラインのためのものです。
+Speckit のコマンドも skill としてインストールされます。skill は関係するときにだけ読み込まれるので、
+`AGENTS.md` よりはるかに多くの詳細を持てます。
+
+## issue の指示
+
+すべての実装 issue は同じ指示で終わります。これは Agent Issues スクリプトが
+`.github/ISSUE_TEMPLATE/implement-phase.md` からコピーしたものです。指示はエージェントに次のことを求めます。
+
+- まず `AGENTS.md`、constitution、spec フォルダーを読む
+- 各ストーリーのテストを先に書き、各タスクはそれを完了させるコミットでチェックを付ける
+- ユニットテスト、lint、型チェック、ビルドはローカルで実行し、e2e と並行性のテストは PR の CI に任せる
+- すべての UI の変更に `screenshot()` 呼び出しを追加し、スクリーンショットを **(human)** タスクに任せない
+- **(human)** タスクはスキップし、PR の説明に列挙する
+- Conventional Commits を使い、`Closes` ではなく `Refs #<parent>` を使う
+- テストを弱めたり、ワークフローを編集したり、マージしたり、AWS の認証情報に触れたりしない
+- 行き詰まったら issue にコメントして止まる
+
+どれも、初期の実行がその逆をしたために存在します。たとえば `Refs` のルールは、最初のフェーズの PR が機能全体の
+親 issue を閉じてしまうのを防ぎます。全文は
+[導入: エージェントのガイダンス](../../adopt/agent-guidance/) にあります。
+
+次へ: [Speckit のセットアップ](../speckit-setup/)。

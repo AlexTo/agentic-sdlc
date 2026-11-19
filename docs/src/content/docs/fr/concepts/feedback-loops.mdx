@@ -1,0 +1,95 @@
+---
+title: Boucles de retour
+description: Comment une exécution de CI rouge ou une revue « changes requested » renvoie l'agent au travail, et pourquoi chaque boucle s'arrête après cinq essais.
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**La version courte :** quand quelque chose échoue, un workflow marque le commit de tête de la PR avec
+un statut en échec. Le worker OpenHands le voit à son prochain passage et demande à la même
+conversation d'agent de corriger la même PR. Chaque boucle a un compteur dans un label, et s'arrête à
+cinq.
+
+## Les deux boucles
+
+```d2
+direction: right
+
+pr: l'agent pousse {shape: page}
+checks: PR Checks
+review: agent relecteur
+you: revue humaine
+
+actions: GitHub Actions {
+  style.stroke-dash: 3
+  ci: Agent CI Status
+  rv: Agent Review Status
+}
+
+status: "software-factory/review\n= failure" {shape: document}
+worker: "worker issue-to-PR\n(prochain passage)"
+
+pr -> checks
+checks -> review: tous terminés
+checks -> actions.ci: échec
+review -> actions.rv: changes requested
+review -> you: approuvée
+actions.ci -> status: ci-fix-N
+actions.rv -> status: review-fix-N
+status -> worker
+worker -> pr: révise la même PR
+```
+
+| | Boucle CI | Boucle de revue |
+| --- | --- | --- |
+| Déclenchée par | Le workflow PR Checks qui se termine en `failure` ou `timed_out` | Une revue sur la PR écrite par l'agent relecteur, qui se termine par `🔄 CHANGES REQUESTED` |
+| Workflow | Agent CI Status | Agent Review Status |
+| Labels compteurs | `ci-fix-1` … `ci-fix-5` | `review-fix-1` … `review-fix-5` |
+| Quand elle abandonne | `ci-fix-exhausted`, plus un commentaire | `review-fix-exhausted`, plus un commentaire |
+| Description du statut | `CI failed (fix attempt 2 of 5): E2E tests (3/4)` | `Review requested changes (fix attempt 1 of 5): see the review` |
+
+Une exécution réussie ne publie rien. Le commit suivant démarre sans statut, donc le worker laisse la
+PR tranquille.
+
+## Les vérifications avant de renvoyer l'agent
+
+Chaque script refuse d'agir à moins que toutes ces conditions soient réunies :
+
+1. La branche est exactement `openhands/issue-<n>`. Une branche de seconde tentative, comme
+   `openhands/issue-308-2`, n'est jamais révisée par le worker, donc on n'y répond pas non plus.
+2. La PR est ouverte.
+3. L'exécution ou la revue porte sur le commit de tête **actuel** de la PR. Une exécution plus
+   ancienne est périmée.
+4. Ce commit n'a pas déjà été renvoyé. Une réexécution des mêmes checks ne doit pas consommer une
+   autre tentative.
+5. Pour les revues : la revue porte le marqueur d'exécution caché du relecteur et vient d'un compte
+   avec accès en écriture, pour qu'une personne qui cite le verdict ne la déclenche pas.
+6. Moins de cinq tentatives ont été utilisées.
+
+Le label est posé **avant** la publication du statut. Si la publication du statut échoue ensuite,
+l'échec suivant compte une tentative de plus au lieu de répéter celle-ci indéfiniment.
+
+## Pourquoi cinq
+
+Un nouvel essai corrige la plupart des erreurs : un localisateur instable, un type oublié, une règle
+de lint. Les quelques suivants couvrent une correction qui a révélé un second problème, ou une
+exécution de CI et une revue qui demandent chacune quelque chose de différent. Au cinquième échec,
+l'agent est en général bloqué sur quelque chose qu'il ne voit pas, et d'autres tentatives coûtent de
+l'argent sans converger. Discava a commencé avec une limite de trois et l'a relevée à cinq.
+
+Sur les 67 premières PR d'agent mergées de Discava, 42 ne portent aucun label de correction
+(certaines sont antérieures aux workflows de correction), 17 ont eu besoin d'exactement un tour, et
+une seule a épuisé une boucle.
+
+<Aside type="caution">
+Quand une boucle est épuisée, lisez le dernier échec avant de corriger quoi que ce soit. Des échecs
+répétés signifient souvent que la spec ou le plan était ambigu, et que l'agent essayait de satisfaire
+deux interprétations à la fois. Corrigez la spec, puis laissez l'agent réessayer.
+</Aside>
+
+Pour donner ensuite un tour de plus à l'agent, voir
+[Réinitialiser une boucle](../../reference/labels/#réinitialiser-une-boucle).
+
+Suite : [Couches de confiance](../layers-of-trust/).

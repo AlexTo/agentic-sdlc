@@ -1,0 +1,53 @@
+---
+title: 1. Fork 仓库
+description: Fork 这个仓库，打开 GitHub 对 fork 关闭的功能，并检查它能运行。
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完成后你将拥有：** 你自己的 fork，已启用 Issues 和 Actions，已克隆到本地，并且检查全部通过。
+
+<Steps>
+
+1. **Fork 并克隆。**
+
+   ```bash
+   gh repo fork AlexTo/agentic-sdlc --clone
+   cd agentic-sdlc
+   ```
+
+2. **把你的 fork 设为 `gh` 的默认仓库。** 否则 `gh` 命令会作用于原仓库，而不是你的仓库。
+
+   ```bash
+   gh repo set-default <you>/agentic-sdlc
+   ```
+
+3. **开启 Issues。** GitHub 对 fork 关闭了 Issues，而整个工作流都运行在 issue 之上。在你的 fork 中打开 **Settings → General → Features**，勾选 **Issues**。
+
+4. **开启 Actions。** 打开你的 fork 的 **Actions** 标签页，点击 **I understand my workflows, go
+   ahead and enable them**。在你这样做之前，GitHub 不会在 fork 中运行 workflow。
+
+5. **在本地安装并运行检查**，与 CI 运行的检查相同：
+
+   ```bash
+   pnpm install
+   pnpm nx run-many --target lint --all
+   pnpm nx run-many --target test --all
+   pnpm nx run-many --target build --all
+   ```
+
+   运行笔记应用（需要 Docker）：`pnpm dev`，然后打开网站打印出的 URL。
+
+</Steps>
+
+## 检查是否成功
+
+你的 fork 显示 **Issues** 标签页，它的 **Actions** 标签页列出了各个 workflow。在本地，三条 `nx run-many` 命令都通过。
+
+<Aside type="note">
+在 fork 中有两处行为不同，但都不会阻塞工作流。没有 `CODECOV_TOKEN` secret 时，覆盖率上传步骤会记录一个错误然后继续。CI 中的 **Deploy Docs** job 会一直失败，直到你开启 GitHub Pages（**Settings → Pages → Source: GitHub Actions**），你也可以忽略它。
+</Aside>
+
+下一步：[2. 配置仓库](../github-repository/)。

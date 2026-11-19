@@ -1,0 +1,98 @@
+---
+title: 基本原则
+description: 构成这套工作流的九个理念，按重要性排序。
+sidebar:
+  order: 1
+---
+
+import { Icon } from '@astrojs/starlight/components';
+
+这套工作流中的一切都源于一个举动：**把开发者从循环中拿出来，放到循环的两端。** 人决定*构建什么*
+以及*结果好不好*。中间的一切由智能体通过常规的 GitHub 流程完成。
+
+这些原则按重要性排序。如果你只能做到其中几条，就从最上面开始。
+
+## 1. 验证优先：给智能体一双手和一双眼睛<Icon name="magnifier" class="heading-icon" />
+
+一个无法运行应用、看不到自己构建了什么的智能体只是在猜，而其他所有原则也只是在组织这些猜测。
+能编译、能通过单元测试的代码仍然可能让用户失望，所以智能体必须像人一样**从后端到前端运行它构建的
+东西**：
+
+- **手：**在不需要云账号的本地栈上启动整个应用，调用 API，登录，在真实浏览器中点完整个流程，
+  并触发其背后的后台任务。
+- **眼睛：**读取返回的内容：响应、日志、留在数据库里的数据，以及评审者想看到的每个状态的截图。
+
+智能体并不在自己的机器上做这些。它编写 e2e 场景，由 CI 在每个 PR 上针对一个全新的本地栈运行。
+结果、不变式失败和截图都会回到 PR 上，因此智能体能发现自己的错误，每个 PR 都带着证据到来。
+
+从第一天起就为此而构建：每个云服务都需要一个本地替身，每个用户流程都需要一个 e2e 场景，每个 UI
+状态都需要一张截图。任何智能体无法运行的东西，都是需要人来验证的任务。
+
+## 2. spec 是事实来源<Icon name="document" class="heading-icon" />
+
+一个功能从 `spec.md`、`plan.md` 和 `tasks.md` 开始，像代码一样接受评审。智能体依据它们来构建。
+要改变行为，就修改 spec，并重新生成计划和任务。不要手动修补代码而让 spec 过时。
+
+## 3. 由自动化关卡而不是你来给出反馈<Icon name="approve-check-circle" class="heading-icon" />
+
+lint、类型检查、单元测试、不变式、e2e 测试、并发测试、截图和一个智能体评审者会在每个 PR 上运行。
+红色结果直接回到编写该变更的智能体那里。没有人需要粘贴错误信息。
+
+## 4. 人保留两个关键决定<Icon name="star" class="heading-icon" />
+
+1. **批准 spec。** 带着 `spec-ready` 标签合并 spec PR 就是开始的信号。
+2. **批准结果。** 由一个人做最终评审并合并每个 PR。
+
+## 5. 让规则和 skill 具有确定性<Icon name="setting" class="heading-icon" />
+
+只写在 `AGENTS.md` 或 constitution 里的规则只是一个请求。智能体可能漏掉它、对它有两种理解，或者
+在一个很长的会话中忘掉它。只要某条规则可以用脚本检查，就编写脚本，在 hook 或 PR 检查中运行它，
+并把文字说明保留为解释。失败的检查会通过与其他红色结果相同的反馈循环，准确地告诉智能体哪里出了
+什么问题。
+
+Discava 处处这样做：
+
+| 文字规则 | 由什么强制执行 |
+| --- | --- |
+| `tasks.md` 遵循固定格式 | `Tasks format` PR 检查。没有它，格式错误的阶段会被悄无声息地跳过 |
+| UI 变更要在其 e2e 场景中截图 | 如果标记或样式发生了变化，而没有任何场景新增 `screenshot(` 调用，`UI Screenshots` 检查就会失败。维护者可以用 `no-ui-screenshots` 豁免它 |
+| 跨记录的规则需要一个不变式 | 如果一个 PR 改变了谁写入核心表，却没有动 `helpers/invariants/` 中的不变式检查，`Invariant coverage` 检查就会让它失败。一个 pre-push hook 会保持其写入者映射是最新的。维护者可以用 `no-new-invariant` 豁免它 |
+| Conventional Commits，不提交密钥 | `commit-msg` hook 中的 commitlint，每次 commit 都运行 `git-secrets` |
+| 每个 Speckit 步骤都有自己的分支和 commit | skill 通过 Speckit 的扩展 hook 运行相应脚本，不管智能体记不记得 |
+
+如果你在评审中把同一条修改意见写了两次，那很可能是缺了一个检查。
+
+## 6. 粘合层是代码，而不是 prompt<Icon name="puzzle" class="heading-icon" />
+
+步骤之间也是同样的道理。任何决定*接下来发生什么*的东西（开哪个 issue、智能体是否返工、何时停止）
+都是一个带单元测试、由 workflow 运行的脚本。只有需要判断力的事才交给智能体：编写代码，以及评审
+代码。prompt 可以被忽略，workflow 不会。
+
+## 7. 有边界的自主<Icon name="padlock" class="heading-icon" />
+
+智能体不能合并，不能编辑 workflow，不能接触云凭证，也不能为了变绿而削弱测试。每个修复循环最多
+尝试五次。之后它就会停下来，请人介入。
+
+## 8. 小而有明确范围的工作单元<Icon name="list-format" class="heading-icon" />
+
+一份 spec 拆分成多个阶段。每组阶段就是一个 issue 和一个 pull request，并带有智能体不得越出的任务
+范围。小 PR 评审起来成本低，扔掉也成本低。
+
+## 9. 每一步都留下产物<Icon name="notes" class="heading-icon" />
+
+意图在 spec 里，范围在 issue 里，历史在 pull request 里，一次运行停止的原因在标签或评论里。没有
+任何东西只存在于聊天窗口或某个人的脑子里，因此新队友或新的智能体可以从上一个停下的地方接着做。
+
+## 延伸阅读
+
+| 原则 | 页面 |
+| --- | --- |
+| 1. 验证 | [信任的层次](../layers-of-trust/#验证最重要)、[Discava 的本地栈](../../discava/local-stack/) |
+| 2. spec 是事实来源 | [spec 驱动开发](../spec-driven-development/) |
+| 3. 自动化关卡 | [信任的层次](../layers-of-trust/)、[反馈循环](../feedback-loops/) |
+| 4. 人的决定 | [人工关卡](../human-gates/) |
+| 5. 确定性的规则和 skill | [Discava 的 PR 检查](../../discava/pr-checks/)、[constitution 与指导](../../discava/constitution-and-guidance/) |
+| 6. 粘合层是代码 | [缺失的粘合层](../the-missing-glue/) |
+| 7. 有边界的自主 | [反馈循环](../feedback-loops/)、[人工关卡](../human-gates/#智能体绝不能做的事) |
+| 8. 小单元 | [一次一个阶段](../one-phase-at-a-time/) |
+| 9. 产物 | [参考：标签](../../reference/labels/)、[状态与标记](../../reference/statuses-and-markers/) |

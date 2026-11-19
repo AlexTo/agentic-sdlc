@@ -1,0 +1,66 @@
+---
+title: Discava de un vistazo
+description: Qué es Discava, las herramientas que usa y el archivo que cubre cada hueco.
+sidebar:
+  order: 1
+  label: Resumen
+---
+
+[Discava](https://github.com/AlexTo/discava) es un sistema de gestión del aprendizaje serverless en
+AWS: tres portales en React, tres APIs tRPC en Lambda, una única tabla de DynamoDB, un pipeline de
+medios y búsqueda, desplegado con CDK desde un monorepo Nx. Es lo bastante grande como para que
+nadie lo tenga entero en la cabeza, que es justo cuando el workflow compensa.
+
+Esta sección describe lo que usa Discava, a noviembre de 2026, con los archivos que hay detrás de
+cada pieza.
+
+## Las herramientas y sus versiones
+
+| Herramienta | Versión | Función |
+| --- | --- | --- |
+| Speckit (`specify-cli`) | 1.3.2 | Generación de specs, planes y tareas, con su extensión `git` |
+| OpenHands Agent Canvas | 1.41.0 | Runtime del agente y las dos automatizaciones, como servicio de usuario en una máquina Linux |
+| Automatización `github-issue-to-pr` | 1.2.4 | Implementa issues etiquetadas, revisa PR fallidos |
+| Automatización `github-pr-reviewer` | 1.11.2 | Revisa los PR cuando terminan los checks |
+| Agente para implementar | Claude Code mediante ACP, Sonnet | Perfil de agente `default` |
+| Agente para revisar | Claude Code mediante ACP, Opus | Perfil de agente `reviewer` |
+| Nx + pnpm | Nx 23 | Monorepo, `nx affected` en el CI |
+| Playwright | | Tests E2E contra el stack local, seis shards en el CI |
+| Trivy, git-secrets, commitlint | | Escaneo de seguridad, comprobación de secretos en pre-commit, formato de los mensajes de commit |
+
+## Del hueco al archivo
+
+| Hueco | La respuesta de Discava | Archivos |
+| --- | --- | --- |
+| De la spec a la issue | El workflow Agent Issues y sus scripts | `.github/workflows/agent-issues.yml`, `packages/common/scripts/src/agent-issues/` |
+| Del fallo de CI al agente | Agent CI Status | `.github/workflows/agent-ci.yml`, `src/agent-ci/` |
+| De la revisión al agente | Agent Review Status | `.github/workflows/agent-review.yml`, `src/agent-review/` |
+| Bucles infinitos | Límites de cinco intentos con labels | `MAX_CI_FIX_ATTEMPTS` y `MAX_REVIEW_FIX_ATTEMPTS` en `plan.ts` |
+| `tasks.md` mal formado | Job Tasks format | `pr-checks.yml` `tasks-format`, `src/agent-issues/validate.ts` |
+| Cambios de UI sin mirar | Job UI Screenshots, comentario E2E screenshots | `pr-checks.yml`, `src/ui-screenshots/`, `packages/e2e/src/helpers/screenshots.ts` |
+| El merge no continúa | Agent Issues en ramas `openhands/` fusionadas | `src/agent-issues/gate.ts` |
+| Sin nube para el agente | Sustitutos locales de cada servicio de AWS | `pnpm dev`, `packages/common/scripts/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
+| El merge no publica nada | CI en `main` y después Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
+| Secretos y dependencias vulnerables | Trivy en el CI y antes del despliegue, git-secrets en cada commit | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
+
+Y el texto que lee cada agente:
+
+| Guía | Archivo |
+| --- | --- |
+| Reglas del proyecto, comprobadas por cada plan | `.specify/memory/constitution.md` (versión 1.2.1) |
+| Comandos, arquitectura, convenciones | `AGENTS.md` |
+| Proceso de PR, stack local, testing | `CONTRIBUTING.md` |
+| Instrucciones en cada issue de implementación | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| Plantillas de Speckit, adaptadas para la automatización | `.specify/templates/tasks-template.md`, `spec-template.md` |
+
+## En cifras
+
+Del 14 de noviembre, cuando el workflow se puso en marcha, al 18 de noviembre de 2026:
+
+- 12 specs de features escritas con Speckit, en `specs/`.
+- 2.344 barridos de automatización, uno cada cinco minutos: 1.304 sondeos de issue a PR y 1.040
+  sondeos de revisión. 149 de ellos encontraron trabajo y arrancaron un agente.
+- 67 PR de agentes fusionados. 42 no necesitaron ninguna corrección automática, 17 necesitaron una
+  ronda y uno agotó un bucle.
+
+Siguiente: [Constitución y guía](../constitution-and-guidance/).

@@ -1,0 +1,42 @@
+---
+title: Agentic SDLC
+description: エージェントがコードを書き、人間が舵を取るソフトウェアライフサイクル。Discava で実際に構築・運用されています。
+template: splash
+hero:
+  title: Agentic SDLC
+  tagline: "1 つのエージェントを細かく管理するのはやめましょう。信頼のはしごを登るのです。環境に組み込むものが多いほど、エージェントが正しいことをすると信頼でき、同時に動かせるエージェントも増えます。このガイドは考え方を説明し、Discava がそれをどう動かしているかを示し、自分で構築する手順を案内します。"
+  actions:
+    - text: ここから始める
+      link: /agentic-sdlc/jp/guides/introduction/
+      icon: right-arrow
+    - text: セットアップする
+      link: /agentic-sdlc/jp/setup/before-you-start/
+      icon: setting
+      variant: minimal
+---
+
+import { CardGrid, Card, LinkCard } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <Card title="信頼できる環境" icon="approve-check">
+    ルール、テスト、チェックを層にして、ミスが表に出たら、あなたではなくエージェントに戻るようにします。
+  </Card>
+  <Card title="spec を書く" icon="pencil">
+    すべての機能は、レビュー済みの spec、plan、タスクリストから始まります。エージェントはチャットではなく、それらをもとに実装します。
+  </Card>
+  <Card title="残りはエージェントが行う" icon="rocket">
+    spec がマージされると、フェーズごとに issue が開かれます。エージェントが PR を開き、赤い CI やレビューのフィードバックを自分で修正します。1 つのループにつき最大 5 回までです。
+  </Card>
+  <Card title="あなたは舵を取る" icon="information">
+    人は spec を承認し、マージ前に最終判断を下します。その間のすべては自動で進みます。
+  </Card>
+</CardGrid>
+
+## 進む道を選ぶ
+
+<CardGrid>
+  <LinkCard title="コンセプトを理解する" href="/agentic-sdlc/jp/concepts/principles/" description="原則と、ワークフローを構成する 5 つの要素。" />
+  <LinkCard title="Discava のやり方を見る" href="/agentic-sdlc/jp/discava/overview/" description="すべてのギャップとそれを埋める具体的なファイル、そして spec からマージまでたどった実際の機能。" />
+  <LinkCard title="ワークフローを再現する" href="/agentic-sdlc/jp/setup/before-you-start/" description="このリポジトリを fork し、OpenHands をそこに向け、1 つの機能をループ全体に通します。" />
+  <LinkCard title="機能で試してみる" href="/agentic-sdlc/jp/tutorial/the-case/" description="小さな機能 1 つ、ノートのタグを、すべての段階で追いかけます。" />
+</CardGrid>

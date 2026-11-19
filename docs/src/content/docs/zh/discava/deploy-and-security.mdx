@@ -1,0 +1,91 @@
+---
+title: 部署与安全
+description: 绿色的 main 如何自动部署，以及阻止泄露密钥或有漏洞依赖的扫描。
+sidebar:
+  order: 9
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+缺口 9 和 10：合并不会发布任何东西，而智能体可能提交密钥或引入有漏洞的包。Discava 在 GitHub Actions
+中处理这两者，任何地方都没有长期有效的云凭证。
+
+## 部署
+
+`.github/workflows/deploy.yml` 在 **CI** 于 `main` 上以绿色完成时运行，也可以针对任意 stage 手动运行。
+每个 stage 都有自己的 GitHub environment 和自己的并发组，因此对同一个 stage 的两次部署永远不会重叠。
+该 workflow 的精简版本见[采用：部署](../../adopt/deploy/)。
+
+```d2
+direction: right
+
+ci: main 上 CI 变绿
+manual: 手动运行
+approve: "必需审核者\n（仅限生产环境）" {shape: diamond}
+deploy: "Deploy workflow\nTrivy、OIDC 角色、synth、\n仍是 main 的最新提交？、cdk deploy"
+dev: 开发 stage {shape: cylinder}
+prod: 生产 stage {shape: cylinder}
+
+ci -> deploy: AUTO_DEPLOY_STAGE
+manual -> approve -> deploy
+deploy -> dev
+deploy -> prod
+```
+
+步骤依次为：
+
+1. **检出 CI 验证过的 commit**（`workflow_run.head_sha`），而不是 `main` 现在指向的任意 commit。
+2. **检查 stage 是否存在**于 `stages.config.ts` 中，这样拼写错误会清晰地失败，而不是表现为一个令人
+   困惑的凭证错误。
+3. **转发 stage 覆盖项。** GitHub environment 上命名形如 `DISCAVA_DEVELOPMENT_*` 的变量会成为 synth
+   的环境变量，用于自定义域名等不应提交到仓库的内容。
+4. **Trivy 扫描。** 与 CI 中相同的扫描，作为一道关卡。
+5. 通过 GitHub OIDC（`aws-actions/configure-aws-credentials`）**承担部署角色**。任何地方都不存储访问
+   密钥。
+6. 在应用该 stage 的权限边界的情况下进行 **synth**。
+7. **检查该 commit 是否仍是 `main` 的最新提交。** 这一步在并发槽内运行。重新运行的旧 CI，或者在一次
+   更新的部署后面排队等待的运行，会附带一条 notice 被跳过，而不是部署过时的代码。手动运行会跳过这项
+   检查，因此你可以回滚。
+8. 用 CDK **部署**，并交给 CloudFormation 一个限定范围的执行角色（`--role-arn`）。
+
+`AUTO_DEPLOY_STAGE` 是一个仓库变量。Discava 把它设为 `discava-development`，因此每个绿色的 `main`
+都会到达开发 stage。不设置它，没有人参与就不会部署任何东西。
+
+### 配置一个 stage
+
+`scripts/setup-stage.sh` 每个 stage 运行一次，从运行该 workflow 的仓库的一个克隆中运行。它会就所有内容
+进行询问，并为它能检测到的内容提供默认值。它会创建：
+
+- AWS 账号中的 GitHub OIDC provider
+- workflow 承担的**部署角色**，只信任该仓库和该 environment
+- **CloudFormation 执行角色**及其托管策略，并带有一个权限边界，使各个 stack 只能创建带有该边界的角色
+- GitHub environment 的 `AWS_REGION`、`AWS_DEPLOY_ROLE_ARN` 和 `AWS_EXECUTION_ROLE_ARN` 变量，以及
+  可选的 `AUTO_DEPLOY_STAGE`
+- 可选地，从一个问题（一个根域名）出发配置自定义域名。每个组件都会得到它的一个固定子域名，脚本会为每个
+  子域名查找已签发的证书。如果缺少某个证书，它会列出来，并在做任何修改之前停止。这些域名作为 stage
+  覆盖项存储在 GitHub environment 上（上面的第 3 步）
+
+### 生产环境等待一个人
+
+每个 stage 都从同名的 GitHub environment 部署。类生产的 stage 会在其 environment 上设置**必需审核者**：
+job 会暂停，直到有人在 Actions UI 中批准它。Discava 还没有正式上线，所以目前只有 `discava-development`
+有 environment，并且会自动部署。
+
+## 安全扫描
+
+| 扫描 | 何时 | 阻止 |
+| --- | --- | --- |
+| `git-secrets`（AWS 模式） | `pre-commit` hook，每次本地 commit 时 | 包含 AWS 密钥的 commit |
+| Trivy，漏洞和密钥 | `ci.yml` 的 `trivy` job 在每次推送到 `main` 时运行，`deploy.yml` 在每次部署前运行 | 存在可修复 CRITICAL 漏洞或已提交 HIGH/CRITICAL 密钥的部署 |
+| checkov | 基础设施项目 `build` target 的一部分，因此在每个 PR 的 `Checks (build)` 中运行 | 不安全的 CDK 资源设置 |
+| Dependabot | 每周，npm 和 GitHub Actions，分组 | 过时的依赖和 action 固定版本 |
+
+Trivy 作为**独立**的 CI job 运行，而不是 `build` 的一部分。它的漏洞数据库每天都在变化，新发布的 CVE
+应该标记 `main`，但不应阻塞文档部署。被接受的发现以每行一个 ID 的形式列在 `.trivyignore` 中。
+
+<Aside type="note">
+pre-commit hook 还会运行 `lint-staged`（Biome），如果任一工具修改了工作区，就让 commit 失败，于是
+智能体会重新暂存并再次 commit。`commit-msg` 使用 Conventional Commits 配置运行 commitlint。
+</Aside>
+
+下一步：[一个真实的功能](../a-real-feature/)。

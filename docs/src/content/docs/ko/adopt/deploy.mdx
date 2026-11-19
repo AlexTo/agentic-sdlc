@@ -1,0 +1,90 @@
+---
+title: 9. 배포와 보안 스캔 (선택)
+description: 초록색이 된 모든 main을 development stage에 배포하고, production은 승인 뒤에 두며, 배포 전마다 스캔합니다.
+sidebar:
+  order: 9
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**결과:** `main`으로의 모든 push에 대한 Trivy 스캔, 초록색이 된 각 `main`을 development stage로
+배포하는 Deploy workflow, 그리고 사람을 기다리는 production 배포.
+
+이 단계의 세부 사항은 Discava에 특화되어 있지만 (AWS, CDK), 구조는 어떤 cloud에서든 동작합니다. 이
+저장소의 예제 노트 앱에는 배포가 없으므로,
+[Discava의 `deploy.yml`](https://github.com/AlexTo/discava/blob/main/.github/workflows/deploy.yml)에서 복사하세요.
+
+<Steps>
+
+1. 스캔하려는 프로젝트에 **`trivy` target을 추가**합니다 (루트의 `pnpm trivy`가
+   `nx run-many --target trivy --all`을 실행합니다). 이 저장소처럼 `ci.yml`에 `trivy` job을 추가합니다.
+   `build`와는 별도의 job으로 두어, 새로 공개된 CVE가 다른 것을 막지 않고 `main`에만 표시되게 하세요.
+   수용한 발견 사항은 `.trivyignore`에 한 줄에 ID 하나씩 기록합니다.
+
+2. **key 없는 cloud 접근을 설정**합니다. AWS에서 Discava의 `scripts/setup-stage.sh`는 stage마다 다음을 만듭니다:
+   GitHub OIDC provider,
+   `repo:owner/repo:environment:<stage>`에 대해서만 신뢰하는 deploy role, permissions
+   boundary가 있는 CloudFormation execution role, 그리고 GitHub environment의 변수
+   (`AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `AWS_EXECUTION_ROLE_ARN`). 여러분의 cloud에서도 GitHub Actions용
+   OIDC federation을 같은 방식으로 사용하세요. access key를 저장하지 마세요.
+
+3. `main`에서 CI가 완료될 때와 수동으로 trigger되는 **Deploy workflow를 추가**합니다.
+
+   ```yaml
+   on:
+     workflow_run: { workflows: [CI], types: [completed], branches: [main] }
+     workflow_dispatch:
+       inputs: { stage: { type: string, required: true } }
+
+   jobs:
+     deploy:
+       if: ${{ github.event_name == 'workflow_dispatch' ||
+               (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
+       environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
+       concurrency: { group: 'deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}', cancel-in-progress: false }
+       steps:
+         - uses: actions/checkout@<sha>
+           with: { ref: '${{ github.event.workflow_run.head_sha || github.sha }}' }
+         # init, then: pnpm trivy, configure credentials (OIDC), synth
+         - name: Check commit is still main's latest
+           id: freshness
+           if: ${{ github.event_name == 'workflow_run' }}
+           run: |
+             main_sha="$(git ls-remote --exit-code origin refs/heads/main | cut -f1)"
+             if [[ "$main_sha" == "$(git rev-parse HEAD)" ]]; then
+               echo "current=true" >> "$GITHUB_OUTPUT"
+             else
+               echo "::notice::Skipping deploy: no longer main's latest commit"
+               echo "current=false" >> "$GITHUB_OUTPUT"
+             fi
+         - name: Deploy
+           if: ${{ github.event_name != 'workflow_run' || steps.freshness.outputs.current == 'true' }}
+           run: pnpm nx run @your-scope/infra:deploy-ci "$STAGE/*" --role-arn "$AWS_EXECUTION_ROLE_ARN"
+   ```
+
+   최신 여부 확인은 concurrency slot *안에* 있으므로, 실행이 다른 실행 뒤에서 기다렸더라도 배포 직전의
+   `main`을 반영합니다.
+
+4. development stage에 대해 **자동 배포를 켭니다**. **Settings → Secrets and
+   variables → Actions → Variables**에서 development stage의 이름으로 저장소 변수
+   `AUTO_DEPLOY_STAGE`를 추가합니다.
+
+5. **production을 보호합니다.** **Settings → Environments**에서 production stage의
+   environment를 열고 **Required reviewers**를 추가합니다. 배포하려면 **Actions → Deploy → Run
+   workflow**를 열고 production stage를 입력합니다. 그러면 job이 승인을 기다립니다.
+
+</Steps>
+
+## 동작 확인
+
+아무 PR이나 merge합니다. CI가 실행되고, 이어서 **Deploy**가 development stage로 저절로 시작됩니다.
+오래된 커밋에서 CI를 수동으로 다시 실행합니다: Deploy가 `Skipping deploy: no longer main's latest commit`을
+로그에 남기고 아무것도 배포하지 않습니다.
+
+<Aside type="note">
+에이전트는 절대 배포하지 않으며 이 role들을 보지도 못합니다. 에이전트의 대화에는 GitHub 토큰만 있습니다.
+deploy role은 stage의 environment 안에서 `main`으로부터 실행되는 workflow만 assume합니다.
+</Aside>
+
+다음: 이제 여러분의 저장소에는 이 저장소의 fork에 있는 모든 것이 갖춰졌습니다. fork 대신
+여러분의 저장소로 [2. 저장소 설정하기](../../setup/github-repository/)부터 이어서 진행하세요.

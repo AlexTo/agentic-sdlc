@@ -1,0 +1,85 @@
+---
+title: 8. 本地环境、e2e 与截图
+description: 让整个应用无需云账号即可运行，添加带截图的 e2e 测试，并在每个测试之后检查数据不变式。
+sidebar:
+  order: 8
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**完成后你将拥有：** 用本地替身启动整个应用的 `pnpm dev`、CI 在每个 PR 上运行的 Playwright 测试套件、发布在 PR 上的截图，以及在每个测试之后检查的不变式。
+
+这是最依赖你技术栈的一步。也正是它让 CI 无需云凭证就能给智能体真实的反馈。
+
+<Steps>
+
+1. **给每个云服务一个本地替身**，由一个 `dev` target 启动，这样 `pnpm dev` 就能运行所有东西。[Discava 的替身](../../discava/local-stack/#本地运行的内容)覆盖 DynamoDB、S3、SQS、OpenSearch 和 Cognito，外加一个 “event runner” 进程，它调用的处理函数与云上 Lambda 触发器、stream 和 EventBridge 所调用的相同。
+
+   让后端代码通过一个开关（`LOCAL_DEV=true`）切换，端点集中在一个共享模块中。在 `CONTRIBUTING.md` 中列出仍然只能在云上运行的部分，并把需要它们的任务标记为 **(human)**。
+
+2. **添加一个 Playwright 项目**，每个用户流程对应一个场景文件。这个仓库的 `packages/e2e` 是一个最小的例子。在 `playwright.config.ts` 中，从环境变量读取分片，以便 CI 矩阵拆分测试套件：
+
+   ```ts
+   const [shardCurrent, shardTotal] = (process.env.E2E_SHARD ?? '').split('/').map(Number);
+
+   export default defineConfig({
+     testDir: './src',
+     testMatch: ['scenarios/**/*.e2e.ts'],
+     workers: 1,
+     forbidOnly: !!process.env.CI,
+     retries: process.env.CI ? 1 : 0,
+     shard: shardCurrent && shardTotal ? { current: shardCurrent, total: shardTotal } : null,
+     webServer: { command: 'pnpm dev', reuseExistingServer: !process.env.CI /* … */ },
+   });
+   ```
+
+   每个场景都创建自己的用户和名称唯一的数据，并且没有场景会重置本地数据，因此它们可以按任意顺序运行。
+
+3. 从这个仓库**复制截图辅助函数**：`packages/e2e/src/helpers/screenshots.ts`。它保存到 `dist/packages/e2e/screenshots/<scenario>/<nn>-<name>.png`，也就是 PR Checks 的 `e2e` job 上传的文件夹。在人会去看的地方调用它，放在对显示内容的 `expect` 之后：
+
+   ```ts
+   await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible();
+   await screenshot(page, 'reviews section with three reviews');
+   ```
+
+4. **在每个测试之后检查不变式。** 对于每条跨越由不同代码写入的记录的规则（计数器、聚合值、排序），编写一个扫描数据并返回违规项的函数。然后给场景提供一个自动检查它们的 `test`。下面是精简过的 Discava 模式：
+
+   ```ts
+   export const test = base.extend<{ tableInvariants: void }>({
+     tableInvariants: [
+       async ({}, use, testInfo) => {
+         const before = new Set((await findViolations()).map(violationId));
+         await use();
+         if (testInfo.status !== testInfo.expectedStatus) return;
+         await expect
+           .poll(async () => (await findViolations()).filter((v) => !before.has(violationId(v))), {
+             message: 'The scenario left the table breaking invariants',
+             timeout: 30_000,
+           })
+           .toEqual([]);
+       },
+       { auto: true },
+     ],
+   });
+   ```
+
+   只有*新的*违规才会让测试失败，所以旧的本地数据永远不会导致失败。`expect.poll` 给后台工作（stream 处理函数、重新计算）留出追上的时间。
+
+5. 为两个用户可能产生竞争的写操作**添加并发测试**：用 `Promise.all` 在同一时刻发出相同的 API 请求，然后对结果和不变式进行断言。
+
+</Steps>
+
+## 检查是否成功
+
+```bash
+pnpm nx e2e @your-scope/e2e
+ls dist/packages/e2e/screenshots/*/
+```
+
+然后开一个修改了某个页面并添加了一处 `screenshot(` 调用的 PR。PR Checks 完成后，PR 上会有一条标题为 **E2E screenshots** 的评论，在 “Added by this pull request” 下列出新的图片。
+
+<Aside type="tip">
+如果你的应用目前还不能完全在本地运行，就从能运行的部分开始。即使只覆盖 API 和数据库的测试套件，也能抓住智能体的大部分错误。一次为一个服务添加替身，在那之前把其余部分保留为 **(human)** 任务。
+</Aside>
+
+下一步：[9. 部署与安全扫描](../deploy/)。

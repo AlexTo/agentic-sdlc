@@ -1,0 +1,53 @@
+---
+title: L'adopter dans votre propre dépôt
+description: Quand vous ne pouvez pas forker, comment ajouter chaque élément à un dépôt existant, dans l'ordre.
+sidebar:
+  order: 0
+  label: Vue d'ensemble
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Le moyen le plus rapide d'obtenir le workflow est de [forker ce dépôt](../../setup/fork/). Cette section
+est pour le cas où vous ne pouvez pas : vous avez un dépôt produit existant et voulez y mettre la même configuration.
+
+Chaque étape ajoute un élément, copié depuis ce dépôt, et indique comment le vérifier. Une fois
+terminé, votre dépôt contient ce que contient un fork, et vous continuez à partir de
+[2. Configurer le dépôt](../../setup/github-repository/).
+
+<Aside type="tip">
+Forkez quand même ce dépôt et lancez d'abord [votre première fonctionnalité](../../setup/first-feature/) sur l'application
+de notes. Voir toute la boucle fonctionner une fois rend chaque étape ici bien plus facile à suivre.
+</Aside>
+
+## Les étapes
+
+| # | Étape | Manque comblé |
+| --- | --- | --- |
+| 1 | [Workspace et hygiène des commits](../workspace/) | |
+| 2 | [Installer Speckit](../speckit/) | |
+| 3 | [Constitution et templates](../constitution-and-templates/) | 5 (format, en prose) |
+| 4 | [Guidage des agents et template d'issue](../agent-guidance/) | |
+| 5 | [Les scripts de glue](../glue-scripts/) | 1 à 7 (logique) |
+| 6 | [Checks de PR et CI](../pr-checks-and-ci/) | 5, 6 (appliqués) |
+| 7 | [Les workflows des agents](../agent-workflows/) | 1, 2, 3, 4, 7 (branchés) |
+| 8 | [Stack locale, e2e et captures d'écran](../local-stack-and-e2e/) | 6, 8 |
+| 9 | [Déploiement et scans de sécurité (facultatif)](../deploy/) | 9, 10 |
+
+Les numéros de manque renvoient à [La glue manquante](../../concepts/the-missing-glue/).
+
+## À décider d'abord
+
+| Décision | Par défaut | À changer si |
+| --- | --- | --- |
+| Label déclencheur de l'implémentation | `openhands` | Vous utilisez déjà ce label |
+| Préfixe de branche | `openhands/issue` | Rarement. La glue attend exactement `openhands/issue-<n>`. Si vous le changez, changez aussi `AGENT_BRANCH` et les conditions des workflows |
+| Label de review | `openhands-review` | Comme ci-dessus |
+| Intervalle d'interrogation | toutes les 5 minutes | Vous voulez réduire le coût et pouvez attendre plus longtemps (la valeur par défaut du catalogue est 15) |
+| Nombre max de tentatives de correction | 5 par boucle | Rarement. C'est `MAX_*_FIX_ATTEMPTS` dans deux fichiers `plan.ts` |
+| Numérotation des dossiers de spec | horodatage | Jamais, avec plus d'un auteur de specs |
+
+Dans chaque commande et chaque fichier copié, remplacez `@your-scope` ou `@agentic-sdlc` par le scope npm
+de votre workspace.
+
+Suite : [1. Workspace et hygiène des commits](../workspace/).

@@ -1,0 +1,44 @@
+---
+title: 사례 - note tag
+description: 튜토리얼의 모든 단계가 만들어 가는 기능, 그리고 이것을 고른 이유.
+sidebar:
+  order: 0
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+튜토리얼은 하나의 기능을 아이디어에서 merge된 코드까지 따라갑니다: **note에 tag 달기**.
+
+> 사용자는 note에 최대 다섯 개의 tag를 추가할 수 있고, note 목록을 tag로 필터링할 수 있습니다.
+
+몇 개의 PR로 끝낼 수 있을 만큼 작으면서도 예제 노트 앱의 모든 계층을 건드리므로,
+workflow의 각 단계에 실제로 할 일이 있습니다.
+
+| 계층 | 바뀌는 것 | 실수를 잡아내는 게이트 |
+| --- | --- | --- |
+| `notes-table` | `note` entity의 `tags` attribute | 단위 테스트 |
+| `notes-api` | create와 update의 `tags`, list의 `tag` 필터 | 단위 테스트, typecheck |
+| `notes-website` | note form의 tag 입력, tag chip, tag 필터 | 스크린샷, e2e |
+| 비즈니스 규칙 | 최대 다섯 개의 tag, 중복 없음, 대소문자 구분 없음 | Invariant, 단위 테스트 |
+| 동시성 | 두 탭에서 동시에 tag를 추가해도 어느 쪽도 사라지면 안 됨 | Concurrency test |
+| `docs/` | 노트 앱 페이지가 tag를 설명함 | 에이전트 리뷰, 사람의 리뷰 |
+
+## Phase
+
+spec은 세 개의 phase로 나뉘므로, issue도 세 개, PR도 세 개입니다.
+
+1. **데이터와 API.** Entity, procedure, 검증 규칙, 단위 테스트.
+2. **웹사이트.** Tag 입력, chip, 필터, 스크린샷이 있는 e2e 시나리오, invariant와 동시성 테스트.
+3. **문서.** tag를 설명하도록 문서를 업데이트합니다.
+
+<Aside type="note">
+이 사례의 phase는 예시입니다. 여러분의 spec은 다르게 나뉠 것입니다. 규칙은 단 하나, 각 phase가
+`main`을 동작하는 상태로 유지하는, 리뷰 가능한 PR 하나라는 것입니다.
+</Aside>
+
+## 시작하기 전에
+
+- [설정하기: fork하고 실행하기](../../setup/before-you-start/)에 따라 설정된
+  이 저장소의 fork가 있습니다.
+- OpenHands가 `openhands` label이 붙은 issue를 폴링하고 있습니다.
+- 깨끗한 작업 트리 상태로 `main`에서 작업하고 있습니다.

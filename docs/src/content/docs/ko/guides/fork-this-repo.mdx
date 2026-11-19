@@ -1,0 +1,58 @@
+---
+title: 이 저장소 fork하기
+description: 이 저장소를 fork하면 왜 Discava의 설정을 그대로 얻게 되는지, 그리고 작은 예제 앱에서 바로 시도해 볼 수 있는 이유.
+sidebar:
+  order: 3
+---
+
+import { FileTree, LinkCard } from '@astrojs/starlight/components';
+
+이 저장소가 *곧* 워크플로입니다. Discava가 실행하는 것과 같은 Speckit 설정, issue 템플릿, PR 검사, 에이전트
+workflow, 단위 테스트를 갖춘 glue가 작은 노트 앱을 감싸고 있습니다.
+
+**fork하면 Discava의 설정을 얻습니다.** 여러분의 OpenHands가 fork를 가리키게 하고, 노트 앱에 대한 spec을
+작성하면, [동작 방식](../how-it-works/)에서 설명하는 루프를 거칩니다.
+
+## 얻는 것
+
+<FileTree>
+- .specify/ Speckit 템플릿, 스크립트, constitution
+- .github/
+  - ISSUE_TEMPLATE/implement-phase.md 모든 구현 issue에 담기는 지시 사항
+  - actions/init-monorepo/ 공유 CI 설정
+  - workflows/
+    - pr-checks.yml lint, test, build, tasks 형식, e2e, 스크린샷 댓글
+    - ui-screenshots.yml 스크린샷 규칙
+    - ci.yml main에서의 검사, Trivy, 문서 배포
+    - agent-issues.yml spec → issue, merge → 다음 issue
+    - archive-specs.yml 완료된 spec → 아카이브 PR
+    - agent-ci.yml 빨간 CI → 에이전트
+    - agent-review.yml "changes requested" → 에이전트
+- packages/
+  - common/scripts/src/ glue의 규칙, 단위 테스트 143개
+  - notes-table/ ElectroDB 엔터티, DynamoDB local
+  - notes-api/ tRPC 프로시저
+  - notes-website/ React, Vite, TanStack Router, shadcn/ui
+  - e2e/ Playwright 시나리오와 `screenshot()` 헬퍼
+- docs/ 이 사이트
+</FileTree>
+
+노트 앱은 완전히 로컬에서 실행되므로(`pnpm dev`, DynamoDB local용 Docker 포함), CI가 e2e 테스트를 실행할 수
+있고 에이전트에게는 클라우드 자격 증명이 전혀 필요 없습니다.
+
+## 추가해야 하는 것
+
+저장소에 담을 수 없는 것만 추가하면 됩니다.
+
+1. **GitHub 설정**: Issues와 Actions 활성화, label, branch protection. fork는 이것들을 복사하지
+   않습니다.
+2. **OpenHands**: 여러분 컴퓨터의 Agent Canvas, GitHub 토큰, 그리고 fork를 가리키는 두 개의
+   automation.
+
+## 빠진 것
+
+Discava의 AWS 배포입니다. 노트 앱에는 클라우드 인프라가 없으므로, merge해도 문서 사이트 외에는 아무것도
+배포되지 않습니다. [배포와 보안](../../discava/deploy-and-security/)에서 Discava의 파이프라인을 설명하고,
+[도입: 배포](../../adopt/deploy/)에서 파이프라인을 추가하는 방법을 보여 줍니다.
+
+<LinkCard title="설정하기: fork, 구성, 첫 기능 실행" href="/agentic-sdlc/ko/setup/before-you-start/" />

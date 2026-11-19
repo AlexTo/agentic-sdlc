@@ -1,0 +1,53 @@
+---
+title: 3. Approva la spec
+description: Fai la review della PR della spec come se fosse codice, e mettile l'label spec-ready per avviare l'agente.
+sidebar:
+  order: 3
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Sei qui:** 🧑 gate umano n. 1. **Output:** una PR della spec unita e la prima issue di implementazione.
+
+<Steps>
+
+1. Fai il push del branch, poi apri una pull request su GitHub.
+
+   ```bash
+   git add specs/ && git commit -m "docs(specs): add note tags spec"
+   git push -u origin spec/note-tags
+   ```
+
+2. Fanne la review come faresti con il codice. Leggi prima `spec.md`, poi `plan.md`, poi scorri `tasks.md`.
+   Chiediti:
+
+   - La spec dice quello che vuoi davvero?
+   - Ogni fase è abbastanza piccola da rivederla in una sola seduta?
+   - C'è qualcosa nel plan che rifiuteresti in una code review?
+
+   Commenta la PR per cambiare qualcosa. L'agente legge anche i commenti, quindi puoi chiedergli di rivederla.
+
+   Coinvolgi qui il tuo business analyst o product owner. `spec.md` è in linguaggio semplice, quindi può
+   rivederla sulla PR mentre tu controlli il plan. Vedi
+   [Gate umani](../../concepts/human-gates/#questo-è-ora-il-collo-di-bottiglia-principale).
+
+3. Aggiungi l'label `spec-ready` alla PR, poi fai il merge.
+
+   Hai aperto tu questa PR, quindi GitHub non ti lascia approvarla. Con la protezione del branch attiva, spunta
+   **Merge without waiting for requirements to be met** per fare il merge come amministratore del repository.
+
+</Steps>
+
+## Cosa succede dopo, senza che nessuno tocchi nulla
+
+Il workflow **Agent Issues** vede una PR unita con `spec-ready`. Legge `tasks.md`, prende
+la prima fase non finita e apre una issue dal
+[template di implementazione](https://github.com/AlexTo/agentic-sdlc/blob/main/.github/ISSUE_TEMPLATE/implement-phase.md):
+cartella della spec, intervallo di task da `T001` a `T003`, e le regole che l'agente deve seguire. Aggiunge
+l'label `openhands`, che è il segnale di partenza.
+
+<Aside type="note">
+Hai dimenticato l'label? Aggiungi `spec-ready` alla PR già unita.
+</Aside>
+
+La tua attenzione ora è libera finché non c'è qualcosa da rivedere. Avanti: [L'agente implementa](../agent-implements/).

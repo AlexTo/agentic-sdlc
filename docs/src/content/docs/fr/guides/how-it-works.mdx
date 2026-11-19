@@ -1,0 +1,78 @@
+---
+title: Comment ça marche
+description: Le parcours d'une fonctionnalité, de l'idée au code mergé, en onze étapes.
+sidebar:
+  order: 2
+---
+
+Cette page suit une fonctionnalité à travers toute la boucle. Chaque étape indique qui agit et ce
+qu'il en reste.
+
+```d2
+grid-rows: 2
+grid-columns: 4
+horizontal-gap: 140
+vertical-gap: 90
+
+# Top row runs left to right, bottom row right to left, so the loop wraps.
+spec: "PR de spec\n(vous)" {shape: document}
+issues: "Agent Issues\n(GitHub Actions)"
+issue: issue {shape: page}
+implement: "implémentation\n(OpenHands)"
+merge: "merge\n(vous)"
+review: "revue\n(OpenHands)"
+checks: "PR Checks\n(GitHub Actions)"
+pr: pull request {shape: page}
+
+spec -> issues: spec-ready
+issues -> issue
+issue -> implement
+implement -> pr
+pr -> checks
+checks -> review: vert
+review -> merge: approuvée
+merge -> issues: phase suivante
+```
+
+## Les étapes
+
+| # | Qui | Ce qui se passe | Artefact |
+| --- | --- | --- | --- |
+| 1 | 🧑🤖&nbsp;Vous + agent | `/speckit-specify` transforme une idée d'un paragraphe en spec. `/speckit-clarify` pose jusqu'à cinq questions et y reporte vos réponses | `specs/<timestamp>-<name>/spec.md` |
+| 2 | 🧑🤖&nbsp;Vous + agent | `/speckit-plan` décide du *comment*, et vérifie le plan par rapport à la constitution | `plan.md`, `data-model.md`, `contracts/` |
+| 3 | 🧑🤖&nbsp;Vous + agent | `/speckit-tasks` écrit une liste de tâches ordonnée, groupée en phases. `/speckit-analyze` vérifie la cohérence des trois fichiers | `tasks.md` |
+| 4 | 🧑&nbsp;**Vous** | Ouvrez la PR de spec, relisez-la comme du code, ajoutez le label `spec-ready`, mergez | Une PR de spec mergée. **Contrôle humain 1** |
+| 5 | ⚙️&nbsp;Automatisation | Le workflow **Agent Issues** lit `tasks.md` et ouvre une issue pour le premier groupe de phases, avec le label `openhands` | Une issue d'implémentation |
+| 6 | 🤖&nbsp;OpenHands | À son prochain passage, l'agent prend l'issue, écrit d'abord les tests, implémente, coche ses tâches et ouvre une PR sur `openhands/issue-<n>` | Une pull request |
+| 7 | ⚙️&nbsp;CI | Les checks de PR exécutent le lint, les tests unitaires, le build, la vérification du format de `tasks.md`, les tests e2e et la vérification des captures d'écran | Résultats des checks |
+| 8 | ⚙️🤖&nbsp;Automatisation + OpenHands | Sur une exécution rouge, **Agent CI Status** marque la PR comme en échec. L'agent le voit au passage suivant et révise la même PR | Labels `ci-fix-1` à `ci-fix-5` |
+| 9 | 🤖&nbsp;OpenHands | Une fois tous les checks terminés, l'agent relecteur revoit le commit de tête et conclut par `✅ APPROVED` ou `🔄 CHANGES REQUESTED`. **Agent Review Status** renvoie l'agent au travail dans le second cas | Une revue, et éventuellement des labels `review-fix-N` |
+| 10 | 🧑&nbsp;**Vous** | Vous lisez la description de la PR et le commentaire **E2E screenshots**, faites les éventuelles tâches **(human)**, et mergez | Une PR mergée. **Contrôle humain 2** |
+| 11 | ⚙️&nbsp;Automatisation | Le merge relance **Agent Issues**. Il ouvre l'issue de la phase suivante qui a des tâches d'agent non cochées, et les étapes 6 à 10 se répètent jusqu'à ce qu'il n'en reste plus | L'issue suivante, ou terminé |
+
+## Ce que vous faites vraiment
+
+Par fonctionnalité, vous écrivez et approuvez la spec une fois. Par pull request, vous faites une
+revue et cliquez sur merge. On ne vous sollicite plus tôt que lorsqu'une boucle épuise ses tentatives
+(`ci-fix-exhausted` ou `review-fix-exhausted`), ou quand l'agent indique en commentaire qu'il est
+bloqué. Pendant que les agents travaillent, vous pouvez écrire la spec suivante.
+
+## Où se trouve chaque pièce
+
+| Pièce | Fichier |
+| --- | --- |
+| Outillage de spec | `.specify/`, les skills `speckit-*`, `specs/` |
+| Règles du projet pour chaque exécution d'agent | `.specify/memory/constitution.md`, `AGENTS.md` |
+| L'issue que reçoit l'agent | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| De la spec à l'issue | `.github/workflows/agent-issues.yml` |
+| Spec terminée vers `specs/_archive/` | `.github/workflows/archive-specs.yml` |
+| De la CI à l'agent | `.github/workflows/agent-ci.yml` |
+| Du relecteur à l'agent | `.github/workflows/agent-review.yml` |
+| Checks | `.github/workflows/pr-checks.yml`, `ui-screenshots.yml`, `ci.yml` |
+| Les règles derrière la glue, testées unitairement | `packages/common/scripts/src/agent-*`, `ui-screenshots/` |
+| Le runtime de l'agent | OpenHands Agent Canvas, en dehors du dépôt |
+
+Les détails sont dans Concepts : [comment les phases deviennent des issues](../../concepts/one-phase-at-a-time/),
+et [comment un échec renvoie l'agent au travail](../../concepts/feedback-loops/).
+
+Suite : [Forker ce dépôt](../fork-this-repo/), ou allez à [Concepts](../../concepts/principles/).

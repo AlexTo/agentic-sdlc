@@ -1,0 +1,86 @@
+---
+title: 6. PR checks e CI
+description: Adicione o workflow PR Checks (lint, test, build, formato das tasks, e2e, screenshots) e o CI na main.
+sidebar:
+  order: 6
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**No final você terá:** um workflow **PR Checks** cuja falha alimenta o loop de CI, um check
+**UI Screenshots**, e o **CI** na `main`.
+
+<Steps>
+
+1. **Copie `.github/workflows/pr-checks.yml`** deste repositório. Mantenha o `name: PR Checks`
+   exatamente assim: o Agent CI Status escuta um workflow com esse nome. Os jobs dele:
+
+   | Job | Manter como está? |
+   | --- | --- |
+   | `checks`, uma matriz de `lint`, `test`, `build` com `fail-fast: false` | Sim |
+   | `tasks-format` | Sim |
+   | `e2e`, em shards, mais `e2e-result` juntando os shards em um único check `E2E tests` | Ajuste o número de shards à sua suíte |
+   | `e2e-screenshots` | Sim, depois que o [passo 8](../local-stack-and-e2e/) estiver feito |
+
+2. **Copie `.github/workflows/ui-screenshots.yml`.** Neste repositório, a regra dos screenshots é um
+   workflow próprio, disparado em `opened, synchronize, reopened, labeled, unlabeled`. Adicionar ou
+   remover o label `no-ui-screenshots` então roda de novo só este check, não a suíte e2e inteira. O
+   Discava roda a mesma regra como um job do PR Checks. Qualquer um funciona.
+
+3. **Copie `.github/workflows/ci.yml`** para pushes na `main`. Mantenha o passo `Check for mutations`
+   (`git diff --ignore-space-at-eol --exit-code` depois do build). Ele pega arquivos gerados que o
+   agent esqueceu de commitar. Mantenha o job `playwright-cache` se você usa Playwright: execuções
+   de PR só conseguem restaurar caches salvos na `main`.
+
+   O job `build` passa `nx-cache-scope: main` para o `init-monorepo`, que salva o cache de tasks do
+   Nx. A primeira execução de um PR começa a partir dele, então as tasks cujos inputs a `main` já
+   buildou são reaproveitadas, não rodadas de novo, e o agent espera menos em cada rodada de
+   correção. Cada perna de `checks` no PR Checks mantém seu próprio cache do mesmo jeito, exceto
+   `lint`, que só restaura, já que o lint é mais rápido do que salvar um cache. O `init-monorepo`
+   limita o cache a 1 GB.
+
+4. **Copie `.github/workflows/cache-cleanup.yml`.** Ele apaga os caches de um PR quando o PR é
+   fechado. Nada mais consegue lê-los, e sem ele eles contam para os 10 GB de cache de Actions do
+   repositório até o GitHub removê-los, começando pelos de PRs ainda abertos. Veja
+   [Mantendo tudo rápido](../../discava/pr-checks/#mantendo-tudo-rápido) para o quanto isso economizou para o
+   Discava.
+
+5. **Fixe cada action em um SHA de commit**, como os arquivos copiados fazem, e adicione
+   `.github/dependabot.yml` para que os pins fiquem atualizados:
+
+   ```yaml
+   version: 2
+   updates:
+     - package-ecosystem: 'npm'
+       directory: '/'
+       schedule: { interval: 'weekly' }
+       groups: { all: { patterns: ['*'] } }
+     - package-ecosystem: 'github-actions'
+       directories: ['/', '/.github/actions/*']
+       schedule: { interval: 'weekly' }
+       groups: { github-actions: { applies-to: version-updates, patterns: ['*'] } }
+   ```
+
+</Steps>
+
+## Confira se funcionou
+
+Abra um PR descartável que quebra uma linha do `tasks.md`, por exemplo indentando uma task. O check
+**Tasks format** falha com uma anotação nessa linha:
+
+```text
+A task must be written "- [ ] T<3 digits> <description>", starting in the first column
+```
+
+Abra outro que muda um arquivo de UI sem mexer em nenhum cenário. O **UI Screenshots** falha:
+
+```text
+This pull request changes UI source (…) but no e2e scenario gained a `screenshot(page, 'name')` call.
+```
+
+<Aside type="note">
+O `codecov/codecov-action` nos arquivos copiados precisa de um secret `CODECOV_TOKEN`. Remova o
+passo se você não usa o Codecov.
+</Aside>
+
+Próximo: [7. Os workflows dos agents](../agent-workflows/).

@@ -1,0 +1,73 @@
+---
+title: 2. Installa Speckit
+description: Installa specify-cli 1.3.2, inizializzalo nel repository con l'estensione git, e passa alla numerazione con timestamp.
+sidebar:
+  order: 2
+---
+
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
+
+**Alla fine avrai:** `.specify/` nel repository, i comandi `speckit-*` disponibili per il tuo
+coding agent, e cartelle delle spec con nomi basati su timestamp.
+
+<Steps>
+
+1. **Installa la CLI**, fissata alla versione che usa Discava:
+
+   ```bash
+   uv tool install specify-cli --from "git+https://github.com/github/spec-kit.git@v1.3.2"
+   specify --version
+   ```
+
+   ```text
+   specify 1.3.2
+   ```
+
+2. **Inizializzalo nel repository** per il tuo coding agent, con l'estensione git inclusa.
+   Discava ha usato l'integrazione `claude`, che installa i comandi come skill:
+
+   ```bash
+   specify init --here --integration claude --script sh --extension git
+   ```
+
+   Esegui `specify init --help` per vedere le altre integrazioni. Scegli quella che legge l'agente del tuo team.
+
+3. **Passa alla numerazione con timestamp.** In `.specify/extensions/git/git-config.yml`:
+
+   ```yaml
+   branch_numbering: timestamp
+   commit_style: conventional
+   ```
+
+   Le cartelle diventano `specs/20261116-013307-course-reviews/` invece di `specs/001-course-reviews/`,
+   così due persone che scrivono spec nello stesso momento non entrano mai in conflitto.
+
+4. **Controlla gli hook dell'estensione git** in `.specify/extensions.yml`. Discava tiene i valori predefiniti:
+   `speckit.git.feature` prima di `/speckit-specify` (crea un branch), e `speckit.git.commit` dopo
+   ogni passaggio (un commit per passaggio). Imposta `auto_execute_hooks: true` così girano senza chiedere.
+
+5. **Fai il commit di `.specify/`** e dei file di comandi o skill dell'integrazione.
+
+</Steps>
+
+## Verifica che funzioni
+
+<FileTree>
+- .specify/
+  - extensions/git/ git-config.yml, comandi, script
+  - extensions.yml
+  - init-options.json
+  - memory/constitution.md ancora il template, da compilare nel prossimo passaggio
+  - scripts/bash/
+  - templates/ template di spec, plan, tasks, checklist e costituzione
+</FileTree>
+
+Nel tuo coding agent compaiono i comandi `speckit-specify`, `speckit-clarify`, `speckit-plan`, `speckit-tasks`,
+`speckit-analyze` e `speckit-constitution`.
+
+<Aside type="tip">
+Le PR delle spec vanno su un branch a sé (`spec/<name>`), non `openhands/...`. Il branch della feature
+dell'estensione git va bene per questo. Solo i branch dell'agente usano il prefisso `openhands/`.
+</Aside>
+
+Avanti: [3. Costituzione e template](../constitution-and-templates/).

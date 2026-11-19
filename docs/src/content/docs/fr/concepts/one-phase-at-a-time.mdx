@@ -1,0 +1,102 @@
+---
+title: Une phase à la fois
+description: Comment les phases d'une spec deviennent une chaîne d'issues et de pull requests, où chaque merge ouvre l'issue suivante.
+sidebar:
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**La version courte :** une spec n'est pas confiée à l'agent d'un seul coup. `tasks.md` est découpé
+en phases, et l'agent reçoit **un groupe de phases par issue**. Chaque issue devient une pull
+request. Quand cette pull request est mergée, l'issue suivante s'ouvre d'elle-même, jusqu'à ce qu'il
+ne reste plus de tâches d'agent.
+
+```d2
+direction: right
+
+spec: PR de spec {shape: document}
+i1: "issue 1\nde la mise en place à la première story" {shape: page}
+p1: PR 1
+i2: "issue 2\nphase suivante" {shape: page}
+p2: PR 2
+i3: "issue 3\ndernière phase" {shape: page}
+p3: PR 3
+done: rien ne s'ouvre
+
+spec -> i1: merge
+i1 -> p1
+p1 -> i2: merge
+i2 -> p2
+p2 -> i3: merge
+i3 -> p3
+p3 -> done: merge
+```
+
+## Pourquoi pas toute la spec d'un coup ?
+
+- **La revue reste possible.** Une fonctionnalité entière dans une seule PR, ce sont des milliers de
+  lignes que personne ne lit correctement. Une phase, c'est une PR que vous pouvez relire d'une
+  traite.
+- **Chaque étape s'appuie sur du code mergé.** La phase 3 part de `main` avec les phases 1 et 2 déjà
+  dedans, relues et testées, et non du travail non relu de l'agent.
+- **Les erreurs restent petites.** Si une phase tourne mal, vous jetez une PR, pas une
+  fonctionnalité.
+- **Le contexte de l'agent reste ciblé.** Une phase est un périmètre qu'un agent peut garder en tête
+  du premier test au dernier commit.
+
+## Comment les phases sont groupées
+
+`tasks.md` est écrit par `/speckit-tasks` en phases : en général la mise en place, les fondations,
+puis une phase par user story, puis les finitions. Le workflow Agent Issues les groupe ainsi :
+
+| Groupe | Phases | Pourquoi |
+| --- | --- | --- |
+| 0 | Tout jusqu'à la **première** phase `User Story` incluse | La mise en place et les fondations seules ne livrent rien que l'on puisse essayer. Livrée avec la story MVP, la première PR est une tranche qui fonctionne |
+| 1, 2, … | Chaque phase suivante, seule | Une phase, une issue, une PR |
+
+L'issue nomme sa plage de tâches (« Tasks `T015` to `T019` … Do not start tasks outside these
+phases »), et l'agent coche chaque tâche dans `tasks.md` à mesure qu'il la termine.
+
+## Ce qui ouvre l'issue suivante
+
+Agent Issues s'exécute quand une pull request est mergée dans `main`, et n'agit que sur deux types de
+merge :
+
+1. **Une PR de spec avec le label `spec-ready`.** Elle ouvre le groupe 0.
+2. **Une PR issue d'une branche d'agent (`openhands/…`).** Il lit le `tasks.md` que le merge vient de
+   mettre à jour, trouve le premier groupe avec une tâche non cochée qui n'est pas **(human)**, et
+   ouvre son issue.
+
+Tout autre merge est ignoré, même un qui modifie `specs/`. Les PR de l'agent lui-même modifient
+`tasks.md`, donc une règle comme « s'exécuter quand `specs/**` change » se déclencherait elle-même.
+
+## Ce qui arrête la chaîne
+
+| Situation | Ce qui se passe |
+| --- | --- |
+| Toutes les tâches d'agent sont cochées | Rien ne s'ouvre. La fonctionnalité est terminée. Les éventuelles tâches **(human)** restent pour le relecteur |
+| La PR mergée n'a pas coché toutes ses tâches | L'issue suivante pour ce groupe existe déjà, donc aucun doublon ne s'ouvre. La PR mergée reçoit un commentaire qui liste les ID des tâches non cochées |
+| `tasks.md` n'est pas au format attendu | L'exécution échoue au lieu de donner à l'agent les mauvaises tâches. Le check de PR Tasks format l'arrête normalement plus tôt |
+| La PR de spec a été mergée sans `spec-ready` | Rien ne s'ouvre. Ajoutez le label à la PR mergée, et la chaîne démarre |
+
+Pour relancer une chaîne bloquée, corrigez `tasks.md` (cochez ou terminez les tâches), puis lancez
+**Agent Issues** à la main avec le nom du dossier de spec.
+
+## Plusieurs fonctionnalités à la fois
+
+La chaîne est séquentielle **au sein** d'une spec. Des specs différentes sont indépendantes : chacune
+a sa propre chaîne, et l'agent travaille sur toutes leurs issues ouvertes. C'est de là que vient le
+débit.
+
+<Aside type="tip">
+Modifier une spec en cours de route est normal. Mettez à jour `spec.md` et `plan.md`, ajoutez les
+nouvelles tâches à `tasks.md` avec les ID suivants non utilisés, et mergez. Le prochain merge d'une PR
+d'agent les prend en compte comme n'importe quelles autres tâches.
+</Aside>
+
+Un exemple réel, six issues pour une fonctionnalité, se trouve dans
+[Une vraie fonctionnalité : les avis de cours](../../discava/a-real-feature/). Les règles exactes du
+format sont dans [Référence : format de tasks.md](../../reference/tasks-format/).
+
+Suite : [Le runtime de l'agent](../the-agent-runtime/).

@@ -1,0 +1,46 @@
+---
+title: 0. Prima di iniziare
+description: Cosa ti serve, e come il fork di questo repository ti dà la configurazione di Discava.
+sidebar:
+  order: 0
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Un [fork di questo repository](../../guides/fork-this-repo/) contiene tutto ciò che la configurazione di Discava tiene
+nel repository. Questi passaggi aggiungono la parte che vive fuori: le impostazioni di GitHub e
+un'installazione di OpenHands puntata sul tuo fork. Poi scrivi una spec per l'app di note e la guardi
+passare dalla PR della spec alle PR degli agenti unite.
+
+**Tempo:** circa un'ora, quasi tutta in attesa della prima esecuzione dell'agente.
+
+## Cosa ti serve
+
+| Requisito | Perché |
+| --- | --- |
+| Un account GitHub | Per fare il fork, e per possedere il token usato dagli agenti |
+| Node.js 24 e pnpm | Per eseguire il repository e Agent Canvas |
+| `uv` | Agent Canvas avvia il suo backend con `uvx` |
+| Docker | Solo per eseguire in locale l'app di note e i suoi test e2e. La CI li esegue per l'agente |
+| GitHub CLI (`gh`), con accesso effettuato | La usano quasi tutti i passaggi |
+| Un coding agent, installato e con accesso effettuato | Scrive le spec con Speckit, e gira dentro OpenHands. Discava usa Claude Code |
+
+<Aside type="note">
+Agent Canvas gira sulla tua macchina e interroga GitHub, quindi non servono un indirizzo pubblico né un
+webhook. Gli agenti lavorano solo mentre è in esecuzione.
+</Aside>
+
+## I passaggi
+
+| # | Passaggio | Alla fine avrai |
+| --- | --- | --- |
+| 1 | [Fai il fork del repository](../fork/) | La tua copia, con Actions e Issues attivi |
+| 2 | [Configura il repository](../github-repository/) | Le label, e un `main` protetto |
+| 3 | [Installa OpenHands](../openhands/) | Agent Canvas in esecuzione, un token GitHub, due profili agente |
+| 4 | [Crea le due automazioni](../automations/) | OpenHands che implementa e fa review nel tuo fork |
+| 5 | [Esegui la tua prima feature](../first-feature/) | Una spec per l'app di note, portata dagli agenti fino al codice unito |
+
+Vuoi invece la configurazione in un repository esistente? Vedi
+[Adottalo nel tuo repository](../../adopt/overview/).
+
+Avanti: [1. Fai il fork del repository](../fork/).

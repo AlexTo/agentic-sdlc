@@ -1,0 +1,62 @@
+---
+title: 2. Plan y tareas
+description: Deriva el plan técnico y una lista de tareas ordenada, y luego compruébalos contra la spec.
+sidebar:
+  order: 2
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+**Estás aquí:** 🧑 tú + 🤖 agente. **Resultado:** `plan.md`, `data-model.md`, `contracts/` y `tasks.md`.
+
+<Steps>
+
+1. Genera el plan.
+
+   ```text
+   /speckit-plan
+   ```
+
+   El plan lee la spec y la constitución del proyecto (`.specify/memory/constitution.md`) y
+   decide *cómo*: añadir `tags` a la entidad de ElectroDB, ampliar los schemas de entrada de tRPC, añadir un
+   filtro `tag` a `notes.list`.
+
+2. Genera las tareas.
+
+   ```text
+   /speckit-tasks
+   ```
+
+   `tasks.md` está ordenado, se puede marcar y está agrupado por fase. Un script lo lee después, así que su
+   [formato](../../reference/tasks-format/) es fijo, y un check de PR lo valida en el siguiente paso.
+
+   ```markdown
+   ## Phase 1: User Story 1 - Tags in the data and API (Priority: P1) 🎯 MVP
+   - [ ] T001 Add `tags` to the note entity in packages/notes-table/src/entities/note.ts
+   - [ ] T002 [P] Unit tests for tag rules (max five, unique, case-insensitive)
+   - [ ] T003 Extend create and update procedures in packages/notes-api/src/procedures/notes.ts
+
+   ## Phase 2: User Story 2 - Tags on the website (Priority: P2)
+   - [ ] T004 Tag input on the note form
+   - [ ] T005 Tag filter on the list page
+   - [ ] T006 e2e scenario with screenshots, invariant and concurrency tests
+
+   ## Phase 3: Docs
+   - [ ] T007 Describe tags on the notes app page in docs/
+   - [ ] T008 **(human)** Confirm the screenshots match the docs wording
+   ```
+
+3. Comprueba todo de forma cruzada antes de que exista código.
+
+   ```text
+   /speckit-analyze
+   ```
+
+   Informa de requisitos sin tarea, tareas sin requisito y contradicciones entre
+   los tres archivos. Corrígelas ahora; cuesta una frase. Después de la implementación cuesta un PR.
+
+</Steps>
+
+El agente omite las tareas marcadas como **(human)** y las lista para ti en la descripción de su PR.
+
+Siguiente: [Aprueba la spec](../approve-the-spec/).

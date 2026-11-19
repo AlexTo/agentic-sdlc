@@ -1,0 +1,124 @@
+---
+title: Constitution e istruzioni
+description: Le regole che gli agenti di Discava leggono prima di ogni esecuzione, e perché c'è ciascuna.
+sidebar:
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Gli agenti di Discava leggono tre livelli di testo prima di scrivere qualsiasi codice. Ogni livello
+ha un compito diverso, e una regola vive esattamente in uno di essi.
+
+| Livello | Contiene | Cambia |
+| --- | --- | --- |
+| **Constitution** | Regole che un piano non deve violare | Raramente, tramite PR, con un versionamento semantico |
+| **`AGENTS.md`** | Come si lavora qui: comandi, architettura, convenzioni | Ogni volta che cambia la codebase |
+| **Istruzioni della issue** | Come comportarsi in *questa* esecuzione: perimetro, cosa eseguire, cosa non fare mai | Quando cambia il workflow |
+
+## La constitution
+
+`.specify/memory/constitution.md`, versione 1.2.1, ratificata il 7 novembre 2026. Otto principi,
+ognuno con una breve motivazione. Quelli che contano di più per gli agenti:
+
+### III. Tutto gira in locale
+
+> A feature MUST work under `pnpm dev` with Docker and no AWS account. Any AWS service a feature
+> adds MUST get a local stand-in or a documented, justified exception.
+
+È questo che permette alla CI di eseguire l'intera app per i test e2e, e che tiene le credenziali
+cloud lontane dall'agente. Vedi [Stack locale](../local-stack/).
+
+### IV. Test a livelli: unit, invarianti, end to end
+
+Cinque sotto-regole. Due contano più delle altre:
+
+- **Verifica dell'impatto.** Un piano DEVE elencare i record condivisi che la funzionalità scrive, o
+  legge in modo nuovo, e per ognuno indicare gli invarianti e i test esistenti che già lo coprono.
+  Dove la funzionalità cambia il significato di un record, il piano DEVE estendere quei controlli, e
+  `tasks.md` DEVE contenere un task per ciascuno.
+- **I test sono una specifica.** Un test che fallisce si corregge nel codice, non indebolendo il
+  test. Gli invarianti contano come test. La regola completa è citata in [Livelli di fiducia](../../concepts/layers-of-trust/#i-test-sono-una-specifica).
+
+La verifica dell'impatto esiste perché gli agenti aggiungono volentieri nuovi controlli ma raramente
+rivedono quelli vecchi. Una nuova funzionalità che cambia il significato di "uno studente attivo"
+rompe in silenzio il significato di un invariante più vecchio.
+
+### V. Modello dati a tabella singola
+
+I pattern di accesso si progettano nel piano, prima del codice. Una richiesta rivolta all'utente DEVE
+usare una chiave o un indice dichiarato, mai una scansione. È un buon esempio di regola che funziona
+solo perché viene verificata in fase di **piano**: adattare le chiavi in seguito significa migrare i
+dati.
+
+### VII. Cambia liberamente prima del lancio
+
+> Until production is live, routes, APIs and data shapes MUST be changed outright: no redirects,
+> deprecated aliases or fallbacks for old data.
+
+Senza questa regola, gli agenti aggiungono shim di compatibilità a ogni modifica, per prudenza.
+
+### La sezione sul workflow di sviluppo
+
+La parte scritta apposta per gli agenti:
+
+> Features are implemented by autonomous agents, each on its own branch and pull request, so a task
+> list MUST NOT require a local stack, Docker or `pnpm dev`. […] A task that needs a running local
+> stack or people MUST be marked `(human)` in `tasks.md`. […] An agent MUST NOT merge, push to
+> `main`, edit CI workflows, or weaken a test to make CI pass.
+
+## `AGENTS.md`
+
+L'`AGENTS.md` alla radice di Discava è di circa 110 righe. Copre:
+
+- **Comandi.** Installazione, build, lint, test di un progetto o di un file, e2e, sviluppo locale,
+  deploy.
+- **Architettura.** Una riga per package: cos'è, e dove stanno i suoi dettagli.
+- **Convenzioni.** Le regole che altrimenti un reviewer ripeterebbe su ogni PR: Conventional Commits,
+  Biome invece di ESLint, la regola della cartella `helpers/`, "buttons carry text labels only, no
+  arrow icons", dove va il codice condiviso, e i nomi: nomi di file in kebab-case, `helpers/` e mai
+  `lib/` nei package di backend, e una funzione `*Writes` restituisce elementi di transazione mentre
+  una con il nome di un verbo esegue il proprio I/O.
+
+I dettagli di un package stanno in un `AGENTS.md` annidato nella cartella di quel package: sette in
+tutto, da 5 a 28 righe ciascuno, per le API, il package del database, gli eventi, l'infrastruttura e
+così via. Un agente ne carica uno solo quando lavora in quella cartella. Quando il file alla radice
+era arrivato a un paragrafo per package, Discava ha spostato i dettagli più in basso, così ogni
+esecuzione non leggeva più di package che non stava toccando. Il file del package del database, per
+esempio, dice da quale helper passa ogni scrittura condivisa, e che cambiare chi scrive nella tabella
+significa rigenerare la mappa che legge il check `Invariant coverage`.
+
+<Aside type="tip">
+L'`AGENTS.md` di Discava è cresciuto una riga alla volta, ogni volta che una review ha intercettato
+lo stesso errore due volte. È il modo giusto di far crescere il tuo.
+</Aside>
+
+## Skill
+
+Discava installa tre skill della community in `.agents/skills/` (fissate per commit in
+`skills-lock.json`), per le best practice di React, le linee guida per le interfacce web e le linee
+guida di scrittura. Anche i comandi di Speckit sono installati come skill. Le skill vengono caricate
+quando servono, quindi possono contenere molti più dettagli di `AGENTS.md`.
+
+## Le istruzioni della issue
+
+Ogni issue di implementazione termina con le stesse istruzioni, copiate da
+`.github/ISSUE_TEMPLATE/implement-phase.md` dallo script di Agent Issues. Dicono all'agente di:
+
+- leggere prima `AGENTS.md`, la constitution e la cartella della spec
+- scrivere per primi i test di ogni story, e spuntare ogni task nel commit che lo completa
+- eseguire in locale unit test, lint, typecheck e build, e lasciare i test e2e e di concorrenza alla
+  CI della PR
+- aggiungere chiamate `screenshot()` per ogni modifica alla UI, e non lasciare mai gli screenshot a
+  un task **(human)**
+- saltare i task **(human)** ed elencarli nella descrizione della PR
+- usare Conventional Commits, e `Refs #<parent>` invece di `Closes`
+- non indebolire mai un test, non modificare i workflow, non fare merge e non toccare le credenziali
+  AWS
+- commentare sulla issue e fermarsi quando è bloccato
+
+Ognuna c'è perché una delle prime esecuzioni ha fatto il contrario. La regola su `Refs`, per esempio,
+impedisce alla PR della prima fase di chiudere la issue madre dell'intera funzionalità. Il testo
+completo è in [Adottalo: istruzioni per l'agente](../../adopt/agent-guidance/).
+
+Avanti: [Configurazione di Speckit](../speckit-setup/).

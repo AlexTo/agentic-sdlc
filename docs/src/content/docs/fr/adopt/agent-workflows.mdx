@@ -1,0 +1,90 @@
+---
+title: 7. Les workflows des agents
+description: Branchez les scripts de glue sur les événements GitHub avec Agent Issues, Agent CI Status et Agent Review Status.
+sidebar:
+  order: 7
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Résultat :** trois workflows qui ouvrent des issues à partir des specs et renvoient l'agent au travail sur une CI
+en rouge ou une review « changes requested », et un quatrième qui archive une spec dès que toutes ses tâches sont cochées.
+
+<Steps>
+
+1. **Copiez les trois workflows** depuis le dossier `.github/workflows/` de ce dépôt : `agent-issues.yml`,
+   `agent-ci.yml` et `agent-review.yml`. Leurs déclencheurs et permissions sont listés dans
+   [Référence : workflows](../../reference/workflows/).
+
+2. **Vérifiez que les conditions `if:` correspondent à vos décisions.** Si vous avez changé le préfixe de branche ou les
+   labels, changez-les ici aussi :
+
+   ```yaml
+   # agent-issues.yml
+   if: >-
+     github.event_name == 'workflow_dispatch' ||
+     (github.event.pull_request.merged == true &&
+     ((github.event.action == 'closed' &&
+     (contains(github.event.pull_request.labels.*.name, 'spec-ready') ||
+     startsWith(github.event.pull_request.head.ref, 'openhands/'))) ||
+     (github.event.action == 'labeled' &&
+     github.event.label.name == 'spec-ready')))
+
+   # agent-ci.yml
+   if: >-
+     github.event.workflow_run.event == 'pull_request' &&
+     startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
+     (github.event.workflow_run.conclusion == 'failure' ||
+     github.event.workflow_run.conclusion == 'timed_out')
+
+   # agent-review.yml
+   if: >-
+     startsWith(github.event.pull_request.head.ref, 'openhands/issue-') &&
+     github.event.pull_request.head.repo.full_name == github.repository &&
+     contains(github.event.review.body, 'CHANGES REQUESTED')
+   ```
+
+3. **Gardez les permissions et le checkout exactement tels que copiés.** Chaque workflow ne demande que ce
+   qu'il écrit. `pull-requests: write` semble superflu mais ne l'est pas : les labels et les commentaires sur une PR passent par
+   l'API des issues, qui refuse le token du workflow sans cette permission.
+
+   Les deux workflows de statut font le checkout de la **branche par défaut**. Agent Issues fait le checkout du
+   **commit de merge**, pour voir les cases cochées par la PR mergée. Ne changez jamais l'un ou l'autre pour faire le checkout du
+   head de la PR : ces jobs détiennent un token qui peut écrire.
+
+4. **Gardez les groupes de concurrence.** Chacun est par PR ou par branche, avec `cancel-in-progress: false`.
+   Ainsi, deux événements pour une même PR ne peuvent pas compter chacun une tentative, et les merges de PR différentes ne
+   s'annulent jamais entre eux.
+
+5. **Copiez `archive-specs.yml`**, si vous voulez que les specs terminées soient rangées. Quand un push sur
+   `main` modifie un `specs/*/tasks.md` actif, il ouvre une PR sur la branche `archive-spec/<folder>` pour
+   chaque spec dont toutes les tâches sont cochées, tâches **(human)** comprises. La PR déplace le dossier vers
+   `specs/_archive/` et réécrit les liens qui y mènent et qui en partent. Agent Issues ignore `specs/_archive/`,
+   et `Tasks format` échoue si un `tasks.md` archivé contient une tâche non cochée.
+
+   Il ignore une spec qui a une issue d'agent ouverte, et une spec qui a déjà eu une PR d'archivage. Fermez cette
+   PR sans la merger pour garder la spec active.
+
+   <Aside type="caution">
+   Activez **Settings → Actions → General → Allow GitHub Actions to create and approve pull
+   requests**, sinon le workflow ne peut pas ouvrir ses PR. Les PR ouvertes avec le token du workflow ne
+   déclenchent pas PR Checks : fermez et rouvrez chacune pour les lancer.
+   </Aside>
+
+</Steps>
+
+## Vérifier que ça marche
+
+Les workflows apparaissent dans l'onglet **Actions** du dépôt une fois arrivés sur `main`. Ouvrez
+**Actions → Agent Issues → Run workflow**, et saisissez un dossier de spec qui n'existe pas, comme
+`does-not-exist`.
+
+L'exécution réussit avec une notice : `No issue created: no spec folder with a tasks.md was found`.
+
+<Aside type="note">
+Les workflows `workflow_run` et `pull_request_review` ne s'exécutent que depuis la version de la branche par défaut.
+Leurs modifications prennent effet une fois mergées. C'est aussi pour cela qu'un agent ne peut pas les modifier dans sa
+propre PR.
+</Aside>
+
+Suite : [8. Stack locale, e2e et captures d'écran](../local-stack-and-e2e/).

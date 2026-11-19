@@ -1,0 +1,91 @@
+---
+title: 9. Deploy e scansioni di sicurezza (facoltativo)
+description: Fai il deploy di ogni main verde su uno stage di sviluppo, tieni la produzione dietro un'approvazione, e fai una scansione prima di ogni deploy.
+sidebar:
+  order: 9
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Alla fine avrai:** una scansione Trivy a ogni push su `main`, un workflow Deploy che porta ogni `main`
+verde su uno stage di sviluppo, e deploy in produzione che aspettano una persona.
+
+Nei dettagli questo passaggio è specifico di Discava (AWS, CDK), ma lo schema funziona per qualsiasi cloud. L'app
+di note di esempio in questo repository non ha un deploy, quindi copia da
+[`deploy.yml` di Discava](https://github.com/AlexTo/discava/blob/main/.github/workflows/deploy.yml).
+
+<Steps>
+
+1. **Aggiungi un target `trivy`** ai progetti che vuoi scansionare (il `pnpm trivy` della radice esegue
+   `nx run-many --target trivy --all`). Aggiungi il job `trivy` a `ci.yml`, come in questo repository. Tienilo
+   un job separato da `build`, così una CVE appena pubblicata segnala `main` senza bloccare nient'altro.
+   Registra i risultati accettati, un ID per riga, in `.trivyignore`.
+
+2. **Configura un accesso al cloud senza chiavi.** Su AWS, lo script `scripts/setup-stage.sh` di Discava crea, per ogni stage:
+   il provider OIDC di GitHub, un ruolo di deploy considerato affidabile solo per
+   `repo:owner/repo:environment:<stage>`, un ruolo di esecuzione CloudFormation con un permissions
+   boundary, e le variabili dell'environment GitHub (`AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`,
+   `AWS_EXECUTION_ROLE_ARN`). Usa allo stesso modo la federazione OIDC del tuo cloud per GitHub Actions.
+   Non salvare chiavi di accesso.
+
+3. **Aggiungi il workflow Deploy**, avviato dal completamento della CI su `main` e a mano:
+
+   ```yaml
+   on:
+     workflow_run: { workflows: [CI], types: [completed], branches: [main] }
+     workflow_dispatch:
+       inputs: { stage: { type: string, required: true } }
+
+   jobs:
+     deploy:
+       if: ${{ github.event_name == 'workflow_dispatch' ||
+               (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
+       environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
+       concurrency: { group: 'deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}', cancel-in-progress: false }
+       steps:
+         - uses: actions/checkout@<sha>
+           with: { ref: '${{ github.event.workflow_run.head_sha || github.sha }}' }
+         # init, then: pnpm trivy, configure credentials (OIDC), synth
+         - name: Check commit is still main's latest
+           id: freshness
+           if: ${{ github.event_name == 'workflow_run' }}
+           run: |
+             main_sha="$(git ls-remote --exit-code origin refs/heads/main | cut -f1)"
+             if [[ "$main_sha" == "$(git rev-parse HEAD)" ]]; then
+               echo "current=true" >> "$GITHUB_OUTPUT"
+             else
+               echo "::notice::Skipping deploy: no longer main's latest commit"
+               echo "current=false" >> "$GITHUB_OUTPUT"
+             fi
+         - name: Deploy
+           if: ${{ github.event_name != 'workflow_run' || steps.freshness.outputs.current == 'true' }}
+           run: pnpm nx run @your-scope/infra:deploy-ci "$STAGE/*" --role-arn "$AWS_EXECUTION_ROLE_ARN"
+   ```
+
+   Il controllo di attualità sta *dentro* lo slot di concurrency, quindi riflette `main` subito prima del
+   deploy, anche se l'esecuzione ha aspettato dietro un'altra.
+
+4. **Attiva i deploy automatici** per lo stage di sviluppo. In **Settings → Secrets and
+   variables → Actions → Variables**, aggiungi una variabile di repository `AUTO_DEPLOY_STAGE` con il nome del tuo
+   stage di sviluppo.
+
+5. **Proteggi la produzione.** In **Settings → Environments**, apri l'environment del tuo stage di produzione
+   e aggiungi **Required reviewers**. Per farne il deploy, apri **Actions → Deploy → Run
+   workflow** e inserisci lo stage di produzione. Il job poi aspetta l'approvazione.
+
+</Steps>
+
+## Verifica che funzioni
+
+Fai il merge di una PR qualsiasi. La CI gira, poi **Deploy** parte da solo con lo stage di sviluppo. Riesegui la CI
+a mano su un commit più vecchio: Deploy registra `Skipping deploy: no longer main's latest commit` e
+non porta nulla in produzione.
+
+<Aside type="note">
+L'agente non fa mai deploy e non vede mai questi ruoli. La sua conversazione ha solo il token GitHub.
+Il ruolo di deploy viene assunto solo da un workflow che gira da `main`, nell'environment dello stage.
+</Aside>
+
+Avanti: il tuo repository ora ha tutto ciò che ha un fork di questo. Continua da
+[2. Configura il repository](../../setup/github-repository/), con il tuo repository al posto
+del fork.

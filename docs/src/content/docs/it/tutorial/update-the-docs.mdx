@@ -1,0 +1,42 @@
+---
+title: 7. Aggiorna la documentazione
+description: La documentazione è l'ultima fase della stessa catena, fatta dall'agente e rivista da te.
+sidebar:
+  order: 7
+---
+
+**Sei qui:** 🤖 agente, poi di nuovo 🧑 gate umano n. 2. **Output:** la documentazione descrive i tag.
+
+La documentazione è codice (questo sito è MDX in `docs/`), quindi la gestisce la stessa catena.
+
+## Cosa fa l'agente
+
+Data la issue per i task da `T007` a `T008`, l'agente:
+
+1. Legge la spec e il codice unito delle fasi 1 e 2. La spec dice a cosa serve la feature;
+   il codice dice cosa fa.
+2. Aggiorna la pagina dell'app di note: l'attributo `tags`, il nuovo input e il nuovo filtro dell'API, e le regole
+   (cinque tag, univoci, senza distinzione tra maiuscole e minuscole), formulate esattamente come le enuncia la spec.
+3. Riusa gli screenshot dello scenario e2e invece di inventarne di nuovi, così la documentazione mostra
+   cosa fa davvero l'app.
+4. Compila il sito della documentazione, così un link rotto o un MDX malformato fa fallire la PR come qualsiasi altro errore di build.
+
+## Cosa controlli tu
+
+- Ogni regola sulla pagina corrisponde a un requisito in `spec.md`?
+- Se la documentazione e la spec non sono d'accordo, **vince la spec.** Cambia la spec, non la documentazione a mano.
+- C'è qualcosa di documentato che il codice non fa?
+
+## Perché fa parte della catena
+
+La documentazione scritta a posteriori, da un'altra persona, a memoria, si allontana dalla realtà. Quella generata dalla
+spec e dal codice unito, e rivista con gli stessi controlli, no. L'agente reviewer è anche un
+secondo lettore economico: segnala un'affermazione della documentazione che nessun test o codice conferma.
+
+## Fatto
+
+Fai il merge della PR della documentazione. Senza più task per l'agente, non si apre nessuna nuova issue. La feature è passata da una
+frase a codice e documentazione uniti, e hai preso due tipi di decisione: approvare la spec, e
+approvare ogni risultato.
+
+Torna ai [principi](../../concepts/principles/).

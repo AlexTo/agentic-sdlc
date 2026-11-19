@@ -1,0 +1,100 @@
+---
+title: Configuration de Speckit
+description: Comment Speckit est configuré dans Discava, et les modifications de templates qui rendent sa production lisible par une machine.
+sidebar:
+  order: 3
+---
+
+import { FileTree } from '@astrojs/starlight/components';
+
+Discava utilise Speckit 1.3.2 presque tel quel. Les changements importants portent sur deux templates,
+pour que ce qu'écrit Speckit puisse être lu par l'automatisation.
+
+## Configuration
+
+`.specify/init-options.json`, écrit par `specify init` :
+
+```json
+{
+  "ai": "claude",
+  "ai_skills": true,
+  "feature_numbering": "timestamp",
+  "here": true,
+  "integration": "claude",
+  "script": "sh",
+  "speckit_version": "1.3.2"
+}
+```
+
+- **Intégration sous forme de skills.** Les commandes sont installées comme skills
+  (`/speckit-specify`, `/speckit-plan`, …) pour l'agent de code de l'équipe.
+- **Numérotation par horodatage.** Les dossiers de spec sont nommés `YYYYMMDD-HHMMSS-<name>`, et non
+  `001-<name>`. Deux personnes qui écrivent des specs sur deux branches le même jour n'entrent jamais
+  en collision sur un numéro.
+
+## L'extension git
+
+L'extension `git` fournie avec Speckit est installée (`.specify/extensions.yml`). Ses hooks créent une
+branche de fonctionnalité avant `/speckit-specify` et commitent après chaque étape, donc chaque étape
+de la rédaction d'une spec est son propre Conventional Commit dans la PR de spec.
+
+## Modifications des templates
+
+### `spec-template.md` : une ligne pour l'issue parente
+
+```markdown
+**Parent issue**: [#<number>, or "none" if there is no tracking issue]
+```
+
+Le script Agent Issues lit cette ligne et écrit `Refs #<parent>` dans chaque issue d'implémentation,
+pour que l'issue de suivi de la fonctionnalité soit liée à chaque PR.
+
+### `tasks-template.md` : le bloc de format et les tâches de test
+
+Trois ajouts au template d'origine :
+
+1. **Les tests ne sont pas facultatifs.** Le template d'origine dit que les tests sont facultatifs.
+   Celui de Discava dit que la constitution les exige, et chaque phase de user story porte trois
+   tâches types : des tests unitaires, un invariant et un test qui l'enfreint (si une règle porte sur
+   plusieurs enregistrements), et un scénario e2e (si elle modifie un flux principal).
+2. **Qui exécute quoi.** Un paragraphe qui dit qu'un agent implémente ces tâches sans Docker, que les
+   tests e2e et de concurrence s'exécutent dans la CI de la PR, et ce que signifie **(human)**. Cela
+   inclut « pas pour les captures d'écran » : un changement d'UI prend ses captures d'écran dans les
+   tests e2e.
+3. **Lu par l'automatisation.** Les [règles de format](../../reference/tasks-format/) que le
+   validateur fait respecter, énoncées dans le template pour que l'agent qui écrit `tasks.md` les
+   suive.
+
+Et une ligne ajoutée aux notes de la fin : « Do not edit existing tests to make them pass. If one
+looks wrong, stop and raise it. »
+
+Le texte exact de chaque modification se trouve dans
+[Adopter : constitution et templates](../../adopt/constitution-and-templates/).
+
+## Un dossier de spec
+
+<FileTree>
+- specs/20261116-013307-course-reviews/
+  - spec.md quoi et pourquoi, avec les clarifications et l'issue parente
+  - plan.md comment, avec le Constitution Check
+  - research.md les décisions et les alternatives écartées
+  - data-model.md entités, clés, index
+  - contracts/ formes des API
+  - quickstart.md comment un relecteur l'essaie à la main
+  - tasks.md huit phases, 36 tâches, dont deux (human)
+  - checklists/ checklists de qualité des exigences
+</FileTree>
+
+## Comment une spec est écrite
+
+1. Une personne ouvre une issue de suivi pour la fonctionnalité, comme #279 « course ratings and
+   written reviews ».
+2. Un agent de code exécute `/speckit-specify` avec le texte de l'issue, puis `/speckit-clarify`.
+   Quand personne n'est disponible pour répondre, l'agent choisit la réponse recommandée et la
+   consigne sous « Clarifications » dans la spec.
+3. `/speckit-plan`, `/speckit-tasks`, `/speckit-analyze`. Les problèmes relevés par analyze sont
+   corrigés dans la même PR. On le voit dans l'historique de Discava, avec des commits comme
+   « resolve analysis findings in the public pages spec ».
+4. La PR de spec reçoit le label `spec-ready` et est mergée.
+
+Suite : [Configuration d'OpenHands](../openhands-setup/).

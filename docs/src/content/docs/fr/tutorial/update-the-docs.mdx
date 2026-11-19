@@ -1,0 +1,42 @@
+---
+title: 7. Mettre à jour la documentation
+description: La documentation est la dernière phase de la même chaîne, faite par l'agent et relue par vous.
+sidebar:
+  order: 7
+---
+
+**Vous êtes ici :** 🤖 agent, puis 🧑 de nouveau le contrôle humain n° 2. **Sortie :** la documentation décrit les tags.
+
+La documentation est du code (ce site est du MDX dans `docs/`), donc la même chaîne s'en occupe.
+
+## Ce que fait l'agent
+
+À partir de l'issue des tâches `T007` à `T008`, l'agent :
+
+1. Lit la spec et le code mergé des phases 1 et 2. La spec dit à quoi sert la fonctionnalité ;
+   le code dit ce qu'elle fait.
+2. Met à jour la page de l'application de notes : l'attribut `tags`, la nouvelle entrée et le nouveau filtre de l'API, et les règles
+   (cinq tags, uniques, insensibles à la casse), formulées exactement comme la spec les énonce.
+3. Réutilise les captures d'écran du scénario e2e au lieu d'en inventer de nouvelles, pour que la documentation montre
+   ce que fait réellement l'application.
+4. Construit le site de documentation, pour qu'un lien cassé ou un MDX mal formé fasse échouer la PR comme toute autre erreur de build.
+
+## Ce que vous vérifiez
+
+- Chaque règle de la page correspond-elle à une exigence de `spec.md` ?
+- Si la documentation et la spec divergent, **la spec l'emporte.** Modifiez la spec, pas la documentation à la main.
+- Quelque chose est-il documenté que le code ne fait pas ?
+
+## Pourquoi elle fait partie de la chaîne
+
+Une documentation écrite après coup, par une autre personne, de mémoire, dérive. Une documentation générée à partir de la
+spec et du code mergé, et relue avec les mêmes contrôles, ne dérive pas. L'agent reviewer est aussi un
+second lecteur bon marché : il signale une affirmation de la documentation qu'aucun test ni code ne soutient.
+
+## Terminé
+
+Mergez la PR de documentation. Comme il ne reste aucune tâche d'agent, aucune nouvelle issue ne s'ouvre. La fonctionnalité est passée d'une
+phrase à du code et une documentation mergés, et vous avez pris deux sortes de décisions : approuver la spec, et
+approuver chaque résultat.
+
+Retour aux [principes](../../concepts/principles/).

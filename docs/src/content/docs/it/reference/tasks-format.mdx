@@ -1,0 +1,73 @@
+---
+title: Formato di tasks.md
+description: Il formato esatto che legge il workflow Agent Issues, come le fasi diventano issue, e ogni messaggio del validatore.
+sidebar:
+  order: 4
+---
+
+## Il formato
+
+```markdown
+# Tasks: Course ratings and reviews
+
+Free text, legends and notes anywhere. Fenced code blocks are ignored.
+
+## Phase 1: Setup
+- [x] T001 Create the review entity
+- [ ] T002 [P] Add the rating summary entity
+
+## Phase 2: Foundational
+- [ ] T003 Shared review writer in core-table helpers
+
+## Phase 3: User Story 1 - Leave a rating (Priority: P1) 🎯 MVP
+### Tests for User Story 1
+- [ ] T004 [P] [US1] Unit tests for rating rules
+### Implementation for User Story 1
+- [ ] T005 [US1] review.upsert procedure
+- [ ] T006 (human) Check the layout on a phone-width window
+
+## Phase 4: User Story 2 - Instructor responds (Priority: P2)
+- [ ] T007 [US2] review.respond procedure
+- [ ] T037 [US2] Notify the student (added later: next unused id)
+```
+
+| Elemento | Pattern | Note |
+| --- | --- | --- |
+| Fase | `^## Phase (\d+): (.+)$` | I numeri crescono scendendo nel file. Ogni fase ha almeno un task |
+| Fase di user story | il titolo inizia con `User Story` | Ne deve esistere almeno una |
+| Task | `^- \[([ xX])\] (T\d{3})\b` | Nella prima colonna, sotto una fase. Gli ID sono univoci, mai rinumerati |
+| Fatto | `[x]` o `[X]` | Spuntato sul posto, mai eliminato |
+| Task umano | `(human)` in qualsiasi punto della riga, in grassetto o no | Saltato dall'agente, e non contato quando si decide se un gruppo è finito |
+| Sottointestazioni | `### …` | Consentite, ignorate |
+
+## Come le fasi diventano issue
+
+1. Il **gruppo 0** è formato da tutte le fasi fino alla prima fase `User Story` inclusa. Setup, fondamenta
+   e la story MVP escono come un'unica PR, con ` (with setup and foundations)` nel titolo.
+2. **Ogni fase successiva** è un gruppo a sé, con la sua issue.
+3. Il **gruppo successivo** è il primo con un task non spuntato che non sia **(human)**.
+4. Un gruppo la cui issue esiste già, ma i cui task dell'agente non sono tutti spuntati, è **bloccato**. Non
+   si apre nessuna nuova issue, e la PR unita riceve un commento che elenca gli ID non spuntati.
+
+Il titolo della issue è `feat(<feature>): <last phase's title, shortened>`. `<feature>` è il nome della
+cartella senza il timestamp. Il titolo accorciato toglie il prefisso `User Story <n> - ` e il
+suffisso `(Priority: Pn)`. Il titolo inizia in minuscolo ed è lungo al massimo 100 caratteri.
+
+## Messaggi del validatore
+
+| Messaggio | Correzione |
+| --- | --- |
+| `A phase heading must be written "## Phase <number>: <title>"` | Un'intestazione cita "Phase" ma non è nel formato, ad es. `### Phase 2` o `## Phase 2 - Setup` |
+| `A task must be written "- [ ] T<3 digits> <description>", starting in the first column` | Un task indentato, `* [ ]`, `- []`, o un ID come `T12` |
+| `Phase <n> has no tasks` | Aggiungi un task, o rimuovi la fase |
+| `Phase <n> comes after phase <m>; phase numbers must increase down the file` | Rinumera le fasi (non i task) |
+| `T0xx is above the first phase heading, so it belongs to no phase` | Spostalo sotto una fase |
+| `T0xx is used more than once` | Dai al secondo il prossimo ID non usato |
+| `No phase headings found; …` | Il file non è affatto nel formato |
+| `No phase is titled "User Story <n> - ..."; …` | Dai ad almeno una fase il titolo di una user story |
+
+Eseguilo in locale:
+
+```bash
+pnpm nx run @your-scope/common-scripts:validate-tasks
+```

@@ -1,0 +1,80 @@
+---
+title: Il collante mancante
+description: Le dieci lacune tra Speckit, OpenHands e la CI, e le regole per colmarle.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Speckit finisce con un `tasks.md`. OpenHands parte da una issue con label e si ferma a una pull
+request. La CI riporta un risultato e passa oltre. Ogni strumento fa bene il proprio lavoro, e nessuno
+passa il lavoro al successivo. Senza collante, il passaggio lo fai *tu*: copi i task in una issue, ti
+accorgi che la CI è diventata rossa, e dici all'agente di correggere.
+
+Queste sono le lacune, e cosa colma ciascuna:
+
+| # | La lacuna | Cosa la colma |
+| --- | --- | --- |
+| 1 | Niente trasforma una spec finita in lavoro per l'agente | Un workflow legge `tasks.md` e apre la successiva issue di implementazione, un gruppo di fasi alla volta |
+| 2 | L'agente non sa che la CI è fallita | Un workflow riporta all'agente un'esecuzione fallita come il commit status che già osserva |
+| 3 | Il "changes requested" di un reviewer resta inascoltato | Un workflow fa lo stesso per il verdetto dell'agente reviewer |
+| 4 | Niente impedisce a un agente bloccato di andare in loop all'infinito | Entrambi i loop di correzione sono limitati a cinque tentativi, contati con le label, poi subentra una persona |
+| 5 | `tasks.md` è solo una convenzione, quindi uno malformato blocca la catena in silenzio | Un check della PR ne valida il formato |
+| 6 | Le modifiche alla UI arrivano in review senza che nessuno le abbia guardate | Un check richiede screenshot e2e, e la CI li pubblica sulla PR |
+| 7 | Il merge della PR dell'agente non avvia la fase successiva | Il merge di un branch di un agente apre la issue successiva, finché la spec non è completata |
+| 8 | L'agente non può eseguire lo stack reale senza accesso al cloud | Sostituti locali per ogni servizio, così l'intera app e i suoi test e2e girano senza credenziali |
+| 9 | Il merge non rilascia nulla | Una build verde su `main` fa il deploy da sola, salta un commit che non è più l'ultimo, e la produzione aspetta una persona |
+| 10 | Un agente può committare un secret trapelato o una dipendenza vulnerabile | Una scansione di secret e dipendenze a ogni build, e di nuovo prima di ogni deploy |
+
+[Come fa Discava](../../discava/overview/) associa ogni riga ai suoi file.
+
+## Regole per scrivere il collante
+
+Queste regole sono nate costruendo e correggendo il collante su Discava.
+
+### Decidi nel codice, non in un prompt
+
+Ogni decisione su "cosa succede dopo" è una funzione pura con unit test: `decide()` in `gate.ts` per
+quali merge contano, `planCi()` per decidere se rimandare indietro l'agente. Il file del workflow si
+limita a collegare l'evento allo script. Puoi testare una decisione senza GitHub, e l'agente non può
+aggirarla a parole.
+
+### Tieni lo stato su GitHub
+
+Non c'è un database. Il numero di tentativi è una label (`ci-fix-2`). La issue per un gruppo di fasi
+si trova grazie a un marcatore nascosto nel suo corpo (`<!-- agent-issue spec:<folder> group:2 -->`).
+"Già rimandato indietro" è un commit status. Chiunque può vedere lo stato, e una persona può cambiarlo
+a mano, per esempio rimuovendo una label per consentire un altro tentativo.
+
+### Parla la lingua che l'agente già conosce
+
+OpenHands rivede già una PR il cui commit di testa ha uno status `software-factory/review` fallito.
+Quindi il collante pubblica quello status invece di inventare un nuovo trigger. Non serve alcuna
+modifica a OpenHands.
+
+### Esegui codice fidato con il token
+
+I workflow del collante hanno un token che può scrivere label, status e commenti. Fanno il checkout
+del **branch di default**, mai della pull request, così niente di ciò che ha scritto un agente o un
+contributor gira con quel token. Tutto ciò che viene letto dalla PR (nomi dei branch, corpi) viene
+verificato rispetto a un pattern rigoroso prima di essere usato.
+
+### Sii idempotente
+
+GitHub consegna gli eventi più di una volta, e le persone rieseguono i job. Ogni script controlla
+prima di agire: nessuna seconda issue per lo stesso gruppo, nessun secondo tentativo per lo stesso
+commit, nessuna reazione a un'esecuzione per un commit che non è più quello di testa.
+
+### Fallisci in modo evidente, dove una persona guarda
+
+Un notice di un workflow non lo legge nessuno. Quando la catena si blocca, dillo sulla pull request:
+"the next issue was not opened because these tasks aren't ticked: T014, T015".
+
+<Aside type="note">
+Il collante in questo repository è di circa 1.600 righe di TypeScript, e altrettante di unit test,
+distribuite in quattro cartelle in `packages/common/scripts/src/`. Leggilo prima di adottarlo. Ci
+vuole un pomeriggio.
+</Aside>
+
+Avanti: [Loop di feedback](../feedback-loops/).

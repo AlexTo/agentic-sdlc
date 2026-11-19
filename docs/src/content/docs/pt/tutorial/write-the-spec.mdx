@@ -1,0 +1,60 @@
+---
+title: 1. Escreva a spec
+description: Transforme a ideia em spec.md com o Speckit, e deixe o agent questioná-la.
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Você está aqui:** 🧑 você + 🤖 agent. **Resultado:** `specs/<timestamp>-note-tags/spec.md`.
+
+A spec diz *o quê* e *por quê*, nunca *como*. Ela é a coisa mais importante que você escreve.
+
+<Steps>
+
+1. Comece a partir de uma branch.
+
+   ```bash
+   git switch -c spec/note-tags
+   ```
+
+2. Descreva a feature para o Speckit.
+
+   ```text
+   /speckit-specify Users can add up to five tags to a note and filter the note list by tag.
+   Tags are case-insensitive and unique per note.
+   ```
+
+   O Speckit cria `specs/<timestamp>-note-tags/spec.md` com user stories, requisitos funcionais e
+   critérios de aceitação.
+
+3. Deixe o agent encontrar as lacunas.
+
+   ```text
+   /speckit-clarify
+   ```
+
+   Ele faz até cinco perguntas direcionadas e escreve suas respostas de volta na spec. Para esta
+   feature, espere perguntas como:
+
+   - O que acontece quando uma sexta tag é adicionada: rejeitar, ou descartar a mais antiga?
+   - `Work` é a mesma tag que `work`? (A spec diz que sim: minúsculas ao salvar.)
+   - Existe um tamanho máximo de tag?
+
+</Steps>
+
+## Como é uma boa spec
+
+- Cada user story pode ser testada isoladamente, com cenários de aceitação escritos como
+  Given/When/Then.
+- Toda regra é escrita como um requisito, por exemplo *"Uma nota NÃO DEVE ter mais de cinco tags."*
+  Essas regras viram os invariantes e os testes depois.
+- Nenhuma tecnologia aparece na spec. Nada de DynamoDB, nada de tRPC.
+
+<Aside type="tip">
+Responda você mesmo às perguntas de esclarecimento, em vez de deixar o agent adivinhar. Cada
+resposta que você dá é uma suposição errada a menos no código.
+</Aside>
+
+Próximo: [Plan e tasks](../plan-and-tasks/).

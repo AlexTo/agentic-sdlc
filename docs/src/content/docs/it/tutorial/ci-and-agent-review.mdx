@@ -1,0 +1,53 @@
+---
+title: 5. CI e review dell'agente
+description: Controlli automatici e loop di correzione limitati, senza nessuna persona in mezzo.
+sidebar:
+  order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Sei qui:** ⚙️ automazione, senza supervisione. **Output:** una PR verde con una review di approvazione dell'agente.
+
+Ogni push sulla PR dell'agente esegue i controlli. I fallimenti tornano all'agente, mai a te.
+
+## I controlli
+
+| Controllo | Cosa intercetta nel caso dei tag |
+| --- | --- |
+| Lint, typecheck, build | Un tipo dell'API che non corrisponde più all'entità |
+| Unit test | Un sesto tag accettato, o `Work` e `work` salvati come due tag |
+| Invarianti | Qualsiasi nota nella tabella con più di cinque tag, dopo ogni test e2e |
+| Test E2E | Il campo dei tag non salva, o il filtro mostra le note sbagliate |
+| Test di concorrenza | Due aggiunte simultanee si sovrascrivono e un tag va perso |
+| Screenshot | Nessuno ha mai guardato la nuova UI: il check `UI Screenshots` fallisce |
+| Check del formato dei task | Un `tasks.md` malformato che bloccherebbe la catena |
+
+## Quando un controllo fallisce
+
+1. Il workflow **Agent CI Status** segna come fallito il commit di head della PR.
+2. L'agente rivede la *stessa* PR nella sua conversazione originale, usando l'output del fallimento.
+3. La CI gira di nuovo.
+
+Un esempio: il test di concorrenza fallisce perché l'aggiunta di un tag legge la nota, aggiunge in memoria e
+la riscrive, quindi due richieste entrano in conflitto. L'agente la cambia in un'aggiunta atomica con una condizione sul
+conteggio, e il test diventa verde. Tu non l'hai mai visto.
+
+## Review dell'agente
+
+Quando la CI è verde, un secondo agente OpenHands fa la review della PR come farebbe una persona: correttezza, casi
+limite trascurati, regole della spec che nessun test copre. O approva, o chiede modifiche, il che
+rimanda indietro l'agente che implementa nello stesso modo in cui lo fa una CI rossa.
+
+## Il limite
+
+Ogni loop è limitato a **cinque** tentativi per PR, contati con le label: da `ci-fix-1` a `ci-fix-5` per
+la CI, da `review-fix-1` a `review-fix-5` per la review. Dopo il quinto, il workflow commenta, aggiunge
+`ci-fix-exhausted` o `review-fix-exhausted`, e si ferma.
+
+<Aside type="caution">
+Un loop esaurito è l'unico caso in cui vieni coinvolto prima.
+[Gate umani](../../concepts/human-gates/#quando-vieni-coinvolto-prima) dice cosa fare.
+</Aside>
+
+Avanti: [Merge e ripeti](../merge-and-repeat/).

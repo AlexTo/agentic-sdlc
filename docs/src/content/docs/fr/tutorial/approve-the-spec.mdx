@@ -1,0 +1,53 @@
+---
+title: 3. Approuver la spec
+description: Relisez la PR de spec comme du code, et ajoutez-lui le label spec-ready pour démarrer l'agent.
+sidebar:
+  order: 3
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**Vous êtes ici :** 🧑 contrôle humain n° 1. **Sortie :** une PR de spec mergée et la première issue d'implémentation.
+
+<Steps>
+
+1. Poussez la branche, puis ouvrez une pull request pour elle sur GitHub.
+
+   ```bash
+   git add specs/ && git commit -m "docs(specs): add note tags spec"
+   git push -u origin spec/note-tags
+   ```
+
+2. Relisez-la comme vous le feriez pour du code. Lisez d'abord `spec.md`, puis `plan.md`, puis survolez `tasks.md`.
+   Demandez-vous :
+
+   - La spec dit-elle ce que vous voulez vraiment ?
+   - Chaque phase est-elle assez petite pour être relue d'une traite ?
+   - Y a-t-il dans le plan quelque chose que vous refuseriez en code review ?
+
+   Commentez la PR pour changer quoi que ce soit. L'agent lit aussi les commentaires, vous pouvez donc lui demander de réviser.
+
+   Faites intervenir ici votre business analyst ou votre product owner. `spec.md` est en langage courant, il peut donc
+   le relire sur la PR pendant que vous vérifiez le plan. Voir
+   [Contrôles humains](../../concepts/human-gates/#cest-désormais-le-principal-goulot-détranglement).
+
+3. Ajoutez le label `spec-ready` à la PR, puis mergez-la.
+
+   C'est vous qui avez ouvert cette PR, donc GitHub ne vous laissera pas l'approuver. Avec la protection de branche activée, cochez
+   **Merge without waiting for requirements to be met** pour merger en tant qu'administrateur du dépôt.
+
+</Steps>
+
+## Ce qui se passe ensuite, sans que personne ne touche à rien
+
+Le workflow **Agent Issues** voit une PR mergée portant `spec-ready`. Il lit `tasks.md`, prend
+la première phase non terminée et ouvre une issue à partir du
+[template d'implémentation](https://github.com/AlexTo/agentic-sdlc/blob/main/.github/ISSUE_TEMPLATE/implement-phase.md) :
+dossier de spec, plage de tâches `T001` à `T003`, et les règles que l'agent doit suivre. Il ajoute le
+label `openhands`, qui est le signal de départ.
+
+<Aside type="note">
+Vous avez oublié le label ? Ajoutez `spec-ready` à la PR déjà mergée.
+</Aside>
+
+Votre attention est désormais libre jusqu'à ce qu'il y ait quelque chose à relire. Suite : [L'agent implémente](../agent-implements/).

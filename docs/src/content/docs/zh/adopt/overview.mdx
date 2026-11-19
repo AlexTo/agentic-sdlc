@@ -1,0 +1,48 @@
+---
+title: 在你自己的仓库中采用
+description: 当你无法 fork 时，如何按顺序把每个部件加入一个已有的仓库。
+sidebar:
+  order: 0
+  label: 概览
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+获得这套工作流最快的方式是 [fork 这个仓库](../../setup/fork/)。本节适用于你无法这样做的情况：你有一个已有的产品仓库，想在其中搭建同样的配置。
+
+每一步都会加入一个从这个仓库复制过来的部件，并说明如何检查。完成后，你的仓库就拥有了 fork 所拥有的一切，然后你从 [2. 配置仓库](../../setup/github-repository/)继续。
+
+<Aside type="tip">
+无论如何，先 fork 这个仓库，在笔记应用上运行一遍[你的第一个功能](../../setup/first-feature/)。亲眼看到整个循环跑通一次，会让这里的每一步都容易理解得多。
+</Aside>
+
+## 步骤
+
+| # | 步骤 | 填补的缺口 |
+| --- | --- | --- |
+| 1 | [工作区与提交规范](../workspace/) | |
+| 2 | [安装 Speckit](../speckit/) | |
+| 3 | [constitution 与模板](../constitution-and-templates/) | 5（格式，以文字形式） |
+| 4 | [智能体指引与 issue 模板](../agent-guidance/) | |
+| 5 | [粘合脚本](../glue-scripts/) | 1 到 7（逻辑） |
+| 6 | [PR 检查与 CI](../pr-checks-and-ci/) | 5、6（强制执行） |
+| 7 | [智能体 workflow](../agent-workflows/) | 1、2、3、4、7（接入） |
+| 8 | [本地环境、e2e 与截图](../local-stack-and-e2e/) | 6、8 |
+| 9 | [部署与安全扫描（可选）](../deploy/) | 9、10 |
+
+缺口编号对应[缺失的粘合层](../../concepts/the-missing-glue/)。
+
+## 先做这些决定
+
+| 决定 | 默认值 | 何时修改 |
+| --- | --- | --- |
+| 实现用的触发标签 | `openhands` | 你已经在用这个标签 |
+| 分支前缀 | `openhands/issue` | 很少需要。粘合层精确匹配 `openhands/issue-<n>`。如果你修改了它，也要修改 `AGENT_BRANCH` 和 workflow 的条件 |
+| 评审标签 | `openhands-review` | 同上 |
+| 轮询间隔 | 每 5 分钟 | 你希望降低成本，并且可以等更久（目录中的默认值是 15） |
+| 最大修复次数 | 每个循环 5 次 | 很少需要。它是两个 `plan.ts` 文件中的 `MAX_*_FIX_ATTEMPTS` |
+| Spec 文件夹编号 | 时间戳 | 只要 spec 作者多于一人，就永远不要改 |
+
+在每条命令和每个复制过来的文件中，把 `@your-scope` 或 `@agentic-sdlc` 替换为你工作区的 npm scope。
+
+下一步：[1. 工作区与提交规范](../workspace/)。

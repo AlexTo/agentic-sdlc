@@ -1,0 +1,109 @@
+---
+title: constitution 与指导
+description: Discava 的智能体在每次运行前都会阅读的规则，以及每条规则存在的原因。
+sidebar:
+  order: 2
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Discava 的智能体在编写任何代码之前都会阅读三层文字说明。每一层承担不同的职责，一条规则恰好只存在于
+其中一层。
+
+| 层 | 包含 | 何时变化 |
+| --- | --- | --- |
+| **Constitution** | 计划不得违反的规则 | 很少变化，通过 PR 修改，并带有语义化版本号 |
+| **`AGENTS.md`** | 在这里如何工作：命令、架构、约定 | 每当代码库变化时 |
+| **issue 指令** | 在*这一次*运行中如何行事：范围、要运行什么、绝不能做什么 | 当 workflow 变化时 |
+
+## constitution
+
+`.specify/memory/constitution.md`，版本 1.2.1，于 2026 年 11 月 7 日批准。共八条原则，每条都附有简短
+的理由。对智能体最重要的几条：
+
+### III. 一切都在本地运行
+
+> A feature MUST work under `pnpm dev` with Docker and no AWS account. Any AWS service a feature
+> adds MUST get a local stand-in or a documented, justified exception.
+
+正是这一条让 CI 能够为 e2e 测试运行整个应用，也让云凭证远离智能体。参见[本地栈](../local-stack/)。
+
+### IV. 分层测试：单元、不变式、端到端
+
+五条子规则。其中两条最重要：
+
+- **影响检查。** 计划必须列出该功能写入或以新方式读取的共享记录，并为每条记录指出已经覆盖它的现有
+  不变式和测试。如果功能改变了某条记录的含义，计划必须扩展这些检查，并且 `tasks.md` 必须为每一项
+  包含一个任务。
+- **测试即规格。** 失败的测试要通过修改代码来解决，而不是削弱测试。不变式也算作测试。完整规则引用在
+  [信任的层次](../../concepts/layers-of-trust/#测试即规格)中。
+
+影响检查之所以存在，是因为智能体很乐意添加新检查，却很少回头看旧检查。一个改变了"活跃学生"含义的
+新功能，会悄无声息地破坏一个旧不变式的含义。
+
+### V. 单表数据模型
+
+访问模式在计划阶段、写代码之前就设计好。面向用户的请求必须使用键或已声明的索引，绝不能用 scan。这是
+一个很好的例子，说明有些规则只有在**计划**阶段检查才有效：事后再改造键就意味着要迁移数据。
+
+### VII. 上线前自由修改
+
+> Until production is live, routes, APIs and data shapes MUST be changed outright: no redirects,
+> deprecated aliases or fallbacks for old data.
+
+没有这条规则，智能体出于谨慎会给每个变更都加上兼容层。
+
+### 开发工作流小节
+
+专门为智能体写的部分：
+
+> Features are implemented by autonomous agents, each on its own branch and pull request, so a task
+> list MUST NOT require a local stack, Docker or `pnpm dev`. […] A task that needs a running local
+> stack or people MUST be marked `(human)` in `tasks.md`. […] An agent MUST NOT merge, push to
+> `main`, edit CI workflows, or weaken a test to make CI pass.
+
+## `AGENTS.md`
+
+Discava 根目录的 `AGENTS.md` 大约 110 行。它涵盖：
+
+- **命令。** 安装、构建、lint、测试一个项目或一个文件、e2e、本地开发、部署。
+- **架构。** 每个包一行：它是什么，以及它的细节在哪里。
+- **约定。** 否则评审者要在每个 PR 上重复的规则：Conventional Commits、用 Biome 而不是 ESLint、
+  `helpers/` 文件夹规则、"buttons carry text labels only, no arrow icons"、共享代码放在哪里，以及命名：
+  kebab-case 文件名，后端包中使用 `helpers/` 而绝不用 `lib/`，`*Writes` 函数返回事务项，而以动词命名
+  的函数自己执行 I/O。
+
+单个包的细节放在该包文件夹中嵌套的 `AGENTS.md` 里：共七个，每个 5 到 28 行，分别对应 API、数据库包、
+事件、基础设施等。智能体只有在那个文件夹里工作时才会加载对应的文件。当根文件膨胀到每个包一段话时，
+Discava 把细节移了下去，这样每次运行就不再阅读它并不涉及的包。例如，数据库包的文件说明了每种共享写入
+经过哪个 helper，以及改变谁写入这张表意味着要重新生成 `Invariant coverage` 检查读取的映射。
+
+<Aside type="tip">
+Discava 的 `AGENTS.md` 是一行一行长出来的，每次都是因为评审第二次发现了同一个错误。这也是让你的
+`AGENTS.md` 成长的正确方式。
+</Aside>
+
+## Skill
+
+Discava 在 `.agents/skills/` 中安装了三个社区 skill（在 `skills-lock.json` 中按 commit 固定），分别
+用于 React 最佳实践、Web 界面指南和写作指南。Speckit 命令也作为 skill 安装。skill 在相关时才会加载，
+所以它们能容纳比 `AGENTS.md` 多得多的细节。
+
+## issue 指令
+
+每个实现 issue 都以相同的指令结尾，由 Agent Issues 脚本从 `.github/ISSUE_TEMPLATE/implement-phase.md`
+复制而来。它们告诉智能体：
+
+- 先阅读 `AGENTS.md`、constitution 和 spec 文件夹
+- 先写每个故事的测试，并在完成某项任务的 commit 中勾选它
+- 在本地运行单元测试、lint、类型检查和构建，把 e2e 和并发测试留给 PR CI
+- 为每个 UI 变更添加 `screenshot()` 调用，绝不把截图留给 **(human)** 任务
+- 跳过 **(human)** 任务，并在 PR 描述中列出它们
+- 使用 Conventional Commits，用 `Refs #<parent>` 而不是 `Closes`
+- 绝不削弱测试、编辑 workflow、合并或接触 AWS 凭证
+- 受阻时在 issue 上评论并停止
+
+每一条之所以存在，都是因为早期某次运行做了相反的事。例如，`Refs` 规则防止第一个阶段的 PR 关闭整个
+功能的父 issue。完整文本见[采用：智能体指导](../../adopt/agent-guidance/)。
+
+下一步：[Speckit 配置](../speckit-setup/)。

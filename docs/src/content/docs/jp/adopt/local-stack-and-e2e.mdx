@@ -1,0 +1,105 @@
+---
+title: 8. ローカルスタック、e2e、スクリーンショット
+description: アプリ全体をクラウドアカウントなしで動かし、スクリーンショット付きの e2e テストを追加し、テストのたびにデータの invariant をチェックします。
+sidebar:
+  order: 8
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**このステップで得られるもの:** ローカルの代替サービスでアプリ全体を起動する `pnpm dev`、CI がすべての PR で実行する
+Playwright スイート、PR に投稿されるスクリーンショット、そして各テストの後にチェックされる invariant。
+
+これは最もスタックに依存するステップです。同時に、クラウドの認証情報なしで CI がエージェントに本物のフィードバックを
+返せるようにするステップでもあります。
+
+<Steps>
+
+1. **すべてのクラウドサービスにローカルの代替を用意し**、`dev` ターゲットで起動して、`pnpm dev` ですべてが
+   動くようにします。[Discava のローカル代替](../../discava/local-stack/#ローカルで動くもの) は DynamoDB、
+   S3、SQS、OpenSearch、Cognito をカバーし、さらに、クラウドで Lambda のトリガー、ストリーム、EventBridge が
+   呼び出すのと同じハンドラーを呼び出す「イベントランナー」プロセスも含みます。
+
+   バックエンドのコードは 1 つのフラグ（`LOCAL_DEV=true`）で切り替え、エンドポイントは 1 つの共有モジュールにまとめます。
+   まだクラウドでしか動かないものは `CONTRIBUTING.md` に列挙し、それを必要とするタスクには
+   **(human)** を付けます。
+
+2. ユーザーフローごとに 1 つのシナリオファイルを持つ **Playwright プロジェクトを追加します**。このリポジトリの
+   `packages/e2e` は最小限の例です。`playwright.config.ts` では、CI のマトリックスがスイートを分割できるように、
+   シャードを環境変数から読み込みます。
+
+   ```ts
+   const [shardCurrent, shardTotal] = (process.env.E2E_SHARD ?? '').split('/').map(Number);
+
+   export default defineConfig({
+     testDir: './src',
+     testMatch: ['scenarios/**/*.e2e.ts'],
+     workers: 1,
+     forbidOnly: !!process.env.CI,
+     retries: process.env.CI ? 1 : 0,
+     shard: shardCurrent && shardTotal ? { current: shardCurrent, total: shardTotal } : null,
+     webServer: { command: 'pnpm dev', reuseExistingServer: !process.env.CI /* … */ },
+   });
+   ```
+
+   各シナリオは自分のユーザーと一意な名前のデータを作り、どのシナリオもローカルのデータをリセットしないので、
+   どの順番でも実行できます。
+
+3. このリポジトリから **スクリーンショットのヘルパーをコピーします**: `packages/e2e/src/helpers/screenshots.ts`。
+   このヘルパーは `dist/packages/e2e/screenshots/<scenario>/<nn>-<name>.png` に保存します。これは PR Checks の
+   `e2e` ジョブがアップロードするフォルダーです。人が目で確認する箇所で、表示内容に対する `expect` の後に呼び出します。
+
+   ```ts
+   await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible();
+   await screenshot(page, 'reviews section with three reviews');
+   ```
+
+4. **テストのたびに invariant をチェックします。** 異なるコードが書き込むレコードにまたがるルール
+   （カウンター、集計、順序）ごとに、データを走査して違反を返す関数を書きます。そして、それを自動でチェックする
+   `test` をシナリオに渡します。次は Discava のパターンを簡略化したものです。
+
+   ```ts
+   export const test = base.extend<{ tableInvariants: void }>({
+     tableInvariants: [
+       async ({}, use, testInfo) => {
+         const before = new Set((await findViolations()).map(violationId));
+         await use();
+         if (testInfo.status !== testInfo.expectedStatus) return;
+         await expect
+           .poll(async () => (await findViolations()).filter((v) => !before.has(violationId(v))), {
+             message: 'The scenario left the table breaking invariants',
+             timeout: 30_000,
+           })
+           .toEqual([]);
+       },
+       { auto: true },
+     ],
+   });
+   ```
+
+   テストを失敗させるのは *新しい* 違反だけなので、古いローカルデータが原因で失敗することはありません。`expect.poll` は
+   バックグラウンドの処理（ストリームハンドラー、再計算）が追いつくまでの時間を与えます。
+
+5. 2 人のユーザーが競合しうる書き込みについて **並行性テストを追加します**。`Promise.all` で同じ API リクエストを
+   同時に送り、その結果と invariant をアサートします。
+
+</Steps>
+
+## 動作を確認する
+
+```bash
+pnpm nx e2e @your-scope/e2e
+ls dist/packages/e2e/screenshots/*/
+```
+
+次に、ページを変更し `screenshot(` の呼び出しを 1 つ追加する PR を開きます。PR Checks が終わると、PR には
+見出しが **E2E screenshots** のコメントが付き、「Added by this pull
+request」の下に新しい画像が一覧表示されます。
+
+<Aside type="tip">
+アプリをまだ完全にはローカルで動かせない場合は、動かせる部分から始めてください。API とデータベースだけをカバーする
+スイートでも、エージェントのミスの大半を検出できます。代替はサービスを 1 つずつ追加し、それまでは残りを
+**(human)** タスクとして残しておきます。
+</Aside>
+
+次へ: [9. デプロイとセキュリティスキャン](../deploy/)。

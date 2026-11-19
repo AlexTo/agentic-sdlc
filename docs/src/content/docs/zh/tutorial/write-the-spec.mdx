@@ -1,0 +1,55 @@
+---
+title: 1. 编写 spec
+description: 用 Speckit 把想法变成 spec.md，并让智能体对它提出质疑。
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+**当前位置：** 🧑 你 + 🤖 智能体。**产出：** `specs/<timestamp>-note-tags/spec.md`。
+
+spec 说明*做什么*和*为什么*，从不说明*怎么做*。它是你写下的最重要的东西。
+
+<Steps>
+
+1. 从一个分支开始。
+
+   ```bash
+   git switch -c spec/note-tags
+   ```
+
+2. 向 Speckit 描述这个功能。
+
+   ```text
+   /speckit-specify Users can add up to five tags to a note and filter the note list by tag.
+   Tags are case-insensitive and unique per note.
+   ```
+
+   Speckit 会创建 `specs/<timestamp>-note-tags/spec.md`，其中包含用户故事、功能需求和验收标准。
+
+3. 让智能体找出遗漏之处。
+
+   ```text
+   /speckit-clarify
+   ```
+
+   它最多会提出五个有针对性的问题，并把你的回答写回 spec。对于这个功能，可以预期会有这样的问题：
+
+   - 添加第六个标签时会怎样：拒绝，还是丢弃最旧的那个？
+   - `Work` 和 `work` 是同一个标签吗？（spec 的回答是：是，保存时转为小写。）
+   - 标签有最大长度吗？
+
+</Steps>
+
+## 好的 spec 是什么样子
+
+- 每个用户故事都可以单独测试，验收场景以 Given/When/Then 的形式编写。
+- 每条规则都写成一条需求，例如 *"A note MUST NOT have more than five tags."* 这些规则之后会变成不变式和测试。
+- spec 中不出现任何技术。没有 DynamoDB，没有 tRPC。
+
+<Aside type="tip">
+自己回答澄清问题，而不是让智能体去猜。你给出的每一个回答，都会让代码中少一个错误的假设。
+</Aside>
+
+下一步：[计划与任务](../plan-and-tasks/)。

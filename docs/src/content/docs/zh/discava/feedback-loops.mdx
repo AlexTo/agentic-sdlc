@@ -1,0 +1,77 @@
+---
+title: 反馈循环
+description: Agent CI Status 和 Agent Review Status，这两个把智能体送回去的 workflow。
+sidebar:
+  order: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+缺口 2、3 和 4：智能体听不到红色的 CI 运行或 "changes requested" 评审，而即使它听到了并且不断失败，
+也没有东西能阻止它。这两个 workflow 都把一个事件转换成 OpenHands worker 本就会响应的那一个信号：PR
+head 上一个名为 `software-factory/review`、状态为 `failure` 的 commit 状态。
+
+## Agent CI Status
+
+`.github/workflows/agent-ci.yml` 在 `workflow_run` 上运行，即当 **PR Checks** 针对 `openhands/issue-`
+分支上的 pull request 以 `failure` 或 `timed_out` 完成时。它检出默认分支，并运行 `agent-ci-status`。
+
+`workflow_run` 很关键。它在默认分支的上下文中运行，带有一个可写的 token，即使 PR Checks 是用只读
+token 在 PR 的代码上运行的。
+
+脚本（`src/agent-ci/`）：
+
+1. 在任何请求中使用分支名**之前**，先用 `^openhands/issue-\d+$` 检查它。分支名来自 PR 作者。
+2. 找到打开的 PR、它的标签和当前 head，以及这次运行所针对 commit 上的状态。
+3. 列出失败的 job，例如 `E2E tests (3/4)` 和 `Checks (lint)`。
+4. 调用 `planCi()`，它返回 `ignore`、`send-back` 或 `give-up`。
+5. 对于 `send-back`：加上 `ci-fix-<n>`，然后发布状态，描述中写明失败的 job，并以这次运行作为链接。
+6. 对于 `give-up`：加上 `ci-fix-exhausted` 并发表评论，例如：
+
+   > CI is still failing after 5 automatic fix attempts, so the agent will not be sent back again.
+   >
+   > Failing checks on `1a2b3c4`: E2E tests (2/4).
+   >
+   > A person needs to take over this pull request. To let the agent try again, remove the
+   > `ci-fix-*` and `ci-fix-exhausted` labels and re-run the checks.
+
+## Agent Review Status
+
+`.github/workflows/agent-review.yml` 在 `pull_request_review: submitted` 上运行，条件是分支是同一仓库中
+的智能体分支，并且评审正文包含 `CHANGES REQUESTED`。它显式检出默认分支，并运行 `agent-review-status`。
+
+`planReview()` 在把智能体送回去之前，会额外进行三项自己的检查：
+
+| 检查 | 原因 |
+| --- | --- |
+| 作者关联为 `OWNER`、`MEMBER` 或 `COLLABORATOR` | 只有具有写权限的人才能触发它 |
+| 正文中有 `<!-- openhands-review-run: … -->` | 这是评审智能体的评审，而不是某个人在引用它 |
+| 正文中有一行恰好是 `🔄 CHANGES REQUESTED` | 这是结论，而不是对它的提及 |
+
+然后是与 CI 相同的步骤：`review-fix-<n>`、链接到该评审的失败状态，以及五次之后的
+`review-fix-exhausted`。
+
+智能体推送之后，评审者会自行重新评审，因为修改 prompt 会让智能体重新加上 `openhands-review`，而新的
+head commit 会被视为一次新的评审。
+
+## 在 PR 上是什么样子
+
+来自 [#470](https://github.com/AlexTo/discava/pull/470)，"ratings in search"：
+
+1. 智能体打开 PR。`E2E tests (4/4)` 分片失败。
+2. Agent CI Status 加上 `ci-fix-1` 并发布失败状态。
+3. 在下一次轮询时，智能体进行修改，推送 `94b9ee3`，并评论：*"The only finding was the
+   failing `E2E tests (4/4)` shard: my new scenario […] hit a strict-mode violation, because
+   `getByText('4.5')` matched both the rating and the `4.5 and up` option […]. I fixed both
+   locators."*
+4. 评审者看到新 head 上的检查仍在运行，于是评论 "⏳ Review waiting on checks"。在之后的一次扫描中，
+   一切都变绿了。它评审 `94b9ee3`，并以 `✅ APPROVED` 结尾。
+5. `main` 被合并进该分支。评审者再次评审新的 head 并批准它。
+6. 一个人进行合并。
+
+<Aside type="tip">
+两个脚本都接受 `DRY_RUN=true`，它会把计划以 JSON 打印出来，而不做任何修改。把 `GITHUB_EVENT_PATH`
+指向一个保存下来的事件负载，就可以重放一个真实案例。
+</Aside>
+
+下一步：[PR 检查](../pr-checks/)。

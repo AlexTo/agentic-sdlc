@@ -1,0 +1,79 @@
+---
+title: Gates humanos
+description: As duas decisões que ficam com as pessoas, o que os agents nunca têm permissão para fazer e quando você é chamado antes.
+sidebar:
+  order: 8
+---
+
+As pessoas não são removidas do loop. Elas são levadas para os dois pontos em que o julgamento mais importa,
+e mantidas longe da espera e da digitação que ficam no meio.
+
+## Gate 1: aprovar a spec
+
+O spec PR é revisado como código. Fazer o merge dele **com o label `spec-ready`** é a única coisa
+que inicia a implementação.
+
+O que observar:
+
+- O `spec.md` diz o que você realmente quer, com cada regra escrita como um requisito?
+- Cada fase é pequena o bastante para revisar de uma sentada?
+- Há algo no `plan.md` que você rejeitaria em um code review?
+
+### Este agora é o principal gargalo
+
+Quando os loops rodam sozinhos, o code review fica pequeno: um PR verde e aprovado pelo agent por fase.
+O passo humano mais lento é este. Toda feature espera aqui até alguém concordar que a spec está certa.
+
+Ela não precisa esperar por um desenvolvedor. O `spec.md` é linguagem simples (histórias de usuário, cenários
+de aceitação, requisitos funcionais), então um **analista de negócios** ou **product owner** pode revisá-lo
+no spec PR, comentar e aprovar. Divida o review por arquivo:
+
+| Revisor | Lê | Pergunta |
+| --- | --- | --- |
+| Product owner, analista de negócios | `spec.md` | É esta a feature que queremos? As regras e os casos extremos estão certos? Falta alguma coisa? |
+| Engenheiro | `plan.md`, `data-model.md`, `contracts/`, `tasks.md` | O design é sólido? As fases são pequenas o bastante para revisar? |
+
+Qualquer pessoa que consiga ler o repositório pode comentar. Para que a aprovação dela conte para a branch
+protection, ela precisa de acesso de escrita.
+
+## Gate 2: aprovar o resultado
+
+Cada PR de agent chega até você depois que o CI está verde e o agent revisor aprovou. Seu papel é
+julgar o resultado, não caçar problemas:
+
+- Leia a descrição do PR: o que mudou, quais tarefas, quais tarefas **(human)** ficaram para você.
+- Olhe o comentário **E2E screenshots** em vez de baixar a branch. Ele mostra a feature
+  funcionando. Veja [A verificação é o que mais importa](../layers-of-trust/#a-verificação-é-o-que-mais-importa) para um
+  exemplo.
+- Faça as tarefas **(human)**: verificações manuais em uma stack local ou em um stage com deploy.
+- Faça o merge ou peça mudanças. Para que o agent as faça, adicione o label `openhands-review` depois
+  do seu review: o agent revisor revisa o PR de novo, e o veredito "changes requested" dele manda o
+  agent implementador de volta pelo loop review-fix, contado com os mesmos labels `review-fix-*`.
+
+## O que os agents nunca podem fazer
+
+| Nunca | Garantido por |
+| --- | --- |
+| Fazer merge ou push na `main` | Branch protection exigindo um review de aprovação. O token do agent só é usado na própria branch dele |
+| Editar `.github/workflows/` | Constitution e instruções da issue. O revisor e o review humano pegam isso. Os workflows de cola rodam o código da branch padrão, então um workflow editado em um PR não consegue alterá-los |
+| Enfraquecer um teste para fazê-lo passar | Constitution ("tests are a specification"), instruções da issue, agent revisor |
+| Mexer em credenciais de nuvem | A conversa nunca as recebe. O deploy usa roles OIDC de curta duração de um GitHub environment |
+| Trabalhar fora do seu intervalo de tarefas | A issue nomeia o intervalo. A próxima issue só abre quando toda tarefa de agent estiver marcada |
+| Tentar de novo para sempre | Cinco tentativas por loop, contadas em labels |
+
+## Quando você é chamado antes
+
+| Sinal | O que aconteceu | O que fazer |
+| --- | --- | --- |
+| `ci-fix-exhausted` | O CI falhou cinco vezes depois das correções automáticas | Leia a última falha. Comente com orientações, corrija você mesmo ou corrija a spec. Depois [reinicie o loop](../../reference/labels/#reiniciando-um-loop) |
+| `review-fix-exhausted` | O revisor continua pedindo mudanças depois de cinco rodadas | Decida se o revisor tem razão. Muitas vezes a spec é ambígua |
+| Um comentário do agent na issue | Ele ficou bloqueado e parou, como instruído | Responda e depois remova e aplique de novo o label `openhands` |
+| Um comentário em um PR mergeado: "the next implementation issue … was not opened" | Nem todas as tarefas da fase estão marcadas | Marque ou termine as tarefas e depois rode o Agent Issues à mão para a pasta da spec |
+
+## A produção é um terceiro gate, opcional
+
+O deploy em um stage de desenvolvimento pode ser automático a cada `main` verde. O deploy em produção
+deve esperar por uma pessoa, usando required reviewers em um GitHub environment. Veja
+[Deploy e segurança](../../discava/deploy-and-security/).
+
+Próximo: [Como o Discava faz](../../discava/overview/).

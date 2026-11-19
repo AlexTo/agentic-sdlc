@@ -1,0 +1,42 @@
+---
+title: Agentic SDLC
+description: 에이전트가 코드를 작성하고 사람은 방향을 잡는 소프트웨어 라이프사이클로, Discava에서 실제로 구축하고 운영하고 있습니다.
+template: splash
+hero:
+  title: Agentic SDLC
+  tagline: "에이전트 하나를 일일이 챙기는 일은 그만두세요. 신뢰의 사다리를 오르세요. 환경에 더 많은 것을 갖춰 둘수록 에이전트가 올바르게 일한다고 더 믿을 수 있고, 더 많은 에이전트를 동시에 돌릴 수 있습니다. 이 가이드는 그 아이디어를 설명하고, Discava가 이를 어떻게 운영하는지 보여 주며, 직접 설정하는 과정을 안내합니다."
+  actions:
+    - text: 여기서 시작
+      link: /agentic-sdlc/ko/guides/introduction/
+      icon: right-arrow
+    - text: 설정하기
+      link: /agentic-sdlc/ko/setup/before-you-start/
+      icon: setting
+      variant: minimal
+---
+
+import { CardGrid, Card, LinkCard } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <Card title="믿을 수 있는 환경" icon="approve-check">
+    규칙, 테스트, 검사가 겹겹이 쌓여 있어서 실수가 드러나면 여러분이 아니라 에이전트에게 돌아갑니다.
+  </Card>
+  <Card title="spec을 작성하세요" icon="pencil">
+    모든 기능은 리뷰를 거친 spec, plan, 작업 목록에서 시작합니다. 에이전트는 채팅이 아니라 이 문서들을 바탕으로 구현합니다.
+  </Card>
+  <Card title="나머지는 에이전트가" icon="rocket">
+    spec이 merge되면 phase마다 issue가 열립니다. 에이전트가 PR을 열고, 빨간 CI나 리뷰 피드백을 스스로 고치며, 루프마다 최대 다섯 번까지 시도합니다.
+  </Card>
+  <Card title="여러분은 방향을 잡습니다" icon="information">
+    사람은 spec을 승인하고 merge 전에 최종 결정을 내립니다. 그 사이의 모든 일은 저절로 진행됩니다.
+  </Card>
+</CardGrid>
+
+## 경로 선택
+
+<CardGrid>
+  <LinkCard title="개념 이해하기" href="/agentic-sdlc/ko/concepts/principles/" description="원칙, 그리고 워크플로를 이루는 다섯 가지 구성 요소." />
+  <LinkCard title="Discava의 방식 보기" href="/agentic-sdlc/ko/discava/overview/" description="모든 빈틈과 그것을 메우는 정확한 파일, 그리고 spec에서 merge까지 추적한 실제 기능." />
+  <LinkCard title="워크플로 재현하기" href="/agentic-sdlc/ko/setup/before-you-start/" description="이 저장소를 fork하고, OpenHands가 이를 가리키게 한 뒤, 기능 하나를 전체 루프에 통과시켜 보세요." />
+  <LinkCard title="기능 하나로 해 보기" href="/agentic-sdlc/ko/tutorial/the-case/" description="작은 기능 하나, 노트 태그를 모든 단계에 걸쳐 따라가 보세요." />
+</CardGrid>

@@ -1,0 +1,46 @@
+---
+title: 0. Avant de commencer
+description: Ce dont vous avez besoin, et comment forker ce dépôt vous donne la configuration de Discava.
+sidebar:
+  order: 0
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Un [fork de ce dépôt](../../guides/fork-this-repo/) contient tout ce que la configuration de Discava garde dans
+le dépôt. Ces étapes ajoutent la partie qui vit en dehors : vos réglages GitHub, et une
+installation d'OpenHands pointée vers votre fork. Ensuite, vous écrivez une spec pour l'application de notes et la regardez
+passer de la PR de spec aux PR d'agents mergées.
+
+**Durée :** environ une heure, passée surtout à attendre la première exécution de l'agent.
+
+## Ce dont vous avez besoin
+
+| Besoin | Pourquoi |
+| --- | --- |
+| Un compte GitHub | Pour forker, et pour posséder le token qu'utilisent les agents |
+| Node.js 24 et pnpm | Pour faire tourner le dépôt et Agent Canvas |
+| `uv` | Agent Canvas démarre son backend avec `uvx` |
+| Docker | Seulement pour lancer l'application de notes et ses tests e2e en local. La CI les lance pour l'agent |
+| GitHub CLI (`gh`), connecté | La plupart des étapes l'utilisent |
+| Un agent de code, installé et connecté | Écrit les specs avec Speckit, et tourne dans OpenHands. Discava utilise Claude Code |
+
+<Aside type="note">
+Agent Canvas tourne sur votre propre machine et interroge GitHub, il n'a donc besoin ni d'adresse publique ni de
+webhook. Les agents ne travaillent que tant qu'il tourne.
+</Aside>
+
+## Les étapes
+
+| # | Étape | Résultat |
+| --- | --- | --- |
+| 1 | [Forker le dépôt](../fork/) | Votre propre copie, avec Actions et Issues activés |
+| 2 | [Configurer le dépôt](../github-repository/) | Les labels, et une branche `main` protégée |
+| 3 | [Installer OpenHands](../openhands/) | Agent Canvas en marche, un token GitHub, deux profils d'agent |
+| 4 | [Créer les deux automatisations](../automations/) | OpenHands qui implémente et relit dans votre fork |
+| 5 | [Lancer votre première fonctionnalité](../first-feature/) | Une spec pour l'application de notes, menée jusqu'au code mergé par les agents |
+
+Vous préférez mettre la configuration en place dans un dépôt existant ? Voir
+[L'adopter dans votre propre dépôt](../../adopt/overview/).
+
+Suite : [1. Forker le dépôt](../fork/).

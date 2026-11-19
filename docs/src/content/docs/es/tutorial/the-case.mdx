@@ -1,0 +1,44 @@
+---
+title: El caso - tags en notas
+description: La feature que construye cada paso del tutorial, y por qué se eligió.
+sidebar:
+  order: 0
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+El tutorial sigue una feature desde la idea hasta el código fusionado: **tags en las notas**.
+
+> Un usuario puede añadir hasta cinco tags a una nota y filtrar la lista de notas por tag.
+
+Es lo bastante pequeña para terminarla en unos pocos PR, y toca todas las capas de la app de notas de ejemplo, así que
+cada etapa del workflow tiene algo real que hacer.
+
+| Capa | Qué cambia | Qué control detecta los errores |
+| --- | --- | --- |
+| `notes-table` | Atributo `tags` en la entidad `note` | Tests unitarios |
+| `notes-api` | `tags` al crear y actualizar, filtro `tag` al listar | Tests unitarios, typecheck |
+| `notes-website` | Campo de tags en el formulario de la nota, chips de tags, filtro por tag | Capturas de pantalla, e2e |
+| Regla de negocio | Máximo cinco tags, sin duplicados, sin distinguir mayúsculas y minúsculas | Invariantes, tests unitarios |
+| Concurrencia | Dos pestañas añadiendo tags a la vez no deben perder ninguno | Test de concurrencia |
+| `docs/` | La página de la app de notas describe los tags | Review del agente, review humana |
+
+## Las fases
+
+La spec se divide en tres fases, así que tres issues y tres PR:
+
+1. **Datos y API.** Entidad, procedures, reglas de validación, tests unitarios.
+2. **Sitio web.** Campo de tags, chips, filtro, escenario e2e con capturas de pantalla, tests de invariantes y de concurrencia.
+3. **Docs.** Actualizar la documentación para describir los tags.
+
+<Aside type="note">
+Las fases de este caso son un ejemplo. Tus propias specs se dividirán de otra forma. La única regla es que
+cada fase sea un PR que se pueda revisar y que deje `main` funcionando.
+</Aside>
+
+## Antes de empezar
+
+- Tienes un fork de este repositorio, configurado como en
+  [Configúralo: fork y ejecución](../../setup/before-you-start/).
+- OpenHands está consultando las issues con la label `openhands`.
+- Estás trabajando en `main` con el árbol limpio.

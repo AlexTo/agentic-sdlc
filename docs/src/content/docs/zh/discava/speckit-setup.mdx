@@ -1,0 +1,91 @@
+---
+title: Speckit 配置
+description: Speckit 在 Discava 中如何配置，以及让其输出可被机器读取的模板改动。
+sidebar:
+  order: 3
+---
+
+import { FileTree } from '@astrojs/starlight/components';
+
+Discava 几乎原样使用 Speckit 1.3.2。重要的改动集中在两个模板上，目的是让 Speckit 写出的内容能被自动化
+读取。
+
+## 配置
+
+`.specify/init-options.json`，由 `specify init` 写入：
+
+```json
+{
+  "ai": "claude",
+  "ai_skills": true,
+  "feature_numbering": "timestamp",
+  "here": true,
+  "integration": "claude",
+  "script": "sh",
+  "speckit_version": "1.3.2"
+}
+```
+
+- **以 skill 形式集成。** 这些命令作为 skill（`/speckit-specify`、`/speckit-plan`……）安装给团队的编码
+  智能体使用。
+- **时间戳编号。** spec 文件夹命名为 `YYYYMMDD-HHMMSS-<name>`，而不是 `001-<name>`。两个人在同一天、
+  在两个分支上编写 spec，编号永远不会冲突。
+
+## git 扩展
+
+安装了 Speckit 自带的 `git` 扩展（`.specify/extensions.yml`）。它的 hook 会在 `/speckit-specify` 之前
+创建一个功能分支，并在每一步之后 commit，因此编写 spec 的每一步都是 spec PR 中一个独立的
+Conventional Commit。
+
+## 模板改动
+
+### `spec-template.md`：父 issue 行
+
+```markdown
+**Parent issue**: [#<number>, or "none" if there is no tracking issue]
+```
+
+Agent Issues 脚本读取这一行，并把 `Refs #<parent>` 写入每个实现 issue，这样功能的跟踪 issue 就会链接到
+每个 PR。
+
+### `tasks-template.md`：格式说明块和测试任务
+
+对原版模板的三处补充：
+
+1. **测试不是可选的。** 原版模板说测试是可选的。Discava 的模板则说明 constitution 要求测试，并且每个
+   用户故事阶段都带有三个模板任务：单元测试、一个不变式以及一个会破坏它的测试（如果某条规则跨越多条
+   记录），以及一个 e2e 场景（如果它改变了主要流程）。
+2. **谁运行什么。** 一段说明：由智能体在没有 Docker 的情况下实现这些任务，e2e 和并发测试在 PR CI 上
+   运行，以及 **(human)** 的含义。其中包括"不用于截图"：UI 变更要在 e2e 中截图。
+3. **由自动化读取。** 校验器强制执行的[格式规则](../../reference/tasks-format/)，写在模板中，使编写
+   `tasks.md` 的智能体遵循它们。
+
+此外，在末尾的注意事项中加了一行："Do not edit existing tests to make them pass. If one
+looks wrong, stop and raise it."
+
+每处改动的确切文本见[采用：constitution 与模板](../../adopt/constitution-and-templates/)。
+
+## 一个 spec 文件夹
+
+<FileTree>
+- specs/20261116-013307-course-reviews/
+  - spec.md 做什么、为什么做，附带澄清记录和父 issue
+  - plan.md 怎么做，附带 Constitution Check
+  - research.md 决策以及被否决的备选方案
+  - data-model.md 实体、键、索引
+  - contracts/ API 形态
+  - quickstart.md 评审者如何手动试用
+  - tasks.md 八个阶段、36 个任务，其中两个是 (human)
+  - checklists/ 需求质量检查清单
+</FileTree>
+
+## spec 是如何编写的
+
+1. 一个人为该功能打开一个跟踪 issue，例如 #279 "course ratings and written reviews"。
+2. 一个编码智能体用该 issue 的文本运行 `/speckit-specify`，然后运行 `/speckit-clarify`。当没有人可以
+   回答时，智能体会选择推荐的答案，并把它记录在 spec 的 "Clarifications" 下。
+3. `/speckit-plan`、`/speckit-tasks`、`/speckit-analyze`。analyze 的发现会在同一个 PR 中修复。你可以在
+   Discava 的历史中看到这样的 commit，例如 "resolve analysis findings in the public pages spec"。
+4. spec PR 加上 `spec-ready` 标签并合并。
+
+下一步：[OpenHands 配置](../openhands-setup/)。

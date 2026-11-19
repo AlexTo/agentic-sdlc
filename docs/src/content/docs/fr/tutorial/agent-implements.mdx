@@ -1,0 +1,47 @@
+---
+title: 4. L'agent implémente
+description: OpenHands prend en charge l'issue et ouvre une PR, en commençant par les tests.
+sidebar:
+  order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Vous êtes ici :** 🤖 agent, sans surveillance. **Sortie :** une pull request pour la phase 1 sur une branche `openhands/...`.
+
+À son passage suivant, OpenHands trouve l'issue portant le label `openhands` et démarre une conversation pour elle.
+Vous ne faites rien.
+
+## Ce que fait l'agent
+
+1. Il lit `AGENTS.md`, la constitution et le dossier de spec.
+2. Il écrit d'abord les tests de la phase : les règles de tags de la spec, sous forme de tests unitaires.
+3. Il implémente jusqu'à ce qu'ils passent, en cochant chaque tâche de `tasks.md` dans le commit qui la termine.
+4. Il lance lint, typecheck, build et les tests unitaires sur ce qu'il a modifié, une fois, pas en mode watch.
+5. Il ouvre une PR dont le titre est un Conventional Commit, par exemple
+   `feat(notes): add tags to notes in the data and API layers`, avec `Refs #<parent>` dans le corps.
+6. Il liste les tâches **(human)** qu'il a sautées.
+
+## Ce qu'on lui dit de ne pas faire
+
+L'issue énonce les limites :
+
+- Ne jamais travailler hors de la plage de tâches.
+- Ne jamais affaiblir un test pour le faire passer.
+- Ne jamais modifier `.github/workflows/`, ne jamais merger, ne jamais toucher aux identifiants.
+- S'il est bloqué, commenter l'issue et s'arrêter. Il ne devine pas.
+
+## Ce que vous vérifiez
+
+Ouvrez la PR et lisez-la depuis le début :
+
+- Le titre et le corps vous disent-ils ce qui a changé et quelles tâches sont faites ?
+- Les tests vérifient-ils les règles de la *spec*, ou les particularités de l'implémentation ?
+- `tasks.md` est-il coché pour exactement cette phase, et pas plus ?
+
+<Aside type="tip">
+Vous n'avez pas encore à faire la review. La CI et l'agent reviewer passent en premier, et la PR ne vous parvient qu'une fois
+qu'ils sont satisfaits. Voir l'étape suivante.
+</Aside>
+
+Suite : [CI et review par l'agent](../ci-and-agent-review/).
