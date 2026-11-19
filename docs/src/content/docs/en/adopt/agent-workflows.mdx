@@ -8,7 +8,7 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **You'll end with:** three workflows that open issues from specs and send the agent back on red
-CI or a "changes requested" review.
+CI or a "changes requested" review, and a fourth that archives a spec once every task is ticked.
 
 <Steps>
 
@@ -55,6 +55,21 @@ CI or a "changes requested" review.
 4. **Keep the concurrency groups.** Each is per PR or per branch, with `cancel-in-progress: false`.
    That way two events for one PR can't each count an attempt, and merges of different PRs never
    cancel each other.
+
+5. **Copy `archive-specs.yml`**, if you want finished specs moved out of the way. When a push to
+   `main` changes a live `specs/*/tasks.md`, it opens a PR on branch `archive-spec/<folder>` for
+   each spec with every task ticked, **(human)** ones included. The PR moves the folder to
+   `specs/_archive/` and rewrites the links to and from it. Agent Issues skips `specs/_archive/`,
+   and `Tasks format` fails if an archived `tasks.md` has an unticked task.
+
+   It skips a spec with an open agent issue, and one that already had an archive PR. Close that
+   PR unmerged to keep the spec live.
+
+   <Aside type="caution">
+   Turn on **Settings → Actions → General → Allow GitHub Actions to create and approve pull
+   requests**, or the workflow can't open its PRs. PRs opened with the workflow's token don't
+   start PR Checks: close and reopen each one to run them.
+   </Aside>
 
 </Steps>
 

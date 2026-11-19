@@ -8,7 +8,7 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **Kết quả:** ba workflow mở issue từ spec và gửi agent quay lại khi CI đỏ hoặc có review "changes
-requested".
+requested", và một workflow thứ tư lưu trữ spec khi mọi task đã được đánh dấu.
 
 <Steps>
 
@@ -68,6 +68,22 @@ requested".
 4. **Giữ các nhóm concurrency.** Mỗi nhóm là theo PR hoặc theo nhánh, với `cancel-in-progress: false`.
    Như vậy hai sự kiện cho một PR không thể mỗi cái tính một lượt thử, và merge của các PR khác nhau
    không bao giờ hủy lẫn nhau.
+
+5. **Chép `archive-specs.yml`**, nếu bạn muốn các spec đã xong được dọn sang một bên. Khi một push
+   lên `main` thay đổi một `specs/*/tasks.md` đang hoạt động, nó mở một PR trên nhánh
+   `archive-spec/<folder>` cho mỗi spec mà mọi task đã được đánh dấu, kể cả task **(human)**. PR đó
+   chuyển thư mục vào `specs/_archive/` và sửa các liên kết đến và đi từ nó. Agent Issues bỏ qua
+   `specs/_archive/`, và `Tasks format` thất bại nếu một `tasks.md` đã lưu trữ còn task chưa được
+   đánh dấu.
+
+   Nó bỏ qua spec còn agent issue đang mở, và spec đã từng có PR lưu trữ. Đóng PR đó mà không merge
+   để giữ spec ở trạng thái đang hoạt động.
+
+   <Aside type="caution">
+   Bật **Settings → Actions → General → Allow GitHub Actions to create and approve pull requests**,
+   nếu không workflow không mở được PR. PR mở bằng token của workflow không khởi động PR Checks:
+   đóng rồi mở lại từng PR để chạy chúng.
+   </Aside>
 
 </Steps>
 

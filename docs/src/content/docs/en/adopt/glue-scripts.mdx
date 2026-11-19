@@ -7,7 +7,7 @@ sidebar:
 
 import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
-**You'll end with:** a `common-scripts` project with five Nx targets and 124 passing unit tests.
+**You'll end with:** a `common-scripts` project with six Nx targets and 143 passing unit tests.
 The workflows in steps 6 and 7 only call these targets.
 
 <Steps>
@@ -22,7 +22,7 @@ The workflows in steps 6 and 7 only call these targets.
 
    <FileTree>
    - packages/common/scripts/src/
-     - agent-issues/ spec → issue: gate, discover, tasks, validate, issue, plan-issue, create-next-issue, main, validate-main
+     - agent-issues/ spec → issue: gate, discover, tasks, validate, issue, plan-issue, create-next-issue, main, validate-main, and archive, archive-specs, archive-main for archiving
      - agent-ci/ CI → agent: plan, run, main
      - agent-review/ review → agent: plan, run, main
      - ui-screenshots/ the screenshots rule: check, main
@@ -34,6 +34,7 @@ The workflows in steps 6 and 7 only call these targets.
 
    ```json
    "agent-issue":         { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/main.ts",    "cwd": "{projectRoot}" } },
+   "archive-specs":       { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/archive-main.ts", "cwd": "{projectRoot}" } },
    "agent-ci-status":     { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-ci/main.ts",        "cwd": "{projectRoot}" } },
    "agent-review-status": { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-review/main.ts",    "cwd": "{projectRoot}" } },
    "ui-screenshots":      { "executor": "nx:run-commands", "options": { "command": "tsx src/ui-screenshots/main.ts",  "cwd": "{projectRoot}" } },
@@ -70,7 +71,7 @@ The workflows in steps 6 and 7 only call these targets.
 
 ```text
  Test Files  10 passed (10)
-      Tests  124 passed (124)
+      Tests  143 passed (143)
 ```
 
 ## Try a dry run

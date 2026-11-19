@@ -7,7 +7,7 @@ sidebar:
 
 import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
-**Kết quả:** một project `common-scripts` với năm Nx target và 124 unit test pass. Các workflow ở bước
+**Kết quả:** một project `common-scripts` với sáu Nx target và 143 unit test pass. Các workflow ở bước
 6 và 7 chỉ gọi những target này.
 
 <Steps>
@@ -22,7 +22,7 @@ import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
    <FileTree>
    - packages/common/scripts/src/
-     - agent-issues/ spec → issue: gate, discover, tasks, validate, issue, plan-issue, create-next-issue, main, validate-main
+     - agent-issues/ spec → issue: gate, discover, tasks, validate, issue, plan-issue, create-next-issue, main, validate-main, và archive, archive-specs, archive-main cho việc lưu trữ
      - agent-ci/ CI → agent: plan, run, main
      - agent-review/ review → agent: plan, run, main
      - ui-screenshots/ quy tắc ảnh chụp màn hình: check, main
@@ -34,6 +34,7 @@ import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
    ```json
    "agent-issue":         { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/main.ts",    "cwd": "{projectRoot}" } },
+   "archive-specs":       { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/archive-main.ts", "cwd": "{projectRoot}" } },
    "agent-ci-status":     { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-ci/main.ts",        "cwd": "{projectRoot}" } },
    "agent-review-status": { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-review/main.ts",    "cwd": "{projectRoot}" } },
    "ui-screenshots":      { "executor": "nx:run-commands", "options": { "command": "tsx src/ui-screenshots/main.ts",  "cwd": "{projectRoot}" } },
@@ -70,7 +71,7 @@ import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
 ```text
  Test Files  10 passed (10)
-      Tests  124 passed (124)
+      Tests  143 passed (143)
 ```
 
 Và bộ validate chạy được:

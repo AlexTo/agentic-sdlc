@@ -11,6 +11,7 @@ sidebar:
 | UI Screenshots | `ui-screenshots.yml` | `pull_request` to `main`, including `labeled`/`unlabeled` | `contents: read`, `pull-requests: read` | The default branch (reads the diff from the API) |
 | CI | `ci.yml` | `push` to `main`, `workflow_dispatch` | `contents: read`, `pages: write`, `id-token: write` | `main` |
 | Agent Issues | `agent-issues.yml` | `pull_request: [closed, labeled]` to `main`, `workflow_dispatch(spec_folder)` | `contents: read`, `issues: write`, `pull-requests: write` | The merge commit |
+| Archive Specs | `archive-specs.yml` | `push` to `main` changing `specs/*/tasks.md`, `workflow_dispatch` | `contents: write`, `issues: read`, `pull-requests: write` | `main` |
 | Agent CI Status | `agent-ci.yml` | `workflow_run` of PR Checks, `completed` | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` | The default branch |
 | Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` | The default branch |
 | Deploy (Discava) | `deploy.yml` | `workflow_run` of CI on `main`, `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | The commit CI verified |
@@ -30,6 +31,7 @@ sidebar:
 | --- | --- | --- |
 | PR Checks | `pr-checks-<ref>` | yes: a new push makes the old run pointless |
 | Agent Issues | `agent-issues-<PR number or folder>` | no |
+| Archive Specs | `archive-specs` | no: one run at a time, so two never open the same PR |
 | Agent CI Status | `agent-ci-<head branch>` | no |
 | Agent Review Status | `agent-review-<PR number>` | no |
 | Deploy | `deploy-<stage>` | no |
@@ -44,6 +46,7 @@ All in `@your-scope/common-scripts`:
 | Target | Entry point | Env it reads |
 | --- | --- | --- |
 | `agent-issue` | `src/agent-issues/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH`, `SPEC_FOLDER`, `DRY_RUN` |
+| `archive-specs` | `src/agent-issues/archive-main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_WORKSPACE`, `BASE_BRANCH`, `DRY_RUN` |
 | `agent-ci-status` | `src/agent-ci/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
 | `agent-review-status` | `src/agent-review/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
 | `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH` |

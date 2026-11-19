@@ -171,6 +171,7 @@ the complete pipeline, so you can see the workflow end to end rather than read a
 | --- | --- |
 | Spec tooling (Speckit) | `.specify/`, `.claude/skills/speckit-*`, `specs/` |
 | Spec → issue automation | `.github/workflows/agent-issues.yml` |
+| Finished spec → archive PR | `.github/workflows/archive-specs.yml` |
 | Issue template handed to OpenHands | `.github/ISSUE_TEMPLATE/implement-phase.md` |
 | CI and PR checks (lint, test, e2e, screenshots) | `.github/workflows/ci.yml`, `pr-checks.yml`, `ui-screenshots.yml` |
 | Bounded fix-up loops | `.github/workflows/agent-ci.yml`, `agent-review.yml` |

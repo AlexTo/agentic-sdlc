@@ -51,6 +51,11 @@ requests with green checks and an approval.
    posted as `failure`, and requiring it would block every PR.
    </Aside>
 
+3. **Let Actions open pull requests.** Open **Settings → Actions → General**, and under
+   **Workflow permissions** tick **Allow GitHub Actions to create and approve pull requests**.
+   The Archive Specs workflow needs it to open the PR that moves a finished spec to
+   `specs/_archive/`.
+
 </Steps>
 
 <Aside type="caution" title="One account or two">
