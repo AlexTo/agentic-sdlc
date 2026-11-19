@@ -62,9 +62,10 @@ agent that writes a counter wrongly finds out in the test that wrote it, not thr
 Every rule that spans writers is written through one shared helper that every writer calls (for
 example `studentActivityWrites`), and has an invariant and a test that breaks it.
 
-An **Invariant coverage** PR check is in progress on a branch, not yet on `main`. It maps each
-entity to the files that write it, and fails a PR that adds a new writer without touching
-`invariants.ts`, unless the `no-new-invariant` label waives it.
+The **Invariant coverage** PR check keeps this honest. It keeps a map of which packages write each
+entity (`entity-writers.json`), and fails a PR that changes who writes the core table without
+touching `invariants.ts`, unless a maintainer waives it with the `no-new-invariant` label. A
+pre-push hook regenerates the map, so the agent finds out before CI does.
 
 ## Concurrency tests
 
