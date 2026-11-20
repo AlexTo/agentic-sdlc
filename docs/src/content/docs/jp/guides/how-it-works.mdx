@@ -7,40 +7,11 @@ sidebar:
 
 このページでは、1 つの機能がループ全体を通る様子を追います。各ステップで、誰が動き、何が残るかを示します。
 
-```d2
-grid-rows: 3
-grid-columns: 4
-horizontal-gap: 140
-vertical-gap: 90
+<p>
+  <img alt="エージェントのループ: 人が spec を書いてマージし、自動化が issue を開き、Developer エージェントが実装して PR を出します。CI と Reviewer エージェントがそれぞれ最大 5 回まで修正に差し戻し、最後に人がレビューしてマージします。マージ後、変更は開発ステージにデプロイされ、Tester エージェントがそこでテストします" src="/agentic-sdlc/diagrams/agentic-loop.svg" width="720" />
+</p>
 
-# Top row runs left to right, middle row right to left, so the loop wraps.
-# The bottom row is what happens after the merge.
-spec: "spec PR\n(あなた)" {shape: document}
-issues: "Agent Issues\n(GitHub Actions)"
-issue: issue {shape: page}
-implement: "実装\n(開発担当エージェント)"
-merge: "マージ\n(あなた)"
-review: "レビュー\n(レビュー担当エージェント)"
-checks: "PR Checks\n(GitHub Actions)"
-pr: pull request {shape: page}
-deploy: "デプロイ\n(GitHub Actions)"
-testissue: テスト issue {shape: page}
-test: "ステージでテスト\n(テスト担当エージェント)"
-report: レポート {shape: document}
-
-spec -> issues: spec-ready
-issues -> issue
-issue -> implement
-implement -> pr
-pr -> checks
-checks -> review: 成功
-review -> merge: 承認
-merge -> issues: 次のフェーズ
-merge -> deploy: main が green
-deploy -> testissue
-testissue -> test
-test -> report
-```
+赤はあなた、灰色は自分で動くエージェントや自動化、藍色は自動のゲートです。CI、次に Reviewer エージェント、マージ後は Tester エージェントです。
 
 3 つのエージェントは OpenHands の automation です。**開発担当**がコードを書き、**レビュー担当**がそれをレビューし、
 **テスト担当**がデプロイされた後にそれをテストします。

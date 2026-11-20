@@ -7,40 +7,11 @@ sidebar:
 
 本页跟随一个功能走完整个循环。每一步都会说明由谁行动、留下了什么。
 
-```d2
-grid-rows: 3
-grid-columns: 4
-horizontal-gap: 140
-vertical-gap: 90
+<p>
+  <img alt="智能体循环：一个人编写并合并 spec，自动化打开一个 issue，Developer 智能体实现并提交 PR，然后 CI 和 Reviewer 智能体各自最多五次把它退回修复，最后由人评审并合并。合并之后，变更部署到开发 stage，由 Tester 智能体在那里测试" src="/agentic-sdlc/diagrams/agentic-loop.svg" width="720" />
+</p>
 
-# Top row runs left to right, middle row right to left, so the loop wraps.
-# The bottom row is what happens after the merge.
-spec: "spec PR\n（你）" {shape: document}
-issues: "Agent Issues\n（GitHub Actions）"
-issue: issue {shape: page}
-implement: "实现\n（开发智能体）"
-merge: "合并\n（你）"
-review: "评审\n（评审智能体）"
-checks: "PR Checks\n（GitHub Actions）"
-pr: pull request {shape: page}
-deploy: "部署\n（GitHub Actions）"
-testissue: 测试 issue {shape: page}
-test: "在 stage 上测试\n（测试智能体）"
-report: 报告 {shape: document}
-
-spec -> issues: spec-ready
-issues -> issue
-issue -> implement
-implement -> pr
-pr -> checks
-checks -> review: 绿色
-review -> merge: 已批准
-merge -> issues: 下一阶段
-merge -> deploy: main 为绿色
-deploy -> testissue
-testissue -> test
-test -> report
-```
+红色是你，灰色是自行工作的智能体或自动化，靛蓝色是自动关卡：CI，然后是 Reviewer 智能体，合并之后是 Tester 智能体。
 
 这三个智能体都是 OpenHands 自动化：**开发智能体**编写代码，**评审智能体**评审代码，**测试智能体**在代码
 部署之后测试它。

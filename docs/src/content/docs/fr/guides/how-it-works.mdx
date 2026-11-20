@@ -8,40 +8,11 @@ sidebar:
 Cette page suit une fonctionnalité à travers toute la boucle. Chaque étape indique qui agit et ce
 qu'il en reste.
 
-```d2
-grid-rows: 3
-grid-columns: 4
-horizontal-gap: 140
-vertical-gap: 90
+<p>
+  <img alt="La boucle agentique : une personne écrit et merge la spec, l'automatisation ouvre une issue, l'agent Developer implémente et ouvre une PR, puis la CI et l'agent Reviewer la renvoient en correction jusqu'à cinq fois chacun, avant qu'une personne la relise et la merge. Après le merge, le changement est déployé sur un stage de développement et l'agent Tester le teste là-bas" src="/agentic-sdlc/diagrams/agentic-loop.svg" width="720" />
+</p>
 
-# Top row runs left to right, middle row right to left, so the loop wraps.
-# The bottom row is what happens after the merge.
-spec: "PR de spec\n(vous)" {shape: document}
-issues: "Agent Issues\n(GitHub Actions)"
-issue: issue {shape: page}
-implement: "implémentation\n(agent Développeur)"
-merge: "merge\n(vous)"
-review: "revue\n(agent Relecteur)"
-checks: "PR Checks\n(GitHub Actions)"
-pr: pull request {shape: page}
-deploy: "déploiement\n(GitHub Actions)"
-testissue: issue de test {shape: page}
-test: "test sur le stage\n(agent Testeur)"
-report: rapport {shape: document}
-
-spec -> issues: spec-ready
-issues -> issue
-issue -> implement
-implement -> pr
-pr -> checks
-checks -> review: vert
-review -> merge: approuvée
-merge -> issues: phase suivante
-merge -> deploy: main est vert
-deploy -> testissue
-testissue -> test
-test -> report
-```
+Le rouge, c'est vous, le gris un agent ou une automatisation qui travaille seul, et l'indigo une porte automatique : la CI, puis l'agent Reviewer et, après le merge, l'agent Tester.
 
 Les trois agents sont des automatisations OpenHands : le **Développeur** écrit le code, le
 **Relecteur** le relit, et le **Testeur** le teste une fois déployé.

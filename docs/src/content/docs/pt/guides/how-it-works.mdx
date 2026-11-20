@@ -8,40 +8,11 @@ sidebar:
 Esta página acompanha uma feature pelo loop inteiro. Cada passo diz quem age e o que fica
 como resultado.
 
-```d2
-grid-rows: 3
-grid-columns: 4
-horizontal-gap: 140
-vertical-gap: 90
+<p>
+  <img alt="O loop agêntico: uma pessoa escreve e faz o merge da spec, a automação abre uma issue, o agent Developer implementa e abre um PR, depois a CI e o agent Reviewer o devolvem para correção até cinco vezes cada, antes que uma pessoa revise e faça o merge. Depois do merge, a mudança é implantada em um stage de desenvolvimento e o agent Tester a testa lá" src="/agentic-sdlc/diagrams/agentic-loop.svg" width="720" />
+</p>
 
-# Top row runs left to right, middle row right to left, so the loop wraps.
-# The bottom row is what happens after the merge.
-spec: "spec PR\n(você)" {shape: document}
-issues: "Agent Issues\n(GitHub Actions)"
-issue: issue {shape: page}
-implement: "implementação\n(agent Desenvolvedor)"
-merge: "merge\n(você)"
-review: "review\n(agent Revisor)"
-checks: "PR Checks\n(GitHub Actions)"
-pr: pull request {shape: page}
-deploy: "deploy\n(GitHub Actions)"
-testissue: issue de teste {shape: page}
-test: "teste no stage\n(agent Testador)"
-report: relatório {shape: document}
-
-spec -> issues: spec-ready
-issues -> issue
-issue -> implement
-implement -> pr
-pr -> checks
-checks -> review: verde
-review -> merge: aprovado
-merge -> issues: próxima fase
-merge -> deploy: main está verde
-deploy -> testissue
-testissue -> test
-test -> report
-```
+Vermelho é você, cinza é um agent ou uma automação trabalhando por conta própria, e índigo é um portão automático: a CI, depois o agent Reviewer e, após o merge, o agent Tester.
 
 Os três agents são automations do OpenHands: o **Desenvolvedor** escreve o código, o **Revisor**
 faz o review dele, e o **Testador** o testa depois do deploy.

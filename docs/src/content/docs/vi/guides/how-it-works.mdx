@@ -8,40 +8,11 @@ sidebar:
 Trang này theo chân một tính năng qua trọn vòng lặp. Mỗi bước nêu rõ ai hành động và bước đó để lại
 gì.
 
-```d2
-grid-rows: 3
-grid-columns: 4
-horizontal-gap: 140
-vertical-gap: 90
+<p>
+  <img alt="Vòng lặp agent: một người viết và merge spec, tự động hóa mở một issue, agent Developer triển khai và mở PR, sau đó CI và agent Reviewer trả lại để sửa, mỗi bên tối đa năm lần, trước khi một người review và merge. Sau khi merge, thay đổi được triển khai lên stage phát triển và agent Tester kiểm thử nó ở đó" src="/agentic-sdlc/diagrams/agentic-loop.svg" width="720" />
+</p>
 
-# Top row runs left to right, middle row right to left, so the loop wraps.
-# The bottom row is what happens after the merge.
-spec: "spec PR\n(bạn)" {shape: document}
-issues: "Agent Issues\n(GitHub Actions)"
-issue: issue {shape: page}
-implement: "triển khai\n(agent Developer)"
-merge: "merge\n(bạn)"
-review: "review\n(agent Reviewer)"
-checks: "PR Checks\n(GitHub Actions)"
-pr: pull request {shape: page}
-deploy: "deploy\n(GitHub Actions)"
-testissue: issue test {shape: page}
-test: "test trên stage\n(agent Tester)"
-report: báo cáo {shape: document}
-
-spec -> issues: spec-ready
-issues -> issue
-issue -> implement
-implement -> pr
-pr -> checks
-checks -> review: xanh
-review -> merge: được duyệt
-merge -> issues: giai đoạn tiếp
-merge -> deploy: main xanh
-deploy -> testissue
-testissue -> test
-test -> report
-```
+Màu đỏ là bạn, màu xám là agent hoặc tự động hóa tự làm việc, còn màu chàm là một cổng tự động: CI, rồi agent Reviewer, và sau khi merge là agent Tester.
 
 Ba agent là các automation OpenHands: **Developer** viết code, **Reviewer** review nó, và **Tester**
 test nó khi nó đã được deploy.

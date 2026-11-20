@@ -8,40 +8,11 @@ sidebar:
 Questa pagina segue una funzionalità attraverso tutto il loop. Ogni passo indica chi agisce e cosa
 lascia dietro di sé.
 
-```d2
-grid-rows: 3
-grid-columns: 4
-horizontal-gap: 140
-vertical-gap: 90
+<p>
+  <img alt="Il loop agentico: una persona scrive e fa il merge della spec, l'automazione apre una issue, l'agente Developer implementa e apre una PR, poi la CI e l'agente Reviewer la rimandano indietro da correggere fino a cinque volte ciascuno, prima che una persona la revisioni e faccia il merge. Dopo il merge, la modifica viene distribuita su uno stage di sviluppo e l'agente Tester la testa lì" src="/agentic-sdlc/diagrams/agentic-loop.svg" width="720" />
+</p>
 
-# Top row runs left to right, middle row right to left, so the loop wraps.
-# The bottom row is what happens after the merge.
-spec: "PR della spec\n(tu)" {shape: document}
-issues: "Agent Issues\n(GitHub Actions)"
-issue: issue {shape: page}
-implement: "implementazione\n(agente Developer)"
-merge: "merge\n(tu)"
-review: "review\n(agente Reviewer)"
-checks: "PR Checks\n(GitHub Actions)"
-pr: pull request {shape: page}
-deploy: "deploy\n(GitHub Actions)"
-testissue: issue di test {shape: page}
-test: "test sullo stage\n(agente Tester)"
-report: report {shape: document}
-
-spec -> issues: spec-ready
-issues -> issue
-issue -> implement
-implement -> pr
-pr -> checks
-checks -> review: verde
-review -> merge: approvata
-merge -> issues: fase successiva
-merge -> deploy: main è verde
-deploy -> testissue
-testissue -> test
-test -> report
-```
+Il rosso sei tu, il grigio è un agente o un'automazione che lavora da sola, e l'indaco è un gate automatico: la CI, poi l'agente Reviewer e, dopo il merge, l'agente Tester.
 
 I tre agenti sono automazioni di OpenHands: il **Developer** scrive il codice, il **Reviewer** lo
 revisiona, e il **Tester** lo testa una volta deployato.
