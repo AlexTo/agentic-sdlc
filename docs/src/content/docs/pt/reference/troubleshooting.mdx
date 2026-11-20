@@ -52,7 +52,8 @@ sidebar:
 | Issue de teste aberta, o Testador nunca a pega | A issue não tem o label `openhands-test` porque algo para que ela aponta não pôde ser trancado, ou ela foi aberta por uma conta em que a automação não confia | A execução do Post-merge Verify falha e nomeia o que trancar. Tranque, depois adicione o label manualmente |
 | O Testador relatou, e você quer outra execução | Cada aplicação do label é testada uma vez | Remova e aplique de novo `openhands-test` |
 | O relatório diz "blocked" | Falta no stage algo de que a mudança precisa, como uma conta de pagamento conectada | Corrija o stage, depois aplique de novo o label |
-| O comentário **E2E screenshots** não aparece em um PR do agent | O PR está trancado, e o GitHub recusa ao token do Actions um comentário em uma conversa trancada | Leia a lista no resumo do job `E2E screenshots` |
+| O comentário **E2E screenshots** não aparece em um PR | O PR está trancado, e o GitHub recusa ao token do Actions um comentário em uma conversa trancada | Leia a lista no resumo do job `E2E screenshots`, ou destranque o PR |
+| O agent Revisor nunca publica um review, e o PR está trancado | O GitHub recusa um review nativo em um pull request trancado, mesmo vindo de uma conta com acesso de escrita | Destranque-o. Para manter os estranhos fora, use o limite de interação do repositório em vez de trancar pull requests |
 
 ## Deploy
 

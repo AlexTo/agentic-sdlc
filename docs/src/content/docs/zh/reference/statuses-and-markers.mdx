@@ -51,5 +51,5 @@ Agent Review Status 匹配单独成行的 `^🔄 CHANGES REQUESTED\s*$`。只是
 | `openhands/issue-<n>` | Issue-to-PR automation | worker 唯一会修订的分支，也是修复 workflow 唯一会响应的分支 |
 | `openhands/issue-<n>-2`, … | Issue-to-PR automation，用于重新加标签的 issue | 从不自动修订 |
 | `openhands/test-fix-<n>` | Issue tester automation，用于测试 issue `<n>` | 测试智能体在测试中发现的修复。从不自动修订 |
-| 任何以 `openhands/` 开头的分支 | 智能体分支 | 合并它会推进链条。在 Discava 中，来自这种分支的 pull request 在开启时就会被锁定 |
+| 任何以 `openhands/` 开头的分支 | 智能体分支 | 合并它会推进链条 |
 | `spec/<name>`（任何其他名称） | 人 | 只有带 `spec-ready` 时才会推进链条 |

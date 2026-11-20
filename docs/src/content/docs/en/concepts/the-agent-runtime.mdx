@@ -148,8 +148,9 @@ The Tester is the exception. It has to reach the deployed stage, so it works wit
 signed in to the development account, which its prompt tells it to use read-only, and a test user
 for each role in the app. It never gets the deploy roles, and its prompt forbids changing
 infrastructure, deploying, or touching another stage. Because it reads
-issues and pull requests while holding those credentials, everything it is handed is locked first,
-so only people with write access can comment on it.
+issues and pull requests while holding those credentials, nobody without write access may comment
+on them. On a public repository, that means setting GitHub's interaction limit to collaborators
+only.
 
 What else agents may never do, and what enforces each limit, is on
 [Human gates](../human-gates/#what-agents-may-never-do).

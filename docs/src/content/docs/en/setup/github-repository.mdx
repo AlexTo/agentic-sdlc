@@ -1,14 +1,14 @@
 ---
 title: 2. Configure the repository
-description: Create the labels and protect main. A fork doesn't copy either.
+description: Create the labels, protect main, and keep strangers from commenting. A fork doesn't copy any of it.
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**You'll end with:** every label the workflow uses, and a `main` branch that only takes pull
-requests with green checks and an approval.
+**You'll end with:** every label the workflow uses, a `main` branch that only takes pull
+requests with green checks and an approval, and comments limited to collaborators.
 
 <Steps>
 
@@ -56,6 +56,19 @@ requests with green checks and an approval.
    The Archive Specs workflow needs it to open the PR that moves a finished spec to
    `specs/_archive/`.
 
+4. **Limit comments to collaborators.** A fork of a public repository is public, and the agents
+   read every comment on the issues and pull requests they work on, while holding a token that
+   can push. Open **Settings → Moderation options → Interaction limits** and choose **Limit to
+   repository collaborators**, for six months. Then nobody else can comment, open an issue or open
+   a pull request.
+
+   <Aside type="caution">
+   The limit expires, at most six months after you set it, and nothing warns you. Note the date
+   and set it again before then. If you add the Tester agent later, which holds cloud credentials,
+   this limit is what keeps a stranger's comment from reaching it. See
+   [Who can comment](../../discava/post-merge-verify/#who-can-comment).
+   </Aside>
+
 </Steps>
 
 <Aside type="caution" title="One account or two">
@@ -68,7 +81,8 @@ approve agent PRs normally.
 
 ## Check it worked
 
-The fork's **Issues → Labels** page lists the 16 new labels, and **Settings → Branches** shows the
-rule on `main` with six required checks.
+The fork's **Issues → Labels** page lists the 16 new labels, **Settings → Branches** shows the
+rule on `main` with six required checks, and **Settings → Moderation options → Interaction limits**
+shows the collaborators-only limit with its end date.
 
 Next: [3. Install OpenHands](../openhands/).

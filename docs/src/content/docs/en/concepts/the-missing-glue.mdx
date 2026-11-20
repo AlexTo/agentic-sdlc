@@ -60,14 +60,17 @@ The glue workflows hold a token that can write labels, statuses and comments. Th
 that token. Anything read from the PR (branch names, bodies) is checked against a strict pattern
 before it is used.
 
-### Lock what the agent reads
+### Keep strangers out of what the agent reads
 
 Anyone can comment on a public repository's issues and pull requests, and an agent reads those
 comments while holding a token that can push. The Tester also holds access to the deployed stage.
-So every issue and pull request an agent is handed is **locked** first, which leaves commenting to
-people with write access. An issue is opened without its label, locked, and labelled only then, so
-the agent never picks it up while a stranger can still comment. And an issue's hidden marker
-counts only when the issue was opened by the workflow or by someone with write access.
+So on a public repository, set GitHub's **interaction limit** to collaborators only: nobody else
+can comment, open an issue or open a pull request. The issues a workflow opens for an agent are
+also **locked**: opened without their label, locked, and labelled only then. And an issue's hidden
+marker counts only when the issue was opened by the workflow or by someone with write access.
+
+Don't lock the agents' pull requests, though. GitHub refuses a review on a locked pull request,
+even from an account with write access, so the Reviewer agent can't post one.
 
 ### Be idempotent
 

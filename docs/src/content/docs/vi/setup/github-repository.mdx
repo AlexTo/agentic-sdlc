@@ -1,14 +1,14 @@
 ---
 title: 2. Cấu hình repository
-description: Tạo các label và bảo vệ main. Bản fork không sao chép cả hai thứ này.
+description: Tạo các label, bảo vệ main, và ngăn người lạ comment. Bản fork không sao chép thứ nào trong số này.
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Kết quả:** mọi label mà quy trình dùng, và một nhánh `main` chỉ nhận pull request có check xanh
-và một lượt duyệt.
+**Kết quả:** mọi label mà quy trình dùng, một nhánh `main` chỉ nhận pull request có check xanh
+và một lượt duyệt, và comment được giới hạn cho các collaborator.
 
 <Steps>
 
@@ -56,6 +56,19 @@ và một lượt duyệt.
    Workflow Archive Specs cần nó để mở PR chuyển một spec đã xong vào
    `specs/_archive/`.
 
+4. **Giới hạn comment cho các collaborator.** Một bản fork của một repository công khai cũng công
+   khai, và các agent đọc mọi comment trên issue và pull request mà chúng làm việc, trong khi đang giữ
+   một token có thể push. Mở **Settings → Moderation options → Interaction limits** và chọn **Limit to
+   repository collaborators**, trong sáu tháng. Khi đó không ai khác có thể comment, mở issue hay mở
+   pull request.
+
+   <Aside type="caution">
+   Giới hạn này hết hạn, tối đa sáu tháng sau khi bạn đặt nó, và không có gì cảnh báo bạn. Hãy ghi lại
+   ngày đó và đặt lại trước khi đến hạn. Nếu sau này bạn thêm agent Tester, vốn giữ thông tin đăng
+   nhập cloud, thì giới hạn này là thứ ngăn comment của một người lạ đến được nó. Xem
+   [Ai có thể comment](../../discava/post-merge-verify/#ai-có-thể-comment).
+   </Aside>
+
 </Steps>
 
 <Aside type="caution" title="Một tài khoản hay hai">
@@ -68,7 +81,8 @@ thể duyệt agent PR bình thường.
 
 ## Kiểm tra kết quả
 
-Trang **Issues → Labels** của bản fork liệt kê 16 label mới, và **Settings → Branches** hiện rule
-trên `main` với sáu check bắt buộc.
+Trang **Issues → Labels** của bản fork liệt kê 16 label mới, **Settings → Branches** hiện rule
+trên `main` với sáu check bắt buộc, và **Settings → Moderation options → Interaction limits** hiện
+giới hạn chỉ collaborator cùng ngày kết thúc của nó.
 
 Tiếp theo: [3. Cài OpenHands](../openhands/).

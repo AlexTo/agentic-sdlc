@@ -152,8 +152,9 @@ Il Tester è l'eccezione. Deve raggiungere lo stage deployato, quindi lavora con
 autenticata sull'account di sviluppo, che il suo prompt gli dice di usare in sola lettura, e con un
 utente di test per ogni ruolo dell'app. Non riceve mai i ruoli di deploy, e il suo prompt vieta di
 modificare l'infrastruttura, fare deploy o toccare un altro stage. Poiché legge issue e pull
-request mentre ha in mano quelle credenziali, a tutto ciò che gli viene consegnato viene prima
-messo il lock, così solo le persone con accesso in scrittura possono commentare.
+request mentre ha in mano quelle credenziali, nessuno senza accesso in scrittura può commentarle.
+Su un repository pubblico, questo significa impostare il limite di interazione di GitHub su solo
+collaboratori.
 
 Cos'altro gli agenti non possono mai fare, e cosa garantisce ogni limite, è in
 [Gate umani](../human-gates/#cosa-gli-agenti-non-possono-mai-fare).

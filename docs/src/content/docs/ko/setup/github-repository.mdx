@@ -1,14 +1,14 @@
 ---
 title: 2. 저장소 설정하기
-description: label을 만들고 main을 보호합니다. fork는 둘 다 복사하지 않습니다.
+description: label을 만들고, main을 보호하고, 낯선 사람이 댓글을 달지 못하게 합니다. fork는 이 중 어느 것도 복사하지 않습니다.
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**결과:** workflow가 사용하는 모든 label, 그리고 검사가 초록색이고 승인을 받은 pull
-request만 받는 `main` 브랜치.
+**결과:** workflow가 사용하는 모든 label, 검사가 초록색이고 승인을 받은 pull request만
+받는 `main` 브랜치, 그리고 collaborator로 제한된 댓글.
 
 <Steps>
 
@@ -56,6 +56,18 @@ request만 받는 `main` 브랜치.
    Archive Specs workflow가 완료된 spec을 `specs/_archive/`로 옮기는 PR을 열 때 이 설정이
    필요합니다.
 
+4. **댓글을 collaborator로 제한합니다.** 공개 저장소의 fork는 공개이고, 에이전트는 push할 수 있는 토큰을
+   가진 채로 자신이 작업하는 issue와 pull request의 모든 댓글을 읽습니다. **Settings → Moderation options →
+   Interaction limits**를 열고 **Limit to repository collaborators**를 6개월 동안으로 선택합니다. 그러면 그 밖의
+   누구도 댓글을 달거나, issue를 열거나, pull request를 열 수 없습니다.
+
+   <Aside type="caution">
+   이 제한은 설정한 뒤 최대 6개월이 지나면 만료되고, 아무것도 경고해 주지 않습니다. 날짜를 적어 두고 그전에
+   다시 설정하세요. 나중에 클라우드 자격 증명을 가진 테스터 에이전트를 추가한다면, 낯선 사람의 댓글이 테스터에게
+   닿지 못하게 막는 것이 바로 이 제한입니다.
+   [누가 댓글을 달 수 있나](../../discava/post-merge-verify/#누가-댓글을-달-수-있나)를 참고하세요.
+   </Aside>
+
 </Steps>
 
 <Aside type="caution" title="계정 하나 또는 둘">
@@ -69,6 +81,7 @@ request만 받는 `main` 브랜치.
 ## 동작 확인
 
 fork의 **Issues → Labels** 페이지에 새 label 16개가 나열되고, **Settings → Branches**에
-필수 검사 여섯 개가 있는 `main` 규칙이 보입니다.
+필수 검사 여섯 개가 있는 `main` 규칙이 보이며, **Settings → Moderation options → Interaction limits**에
+종료 날짜와 함께 collaborator 전용 제한이 보입니다.
 
 다음: [3. OpenHands 설치하기](../openhands/).

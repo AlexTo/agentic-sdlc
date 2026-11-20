@@ -52,7 +52,8 @@ sidebar:
 | Test issue opened, the Tester never picks it up | The issue has no `openhands-test` label because something it points at couldn't be locked, or it was opened by an account the automation doesn't trust | The Post-merge Verify run fails and names what to lock. Lock it, then add the label by hand |
 | The Tester reported, and you want another run | Each labelling is tested once | Remove and re-apply `openhands-test` |
 | Report says "blocked" | The stage is missing something the change needs, such as a connected payment account | Fix the stage, then re-apply the label |
-| The **E2E screenshots** comment is missing on an agent PR | The PR is locked, and GitHub refuses the Actions token a comment on a locked conversation | Read the list in the `E2E screenshots` job's summary |
+| The **E2E screenshots** comment is missing on a PR | The PR is locked, and GitHub refuses the Actions token a comment on a locked conversation | Read the list in the `E2E screenshots` job's summary, or unlock the PR |
+| The Reviewer agent never posts a review, and the PR is locked | GitHub refuses a native review on a locked pull request, even from an account with write access | Unlock it. To keep strangers out, use the repository's interaction limit instead of locking pull requests |
 
 ## Deploy
 

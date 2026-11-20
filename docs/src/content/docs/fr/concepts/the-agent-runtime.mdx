@@ -154,9 +154,9 @@ Le Testeur est l'exception. Il doit atteindre le stage déployé, donc il travai
 connecté au compte de développement, que son prompt lui dit d'utiliser en lecture seule, et un
 utilisateur de test pour chaque rôle de l'application. Il ne reçoit jamais les rôles de déploiement,
 et son prompt lui interdit de modifier l'infrastructure, de déployer, ou de toucher à un autre
-stage. Comme il lit des issues et des pull requests tout en détenant ces identifiants, tout ce qu'on
-lui confie est d'abord verrouillé, pour que seules les personnes avec un accès en écriture puissent
-y commenter.
+stage. Comme il lit des issues et des pull requests tout en détenant ces identifiants, personne sans
+accès en écriture ne peut les commenter. Sur un dépôt public, cela veut dire régler la limite
+d'interaction de GitHub sur les collaborateurs uniquement.
 
 Ce que les agents ne doivent par ailleurs jamais faire, et ce qui fait respecter chaque limite, se
 trouve sur [Contrôles humains](../human-gates/#ce-que-les-agents-ne-doivent-jamais-faire).

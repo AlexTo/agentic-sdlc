@@ -73,12 +73,13 @@ Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifa
 L'agent Relecteur lit la même liste. Les artefacts n'ont pas d'URL publique, donc le commentaire
 nomme les images et renvoie vers l'exécution depuis laquelle on peut les télécharger.
 
-La même liste est écrite dans le résumé du job. Pour la pull request d'un agent, c'est le seul
-endroit où elle apparaît : [Agent Lock](../post-merge-verify/#agent-lock) verrouille chaque PR
-d'agent, et GitHub refuse au token d'Actions un commentaire sur une conversation verrouillée,
-quelles que soient ses permissions. Le job saute le commentaire avec une notice au lieu d'échouer.
-Déverrouiller la PR pour commenter laisserait n'importe qui commenter entre-temps, et c'est ce que
-le verrou est là pour empêcher.
+La même liste est écrite dans le résumé du job. Pour une pull request verrouillée, c'est le seul
+endroit où elle apparaît : GitHub refuse au token d'Actions un commentaire sur une conversation
+verrouillée, quelles que soient ses permissions, donc le job saute le commentaire avec une notice au
+lieu d'échouer. Discava verrouillait autrefois chaque pull request d'agent, et s'appuie désormais
+sur une limite d'interaction à la place (voir
+[Qui peut commenter](../post-merge-verify/#qui-peut-commenter)), donc le commentaire est de nouveau
+publié.
 
 ## Garder les checks rapides
 

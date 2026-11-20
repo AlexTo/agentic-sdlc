@@ -1,6 +1,6 @@
 ---
 title: Vérification après merge
-description: Comment chaque pull request déployée sur discava-development devient une issue de test pour l'agent Testeur, et comment tout ce que lisent les agents est verrouillé.
+description: Comment chaque pull request déployée sur discava-development devient une issue de test pour l'agent Testeur, et comment seuls les collaborateurs peuvent commenter ce que lisent les agents.
 sidebar:
   order: 9.5
 ---
@@ -137,6 +137,9 @@ merge avaient laissé passer. Toutes les heures sont en UTC, le 20 novembre 2026
 | 10:45 | Le stage | Les deux livraisons au webhook expirent. La commande reste `pending` |
 | 10:48 | Agent Testeur | Ouvre la correction, [#657](https://github.com/AlexTo/discava/pull/657) |
 | 10:49 | Agent Testeur | [Troisième rapport](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120) : **échec**, avec la cause et la correction |
+| 10:54 | Une personne | Ajoute `openhands-review` à #657 |
+| 11:34 | Une personne | Déverrouille #657, qu'Agent Lock avait verrouillée à son ouverture |
+| 11:39 | Agent Relecteur | Approuve #657 |
 
 ### Exécution 1 : bloqué, et il le dit
 
@@ -246,8 +249,12 @@ La description est aussi franche sur sa limite : « Not verified on a deployed s
 takes effect once deployed. » (non vérifié sur un stage déployé ; la correction ne prend effet
 qu'une fois déployée).
 
-Puis le Testeur s'est arrêté. Il n'a pas mergé, et il n'a pas déployé. Agent Lock a verrouillé la
-nouvelle pull request, [PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986) est passé au vert, et le label `openhands-review` l'a confiée à l'agent Relecteur. Une
+Puis le Testeur s'est arrêté. Il n'a pas mergé, et il n'a pas déployé. [PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986)
+est passé au vert, et le label `openhands-review` l'a confiée à l'agent Relecteur. La relecture est
+restée bloquée quarante minutes à cause de quelque chose qu'aucun agent n'avait mal fait : la pull
+request était verrouillée, et GitHub n'accepte pas de review sur une pull request verrouillée. Une
+fois déverrouillée, le Relecteur l'a approuvée. C'est pourquoi Discava a cessé de verrouiller les
+pull requests (voir [Qui peut commenter](#qui-peut-commenter)). Une
 personne la merge, comme n'importe quelle autre. L'issue de test [#654](https://github.com/AlexTo/discava/issues/654) reste ouverte jusqu'à ce que le remboursement lui-même soit testé sur un
 stage où les paiements sont réglés. Le dernier rapport du Testeur liste les données de test qu'il a
 laissées : le cours et la commande `pending`.
@@ -256,29 +263,20 @@ Les captures d'écran restent sur la station de travail, sous `tmp/screenshots/p
 checkout de Discava. Les rapports nomment chaque fichier et disent ce qu'il montre. Les quatre
 ci-dessus ont été copiées depuis là pour cette page.
 
-## Agent Lock
+## Qui peut commenter
 
 Discava est un dépôt public, donc n'importe qui peut commenter ses issues et ses pull requests. Les
 agents lisent ces commentaires tout en détenant un token qui peut pousser, et le Testeur détient
 aussi un accès AWS et les mots de passe des utilisateurs de test. Un commentaire est donc un moyen
-de donner des instructions à un agent.
+de donner des instructions à un agent : une injection de prompt. Les prompts demandent à chaque
+agent de traiter ce qu'il lit comme des données, mais un prompt est une demande, pas une garantie.
 
-La réponse est de verrouiller chaque conversation confiée à un agent. Une issue ou une pull request
-verrouillée n'accepte de commentaires que des collaborateurs avec un accès en écriture, dont le
-propre token des agents.
+Discava tient donc les inconnus à l'écart de la conversation, de deux façons :
 
-| Quoi | Verrouillé par |
+| Couche | Ce qu'elle fait |
 | --- | --- |
-| Une issue d'implémentation qu'Agent Issues ouvre | Son propre script, avant qu'il n'ajoute `openhands` |
-| Une issue de test, la pull request qu'elle teste et les issues que cette pull request ferme | Le script de Post-merge Verify, avant qu'il n'ajoute `openhands-test` |
-| Une issue à laquelle quelqu'un pose `openhands` ou `openhands-test` à la main | **Agent Lock** (`.github/workflows/agent-lock.yml`), sur `issues: labeled` |
-| Une pull request qu'un agent ouvre, sur une branche `openhands/` qui ne vient pas d'un fork | **Agent Lock**, sur `pull_request: opened` et `reopened` |
-
-Les scripts verrouillent leurs propres issues parce que GitHub ne démarre aucun workflow pour un
-label posé par le token d'un workflow. L'ordre compte aussi : ouvrir sans le label, verrouiller,
-puis labelliser, pour que l'agent ne prenne jamais une issue en charge tant qu'un inconnu peut encore
-commenter. Le code partagé est `src/helpers/conversation-lock.ts`, et les règles du workflow sont
-dans `src/agent-lock/`.
+| **Limite d'interaction** | **Settings → Moderation options → Interaction limits** de GitHub est réglé sur **Limit to repository collaborators**. Personne d'autre ne peut commenter, ouvrir une issue ou ouvrir une pull request où que ce soit dans le dépôt |
+| **Issues d'agent verrouillées** | Agent Issues et Post-merge Verify ouvrent chaque issue sans son label, la verrouillent (et, pour une issue de test, la pull request qu'elle teste et les issues que celle-ci ferme), et seulement ensuite ajoutent le label. Si quelque chose ne peut pas être verrouillé, le label n'est jamais ajouté et l'exécution échoue. Le code partagé est `src/helpers/conversation-lock.ts` |
 
 Deux autres règles vont avec :
 
@@ -287,15 +285,42 @@ Deux autres règles vont avec :
   `github-actions[bot]` ou par quelqu'un avec un accès en écriture (`src/helpers/issue-author.ts`),
   donc un inconnu ne peut pas bloquer une chaîne ni empêcher un test en ouvrant une issue contenant
   un marqueur.
-- **Une PR verrouillée ne reçoit aucun commentaire de bot.** GitHub refuse au token d'Actions un
-  commentaire sur une conversation verrouillée, donc la liste des
-  [E2E screenshots](../pr-checks/#ui-screenshots-et-le-commentaire-e2e-screenshots) va dans le
-  résumé du job à la place.
+- **Le Testeur ne teste que les issues du workflow.** Son automatisation ignore toute issue de test
+  qui n'a pas été ouverte par `github-actions[bot]`, et ses instructions sont son propre prompt,
+  jamais l'issue.
 
-<Aside type="caution">
-Les commentaires écrits avant qu'une issue ne soit labellisée restent. Quand vous labellisez une
-issue existante à la main, lisez d'abord ses commentaires.
+<Aside type="caution" title="Un dépôt public a besoin de la limite d'interaction">
+Si votre dépôt est public, réglez la limite d'interaction sur **collaborateurs uniquement** avant d'activer
+l'agent Testeur, et de préférence avant tout agent. Sans elle, n'importe qui peut commenter une
+issue de test ou la pull request qu'elle teste, et le Testeur lit ce commentaire tout en détenant
+des identifiants cloud et les mots de passe des utilisateurs de test.
+
+La limite dure au plus six mois. Celle de Discava court jusqu'au 20 mai 2027. Notez le
+renouvellement dans un agenda, car rien ne vous prévient quand elle expire. Un dépôt privé n'en a
+pas besoin : seules les personnes qui y ont accès peuvent y commenter.
+
+Les commentaires écrits avant que la limite ne soit posée, ou avant qu'une issue ne soit labellisée,
+restent. Lisez-les avant de labelliser une issue existante à la main.
 </Aside>
+
+### Pourquoi Discava a cessé de verrouiller les pull requests
+
+Jusqu'à [#658](https://github.com/AlexTo/discava/pull/658), un workflow appelé **Agent Lock** verrouillait aussi chaque pull request
+qu'un agent ouvrait, et toute issue que quelqu'un labellisait à la main pour un agent. Il tenait les
+inconnus à l'écart, mais il avait deux coûts :
+
+- **L'agent Relecteur ne pouvait pas relire.** GitHub refuse une review native sur une pull request
+  verrouillée, même venant d'un compte avec un accès en écriture. La PR de correction [#657](https://github.com/AlexTo/discava/pull/657) a été
+  verrouillée à 10:49 et labellisée pour relecture à 10:54, et n'a reçu aucune review avant d'être
+  déverrouillée à la main à 11:34. Le Relecteur l'a approuvée cinq minutes plus tard.
+- **Les E2E screenshots ne pouvaient pas être publiés.** GitHub refuse aussi au token d'Actions un
+  commentaire sur une conversation verrouillée, donc la
+  [liste des captures d'écran](../pr-checks/#ui-screenshots-et-le-commentaire-e2e-screenshots) a dû
+  passer dans le résumé du job.
+
+La limite d'interaction fait le même travail pour tout le dépôt, sans verrouiller quoi que ce soit
+où les agents doivent écrire. Agent Lock et son script ont été supprimés, et les quatre pull
+requests d'agent qu'il avait verrouillées ont été déverrouillées à la main.
 
 ## Exécution à blanc
 

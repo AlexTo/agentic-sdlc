@@ -43,7 +43,7 @@ Questa sezione descrive cosa usa Discava, a novembre 2026, con i file dietro ogn
 | Niente cloud per l'agente | Sostituti locali per ogni servizio AWS | `pnpm dev`, `packages/tooling/local-dev/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
 | Il merge non rilascia | CI su `main`, poi Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
 | Secret e dipendenze vulnerabili | Trivy nella CI e prima del deploy, git-secrets al commit | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
-| Modifica mergiata mai testata dove gira | Post-merge Verify apre una issue di test per ogni PR deployata, l'agente Tester la testa, e Agent Lock mette il lock a ciò che gli agenti leggono | `.github/workflows/post-merge-verify.yml`, `agent-lock.yml`, `src/post-merge-test/`, `src/agent-lock/`, `src/helpers/conversation-lock.ts` |
+| Modifica mergiata mai testata dove gira | Post-merge Verify apre una issue di test per ogni PR deployata, l'agente Tester la testa, e solo i collaboratori possono commentare ciò che gli agenti leggono | `.github/workflows/post-merge-verify.yml`, `src/post-merge-test/`, `src/helpers/conversation-lock.ts`, il limite di interazione del repository |
 
 Il collante vive in `packages/tooling/agent/` (`@discava/tooling-agent`). I percorsi `src/…` di
 questa sezione sono relativi a quella cartella.

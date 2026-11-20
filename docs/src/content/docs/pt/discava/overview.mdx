@@ -43,7 +43,7 @@ Esta seção descreve o que o Discava usa, em novembro de 2026, com os arquivos 
 | Sem nuvem para o agent | Substitutos locais para cada serviço da AWS | `pnpm dev`, `packages/tooling/local-dev/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
 | O merge não entrega nada | CI na `main`, depois Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
 | Segredos e dependências vulneráveis | Trivy no CI e antes do deploy, git-secrets no commit | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
-| Mudança mergeada nunca testada onde ela roda | O Post-merge Verify abre uma issue de teste por PR que sai no deploy, o agent Testador a testa, e o Agent Lock tranca o que os agents leem | `.github/workflows/post-merge-verify.yml`, `agent-lock.yml`, `src/post-merge-test/`, `src/agent-lock/`, `src/helpers/conversation-lock.ts` |
+| Mudança mergeada nunca testada onde ela roda | O Post-merge Verify abre uma issue de teste por PR que sai no deploy, o agent Testador a testa, e só colaboradores podem comentar no que os agents leem | `.github/workflows/post-merge-verify.yml`, `src/post-merge-test/`, `src/helpers/conversation-lock.ts`, o limite de interação do repositório |
 
 A cola fica em `packages/tooling/agent/` (`@discava/tooling-agent`). Os caminhos `src/…` desta
 seção são relativos a ele.

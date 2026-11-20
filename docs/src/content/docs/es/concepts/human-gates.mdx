@@ -65,7 +65,7 @@ toca a ti actuar.
 | Editar `.github/workflows/` | La constitución y las instrucciones de la issue. El Revisor y la revisión humana lo detectan. Los workflows de pegamento ejecutan el código de la rama por defecto, así que un workflow editado en un PR no puede cambiarlos |
 | Debilitar un test para que pase | La constitución ("tests are a specification"), las instrucciones de la issue, el agente Revisor |
 | Desplegar o cambiar la infraestructura | A ningún agente se le da un rol de despliegue. El despliegue usa roles OIDC de corta duración desde un environment de GitHub. El Desarrollador y el Revisor no necesitan ningún acceso a la nube. El Tester solo llega al stage de desarrollo, y su prompt lo limita a leer y a los datos de prueba que crea a través de la app |
-| Recibir instrucciones de un desconocido | Cada issue y cada pull request que se le entrega a un agente está bloqueado (locked), así que solo pueden comentar las personas con acceso de escritura. El Tester solo prueba las issues que abrió el workflow, y sus instrucciones son su propio prompt, no la issue |
+| Recibir instrucciones de un desconocido | En un repositorio público, un límite de interacción deja que solo los colaboradores comenten, abran issues o abran pull requests. Las issues que los workflows abren para un agente además están bloqueadas (locked). El Tester solo prueba las issues que abrió el workflow, y sus instrucciones son su propio prompt, no la issue |
 | Trabajar fuera de su rango de tareas | La issue indica el rango. La siguiente issue no se abre hasta que todas las tareas de agente estén marcadas |
 | Reintentar para siempre | Cinco intentos por bucle, contados en labels |
 

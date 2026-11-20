@@ -1,14 +1,14 @@
 ---
 title: 2. Configura el repositorio
-description: Crea las labels y protege main. Un fork no copia ninguna de las dos cosas.
+description: Crea las labels, protege main e impide que comenten los desconocidos. Un fork no copia nada de esto.
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Al terminar tendrás:** todas las labels que usa el workflow y una rama `main` que solo acepta pull
-requests con checks en verde y una aprobación.
+**Al terminar tendrás:** todas las labels que usa el workflow, una rama `main` que solo acepta pull
+requests con checks en verde y una aprobación, y los comentarios limitados a los colaboradores.
 
 <Steps>
 
@@ -56,6 +56,19 @@ requests con checks en verde y una aprobación.
    El workflow Archive Specs lo necesita para abrir el PR que mueve una spec terminada a
    `specs/_archive/`.
 
+4. **Limita los comentarios a los colaboradores.** Un fork de un repositorio público es público, y los
+   agentes leen cada comentario de las issues y los pull requests en los que trabajan, mientras tienen
+   un token que puede hacer push. Abre **Settings → Moderation options → Interaction limits** y elige
+   **Limit to repository collaborators**, durante seis meses. Así nadie más puede comentar, abrir una
+   issue ni abrir un pull request.
+
+   <Aside type="caution">
+   El límite caduca, como mucho seis meses después de ponerlo, y nada te avisa. Apunta la fecha y
+   vuelve a ponerlo antes. Si más adelante añades el agente Tester, que tiene credenciales de la nube,
+   este límite es lo que impide que el comentario de un desconocido le llegue. Consulta
+   [Quién puede comentar](../../discava/post-merge-verify/#quién-puede-comentar).
+   </Aside>
+
 </Steps>
 
 <Aside type="caution" title="Una cuenta o dos">
@@ -68,7 +81,8 @@ aprobar los PR de los agentes con normalidad.
 
 ## Comprueba que funciona
 
-La página **Issues → Labels** del fork lista las 16 labels nuevas, y **Settings → Branches** muestra la
-regla en `main` con seis checks obligatorios.
+La página **Issues → Labels** del fork lista las 16 labels nuevas, **Settings → Branches** muestra la
+regla en `main` con seis checks obligatorios, y **Settings → Moderation options → Interaction limits**
+muestra el límite de solo colaboradores con su fecha de fin.
 
 Siguiente: [3. Instala OpenHands](../openhands/).

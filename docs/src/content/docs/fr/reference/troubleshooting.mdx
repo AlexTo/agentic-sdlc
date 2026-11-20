@@ -52,7 +52,8 @@ sidebar:
 | Issue de test ouverte, le Testeur ne la prend jamais en charge | L'issue n'a pas le label `openhands-test` parce qu'un élément vers lequel elle pointe n'a pas pu être verrouillé, ou elle a été ouverte par un compte auquel l'automatisation ne fait pas confiance | L'exécution de Post-merge Verify échoue et nomme ce qu'il faut verrouiller. Verrouillez-le, puis ajoutez le label à la main |
 | Le Testeur a rendu son rapport, et vous voulez une autre exécution | Chaque pose du label est testée une fois | Retirez et remettez `openhands-test` |
 | Le rapport indique « blocked » | Il manque au stage quelque chose dont le changement a besoin, comme un compte de paiement connecté | Corrigez le stage, puis remettez le label |
-| Le commentaire **E2E screenshots** manque sur une PR d'agent | La PR est verrouillée, et GitHub refuse au token d'Actions un commentaire sur une conversation verrouillée | Lisez la liste dans le résumé du job `E2E screenshots` |
+| Le commentaire **E2E screenshots** manque sur une PR | La PR est verrouillée, et GitHub refuse au token d'Actions un commentaire sur une conversation verrouillée | Lisez la liste dans le résumé du job `E2E screenshots`, ou déverrouillez la PR |
+| L'agent Relecteur ne publie jamais de review, et la PR est verrouillée | GitHub refuse une review native sur une pull request verrouillée, même venant d'un compte avec un accès en écriture | Déverrouillez-la. Pour tenir les inconnus à l'écart, utilisez la limite d'interaction du dépôt plutôt que de verrouiller les pull requests |
 
 ## Déploiement
 

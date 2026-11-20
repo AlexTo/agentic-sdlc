@@ -17,7 +17,6 @@ sidebar:
 | Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | 无（把 PR 编号传给 `gh`） |
 | Deploy (Discava) | `deploy.yml` | `main` 上 CI 的 `workflow_run`、`workflow_dispatch(stage)` | `contents: read`、`id-token: write` | CI 验证过的 commit |
 | Post-merge Verify (Discava) | `post-merge-verify.yml` | Deploy 的 `workflow_run`，`completed`、`workflow_dispatch(pr_number)` | `contents: read`、`actions: read`、`issues: write`、`pull-requests: write` | 默认分支 |
-| Agent Lock (Discava) | `agent-lock.yml` | `issues: labeled`、`pull_request: [opened, reopened]` | `contents: read`、`issues: write`、`pull-requests: write` | 默认分支 |
 
 ## 在分支保护中设为必需的 job 名称
 
@@ -55,9 +54,8 @@ sidebar:
 | `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH` |
 | `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`、`GITHUB_ACTIONS`（用于 annotations） |
 
-Discava 把同样的 target 放在 `@discava/tooling-agent` 中，并为测试智能体多加了两个：
+Discava 把同样的 target 放在 `@discava/tooling-agent` 中，并为测试智能体多加了一个：
 
 | Target | 入口 | 读取的环境变量 |
 | --- | --- | --- |
 | `post-merge-test` | `src/post-merge-test/main.ts` | `GH_TOKEN`、`GH_REPO`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_NAME`、`GITHUB_EVENT_PATH`、`PR_NUMBER`、`TEST_STAGE`、`DRY_RUN` |
-| `agent-lock` | `src/agent-lock/main.ts` | `GH_TOKEN`、`GH_REPO`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_NAME`、`GITHUB_EVENT_PATH` |

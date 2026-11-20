@@ -77,9 +77,9 @@ de notes d'exemple de ce dépôt n'a pas de déploiement, donc copiez depuis
 6. **Ajoutez l'agent Testeur**, si vous voulez que chaque changement déployé soit testé (manque 11). C'est la
    pièce la plus récente, et elle vit dans Discava, pas dans ce dépôt. Copiez depuis là-bas :
 
-   - `packages/tooling/agent/src/post-merge-test/`, `src/agent-lock/` et `src/helpers/`, avec leurs
-     cibles Nx `post-merge-test` et `agent-lock`
-   - `.github/workflows/post-merge-verify.yml` et `agent-lock.yml`
+   - `packages/tooling/agent/src/post-merge-test/` et `src/helpers/`, avec la cible Nx
+     `post-merge-test`
+   - `.github/workflows/post-merge-verify.yml`
    - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`, pour ouvrir une issue de test à la main
 
    Adaptez ensuite à votre dépôt le nom du stage (`TEST_STAGE`), et les chemins qui n'atteignent jamais une
@@ -94,9 +94,13 @@ de notes d'exemple de ce dépôt n'a pas de déploiement, donc copiez depuis
    - un utilisateur de test par rôle de votre application, stocké comme secrets OpenHands
    - un navigateur qu'il peut piloter, comme Playwright avec Chromium
 
-   <Aside type="caution">
-   Le Testeur lit des issues et des pull requests tout en détenant ces identifiants. Gardez le verrouillage
-   (`agent-lock.yml` et `helpers/conversation-lock.ts`), gardez le « comment tester » dans le prompt propre de
+   <Aside type="caution" title="Dépôt public ? Limitez d'abord les commentaires aux collaborateurs">
+   Le Testeur lit des issues, des pull requests et leurs commentaires tout en détenant ces identifiants.
+   Si votre dépôt est public, le commentaire d'un inconnu peut lui transmettre des instructions. Avant de
+   l'activer, ouvrez **Settings → Moderation options → Interaction limits** et choisissez **Limit to
+   repository collaborators**. La limite dure au plus six mois, donc notez quand la renouveler.
+
+   Gardez aussi le verrouillage dans `helpers/conversation-lock.ts`, gardez le « comment tester » dans le prompt propre de
    l'automatisation plutôt que dans l'issue, et ne le pointez jamais vers un stage dont les données comptent.
    </Aside>
 

@@ -67,7 +67,7 @@ qu'il a stockées, et s'il est en échec, c'est à vous d'agir.
 | Modifier `.github/workflows/` | La constitution et les instructions de l'issue. Le Relecteur et la revue humaine le repèrent. Les workflows de glue exécutent le code de la branche par défaut, donc un workflow modifié dans une PR ne peut pas les changer |
 | Affaiblir un test pour le faire passer | La constitution (« les tests sont une spécification »), les instructions de l'issue, l'agent Relecteur |
 | Déployer, ou modifier l'infrastructure | Aucun agent ne reçoit de rôle de déploiement. Le déploiement utilise des rôles OIDC de courte durée issus d'un environnement GitHub. Le Développeur et le Relecteur n'ont besoin d'aucun accès au cloud. Le Testeur n'atteint que le stage de développement, et son prompt le limite à la lecture et aux données de test qu'il crée via l'application |
-| Recevoir des instructions d'un inconnu | Chaque issue et chaque pull request confiée à un agent est verrouillée, donc seules les personnes avec un accès en écriture peuvent commenter. Le Testeur ne teste que les issues ouvertes par le workflow, et ses instructions sont son propre prompt, pas l'issue |
+| Recevoir des instructions d'un inconnu | Sur un dépôt public, une limite d'interaction ne laisse que les collaborateurs commenter, ouvrir des issues ou ouvrir des pull requests. Les issues que les workflows ouvrent pour un agent sont aussi verrouillées. Le Testeur ne teste que les issues ouvertes par le workflow, et ses instructions sont son propre prompt, pas l'issue |
 | Travailler hors de sa plage de tâches | L'issue nomme la plage. L'issue suivante ne s'ouvre pas tant que toutes les tâches d'agent ne sont pas cochées |
 | Réessayer indéfiniment | Cinq tentatives par boucle, comptées dans des labels |
 

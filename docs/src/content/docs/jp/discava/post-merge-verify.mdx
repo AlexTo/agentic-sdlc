@@ -1,6 +1,6 @@
 ---
 title: マージ後の検証
-description: discava-development にデプロイされた各 pull request がテスト担当エージェント向けのテスト issue になる仕組みと、エージェントが読むものすべてがロックされる仕組み。
+description: discava-development にデプロイされた各 pull request がテスト担当エージェント向けのテスト issue になる仕組みと、エージェントが読むものにコラボレーターだけがコメントできるようにする仕組み。
 sidebar:
   order: 9.5
 ---
@@ -127,6 +127,9 @@ issue に指示はありません。どうテストするか (ツール、テス
 | 10:45 | ステージ | webhook の配信が 2 回ともタイムアウトする。注文は `pending` のまま |
 | 10:48 | テスト担当エージェント | 修正の [#657](https://github.com/AlexTo/discava/pull/657) を開く |
 | 10:49 | テスト担当エージェント | [3 回目のレポート](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120): **失敗**。原因と修正付き |
+| 10:54 | 人 | #657 に `openhands-review` を付ける |
+| 11:34 | 人 | #657 のロックを解除する。開かれたときに Agent Lock がロックしていた |
+| 11:39 | レビュー担当エージェント | #657 を承認する |
 
 ### 実行 1: ブロックされ、そう報告する
 
@@ -230,35 +233,30 @@ Stripe の再試行は毎回コールドスタートになり、同じように�
 説明は、その限界についても率直です。"Not verified on a deployed stage. The fix only
 takes effect once deployed." (デプロイされたステージでは未検証。修正はデプロイされてはじめて効果を持つ。)
 
-そして、テスト担当は止まりました。マージもデプロイもしませんでした。Agent Lock が新しい pull
-request をロックし、[PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986) が green で通り、`openhands-review` ラベルがそれをレビュー担当エージェントに渡しました。
-他の PR と同じように、マージするのは人です。テスト issue [#654](https://github.com/AlexTo/discava/issues/654) は、支払いが確定するステージで返金そのものが
+そして、テスト担当は止まりました。マージもデプロイもしませんでした。[PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986)
+が green で通り、`openhands-review` ラベルがそれをレビュー担当エージェントに渡しました。レビューは、どのエージェントも
+間違えていないことのせいで 40 分止まりました。pull request がロックされていて、GitHub はロックされた pull request への
+レビューを受け付けないのです。ロックが解除されると、レビュー担当はそれを承認しました。Discava が pull request を
+ロックするのをやめたのはこのためです ([誰がコメントできるか](#誰がコメントできるか)を参照)。他の PR と同じように、マージするのは人です。テスト issue [#654](https://github.com/AlexTo/discava/issues/654) は、支払いが確定するステージで返金そのものが
 テストされるまで開いたままです。テスト担当の最後のレポートには、残したテストデータが列挙されています。
 コースと `pending` の注文です。
 
 スクリーンショットはワークステーション上の、Discava のチェックアウトの `tmp/screenshots/pr-<pr>/` に残ります。
 レポートは各ファイルの名前を挙げ、何が写っているかを述べます。上の 4 枚は、このページのためにそこからコピーしたものです。
 
-## Agent Lock
+## 誰がコメントできるか
 
 Discava は公開リポジトリなので、誰でもその issue と pull request にコメントできます。エージェントは、push できる
 トークンを持ったままそれらのコメントを読み、テスト担当は AWS へのアクセスとテストユーザーのパスワードも持っています。
-つまり、コメントはエージェントに指示を与える手段になります。
+つまり、コメントはエージェントに指示を与える手段、すなわちプロンプトインジェクションになります。プロンプトは各エージェントに
+読んだものをデータとして扱うよう指示しますが、プロンプトはお願いであって、保証ではありません。
 
-その答えは、エージェントに渡されるすべての会話をロックすることです。ロックされた issue や pull request が
-コメントを受け付けるのは、書き込み権限のあるコラボレーターからだけです。エージェント自身のトークンもその 1 つです。
+そこで Discava は、2 つの方法で見知らぬ人を会話から締め出します。
 
-| 対象 | ロックするもの |
+| 層 | 何をするか |
 | --- | --- |
-| Agent Issues が開く実装 issue | そのスクリプト自身。`openhands` を付ける前に |
-| テスト issue、それがテストする pull request、その pull request が閉じる issue | Post-merge Verify のスクリプト。`openhands-test` を付ける前に |
-| 誰かが手動で `openhands` または `openhands-test` ラベルを付けた issue | **Agent Lock** (`.github/workflows/agent-lock.yml`)。`issues: labeled` で |
-| エージェントが開く、fork からではない `openhands/` ブランチの pull request | **Agent Lock**。`pull_request: opened` と `reopened` で |
-
-スクリプトが自分の issue をロックするのは、ワークフローのトークンが付けたラベルに対して GitHub がワークフローを
-起動しないからです。順序も重要です。ラベルなしで開き、ロックし、それからラベルを付けるので、見知らぬ人がまだコメントできる
-あいだにエージェントが issue を拾うことはありません。共有のコードは `src/helpers/conversation-lock.ts` に、
-ワークフローのルールは `src/agent-lock/` にあります。
+| **インタラクション制限** | GitHub の **Settings → Moderation options → Interaction limits** が **Limit to repository collaborators** に設定されている。それ以外の人は、リポジトリのどこでもコメントも、issue や pull request の作成もできない |
+| **ロックされたエージェントの issue** | Agent Issues と Post-merge Verify は、各 issue をラベルなしで開き、ロックし (テスト issue の場合は、それがテストする pull request と、その pull request が閉じる issue も)、それからはじめてラベルを付ける。ロックできないものがあれば、ラベルは付かず、実行は失敗する。共有のコードは `src/helpers/conversation-lock.ts` にある |
 
 これに伴うルールがあと 2 つあります。
 
@@ -266,14 +264,37 @@ Discava は公開リポジトリなので、誰でもその issue と pull reque
   マーカーが有効なのは、`github-actions[bot]` か書き込み権限のある人が開いた issue の中にある場合だけです
   (`src/helpers/issue-author.ts`)。そのため、見知らぬ人がマーカー入りの issue を開いてチェーンを止めたり、
   テストを止めたりすることはできません。
-- **ロックされた PR には bot のコメントが付きません。** GitHub はロックされた会話への Actions トークンによるコメントを
-  拒否するので、[E2E screenshots](../pr-checks/#ui-screenshots-と-e2e-screenshots-のコメント) のリストは
-  代わりにジョブのサマリーに書かれます。
+- **テスト担当はワークフローの issue だけをテストします。** その automation は、`github-actions[bot]` が開いていない
+  テスト issue をすべてスキップし、その指示は issue ではなく、常に自身のプロンプトです。
 
-<Aside type="caution">
-issue にラベルが付く前に書かれたコメントは残ります。既存の issue に手動でラベルを付けるときは、先にそのコメントを
-読んでください。
+<Aside type="caution" title="公開リポジトリにはインタラクション制限が必要">
+リポジトリが公開されているなら、テスト担当エージェントを有効にする前に、できればどのエージェントよりも前に、
+インタラクション制限を**コラボレーターのみ**に設定してください。それがないと、誰でもテスト issue やそれがテストする
+pull request にコメントでき、テスト担当はクラウドの認証情報とテストユーザーのパスワードを持ったままそのコメントを読みます。
+
+制限の期間は最長 6 か月です。Discava の制限は 2027 年 5 月 20 日までです。失効しても何も警告されないので、
+更新の予定をカレンダーに入れてください。非公開リポジトリには不要です。そこでは、アクセス権のある人しかコメントできません。
+
+制限を設定する前、または issue にラベルが付く前に書かれたコメントは残ります。既存の issue に手動でラベルを付ける前に、
+それらを読んでください。
 </Aside>
+
+### Discava が pull request のロックをやめた理由
+
+[#658](https://github.com/AlexTo/discava/pull/658) までは、**Agent Lock** というワークフローが、エージェントが開くすべての
+pull request と、誰かが手動でエージェント向けのラベルを付けた issue もロックしていました。見知らぬ人は締め出せましたが、
+2 つの代償がありました。
+
+- **レビュー担当エージェントがレビューできませんでした。** GitHub は、書き込み権限のあるアカウントからであっても、
+  ロックされた pull request へのネイティブのレビューを拒否します。修正 PR [#657](https://github.com/AlexTo/discava/pull/657) は 10:49 にロックされ、
+  10:54 にレビュー用のラベルが付きましたが、11:34 に手動でロックが解除されるまでレビューされませんでした。
+  レビュー担当はその 5 分後に承認しました。
+- **E2E のスクリーンショットを投稿できませんでした。** GitHub はロックされた会話への Actions トークンによるコメントも
+  拒否するので、[スクリーンショットのリスト](../pr-checks/#ui-screenshots-と-e2e-screenshots-のコメント)は
+  ジョブのサマリーに移す必要がありました。
+
+インタラクション制限は、エージェントが書き込む必要のあるものを何もロックせずに、リポジトリ全体で同じ役目を果たします。
+Agent Lock とそのスクリプトは削除され、それがロックしていた 4 つのエージェントの pull request は手動でロックが解除されました。
 
 ## ドライラン
 

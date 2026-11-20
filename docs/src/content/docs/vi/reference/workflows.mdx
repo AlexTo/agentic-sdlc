@@ -17,7 +17,6 @@ sidebar:
 | Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | Không gì cả (truyền số PR cho `gh`) |
 | Deploy (Discava) | `deploy.yml` | `workflow_run` của CI trên `main`, `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | Commit mà CI đã xác minh |
 | Post-merge Verify (Discava) | `post-merge-verify.yml` | `workflow_run` của Deploy, `completed`, `workflow_dispatch(pr_number)` | `contents: read`, `actions: read`, `issues: write`, `pull-requests: write` | Nhánh mặc định |
-| Agent Lock (Discava) | `agent-lock.yml` | `issues: labeled`, `pull_request: [opened, reopened]` | `contents: read`, `issues: write`, `pull-requests: write` | Nhánh mặc định |
 
 ## Tên job cần yêu cầu trong branch protection
 
@@ -56,9 +55,8 @@ Tất cả trong `@your-scope/common-scripts`:
 | `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH` |
 | `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`, `GITHUB_ACTIONS` (cho annotation) |
 
-Discava giữ cùng các target đó trong `@discava/tooling-agent`, với hai target nữa cho Tester:
+Discava giữ cùng các target đó trong `@discava/tooling-agent`, với một target nữa cho Tester:
 
 | Target | Entry point | Biến môi trường nó đọc |
 | --- | --- | --- |
 | `post-merge-test` | `src/post-merge-test/main.ts` | `GH_TOKEN`, `GH_REPO`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH`, `PR_NUMBER`, `TEST_STAGE`, `DRY_RUN` |
-| `agent-lock` | `src/agent-lock/main.ts` | `GH_TOKEN`, `GH_REPO`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH` |

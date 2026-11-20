@@ -56,7 +56,7 @@ spec PR 像代码一样接受评审。**带着 `spec-ready` 标签**合并它，
 | 编辑 `.github/workflows/` | constitution 和 issue 指令。评审智能体和人工评审会发现它。粘合 workflow 运行的是默认分支的代码，所以 PR 中被编辑的 workflow 无法改变它们 |
 | 为了通过而削弱测试 | constitution（"测试即规格"）、issue 指令、评审智能体 |
 | 部署，或更改基础设施 | 没有任何智能体会拿到部署角色。部署使用来自 GitHub environment 的短期 OIDC 角色。开发智能体和评审智能体完全不需要云访问权限。测试智能体只能接触开发 stage，它的 prompt 把它限制为只读，以及它通过应用创建的测试数据 |
-| 听从陌生人的指令 | 交给智能体的每个 issue 和 pull request 都已锁定，所以只有具有写权限的人才能评论。测试智能体只测试由 workflow 打开的 issue，它的指令是它自己的 prompt，而不是 issue |
+| 听从陌生人的指令 | 在公开仓库上，交互限制让只有协作者才能评论、开 issue 或开 pull request。workflow 为智能体开的 issue 也会被锁定。测试智能体只测试由 workflow 打开的 issue，它的指令是它自己的 prompt，而不是 issue |
 | 在其任务范围之外工作 | issue 写明了范围。在每个智能体任务都被勾选之前，下一个 issue 不会打开 |
 | 无限重试 | 每个循环五次尝试，记在标签里 |
 

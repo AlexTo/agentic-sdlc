@@ -59,14 +59,17 @@ Các workflow glue giữ một token có thể ghi label, status và comment. Ch
 định**, không bao giờ là pull request, nên không có gì do agent hay contributor viết được chạy với token
 đó. Mọi thứ đọc từ PR (tên nhánh, nội dung) đều được kiểm tra với một pattern chặt chẽ trước khi dùng.
 
-### Khóa những gì agent đọc
+### Giữ người lạ ngoài những gì agent đọc
 
 Ai cũng có thể comment trên issue và pull request của một repository công khai, và một agent đọc các
 comment đó trong khi đang giữ một token có thể push. Tester còn giữ quyền truy cập vào stage đã
-deploy. Nên mọi issue và pull request mà một agent được giao đều bị **khóa** trước, để việc comment
-chỉ còn dành cho người có quyền ghi. Một issue được mở không có label, được khóa, rồi mới được gắn
-label, nên agent không bao giờ nhận nó trong khi một người lạ vẫn còn comment được. Và marker ẩn của
-một issue chỉ được tính khi issue đó do workflow hoặc một người có quyền ghi mở.
+deploy. Nên trên một repository công khai, hãy đặt **interaction limit** của GitHub thành chỉ
+collaborator: không ai khác có thể comment, mở issue hay mở pull request. Các issue mà một workflow
+mở cho một agent cũng bị **khóa**: mở không có label, khóa, rồi mới gắn label. Và marker ẩn của một
+issue chỉ được tính khi issue đó do workflow hoặc một người có quyền ghi mở.
+
+Tuy nhiên, đừng khóa pull request của các agent. GitHub từ chối một review trên một pull request đã
+khóa, kể cả từ một tài khoản có quyền ghi, nên agent Reviewer không thể đăng review.
 
 ### Idempotent
 

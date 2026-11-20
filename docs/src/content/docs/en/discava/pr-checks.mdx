@@ -68,11 +68,11 @@ Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifa
 The Reviewer agent reads the same list. Artifacts have no public URL, so the comment names the
 images and links the run they can be downloaded from.
 
-The same list is written to the job's summary. For an agent's pull request, that is the only place
-it appears: [Agent Lock](../post-merge-verify/#agent-lock) locks every agent PR, and GitHub refuses
-the Actions token a comment on a locked conversation, whatever its permissions. The job skips the
-comment with a notice instead of failing. Unlocking the PR to comment would let anyone comment in
-between, which is what the lock is there to stop.
+The same list is written to the job's summary. For a locked pull request, that is the only place
+it appears: GitHub refuses the Actions token a comment on a locked conversation, whatever its
+permissions, so the job skips the comment with a notice instead of failing. Discava used to lock
+every agent pull request, and now relies on an interaction limit instead (see
+[Who can comment](../post-merge-verify/#who-can-comment)), so the comment is posted again.
 
 ## Keeping it fast
 

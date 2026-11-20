@@ -1,13 +1,13 @@
 ---
 title: 2. 配置仓库
-description: 创建标签并保护 main。fork 不会复制这两者。
+description: 创建标签、保护 main，并阻止陌生人评论。fork 不会复制其中任何一项。
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**完成后你将拥有：** 工作流用到的所有标签，以及一个只接受检查全绿且已获批准的 pull request 的 `main` 分支。
+**完成后你将拥有：** 工作流用到的所有标签、一个只接受检查全绿且已获批准的 pull request 的 `main` 分支，以及仅限协作者的评论。
 
 <Steps>
 
@@ -47,6 +47,12 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 3. **允许 Actions 开启 pull request。** 打开 **Settings → Actions → General**，在 **Workflow permissions** 下勾选 **Allow GitHub Actions to create and approve pull requests**。Archive Specs workflow 需要它来开启把已完成的 spec 移到 `specs/_archive/` 的 PR。
 
+4. **把评论限制为协作者。** 公开仓库的 fork 也是公开的，而智能体会阅读它们处理的 issue 和 pull request 上的每一条评论，同时持有一个可以推送的 token。打开 **Settings → Moderation options → Interaction limits**，选择 **Limit to repository collaborators**，期限六个月。这样其他任何人都不能评论、开 issue 或开 pull request。
+
+   <Aside type="caution">
+   这个限制会过期，最长在你设置后六个月，而且不会有任何提醒。记下日期，并在那之前重新设置。如果你之后加入持有云凭证的测试智能体，正是这个限制让陌生人的评论无法触及它。参见[谁可以评论](../../discava/post-merge-verify/#谁可以评论)。
+   </Aside>
+
 </Steps>
 
 <Aside type="caution" title="一个账号还是两个">
@@ -55,6 +61,6 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 ## 检查是否成功
 
-fork 的 **Issues → Labels** 页面列出了 16 个新标签，**Settings → Branches** 显示 `main` 上的规则，带有六项必需检查。
+fork 的 **Issues → Labels** 页面列出了 16 个新标签，**Settings → Branches** 显示 `main` 上的规则，带有六项必需检查，**Settings → Moderation options → Interaction limits** 显示仅限协作者的限制及其截止日期。
 
 下一步：[3. 安装 OpenHands](../openhands/)。

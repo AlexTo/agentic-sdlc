@@ -1,6 +1,6 @@
 ---
 title: Verifica post-merge
-description: Come ogni pull request deployata su discava-development diventa una issue di test per l'agente Tester, e come viene messo il lock a tutto ciò che gli agenti leggono.
+description: Come ogni pull request deployata su discava-development diventa una issue di test per l'agente Tester, e come solo i collaboratori possono commentare ciò che gli agenti leggono.
 sidebar:
   order: 9.5
 ---
@@ -134,6 +134,9 @@ era passato sopra. Tutti gli orari sono UTC, del 20 novembre 2026.
 | 10:45 | Lo stage | Entrambe le consegne al webhook vanno in timeout. L'ordine resta `pending` |
 | 10:48 | Agente Tester | Apre la correzione, [#657](https://github.com/AlexTo/discava/pull/657) |
 | 10:49 | Agente Tester | [Terzo report](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120): **fallito**, con la causa e la correzione |
+| 10:54 | Una persona | Aggiunge `openhands-review` a #657 |
+| 11:34 | Una persona | Toglie il lock a #657, che Agent Lock gli aveva messo all'apertura |
+| 11:39 | Agente Reviewer | Approva #657 |
 
 ### Esecuzione 1: bloccato, e lo dice
 
@@ -242,9 +245,13 @@ La descrizione è anche schietta sul proprio limite: "Not verified on a deployed
 takes effect once deployed." (non verificata su uno stage deployato: la correzione ha effetto solo
 dopo il deploy).
 
-Poi il Tester si è fermato. Non ha fatto il merge, e non ha fatto il deploy. Agent Lock ha messo il
-lock alla nuova pull request, [PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986) è girato in verde, e la label `openhands-review` l'ha passata all'agente Reviewer. Il
-merge lo fa una persona, come per qualsiasi altra. La issue di test [#654](https://github.com/AlexTo/discava/issues/654) resta aperta finché il rimborso stesso non viene testato su
+Poi il Tester si è fermato. Non ha fatto il merge, e non ha fatto il deploy. [PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986)
+è girato in verde, e la label `openhands-review` l'ha passata all'agente Reviewer. La review è
+rimasta ferma per quaranta minuti per qualcosa che nessun agente aveva sbagliato: la pull request
+aveva il lock, e GitHub non accetta una review su una pull request con il lock. Una volta tolto il
+lock, il Reviewer l'ha approvata. È per questo che Discava ha smesso di mettere il lock alle pull
+request (vedi [Chi può commentare](#chi-può-commentare)). Il merge lo fa una persona, come per
+qualsiasi altra. La issue di test [#654](https://github.com/AlexTo/discava/issues/654) resta aperta finché il rimborso stesso non viene testato su
 uno stage dove i pagamenti vengono regolati. L'ultimo report del Tester elenca i dati di test che
 ha lasciato: il corso e l'ordine `pending`.
 
@@ -252,29 +259,20 @@ Gli screenshot restano sulla workstation, sotto `tmp/screenshots/pr-<pr>/` nel c
 I report nominano ogni file e dicono cosa mostra. I quattro qui sopra sono stati copiati da lì per
 questa pagina.
 
-## Agent Lock
+## Chi può commentare
 
 Discava è un repository pubblico, quindi chiunque può commentare le sue issue e pull request. Gli
 agenti leggono quei commenti mentre hanno in mano un token che può fare push, e il Tester ha in
 mano anche l'accesso ad AWS e le password degli utenti di test. Un commento è quindi un modo per
-dare istruzioni a un agente.
+dare istruzioni a un agente: una prompt injection. I prompt dicono a ogni agente di trattare ciò
+che legge come dati, ma un prompt è una richiesta, non una garanzia.
 
-La risposta è mettere il lock a ogni conversazione che viene consegnata a un agente. Una issue o
-pull request con il lock accetta commenti solo dai collaboratori con accesso in scrittura, tra cui
-il token degli agenti stessi.
+Quindi Discava tiene gli estranei fuori dalla conversazione, in due modi:
 
-| Cosa | Chi mette il lock |
+| Livello | Cosa fa |
 | --- | --- |
-| Una issue di implementazione aperta da Agent Issues | Il suo script, prima di aggiungere `openhands` |
-| Una issue di test, la pull request che testa e le issue che quella pull request chiude | Lo script di Post-merge Verify, prima di aggiungere `openhands-test` |
-| Una issue a cui qualcuno mette a mano la label `openhands` o `openhands-test` | **Agent Lock** (`.github/workflows/agent-lock.yml`), su `issues: labeled` |
-| Una pull request aperta da un agente, su un branch `openhands/` che non viene da un fork | **Agent Lock**, su `pull_request: opened` e `reopened` |
-
-Gli script mettono il lock alle proprie issue perché GitHub non avvia alcun workflow per una label
-applicata dal token di un workflow. Conta anche l'ordine: aprire senza la label, mettere il lock,
-poi la label, così l'agente non prende mai in carico una issue mentre un estraneo può ancora
-commentare. Il codice condiviso è `src/helpers/conversation-lock.ts`, e le regole del workflow
-stanno in `src/agent-lock/`.
+| **Limite di interazione** | **Settings → Moderation options → Interaction limits** di GitHub è impostato su **Limit to repository collaborators**. Nessun altro può commentare, aprire una issue o aprire una pull request in tutto il repository |
+| **Issue degli agenti con il lock** | Agent Issues e Post-merge Verify aprono ogni issue senza la sua label, le mettono il lock (e, per una issue di test, anche alla pull request che testa e alle issue che quella chiude), e solo allora aggiungono la label. Se a qualcosa non si riesce a mettere il lock, la label non viene mai aggiunta e l'esecuzione fallisce. Il codice condiviso è `src/helpers/conversation-lock.ts` |
 
 Con questo arrivano altre due regole:
 
@@ -283,15 +281,42 @@ Con questo arrivano altre due regole:
   `github-actions[bot]` o da qualcuno con accesso in scrittura (`src/helpers/issue-author.ts`),
   così un estraneo non può bloccare una catena o fermare un test aprendo una issue con dentro un
   marcatore.
-- **Una PR con il lock non riceve commenti dal bot.** GitHub rifiuta al token di Actions un
-  commento su una conversazione con il lock, quindi la lista degli
-  [E2E screenshots](../pr-checks/#ui-screenshots-e-il-commento-e2e-screenshots) va invece nel
-  summary del job.
+- **Il Tester testa solo le issue del workflow.** La sua automazione salta ogni issue di test non
+  aperta da `github-actions[bot]`, e le sue istruzioni sono il suo prompt, mai la issue.
 
-<Aside type="caution">
-I commenti scritti prima che una issue ricevesse la label restano. Quando metti a mano la label a
-una issue esistente, leggi prima i suoi commenti.
+<Aside type="caution" title="Un repository pubblico ha bisogno del limite di interazione">
+Se il tuo repository è pubblico, imposta il limite di interazione su **solo collaboratori** prima
+di attivare l'agente Tester, e preferibilmente prima di qualsiasi agente. Senza di esso, chiunque
+può commentare una issue di test o la pull request che testa, e il Tester legge quel commento
+mentre ha in mano credenziali cloud e le password degli utenti di test.
+
+Il limite dura al massimo sei mesi. Quello di Discava scade il 20 maggio 2027. Segna il rinnovo in
+un calendario, perché niente ti avvisa quando scade. Un repository privato non ne ha bisogno: lì
+possono commentare solo le persone che hanno accesso.
+
+I commenti scritti prima che il limite fosse impostato, o prima che una issue ricevesse la label,
+restano. Leggili prima di mettere a mano la label a una issue esistente.
 </Aside>
+
+### Perché Discava ha smesso di mettere il lock alle pull request
+
+Fino a [#658](https://github.com/AlexTo/discava/pull/658), un workflow chiamato **Agent Lock** metteva il lock anche a ogni pull request
+aperta da un agente, e a ogni issue a cui qualcuno metteva a mano una label per un agente. Teneva
+fuori gli estranei, ma aveva due costi:
+
+- **L'agente Reviewer non poteva fare la review.** GitHub rifiuta una review nativa su una pull
+  request con il lock, anche da un account con accesso in scrittura. La PR di correzione
+  [#657](https://github.com/AlexTo/discava/pull/657) ha ricevuto il lock alle 10:49 e la label per la review alle 10:54, e non ha
+  avuto alcuna review finché non le è stato tolto il lock a mano alle 11:34. Il Reviewer l'ha
+  approvata cinque minuti dopo.
+- **Gli E2E screenshots non potevano essere pubblicati.** GitHub rifiuta al token di Actions anche
+  un commento su una conversazione con il lock, quindi la
+  [lista degli screenshot](../pr-checks/#ui-screenshots-e-il-commento-e2e-screenshots) è dovuta
+  passare nel summary del job.
+
+Il limite di interazione fa lo stesso lavoro per l'intero repository, senza mettere il lock a nulla
+su cui gli agenti devono scrivere. Agent Lock e il suo script sono stati rimossi, e alle quattro
+pull request degli agenti a cui aveva messo il lock è stato tolto a mano.
 
 ## Dry run
 

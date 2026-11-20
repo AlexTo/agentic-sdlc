@@ -43,7 +43,7 @@ sidebar:
 | エージェントにクラウドがない | すべての AWS サービスのローカル代替 | `pnpm dev`, `packages/tooling/local-dev/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
 | マージしてもリリースされない | `main` での CI、その後 Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
 | シークレットと脆弱な依存関係 | CI とデプロイ前の Trivy、コミット時の git-secrets | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
-| マージされた変更が、動く場所でテストされない | Post-merge Verify がデプロイされた PR ごとにテスト issue を開き、テスト担当エージェントがそれをテストし、Agent Lock がエージェントの読むものをロックする | `.github/workflows/post-merge-verify.yml`, `agent-lock.yml`, `src/post-merge-test/`, `src/agent-lock/`, `src/helpers/conversation-lock.ts` |
+| マージされた変更が、動く場所でテストされない | Post-merge Verify がデプロイされた PR ごとにテスト issue を開き、テスト担当エージェントがそれをテストし、エージェントが読むものにはコラボレーターだけがコメントできる | `.github/workflows/post-merge-verify.yml`, `src/post-merge-test/`, `src/helpers/conversation-lock.ts`, リポジトリのインタラクション制限 |
 
 glue は `packages/tooling/agent/` (`@discava/tooling-agent`) にあります。このセクションの `src/…` のパスは、
 そこからの相対パスです。

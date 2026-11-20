@@ -76,9 +76,9 @@ dụng ghi chú ví dụ trong repository này không có deploy, nên hãy ché
 6. **Thêm agent Tester**, nếu bạn muốn mỗi thay đổi đã deploy được test (khoảng trống 11). Đây là
    mảnh mới nhất, và nó nằm trong Discava, không phải trong repository này. Hãy chép từ đó:
 
-   - `packages/tooling/agent/src/post-merge-test/`, `src/agent-lock/` và `src/helpers/`, cùng các
-     Nx target `post-merge-test` và `agent-lock` của chúng
-   - `.github/workflows/post-merge-verify.yml` và `agent-lock.yml`
+   - `packages/tooling/agent/src/post-merge-test/` và `src/helpers/`, cùng Nx target
+     `post-merge-test`
+   - `.github/workflows/post-merge-verify.yml`
    - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`, để mở một issue test thủ công
 
    Sau đó đặt tên stage (`TEST_STAGE`), và các đường dẫn không bao giờ đến một stack đã deploy
@@ -93,9 +93,14 @@ dụng ghi chú ví dụ trong repository này không có deploy, nên hãy ché
    - một người dùng test cho mỗi vai trò trong ứng dụng của bạn, lưu dưới dạng secret của OpenHands
    - một trình duyệt nó điều khiển được, như Playwright với Chromium
 
-   <Aside type="caution">
-   Tester đọc issue và pull request trong khi đang giữ các thông tin đăng nhập đó. Hãy giữ việc khóa
-   (`agent-lock.yml` và `helpers/conversation-lock.ts`), giữ phần "test như thế nào" trong prompt
+   <Aside type="caution" title="Repository công khai? Hãy giới hạn comment cho collaborator trước">
+   Tester đọc issue, pull request và các comment của chúng trong khi đang giữ các thông tin đăng nhập
+   đó. Nếu repository của bạn công khai, comment của một người lạ có thể mang chỉ dẫn đến nó. Trước
+   khi bật nó, hãy mở **Settings → Moderation options → Interaction limits** và chọn **Limit to
+   repository collaborators**. Giới hạn này kéo dài tối đa sáu tháng, nên hãy ghi lại khi nào cần gia
+   hạn.
+
+   Đồng thời giữ việc khóa trong `helpers/conversation-lock.ts`, giữ phần "test như thế nào" trong prompt
    riêng của automation thay vì trong issue, và đừng bao giờ trỏ nó vào một stage có dữ liệu quan trọng.
    </Aside>
 

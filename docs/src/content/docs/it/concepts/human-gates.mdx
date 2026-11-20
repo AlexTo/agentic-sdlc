@@ -66,7 +66,7 @@ agire.
 | Modificare `.github/workflows/` | Constitution e istruzioni della issue. La review del Reviewer e quella umana lo intercettano. I workflow del collante eseguono il codice del branch di default, quindi un workflow modificato in una PR non può cambiarli |
 | Indebolire un test per farlo passare | Constitution ("tests are a specification"), istruzioni della issue, agente Reviewer |
 | Fare deploy, o modificare l'infrastruttura | A nessun agente viene dato un ruolo di deploy. Il deploy usa ruoli OIDC a breve durata da un environment di GitHub. Al Developer e al Reviewer non serve alcun accesso al cloud. Il Tester raggiunge solo lo stage di sviluppo, e il suo prompt lo limita alla lettura e ai dati di test che crea tramite l'app |
-| Prendere istruzioni da un estraneo | Ogni issue e pull request consegnata a un agente ha il lock, quindi solo le persone con accesso in scrittura possono commentare. Il Tester testa solo le issue aperte dal workflow, e le sue istruzioni sono il suo prompt, non la issue |
+| Prendere istruzioni da un estraneo | Su un repository pubblico, un limite di interazione permette solo ai collaboratori di commentare, aprire issue o aprire pull request. Anche le issue che i workflow aprono per un agente hanno il lock. Il Tester testa solo le issue aperte dal workflow, e le sue istruzioni sono il suo prompt, non la issue |
 | Lavorare fuori dal suo intervallo di task | La issue indica l'intervallo. La issue successiva non si apre finché ogni task degli agenti non è spuntato |
 | Riprovare all'infinito | Cinque tentativi per loop, contati nelle label |
 

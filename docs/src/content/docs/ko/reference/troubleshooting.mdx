@@ -52,7 +52,8 @@ sidebar:
 | 테스트 issue가 열렸는데 테스터가 가져가지 않음 | issue가 가리키는 무언가를 잠글 수 없어서 `openhands-test` label이 없거나, automation이 신뢰하지 않는 계정이 issue를 열었습니다 | Post-merge Verify 실행이 실패하고 무엇을 잠가야 하는지 알려 줍니다. 잠근 다음 수동으로 label을 추가합니다 |
 | 테스터가 보고했는데 한 번 더 실행하고 싶음 | label을 붙일 때마다 한 번만 테스트됩니다 | `openhands-test`를 제거했다가 다시 붙입니다 |
 | 보고서가 "blocked"라고 함 | 연결된 결제 계정처럼 변경에 필요한 무언가가 stage에 없습니다 | stage를 고친 다음 label을 다시 붙입니다 |
-| 에이전트 PR에 **E2E screenshots** 댓글이 없음 | PR이 잠겨 있고, GitHub는 Actions 토큰이 잠긴 대화에 댓글을 다는 것을 거부합니다 | `E2E screenshots` job의 summary에서 목록을 읽습니다 |
+| PR에 **E2E screenshots** 댓글이 없음 | PR이 잠겨 있고, GitHub는 Actions 토큰이 잠긴 대화에 댓글을 다는 것을 거부합니다 | `E2E screenshots` job의 summary에서 목록을 읽거나, PR의 잠금을 풉니다 |
+| 리뷰어 에이전트가 리뷰를 게시하지 않고, PR이 잠겨 있음 | GitHub는 쓰기 권한이 있는 계정이라도 잠긴 pull request에 대한 네이티브 리뷰를 거부합니다 | 잠금을 풉니다. 낯선 사람을 막으려면 pull request를 잠그는 대신 저장소의 interaction limit을 사용합니다 |
 
 ## 배포
 

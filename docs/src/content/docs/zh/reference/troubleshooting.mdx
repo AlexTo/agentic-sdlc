@@ -52,7 +52,8 @@ sidebar:
 | 测试 issue 已开出，测试智能体却始终不领取 | 该 issue 没有 `openhands-test` 标签，因为它指向的某个对象无法锁定；或者它是由 automation 不信任的账号开出的 | Post-merge Verify 运行会失败，并指出需要锁定什么。锁定它，然后手动加上标签 |
 | 测试智能体已报告，而你想再跑一次 | 每次加标签只测试一次 | 移除并重新加上 `openhands-test` |
 | 报告写着 “blocked” | stage 缺少该变更所需的某样东西，例如一个已连接的支付账号 | 修复 stage，然后重新加上标签 |
-| 智能体 PR 上没有 **E2E screenshots** 评论 | 该 PR 已锁定，而 GitHub 拒绝 Actions token 在已锁定的对话上评论 | 阅读 `E2E screenshots` job 摘要中的列表 |
+| PR 上没有 **E2E screenshots** 评论 | 该 PR 已锁定，而 GitHub 拒绝 Actions token 在已锁定的对话上评论 | 阅读 `E2E screenshots` job 摘要中的列表，或者解锁该 PR |
+| 评审智能体始终不发布评审，而该 PR 已锁定 | GitHub 拒绝在已锁定的 pull request 上提交原生评审，即使来自具有写权限的账号也一样 | 解锁它。要把陌生人挡在外面，请使用仓库的交互限制，而不是锁定 pull request |
 
 ## 部署
 

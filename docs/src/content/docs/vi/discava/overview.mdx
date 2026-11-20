@@ -43,7 +43,7 @@ Phần này mô tả những gì Discava chạy, tính đến tháng 11 năm 202
 | Agent không có cloud | Bản thay thế local cho mọi dịch vụ AWS | `pnpm dev`, `packages/tooling/local-dev/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
 | Merge không ship | CI trên `main`, rồi Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
 | Secret và dependency có lỗ hổng | Trivy trong CI và trước deploy, git-secrets khi commit | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
-| Thay đổi đã merge không bao giờ được test ở nơi nó chạy | Post-merge Verify mở một issue test cho mỗi PR đã deploy, agent Tester test nó, và Agent Lock khóa những gì các agent đọc | `.github/workflows/post-merge-verify.yml`, `agent-lock.yml`, `src/post-merge-test/`, `src/agent-lock/`, `src/helpers/conversation-lock.ts` |
+| Thay đổi đã merge không bao giờ được test ở nơi nó chạy | Post-merge Verify mở một issue test cho mỗi PR đã deploy, agent Tester test nó, và chỉ các collaborator mới comment được trên những gì các agent đọc | `.github/workflows/post-merge-verify.yml`, `src/post-merge-test/`, `src/helpers/conversation-lock.ts`, interaction limit của repository |
 
 Phần glue nằm trong `packages/tooling/agent/` (`@discava/tooling-agent`). Các đường dẫn `src/…` trong
 phần này là tương đối so với nó.

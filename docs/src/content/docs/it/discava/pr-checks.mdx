@@ -71,12 +71,12 @@ Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifa
 L'agente Reviewer legge la stessa lista. Gli artifact non hanno un URL pubblico, quindi il commento
 nomina le immagini e rimanda all'esecuzione da cui si possono scaricare.
 
-La stessa lista viene scritta nel summary del job. Per la pull request di un agente, è l'unico posto
-in cui compare: [Agent Lock](../post-merge-verify/#agent-lock) mette il lock a ogni PR degli agenti,
-e GitHub rifiuta al token di Actions un commento su una conversazione con il lock, quali che siano i
-suoi permessi. Il job salta il commento con un notice invece di fallire. Togliere il lock alla PR
-per commentare permetterebbe a chiunque di commentare nel frattempo, che è ciò che il lock serve a
-impedire.
+La stessa lista viene scritta nel summary del job. Per una pull request con il lock, è l'unico
+posto in cui compare: GitHub rifiuta al token di Actions un commento su una conversazione con il
+lock, quali che siano i suoi permessi, quindi il job salta il commento con un notice invece di
+fallire. Discava metteva il lock a ogni pull request degli agenti, e ora si affida invece a un
+limite di interazione (vedi [Chi può commentare](../post-merge-verify/#chi-può-commentare)), quindi
+il commento viene di nuovo pubblicato.
 
 ## Mantenerli veloci
 

@@ -1,14 +1,14 @@
 ---
 title: 2. リポジトリを設定する
-description: ラベルを作成し、main を保護します。fork ではどちらもコピーされません。
+description: ラベルを作成し、main を保護し、見知らぬ人がコメントできないようにします。fork ではどれもコピーされません。
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**完了時の状態:** workflow が使うすべてのラベルと、チェックがグリーンで承認済みの pull request だけを
-受け付ける `main` ブランチ。
+**完了時の状態:** workflow が使うすべてのラベル、チェックがグリーンで承認済みの pull request だけを
+受け付ける `main` ブランチ、そしてコラボレーターに限定されたコメント。
 
 <Steps>
 
@@ -55,6 +55,17 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    **Workflow permissions** の下で **Allow GitHub Actions to create and approve pull requests** にチェックを入れます。
    Archive Specs workflow は、完了した spec を `specs/_archive/` に移す PR を開くためにこれを必要とします。
 
+4. **コメントをコラボレーターに限定します。** 公開リポジトリの fork は公開されます。そしてエージェントは、
+   push できるトークンを持ったまま、作業する issue と pull request のすべてのコメントを読みます。
+   **Settings → Moderation options → Interaction limits** を開き、**Limit to repository collaborators** を
+   6 か月の期間で選びます。これで、それ以外の人はコメントも、issue や pull request の作成もできなくなります。
+
+   <Aside type="caution">
+   制限は設定してから最長 6 か月で失効し、何も警告されません。日付を控えておき、それまでに設定し直してください。
+   後でクラウドの認証情報を持つテスト担当エージェントを追加する場合、見知らぬ人のコメントがそこに届かないようにするのは
+   この制限です。[誰がコメントできるか](../../discava/post-merge-verify/#誰がコメントできるか)を参照してください。
+   </Aside>
+
 </Steps>
 
 <Aside type="caution" title="アカウントは 1 つか 2 つか">
@@ -68,6 +79,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 ## 動作を確認する
 
 fork の **Issues → Labels** ページに新しい 16 個のラベルが一覧され、**Settings → Branches** に
-6 つの必須チェックを持つ `main` のルールが表示されます。
+6 つの必須チェックを持つ `main` のルールが表示され、**Settings → Moderation options → Interaction limits** に
+終了日付きのコラボレーターのみの制限が表示されます。
 
 次へ: [3. OpenHands をインストールする](../openhands/)。

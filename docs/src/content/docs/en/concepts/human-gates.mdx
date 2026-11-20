@@ -63,7 +63,7 @@ on.
 | Edit `.github/workflows/` | Constitution and issue instructions. Reviewer and human review catch it. The glue workflows run the default branch's code, so an edited workflow in a PR can't change them |
 | Weaken a test to make it pass | Constitution ("tests are a specification"), issue instructions, Reviewer agent |
 | Deploy, or change infrastructure | No agent is given a deploy role. Deployment uses short-lived OIDC roles from a GitHub environment. The Developer and the Reviewer need no cloud access at all. The Tester reaches the development stage only, and its prompt limits it to reading and to the test data it creates through the app |
-| Take instructions from a stranger | Every issue and pull request an agent is handed is locked, so only people with write access can comment. The Tester tests only issues the workflow opened, and its instructions are its own prompt, not the issue |
+| Take instructions from a stranger | On a public repository, an interaction limit lets only collaborators comment, open issues or open pull requests. The issues the workflows open for an agent are also locked. The Tester tests only issues the workflow opened, and its instructions are its own prompt, not the issue |
 | Work outside its task range | The issue names the range. The next issue doesn't open until every agent task is ticked |
 | Retry forever | Five attempts per loop, counted in labels |
 

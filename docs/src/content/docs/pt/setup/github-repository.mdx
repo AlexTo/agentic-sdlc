@@ -1,14 +1,14 @@
 ---
 title: 2. Configure o repositório
-description: Crie os labels e proteja a main. Um fork não copia nenhuma das duas coisas.
+description: Crie os labels, proteja a main e impeça que estranhos comentem. Um fork não copia nada disso.
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**No final você terá:** todos os labels que o workflow usa, e uma branch `main` que só aceita pull
-requests com checks verdes e uma aprovação.
+**No final você terá:** todos os labels que o workflow usa, uma branch `main` que só aceita pull
+requests com checks verdes e uma aprovação, e comentários limitados aos colaboradores.
 
 <Steps>
 
@@ -56,6 +56,19 @@ requests com checks verdes e uma aprovação.
    O workflow Archive Specs precisa disso para abrir o PR que move uma spec concluída para
    `specs/_archive/`.
 
+4. **Limite os comentários aos colaboradores.** Um fork de um repositório público é público, e os agents
+   leem todo comentário nas issues e nos pull requests em que trabalham, enquanto têm em mãos um token que
+   pode fazer push. Abra **Settings → Moderation options → Interaction limits** e escolha **Limit to
+   repository collaborators**, por seis meses. Assim mais ninguém pode comentar, abrir uma issue ou abrir
+   um pull request.
+
+   <Aside type="caution">
+   O limite expira no máximo seis meses depois de configurado, e nada avisa você. Anote a data
+   e configure-o de novo antes disso. Se você adicionar depois o agent Testador, que tem credenciais de nuvem,
+   é esse limite que impede o comentário de um estranho de chegar até ele. Veja
+   [Quem pode comentar](../../discava/post-merge-verify/#quem-pode-comentar).
+   </Aside>
+
 </Steps>
 
 <Aside type="caution" title="Uma conta ou duas">
@@ -68,7 +81,8 @@ agents uma conta separada no GitHub com acesso de escrita, e use o token dela no
 
 ## Confira se funcionou
 
-A página **Issues → Labels** do fork lista os 16 novos labels, e **Settings → Branches** mostra a
-regra na `main` com seis checks obrigatórios.
+A página **Issues → Labels** do fork lista os 16 novos labels, **Settings → Branches** mostra a
+regra na `main` com seis checks obrigatórios, e **Settings → Moderation options → Interaction limits**
+mostra o limite só para colaboradores com a data de término.
 
 Próximo: [3. Instale o OpenHands](../openhands/).

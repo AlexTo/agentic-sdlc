@@ -77,9 +77,9 @@ cloud. O app de notas de exemplo deste repositório não tem deploy, então copi
 6. **Adicione o agent Testador**, se você quiser que cada mudança que sai no deploy seja testada
    (lacuna 11). Esta é a peça mais nova, e ela fica no Discava, não neste repositório. Copie de lá:
 
-   - `packages/tooling/agent/src/post-merge-test/`, `src/agent-lock/` e `src/helpers/`, com os
-     targets Nx `post-merge-test` e `agent-lock`
-   - `.github/workflows/post-merge-verify.yml` e `agent-lock.yml`
+   - `packages/tooling/agent/src/post-merge-test/` e `src/helpers/`, com o target Nx
+     `post-merge-test`
+   - `.github/workflows/post-merge-verify.yml`
    - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`, para abrir uma issue de teste à mão
 
    Depois ajuste o nome do stage (`TEST_STAGE`) e os caminhos que nunca chegam a uma stack com
@@ -96,9 +96,13 @@ cloud. O app de notas de exemplo deste repositório não tem deploy, então copi
    - um usuário de teste por papel no seu app, guardados como secrets do OpenHands
    - um navegador que ele consiga controlar, como o Playwright com Chromium
 
-   <Aside type="caution">
-   O Testador lê issues e pull requests enquanto tem essas credenciais em mãos. Mantenha o
-   trancamento (`agent-lock.yml` e `helpers/conversation-lock.ts`), mantenha o "como testar" no
+   <Aside type="caution" title="Repositório público? Limite os comentários aos colaboradores antes">
+   O Testador lê issues, pull requests e os comentários deles enquanto tem essas credenciais em mãos. Se
+   o seu repositório é público, o comentário de um estranho pode levar instruções a ele. Antes de
+   ativá-lo, abra **Settings → Moderation options → Interaction limits** e escolha **Limit to
+   repository collaborators**. O limite dura no máximo seis meses, então anote quando renová-lo.
+
+   Mantenha também o trancamento em `helpers/conversation-lock.ts`, mantenha o "como testar" no
    próprio prompt da automation em vez de na issue, e nunca o aponte para um stage cujos dados
    importam.
    </Aside>

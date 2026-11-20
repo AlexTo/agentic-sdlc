@@ -77,9 +77,9 @@ development stage에서 테스트하는 테스터 에이전트.
 6. 배포된 각 변경을 테스트하고 싶다면 **테스터 에이전트를 추가**합니다 (빈틈 11). 가장 최근에 생긴
    조각이며, 이 저장소가 아니라 Discava에 있습니다. 거기서 복사하세요.
 
-   - `packages/tooling/agent/src/post-merge-test/`, `src/agent-lock/`, `src/helpers/`, 그리고 해당
-     Nx target인 `post-merge-test`와 `agent-lock`
-   - `.github/workflows/post-merge-verify.yml`과 `agent-lock.yml`
+   - `packages/tooling/agent/src/post-merge-test/`와 `src/helpers/`, 그리고 해당 Nx target인
+     `post-merge-test`
+   - `.github/workflows/post-merge-verify.yml`
    - 테스트 issue를 직접 열 때 쓰는 `.github/ISSUE_TEMPLATE/test-deployed-pr.md`
 
    그런 다음 stage 이름(`TEST_STAGE`)과, 배포된 스택에 결코 도달하지 않는 경로(`plan.ts`의
@@ -94,9 +94,13 @@ development stage에서 테스트하는 테스터 에이전트.
    - 앱의 역할마다 하나씩 둔 테스트 사용자. OpenHands secret으로 저장합니다
    - Playwright와 Chromium처럼 테스터가 조작할 수 있는 브라우저
 
-   <Aside type="caution">
-   테스터는 그 자격 증명을 가진 채로 issue와 pull request를 읽습니다. 잠금(`agent-lock.yml`과
-   `helpers/conversation-lock.ts`)을 유지하고, "테스트 방법"은 issue가 아니라 automation 자체의
+   <Aside type="caution" title="공개 저장소인가요? 먼저 댓글을 collaborator로 제한하세요">
+   테스터는 그 자격 증명을 가진 채로 issue, pull request, 그리고 그 댓글을 읽습니다. 저장소가 공개라면 낯선
+   사람의 댓글이 테스터에게 지시를 전할 수 있습니다. 테스터를 켜기 전에 **Settings → Moderation options →
+   Interaction limits**를 열고 **Limit to repository collaborators**를 선택하세요. 이 제한은 최대 6개월 동안
+   유지되므로, 언제 갱신해야 하는지 적어 두세요.
+
+   또한 `helpers/conversation-lock.ts`의 잠금을 유지하고, "테스트 방법"은 issue가 아니라 automation 자체의
    프롬프트에 두며, 데이터가 중요한 stage를 절대 대상으로 삼지 마세요.
    </Aside>
 

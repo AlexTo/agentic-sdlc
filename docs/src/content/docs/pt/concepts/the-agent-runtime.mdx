@@ -148,8 +148,9 @@ O Testador é a exceção. Ele precisa alcançar o stage com deploy, então trab
 autenticada na conta de desenvolvimento, que o prompt dele manda usar só para leitura, e um usuário de teste
 para cada papel no app. Ele nunca recebe as roles de deploy, e o prompt dele proíbe mudar a
 infraestrutura, fazer deploy ou mexer em outro stage. Como ele lê
-issues e pull requests enquanto tem essas credenciais em mãos, tudo o que é entregue a ele é trancado antes,
-então só pessoas com acesso de escrita podem comentar ali.
+issues e pull requests enquanto tem essas credenciais em mãos, ninguém sem acesso de escrita pode comentar
+neles. Em um repositório público, isso significa configurar o limite de interação do GitHub como só
+colaboradores.
 
 O que mais os agents nunca podem fazer, e o que garante cada limite, está em
 [Gates humanos](../human-gates/#o-que-os-agents-nunca-podem-fazer).

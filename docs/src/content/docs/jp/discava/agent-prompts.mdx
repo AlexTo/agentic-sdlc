@@ -69,7 +69,7 @@ After opening the pull request, add the `openhands-review` label so the independ
 - **pull request にならない 2 つの出口。** push に失敗した場合、作業はコミットされたまま残り、automation が仕事を仕上げます。
   issue が曖昧すぎる場合、エージェントは何も変更せずに何が足りないかを述べ、その答えが issue に投稿されます。
 - **読むものはすべて信頼できない入力です。** 最後の段落は、issue やコメントに隠された指示に対するプロンプトの防御です。
-  Discava はさらに、エージェントが読むものを[ロック](../post-merge-verify/#agent-lock)しています。
+  Discava はさらに、エージェントが読むものに[コラボレーターだけがコメントできるようにしています](../post-merge-verify/#誰がコメントできるか)。
 - **最後の行がレビューを始めます。** このラベルが、pull request をレビュー担当に渡します。
 
 ### 修正のターン

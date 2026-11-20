@@ -67,10 +67,10 @@ Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifa
 评审智能体读取的是同一份列表。artifact 没有公开 URL，所以评论会写明图片名称，并链接到可以下载它们的
 那次运行。
 
-同一份列表也会写入该 job 的摘要。对于智能体的 pull request，那是它唯一出现的地方：
-[Agent Lock](../post-merge-verify/#agent-lock) 会锁定每个智能体 PR，而无论权限如何，GitHub 都会拒绝
-Actions token 在已锁定的对话上发表评论。该 job 会附带一条 notice 跳过评论，而不是失败。为了评论而解锁
-PR，会让任何人都能在这段间隙里评论，而这正是加锁要阻止的事。
+同一份列表也会写入该 job 的摘要。对于已锁定的 pull request，那是它唯一出现的地方：无论权限如何，GitHub
+都会拒绝 Actions token 在已锁定的对话上发表评论，所以该 job 会附带一条 notice 跳过评论，而不是失败。
+Discava 过去会锁定每个智能体 pull request，现在改为依靠交互限制（参见
+[谁可以评论](../post-merge-verify/#谁可以评论)），所以评论又会发布了。
 
 ## 保持快速
 

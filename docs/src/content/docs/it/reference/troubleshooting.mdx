@@ -52,7 +52,8 @@ sidebar:
 | Issue di test aperta, il Tester non la prende mai in carico | La issue non ha la label `openhands-test` perché non è stato possibile mettere il lock a qualcosa a cui rimanda, oppure è stata aperta da un account di cui l'automazione non si fida | L'esecuzione di Post-merge Verify fallisce e indica a cosa mettere il lock. Metti il lock, poi aggiungi la label a mano |
 | Il Tester ha fatto il report, e vuoi un'altra esecuzione | Ogni applicazione della label viene testata una volta | Rimuovi e riapplica `openhands-test` |
 | Il report dice "blocked" | Allo stage manca qualcosa che serve alla modifica, come un account di pagamento collegato | Sistema lo stage, poi riapplica la label |
-| Il commento **E2E screenshots** manca su una PR dell'agente | La PR ha il lock, e GitHub rifiuta al token di Actions un commento su una conversazione con il lock | Leggi la lista nel summary del job `E2E screenshots` |
+| Il commento **E2E screenshots** manca su una PR | La PR ha il lock, e GitHub rifiuta al token di Actions un commento su una conversazione con il lock | Leggi la lista nel summary del job `E2E screenshots`, oppure togli il lock alla PR |
+| L'agente Reviewer non pubblica mai una review, e la PR ha il lock | GitHub rifiuta una review nativa su una pull request con il lock, anche da un account con accesso in scrittura | Togli il lock. Per tenere fuori gli estranei, usa il limite di interazione del repository invece di mettere il lock alle pull request |
 
 ## Deploy
 

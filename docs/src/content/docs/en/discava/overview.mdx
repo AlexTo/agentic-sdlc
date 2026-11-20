@@ -43,7 +43,7 @@ This section describes what Discava runs, as of November 2026, with the files be
 | No cloud for the agent | Local stand-ins for every AWS service | `pnpm dev`, `packages/tooling/local-dev/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
 | Merge doesn't ship | CI on `main`, then Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
 | Secrets and vulnerable dependencies | Trivy in CI and before deploy, git-secrets on commit | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
-| Merged change never tested where it runs | Post-merge Verify opens a test issue per deployed PR, the Tester agent tests it, and Agent Lock locks what the agents read | `.github/workflows/post-merge-verify.yml`, `agent-lock.yml`, `src/post-merge-test/`, `src/agent-lock/`, `src/helpers/conversation-lock.ts` |
+| Merged change never tested where it runs | Post-merge Verify opens a test issue per deployed PR, the Tester agent tests it, and only collaborators can comment on what the agents read | `.github/workflows/post-merge-verify.yml`, `src/post-merge-test/`, `src/helpers/conversation-lock.ts`, the repository's interaction limit |
 
 The glue lives in `packages/tooling/agent/` (`@discava/tooling-agent`). The `src/…` paths in this
 section are relative to it.

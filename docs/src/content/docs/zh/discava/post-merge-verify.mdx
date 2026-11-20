@@ -1,6 +1,6 @@
 ---
 title: 合并后验证
-description: 部署到 discava-development 的每个 pull request 如何变成交给测试智能体的测试 issue，以及智能体阅读的一切如何被锁定。
+description: 部署到 discava-development 的每个 pull request 如何变成交给测试智能体的测试 issue，以及为什么只有协作者才能在智能体阅读的内容上评论。
 sidebar:
   order: 9.5
 ---
@@ -121,6 +121,9 @@ Commit 标题行，这样测试智能体就可以复用它。当 pull request �
 | 10:45 | 该 stage | 两次 webhook 投递都超时了。订单停留在 `pending` |
 | 10:48 | 测试智能体 | 打开修复 PR [#657](https://github.com/AlexTo/discava/pull/657) |
 | 10:49 | 测试智能体 | [第三份报告](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120)：**失败**，并附上原因和修复 |
+| 10:54 | 一个人 | 给 #657 加上 `openhands-review` |
+| 11:34 | 一个人 | 为 #657 解锁，它在打开时被 Agent Lock 锁定了 |
+| 11:39 | 评审智能体 | 批准 #657 |
 
 ### 第 1 次运行：受阻，并且如实说明
 
@@ -213,45 +216,64 @@ Stripe 关于结账已付款的通知始终没能送达。接收它的函数运�
 描述对自身的局限也直言不讳："Not verified on a deployed stage. The fix only takes effect once
 deployed."（未在已部署的 stage 上验证。修复只有在部署之后才会生效。）
 
-然后测试智能体就停下了。它没有合并，也没有部署。Agent Lock 锁定了这个新的 pull request，
-[PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986) 全部通过，`openhands-review` 标签把它交给了评审智能体。和其他任何 PR
+然后测试智能体就停下了。它没有合并，也没有部署。[PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986)
+全部通过，`openhands-review` 标签把它交给了评审智能体。评审因为一件没有任何智能体做错的事停滞了四十
+分钟：这个 pull request 被锁定了，而 GitHub 不接受对已锁定 pull request 的评审。解锁之后，评审智能体批准
+了它。这就是 Discava 不再锁定 pull request 的原因（见[谁可以评论](#谁可以评论)）。和其他任何 PR
 一样，由一个人来合并它。测试 issue [#654](https://github.com/AlexTo/discava/issues/654) 会保持打开，直到退款本身在一个付款能够结算的 stage 上得到测试。
 测试智能体的最后一份报告列出了它留下的测试数据：那门课程和那笔 `pending` 订单。
 
 截图留在工作站上，位于 Discava 检出目录的 `tmp/screenshots/pr-<pr>/` 下。报告会写明每个文件的名称，并
 说明它展示了什么。上面的四张是为了本页从那里复制过来的。
 
-## Agent Lock
+## 谁可以评论
 
 Discava 是一个公开仓库，所以任何人都可以在它的 issue 和 pull request 上评论。智能体在阅读这些评论时持有
 一个可以推送的 token，测试智能体还持有 AWS 访问权限和测试用户的密码。因此，一条评论就是向智能体下达指令
-的一种途径。
+的一种途径：即 prompt 注入。prompt 会要求每个智能体把它读到的内容当作数据，但 prompt 只是一个请求，而不是
+保证。
 
-对策是锁定交给智能体的每一个对话。被锁定的 issue 或 pull request 只接受具有写权限的协作者的评论，其中
-包括智能体自己的 token。
+所以 Discava 通过两种方式把陌生人挡在对话之外：
 
-| 对象 | 由谁锁定 |
+| 层 | 作用 |
 | --- | --- |
-| Agent Issues 打开的实现 issue | 它自己的脚本，在加上 `openhands` 之前 |
-| 一个测试 issue、它测试的 pull request，以及该 pull request 关闭的 issue | Post-merge Verify 的脚本，在加上 `openhands-test` 之前 |
-| 有人手动加上 `openhands` 或 `openhands-test` 标签的 issue | **Agent Lock**（`.github/workflows/agent-lock.yml`），在 `issues: labeled` 时 |
-| 智能体在非 fork 的 `openhands/` 分支上打开的 pull request | **Agent Lock**，在 `pull_request: opened` 和 `reopened` 时 |
-
-这些脚本自己锁定自己的 issue，是因为对于由 workflow 的 token 加上的标签，GitHub 不会启动任何 workflow。
-顺序也很重要：不带标签地打开，锁定，然后加标签，这样智能体永远不会在陌生人仍能评论的时候接手一个
-issue。共用的代码是 `src/helpers/conversation-lock.ts`，这个 workflow 的规则在 `src/agent-lock/` 中。
+| **交互限制** | GitHub 的 **Settings → Moderation options → Interaction limits** 设置为 **Limit to repository collaborators**。其他任何人都无法在仓库中的任何地方评论、打开 issue 或打开 pull request |
+| **锁定的智能体 issue** | Agent Issues 和 Post-merge Verify 不带标签地打开每个 issue，锁定它（对于测试 issue，还会锁定它测试的 pull request 以及该 pull request 关闭的 issue），之后才加上标签。如果有任何一项无法锁定，标签永远不会被加上，运行会失败。共用的代码是 `src/helpers/conversation-lock.ts` |
 
 随之而来的还有两条规则：
 
 - **标记按作者决定是否可信。** 这些 workflow 通过隐藏标记找到它们之前的 issue。标记只有在由
   `github-actions[bot]` 或具有写权限的人打开的 issue 中才算数（`src/helpers/issue-author.ts`），所以
   陌生人无法通过打开一个带有标记的 issue 来让链条停滞或阻止一次测试。
-- **被锁定的 PR 收不到 bot 评论。** GitHub 拒绝 Actions token 在已锁定的对话上发表评论，所以
-  [E2E screenshots](../pr-checks/#ui-screenshots-与-e2e-screenshots-评论) 列表改为写入 job 摘要。
+- **测试智能体只测试 workflow 的 issue。** 它的自动化会跳过任何不是由 `github-actions[bot]` 打开的测试
+  issue，它的指令是它自己的 prompt，而绝不是 issue。
 
-<Aside type="caution">
-在 issue 被加上标签之前写下的评论会保留。当你手动给一个已有的 issue 加标签时，请先阅读它的评论。
+<Aside type="caution" title="公开仓库需要交互限制">
+如果你的仓库是公开的，请在启用测试智能体之前，最好是在启用任何智能体之前，把交互限制设为
+**仅限协作者**。没有它，任何人都可以在测试 issue 或它测试的 pull request 上评论，而测试智能体会在持有
+云凭证和测试用户密码的同时读到这条评论。
+
+这个限制最长持续六个月。Discava 的限制到 2027 年 5 月 20 日为止。请把续期写进日历，因为它失效时没有任何
+东西会提醒你。私有仓库不需要它：在那里只有拥有访问权限的人才能评论。
+
+在设置限制之前、或在 issue 被加上标签之前写下的评论会保留。在手动给一个已有的 issue 加标签之前，请先阅读
+这些评论。
 </Aside>
+
+### 为什么 Discava 不再锁定 pull request
+
+在 [#658](https://github.com/AlexTo/discava/pull/658) 之前，一个名为 **Agent Lock** 的 workflow 还会锁定
+智能体打开的每一个 pull request，以及任何被人手动加上智能体标签的 issue。它把陌生人挡在了外面，但有两个
+代价：
+
+- **评审智能体无法评审。** GitHub 拒绝对已锁定的 pull request 进行原生评审，即使来自具有写权限的账号也
+  一样。修复 PR [#657](https://github.com/AlexTo/discava/pull/657) 在 10:49 被锁定，在 10:54 被加上评审
+  标签，直到 11:34 被手动解锁之前都没有得到评审。五分钟后，评审智能体批准了它。
+- **E2E 截图无法发布。** GitHub 同样拒绝 Actions token 在已锁定的对话上发表评论，所以
+  [截图列表](../pr-checks/#ui-screenshots-与-e2e-screenshots-评论)不得不改为写入 job 摘要。
+
+交互限制在整个仓库范围内完成同样的工作，而不需要锁定任何智能体必须写入的东西。Agent Lock 及其脚本已被
+移除，它锁定过的四个智能体 pull request 也已被手动解锁。
 
 ## 试运行
 

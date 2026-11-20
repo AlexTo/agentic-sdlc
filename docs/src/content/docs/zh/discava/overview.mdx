@@ -42,7 +42,7 @@ React 门户、三个运行在 Lambda 上的 tRPC API、一张 DynamoDB 表、�
 | 智能体没有云环境 | 为每个 AWS 服务提供本地替身 | `pnpm dev`、`packages/tooling/local-dev/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
 | 合并不发布 | `main` 上的 CI，然后是 Deploy | `.github/workflows/ci.yml`、`deploy.yml`、`scripts/setup-stage.sh` |
 | 密钥和有漏洞的依赖 | CI 中和部署前运行 Trivy，commit 时运行 git-secrets | `ci.yml` 的 `trivy`、`deploy.yml`、`.husky/pre-commit`、`.trivyignore` |
-| 已合并的变更从未在它运行的地方被测试 | Post-merge Verify 为每个已部署的 PR 打开一个测试 issue，测试智能体测试它，Agent Lock 锁定智能体阅读的内容 | `.github/workflows/post-merge-verify.yml`、`agent-lock.yml`、`src/post-merge-test/`、`src/agent-lock/`、`src/helpers/conversation-lock.ts` |
+| 已合并的变更从未在它运行的地方被测试 | Post-merge Verify 为每个已部署的 PR 打开一个测试 issue，测试智能体测试它，并且只有协作者能评论智能体阅读的内容 | `.github/workflows/post-merge-verify.yml`、`src/post-merge-test/`、`src/helpers/conversation-lock.ts`、仓库的交互限制 |
 
 粘合层位于 `packages/tooling/agent/`（`@discava/tooling-agent`）中。本节中的 `src/…` 路径都相对于它。
 

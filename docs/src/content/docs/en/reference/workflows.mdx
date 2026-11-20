@@ -17,7 +17,6 @@ sidebar:
 | Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | Nothing (passes the PR number to `gh`) |
 | Deploy (Discava) | `deploy.yml` | `workflow_run` of CI on `main`, `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | The commit CI verified |
 | Post-merge Verify (Discava) | `post-merge-verify.yml` | `workflow_run` of Deploy, `completed`, `workflow_dispatch(pr_number)` | `contents: read`, `actions: read`, `issues: write`, `pull-requests: write` | The default branch |
-| Agent Lock (Discava) | `agent-lock.yml` | `issues: labeled`, `pull_request: [opened, reopened]` | `contents: read`, `issues: write`, `pull-requests: write` | The default branch |
 
 ## Job names to require in branch protection
 
@@ -56,9 +55,8 @@ All in `@your-scope/common-scripts`:
 | `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH` |
 | `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`, `GITHUB_ACTIONS` (for annotations) |
 
-Discava keeps the same targets in `@discava/tooling-agent`, with two more for the Tester:
+Discava keeps the same targets in `@discava/tooling-agent`, with one more for the Tester:
 
 | Target | Entry point | Env it reads |
 | --- | --- | --- |
 | `post-merge-test` | `src/post-merge-test/main.ts` | `GH_TOKEN`, `GH_REPO`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH`, `PR_NUMBER`, `TEST_STAGE`, `DRY_RUN` |
-| `agent-lock` | `src/agent-lock/main.ts` | `GH_TOKEN`, `GH_REPO`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH` |

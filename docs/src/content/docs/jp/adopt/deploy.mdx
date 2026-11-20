@@ -75,9 +75,9 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 6. デプロイされた変更を毎回テストしたい場合は、**テスト担当エージェントを追加します**（ギャップ 11）。これは最も新しい
    部品で、このリポジトリではなく Discava にあります。そこから次をコピーします:
 
-   - `packages/tooling/agent/src/post-merge-test/`、`src/agent-lock/`、`src/helpers/` と、それらの
-     Nx ターゲット `post-merge-test` と `agent-lock`
-   - `.github/workflows/post-merge-verify.yml` と `agent-lock.yml`
+   - `packages/tooling/agent/src/post-merge-test/` と `src/helpers/`、および Nx ターゲット
+     `post-merge-test`
+   - `.github/workflows/post-merge-verify.yml`
    - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`（テスト issue を手動で開くためのもの）
 
    次に、ステージ名（`TEST_STAGE`）と、デプロイされたスタックに決して届かないパス
@@ -92,9 +92,13 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    - アプリのロールごとに 1 人のテストユーザー。OpenHands のシークレットとして保存します
    - 操作できるブラウザ。たとえば Chromium 付きの Playwright
 
-   <Aside type="caution">
-   テスト担当は、これらの認証情報を持ったまま issue と pull request を読みます。ロック
-   （`agent-lock.yml` と `helpers/conversation-lock.ts`）を維持し、「どうテストするか」は issue ではなく
+   <Aside type="caution" title="公開リポジトリですか? 先にコメントをコラボレーターに限定する">
+   テスト担当は、これらの認証情報を持ったまま issue、pull request、そのコメントを読みます。リポジトリが
+   公開されている場合、見知らぬ人のコメントがテスト担当への指示を運ぶ可能性があります。有効にする前に、
+   **Settings → Moderation options → Interaction limits** を開き、**Limit to repository collaborators** を
+   選んでください。制限の期間は最長 6 か月なので、いつ更新するかを控えておいてください。
+
+   また、`helpers/conversation-lock.ts` のロックを維持し、「どうテストするか」は issue ではなく
    automation 自身のプロンプトに置き、データが重要なステージには決して向けないでください。
    </Aside>
 

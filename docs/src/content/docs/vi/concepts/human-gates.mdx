@@ -63,7 +63,7 @@ bạn phải xử lý.
 | Sửa `.github/workflows/` | Constitution và hướng dẫn trong issue. Reviewer và người review bắt được nó. Các workflow glue chạy code của nhánh mặc định, nên một workflow bị sửa trong PR không thể thay đổi chúng |
 | Làm yếu một test để nó pass | Constitution ("test là một đặc tả"), hướng dẫn trong issue, agent Reviewer |
 | Deploy, hoặc thay đổi hạ tầng | Không agent nào được cấp deploy role. Việc deploy dùng role OIDC ngắn hạn từ một GitHub environment. Developer và Reviewer hoàn toàn không cần quyền truy cập cloud. Tester chỉ chạm tới stage development, và prompt của nó giới hạn nó ở việc đọc và ở dữ liệu test nó tạo qua ứng dụng |
-| Nhận chỉ dẫn từ người lạ | Mọi issue và pull request mà một agent được giao đều bị khóa, nên chỉ người có quyền ghi mới comment được. Tester chỉ test các issue do workflow mở, và chỉ dẫn của nó là prompt của chính nó, không phải issue |
+| Nhận chỉ dẫn từ người lạ | Trên một repository công khai, một interaction limit chỉ cho các collaborator comment, mở issue hoặc mở pull request. Các issue mà workflow mở cho một agent cũng bị khóa. Tester chỉ test các issue do workflow mở, và chỉ dẫn của nó là prompt của chính nó, không phải issue |
 | Làm việc ngoài phạm vi task của nó | Issue nêu tên phạm vi. Issue tiếp theo không mở cho đến khi mọi task agent được đánh dấu |
 | Thử lại mãi mãi | Năm lượt thử mỗi vòng, đếm bằng label |
 

@@ -60,14 +60,17 @@ Os workflows de cola têm um token que pode escrever labels, status e comentári
 esse token. Tudo o que é lido do PR (nomes de branch, corpos) é verificado contra um padrão estrito
 antes de ser usado.
 
-### Tranque o que o agent lê
+### Mantenha os estranhos fora do que o agent lê
 
 Qualquer pessoa pode comentar nas issues e nos pull requests de um repositório público, e um agent lê esses
 comentários enquanto tem em mãos um token que pode fazer push. O Testador também tem acesso ao stage com deploy.
-Por isso, toda issue e todo pull request entregue a um agent é **trancado** (locked) antes, o que deixa os comentários para
-pessoas com acesso de escrita. Uma issue é aberta sem o label, trancada, e só então recebe o label, então
-o agent nunca a pega enquanto um estranho ainda pode comentar. E o marcador oculto de uma issue
+Por isso, em um repositório público, configure o **limite de interação** (interaction limit) do GitHub como só colaboradores: mais ninguém
+pode comentar, abrir uma issue ou abrir um pull request. As issues que um workflow abre para um agent também são
+**trancadas** (locked): abertas sem o label, trancadas, e só então recebem o label. E o marcador oculto de uma issue
 só conta quando a issue foi aberta pelo workflow ou por alguém com acesso de escrita.
+
+Mas não tranque os pull requests dos agents. O GitHub recusa um review em um pull request trancado,
+mesmo vindo de uma conta com acesso de escrita, então o agent Revisor não consegue publicar um.
 
 ### Seja idempotente
 

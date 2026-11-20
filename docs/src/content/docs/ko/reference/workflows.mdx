@@ -17,7 +17,6 @@ sidebar:
 | Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | 없음 (PR 번호를 `gh`에 전달) |
 | Deploy (Discava) | `deploy.yml` | `main`에서 CI의 `workflow_run`, `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | CI가 검증한 커밋 |
 | Post-merge Verify (Discava) | `post-merge-verify.yml` | Deploy의 `workflow_run`, `completed`, `workflow_dispatch(pr_number)` | `contents: read`, `actions: read`, `issues: write`, `pull-requests: write` | 기본 브랜치 |
-| Agent Lock (Discava) | `agent-lock.yml` | `issues: labeled`, `pull_request: [opened, reopened]` | `contents: read`, `issues: write`, `pull-requests: write` | 기본 브랜치 |
 
 ## Branch protection에서 필수로 지정할 job 이름
 
@@ -56,9 +55,8 @@ PR별 그룹이므로 서로 관련 없는 PR이 서로를 기다리지 않습�
 | `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH` |
 | `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`, `GITHUB_ACTIONS` (annotation용) |
 
-Discava는 같은 target을 `@discava/tooling-agent`에 두며, 테스터를 위한 두 개가 더 있습니다.
+Discava는 같은 target을 `@discava/tooling-agent`에 두며, 테스터를 위한 하나가 더 있습니다.
 
 | Target | Entry point | 읽는 환경 변수 |
 | --- | --- | --- |
 | `post-merge-test` | `src/post-merge-test/main.ts` | `GH_TOKEN`, `GH_REPO`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH`, `PR_NUMBER`, `TEST_STAGE`, `DRY_RUN` |
-| `agent-lock` | `src/agent-lock/main.ts` | `GH_TOKEN`, `GH_REPO`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH` |

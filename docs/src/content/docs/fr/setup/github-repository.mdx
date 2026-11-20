@@ -1,14 +1,14 @@
 ---
 title: 2. Configurer le dépôt
-description: Créez les labels et protégez main. Un fork ne copie ni l'un ni l'autre.
+description: Créez les labels, protégez main, et empêchez les inconnus de commenter. Un fork ne copie rien de tout cela.
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Résultat :** tous les labels qu'utilise le workflow, et une branche `main` qui n'accepte que des pull
-requests avec des checks au vert et une approbation.
+**Résultat :** tous les labels qu'utilise le workflow, une branche `main` qui n'accepte que des pull
+requests avec des checks au vert et une approbation, et des commentaires limités aux collaborateurs.
 
 <Steps>
 
@@ -56,6 +56,19 @@ requests avec des checks au vert et une approbation.
    Le workflow Archive Specs en a besoin pour ouvrir la PR qui déplace une spec terminée vers
    `specs/_archive/`.
 
+4. **Limitez les commentaires aux collaborateurs.** Le fork d'un dépôt public est public, et les
+   agents lisent chaque commentaire des issues et des pull requests sur lesquelles ils travaillent,
+   tout en détenant un token qui peut pousser. Ouvrez **Settings → Moderation options → Interaction
+   limits** et choisissez **Limit to repository collaborators**, pour six mois. Personne d'autre ne
+   peut alors commenter, ouvrir une issue ou ouvrir une pull request.
+
+   <Aside type="caution">
+   La limite expire, au plus six mois après que vous l'avez posée, et rien ne vous prévient. Notez
+   la date et posez-la de nouveau avant. Si vous ajoutez plus tard l'agent Testeur, qui détient des
+   identifiants cloud, c'est cette limite qui empêche le commentaire d'un inconnu de l'atteindre.
+   Voir [Qui peut commenter](../../discava/post-merge-verify/#qui-peut-commenter).
+   </Aside>
+
 </Steps>
 
 <Aside type="caution" title="Un compte ou deux">
@@ -68,7 +81,8 @@ approuver les PR des agents normalement.
 
 ## Vérifier que ça marche
 
-La page **Issues → Labels** du fork liste les 16 nouveaux labels, et **Settings → Branches** affiche la
-règle sur `main` avec six checks requis.
+La page **Issues → Labels** du fork liste les 16 nouveaux labels, **Settings → Branches** affiche la
+règle sur `main` avec six checks requis, et **Settings → Moderation options → Interaction limits**
+affiche la limite réservée aux collaborateurs avec sa date de fin.
 
 Suite : [3. Installer OpenHands](../openhands/).

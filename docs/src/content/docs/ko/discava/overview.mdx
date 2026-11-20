@@ -42,7 +42,7 @@ CDK로 배포됩니다. 누구도 전부를 머릿속에 담아 둘 수 없을 �
 | 에이전트에게 클라우드 없음 | 모든 AWS 서비스의 로컬 대체물 | `pnpm dev`, `packages/tooling/local-dev/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
 | merge해도 배포되지 않음 | `main`의 CI, 그다음 Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
 | secret과 취약한 의존성 | CI와 배포 전의 Trivy, 커밋 시 git-secrets | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
-| merge된 변경이 실행되는 곳에서 테스트되지 않음 | Post-merge Verify가 배포된 PR마다 테스트 issue를 열고, 테스터 에이전트가 이를 테스트하며, Agent Lock이 에이전트가 읽는 것을 잠급니다 | `.github/workflows/post-merge-verify.yml`, `agent-lock.yml`, `src/post-merge-test/`, `src/agent-lock/`, `src/helpers/conversation-lock.ts` |
+| merge된 변경이 실행되는 곳에서 테스트되지 않음 | Post-merge Verify가 배포된 PR마다 테스트 issue를 열고, 테스터 에이전트가 이를 테스트하며, 에이전트가 읽는 것에는 collaborator만 댓글을 달 수 있습니다 | `.github/workflows/post-merge-verify.yml`, `src/post-merge-test/`, `src/helpers/conversation-lock.ts`, 저장소의 interaction limit |
 
 glue는 `packages/tooling/agent/`(`@discava/tooling-agent`)에 있습니다. 이 섹션의 `src/…` 경로는 이를 기준으로 한
 상대 경로입니다.

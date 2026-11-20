@@ -77,9 +77,9 @@ app de notas de ejemplo de este repositorio no tiene despliegue, así que copia 
 6. **Añade el agente Tester**, si quieres que se pruebe cada cambio desplegado (hueco 11). Es la pieza
    más reciente, y vive en Discava, no en este repositorio. Copia de allí:
 
-   - `packages/tooling/agent/src/post-merge-test/`, `src/agent-lock/` y `src/helpers/`, con sus
-     targets de Nx `post-merge-test` y `agent-lock`
-   - `.github/workflows/post-merge-verify.yml` y `agent-lock.yml`
+   - `packages/tooling/agent/src/post-merge-test/` y `src/helpers/`, con el target de Nx
+     `post-merge-test`
+   - `.github/workflows/post-merge-verify.yml`
    - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`, para abrir una issue de test a mano
 
    Después ajusta a tu repositorio el nombre del stage (`TEST_STAGE`) y las rutas que nunca llegan a
@@ -96,9 +96,13 @@ app de notas de ejemplo de este repositorio no tiene despliegue, así que copia 
    - un usuario de prueba por cada rol de tu app, guardados como secretos de OpenHands
    - un navegador que pueda manejar, como Playwright con Chromium
 
-   <Aside type="caution">
-   El Tester lee issues y pull requests mientras tiene esas credenciales. Conserva el bloqueo
-   (`agent-lock.yml` y `helpers/conversation-lock.ts`), deja el "cómo probar" en el prompt de la
+   <Aside type="caution" title="¿Repositorio público? Limita primero los comentarios a los colaboradores">
+   El Tester lee issues, pull requests y sus comentarios mientras tiene esas credenciales. Si tu
+   repositorio es público, el comentario de un desconocido puede llevarle instrucciones. Antes de
+   activarlo, abre **Settings → Moderation options → Interaction limits** y elige **Limit to
+   repository collaborators**. El límite dura como mucho seis meses, así que apunta cuándo renovarlo.
+
+   Conserva también el bloqueo de `helpers/conversation-lock.ts`, deja el "cómo probar" en el prompt de la
    propia automatización y no en la issue, y nunca lo apuntes a un stage cuyos datos importen.
    </Aside>
 

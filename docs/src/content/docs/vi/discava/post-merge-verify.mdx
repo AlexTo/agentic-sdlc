@@ -1,6 +1,6 @@
 ---
 title: Kiểm chứng sau merge
-description: Mỗi pull request được deploy lên discava-development trở thành một issue test cho agent Tester như thế nào, và mọi thứ các agent đọc được khóa ra sao.
+description: Mỗi pull request được deploy lên discava-development trở thành một issue test cho agent Tester như thế nào, và vì sao chỉ các collaborator mới comment được trên những gì các agent đọc.
 sidebar:
   order: 9.5
 ---
@@ -131,6 +131,9 @@ mốc giờ là UTC, vào ngày 20 tháng 11 năm 2026.
 | 10:45 | Stage | Cả hai lần giao webhook đều timeout. Đơn hàng vẫn ở `pending` |
 | 10:48 | Agent Tester | Mở bản sửa, [#657](https://github.com/AlexTo/discava/pull/657) |
 | 10:49 | Agent Tester | [Báo cáo thứ ba](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120): **thất bại**, kèm nguyên nhân và bản sửa |
+| 10:54 | Một người | Thêm `openhands-review` vào #657 |
+| 11:34 | Một người | Mở khóa #657, vốn đã bị Agent Lock khóa khi nó được mở |
+| 11:39 | Agent Reviewer | Duyệt #657 |
 
 ### Lần chạy 1: bị chặn, và nó nói rõ điều đó
 
@@ -236,36 +239,31 @@ Mô tả cũng nói thẳng về giới hạn của nó: "Not verified on a depl
 effect once deployed." (Chưa được kiểm chứng trên một stage đã deploy. Bản sửa chỉ có hiệu lực khi
 đã được deploy.)
 
-Rồi Tester dừng lại. Nó không merge, và nó không deploy. Agent Lock khóa pull request mới,
-[PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986) chạy xanh, và label `openhands-review` giao nó cho agent Reviewer. Một
-người merge nó, như mọi PR khác. Issue test [#654](https://github.com/AlexTo/discava/issues/654) vẫn mở cho đến khi chính lần hoàn tiền được test trên một
+Rồi Tester dừng lại. Nó không merge, và nó không deploy. [PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986)
+chạy xanh, và label `openhands-review` giao nó cho agent Reviewer. Lần review bị đứng bốn mươi phút
+vì một thứ không agent nào làm sai: pull request đã bị khóa, và GitHub không nhận review trên một
+pull request đã khóa. Khi nó được mở khóa, Reviewer đã duyệt nó. Đó là lý do Discava ngừng khóa pull
+request (xem [Ai có thể comment](#ai-có-thể-comment)). Một người merge nó, như mọi PR khác. Issue test [#654](https://github.com/AlexTo/discava/issues/654) vẫn mở cho đến khi chính lần hoàn tiền được test trên một
 stage nơi các khoản thanh toán được chốt. Báo cáo cuối của Tester liệt kê dữ liệu test nó để lại:
 khóa học và đơn hàng `pending`.
 
 Ảnh chụp màn hình nằm lại trên máy trạm, dưới `tmp/screenshots/pr-<pr>/` trong bản checkout Discava.
 Các báo cáo nêu tên từng file và nói nó cho thấy gì. Bốn ảnh ở trên được chép từ đó cho trang này.
 
-## Agent Lock
+## Ai có thể comment
 
 Discava là một repository công khai, nên ai cũng có thể comment trên issue và pull request của nó.
 Các agent đọc những comment đó trong khi đang giữ một token có thể push, và Tester còn giữ quyền
 truy cập AWS cùng mật khẩu của các người dùng test. Vì vậy một comment là một cách để đưa chỉ dẫn
-cho agent.
+cho agent: một prompt injection. Các prompt bảo mỗi agent coi những gì nó đọc là dữ liệu, nhưng một
+prompt là một yêu cầu, không phải một sự bảo đảm.
 
-Câu trả lời là khóa mọi cuộc hội thoại mà một agent được giao. Một issue hoặc pull request đã khóa
-chỉ nhận comment từ các collaborator có quyền ghi, trong đó có token của chính các agent.
+Nên Discava giữ người lạ ở ngoài cuộc hội thoại, theo hai cách:
 
-| Cái gì | Được khóa bởi |
+| Lớp | Nó làm gì |
 | --- | --- |
-| Một issue triển khai mà Agent Issues mở | Script của chính nó, trước khi nó thêm `openhands` |
-| Một issue test, pull request mà nó test và các issue mà pull request đó đóng | Script của Post-merge Verify, trước khi nó thêm `openhands-test` |
-| Một issue được ai đó gắn label `openhands` hoặc `openhands-test` thủ công | **Agent Lock** (`.github/workflows/agent-lock.yml`), khi có `issues: labeled` |
-| Một pull request do agent mở, trên một nhánh `openhands/` không đến từ một bản fork | **Agent Lock**, khi có `pull_request: opened` và `reopened` |
-
-Các script tự khóa issue của chúng vì GitHub không khởi động workflow nào cho một label do token của
-một workflow gắn. Thứ tự cũng quan trọng: mở không có label, khóa, rồi gắn label, để agent không bao
-giờ nhận một issue trong khi một người lạ vẫn còn comment được. Code dùng chung là
-`src/helpers/conversation-lock.ts`, và các quy tắc của workflow nằm trong `src/agent-lock/`.
+| **Interaction limit** | **Settings → Moderation options → Interaction limits** của GitHub được đặt là **Limit to repository collaborators**. Không ai khác có thể comment, mở issue hay mở pull request ở bất kỳ đâu trong repository |
+| **Issue của agent được khóa** | Agent Issues và Post-merge Verify mở mỗi issue không có label, khóa nó (và, với một issue test, cả pull request mà nó test và các issue mà pull request đó đóng), và chỉ khi đó mới thêm label. Nếu có thứ gì không khóa được, label không bao giờ được thêm và lần chạy thất bại. Code dùng chung là `src/helpers/conversation-lock.ts` |
 
 Có thêm hai quy tắc đi kèm:
 
@@ -273,15 +271,41 @@ Có thêm hai quy tắc đi kèm:
   Một marker chỉ được tính trong một issue do `github-actions[bot]` hoặc một người có quyền ghi mở
   (`src/helpers/issue-author.ts`), nên một người lạ không thể làm một chuỗi đứng lại hay chặn một
   lần test bằng cách mở một issue có marker trong đó.
-- **Một PR đã khóa không nhận comment của bot.** GitHub từ chối cho token của Actions comment trên
-  một cuộc hội thoại đã khóa, nên danh sách
-  [E2E screenshots](../pr-checks/#ui-screenshots-và-comment-e2e-screenshots) đi vào job summary thay
-  vào đó.
+- **Tester chỉ test các issue của workflow.** Automation của nó bỏ qua mọi issue test không do
+  `github-actions[bot]` mở, và chỉ dẫn của nó là prompt của chính nó, không bao giờ là issue.
 
-<Aside type="caution">
-Các comment được viết trước khi một issue được gắn label vẫn ở lại. Khi bạn gắn label thủ công cho
-một issue có sẵn, hãy đọc các comment của nó trước.
+<Aside type="caution" title="Một repository công khai cần interaction limit">
+Nếu repository của bạn công khai, hãy đặt interaction limit là **collaborators only** trước khi bật
+agent Tester, và tốt hơn là trước khi bật bất kỳ agent nào. Không có nó, ai cũng có thể comment trên
+một issue test hoặc pull request mà nó test, và Tester đọc comment đó trong khi đang giữ thông tin
+đăng nhập cloud và mật khẩu của các người dùng test.
+
+Giới hạn này kéo dài tối đa sáu tháng. Giới hạn của Discava kéo dài đến ngày 20 tháng 5 năm 2027. Hãy
+ghi lịch gia hạn, vì không có gì cảnh báo bạn khi nó hết hạn. Một repository riêng tư không cần nó:
+chỉ những người có quyền truy cập mới comment được ở đó.
+
+Các comment được viết trước khi giới hạn được đặt, hoặc trước khi một issue được gắn label, vẫn ở
+lại. Hãy đọc chúng trước khi bạn gắn label thủ công cho một issue có sẵn.
 </Aside>
+
+### Vì sao Discava ngừng khóa pull request
+
+Cho đến [#658](https://github.com/AlexTo/discava/pull/658), một workflow tên **Agent Lock** còn khóa mọi pull request do agent
+mở, và mọi issue được ai đó gắn label cho agent thủ công. Nó giữ người lạ ở ngoài, nhưng có hai cái
+giá:
+
+- **Agent Reviewer không review được.** GitHub từ chối một review gốc trên một pull request đã khóa,
+  kể cả từ một tài khoản có quyền ghi. Fix PR [#657](https://github.com/AlexTo/discava/pull/657) bị khóa lúc 10:49 và
+  được gắn label để review lúc 10:54, và không nhận được review nào cho đến khi được mở khóa thủ công
+  lúc 11:34. Reviewer duyệt nó năm phút sau đó.
+- **Không đăng được E2E screenshots.** GitHub cũng từ chối cho token của Actions comment trên một
+  cuộc hội thoại đã khóa, nên
+  [danh sách ảnh chụp màn hình](../pr-checks/#ui-screenshots-và-comment-e2e-screenshots) phải chuyển
+  sang job summary.
+
+Interaction limit làm cùng việc đó cho cả repository, mà không khóa thứ gì các agent cần ghi vào.
+Agent Lock và script của nó đã bị gỡ bỏ, và bốn pull request của agent mà nó đã khóa được mở khóa thủ
+công.
 
 ## Chạy thử
 

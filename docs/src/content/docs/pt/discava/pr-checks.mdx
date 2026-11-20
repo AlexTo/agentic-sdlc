@@ -68,11 +68,11 @@ Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifa
 O agent Revisor lê a mesma lista. Artifacts não têm URL pública, então o comentário nomeia as
 imagens e dá o link da execução de onde elas podem ser baixadas.
 
-A mesma lista é escrita no resumo do job. Para o pull request de um agent, esse é o único lugar em que
-ela aparece: o [Agent Lock](../post-merge-verify/#agent-lock) tranca todo PR de agent, e o GitHub recusa
-ao token do Actions um comentário em uma conversa trancada, sejam quais forem as permissões dele. O job pula o
-comentário com um notice em vez de falhar. Destrancar o PR para comentar deixaria qualquer pessoa comentar nesse
-intervalo, que é o que o trancamento existe para impedir.
+A mesma lista é escrita no resumo do job. Para um pull request trancado, esse é o único lugar em que
+ela aparece: o GitHub recusa ao token do Actions um comentário em uma conversa trancada, sejam quais forem as
+permissões dele, então o job pula o comentário com um notice em vez de falhar. O Discava trancava antes
+todo pull request de agent, e agora conta com um limite de interação no lugar disso (veja
+[Quem pode comentar](../post-merge-verify/#quem-pode-comentar)), então o comentário volta a ser publicado.
 
 ## Mantendo tudo rápido
 

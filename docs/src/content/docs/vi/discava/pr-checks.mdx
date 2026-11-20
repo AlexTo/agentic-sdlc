@@ -68,11 +68,11 @@ Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifa
 Agent Reviewer đọc cùng danh sách này. Artifact không có URL công khai, nên comment nêu tên các ảnh
 và liên kết đến lần chạy nơi có thể tải chúng về.
 
-Cùng danh sách đó được ghi vào summary của job. Với pull request của một agent, đó là nơi duy nhất nó
-xuất hiện: [Agent Lock](../post-merge-verify/#agent-lock) khóa mọi agent PR, và GitHub từ chối cho
-token của Actions comment trên một cuộc hội thoại đã khóa, bất kể permission của nó. Job bỏ qua
-comment kèm một notice thay vì thất bại. Mở khóa PR để comment sẽ cho bất kỳ ai comment chen vào giữa
-chừng, mà đó chính là điều việc khóa có mặt để ngăn.
+Cùng danh sách đó được ghi vào summary của job. Với một pull request đã khóa, đó là nơi duy nhất nó
+xuất hiện: GitHub từ chối cho token của Actions comment trên một cuộc hội thoại đã khóa, bất kể
+permission của nó, nên job bỏ qua comment kèm một notice thay vì thất bại. Discava từng khóa mọi
+pull request của agent, và giờ dựa vào một interaction limit thay thế (xem
+[Ai có thể comment](../post-merge-verify/#ai-có-thể-comment)), nên comment lại được đăng.
 
 ## Giữ cho nhanh
 

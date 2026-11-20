@@ -61,9 +61,9 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 6. **添加测试智能体**，如果你希望每个已部署的变更都得到测试（缺口 11）。这是最新的一个部件，它位于 Discava 中，而不在这个仓库里。从那里复制：
 
-   - `packages/tooling/agent/src/post-merge-test/`、`src/agent-lock/` 和 `src/helpers/`，以及它们的
-     Nx target `post-merge-test` 和 `agent-lock`
-   - `.github/workflows/post-merge-verify.yml` 和 `agent-lock.yml`
+   - `packages/tooling/agent/src/post-merge-test/` 和 `src/helpers/`，以及 Nx target
+     `post-merge-test`
+   - `.github/workflows/post-merge-verify.yml`
    - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`，用于手动打开测试 issue
 
    然后设置 stage 名称（`TEST_STAGE`），以及永远不会进入已部署栈的路径（`plan.ts` 中的 `NOT_DEPLOYED`），使它们与你的仓库相符。
@@ -74,8 +74,10 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    - 应用中每个角色一个测试用户，作为 OpenHands secret 存储
    - 一个它可以驱动的浏览器，例如带 Chromium 的 Playwright
 
-   <Aside type="caution">
-   测试智能体在持有这些凭证的同时阅读 issue 和 pull request。请保留加锁机制（`agent-lock.yml` 和 `helpers/conversation-lock.ts`），把“如何测试”放在自动化自己的提示词中而不是 issue 里，并且永远不要让它指向数据重要的 stage。
+   <Aside type="caution" title="公开仓库？先把评论限制为协作者">
+   测试智能体在持有这些凭证的同时阅读 issue、pull request 及其评论。如果你的仓库是公开的，陌生人的评论就可能向它夹带指令。在启用它之前，打开 **Settings → Moderation options → Interaction limits** 并选择 **Limit to repository collaborators**。这个限制最长持续六个月，所以请记下何时续期。
+
+   此外，请保留 `helpers/conversation-lock.ts` 中的加锁机制，把“如何测试”放在自动化自己的提示词中而不是 issue 里，并且永远不要让它指向数据重要的 stage。
    </Aside>
 
 </Steps>

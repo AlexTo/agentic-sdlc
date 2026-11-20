@@ -52,7 +52,8 @@ sidebar:
 | Se abrió la issue de test, el Tester nunca la toma | La issue no tiene la label `openhands-test` porque algo a lo que apunta no se pudo bloquear (lock), o la abrió una cuenta en la que la automatización no confía | La ejecución de Post-merge Verify falla e indica qué hay que bloquear. Bloquéalo y después añade la label a mano |
 | El Tester informó, y quieres otra ejecución | Cada etiquetado se prueba una vez | Quita y vuelve a poner `openhands-test` |
 | El informe dice "blocked" | Al stage le falta algo que el cambio necesita, como una cuenta de pagos conectada | Arregla el stage y después vuelve a poner la label |
-| Falta el comentario **E2E screenshots** en un PR de agente | El PR está bloqueado (locked), y GitHub le niega al token de Actions un comentario en una conversación bloqueada | Lee la lista en el resumen del job `E2E screenshots` |
+| Falta el comentario **E2E screenshots** en un PR | El PR está bloqueado (locked), y GitHub le niega al token de Actions un comentario en una conversación bloqueada | Lee la lista en el resumen del job `E2E screenshots`, o desbloquea el PR |
+| El agente Revisor nunca publica una review, y el PR está bloqueado | GitHub rechaza una review nativa en un pull request bloqueado, incluso desde una cuenta con acceso de escritura | Desbloquéalo. Para mantener fuera a los desconocidos, usa el límite de interacción del repositorio en lugar de bloquear los pull requests |
 
 ## Deploy
 

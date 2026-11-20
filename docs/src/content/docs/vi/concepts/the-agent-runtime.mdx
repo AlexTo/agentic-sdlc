@@ -146,8 +146,8 @@ Tester là ngoại lệ. Nó phải chạm tới stage đã deploy, nên nó là
 vào tài khoản development, mà prompt của nó bảo nó chỉ dùng để đọc, và một người dùng test cho mỗi
 vai trò trong ứng dụng. Nó không bao giờ nhận các deploy role, và prompt của nó cấm thay đổi hạ tầng,
 deploy, hay chạm vào một stage khác. Vì nó đọc issue và pull request trong khi đang giữ các thông tin
-đăng nhập đó, mọi thứ nó được giao đều bị khóa trước, nên chỉ người có quyền ghi mới comment được
-trên đó.
+đăng nhập đó, không ai không có quyền ghi được comment trên chúng. Trên một repository công khai,
+điều đó nghĩa là đặt interaction limit của GitHub thành chỉ collaborator.
 
 Những gì khác agent không bao giờ được làm, và thứ thực thi từng giới hạn, nằm ở
 [Cổng người duyệt](../human-gates/#những-gì-agent-không-bao-giờ-được-làm).

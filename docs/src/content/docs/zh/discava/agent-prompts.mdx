@@ -67,8 +67,8 @@ After opening the pull request, add the `openhands-review` label so the independ
   [Agent Issues](../spec-to-issue/) 所写的 issue 里。
 - **两个不是 pull request 的出口。** 如果推送失败，工作会保持已提交的状态，由自动化把这件事做完。如果
   issue 过于含糊，智能体什么都不改，并说明缺了什么，这个回答会被发布到 issue 上。
-- **它读到的一切都是不可信的输入。** 最后一段是 prompt 对隐藏在 issue 或评论中的指令的防御。Discava 还会
-  [锁定](../post-merge-verify/#agent-lock)智能体阅读的内容。
+- **它读到的一切都是不可信的输入。** 最后一段是 prompt 对隐藏在 issue 或评论中的指令的防御。Discava 还
+  [只让协作者评论](../post-merge-verify/#谁可以评论)智能体阅读的内容。
 - **最后一行启动评审。** 正是这个标签把 pull request 交给评审智能体。
 
 ### 修改轮次

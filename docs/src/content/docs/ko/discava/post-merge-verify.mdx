@@ -1,6 +1,6 @@
 ---
 title: merge 후 검증
-description: discava-development에 배포된 각 pull request가 테스터 에이전트를 위한 테스트 issue가 되는 방식, 그리고 에이전트가 읽는 모든 것이 잠기는 방식.
+description: discava-development에 배포된 각 pull request가 테스터 에이전트를 위한 테스트 issue가 되는 방식, 그리고 에이전트가 읽는 것에 collaborator만 댓글을 달 수 있게 하는 방식.
 sidebar:
   order: 9.5
 ---
@@ -127,6 +127,9 @@ UTC입니다.
 | 10:45 | stage | webhook 전달 두 번이 모두 타임아웃됩니다. 주문은 `pending`으로 남습니다 |
 | 10:48 | 테스터 에이전트 | 수정 PR인 [#657](https://github.com/AlexTo/discava/pull/657)을 엽니다 |
 | 10:49 | 테스터 에이전트 | [세 번째 보고서](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120): **실패**, 원인과 수정을 함께 담았습니다 |
+| 10:54 | 사람 | #657에 `openhands-review`를 붙입니다 |
+| 11:34 | 사람 | 열릴 때 Agent Lock이 잠갔던 #657의 잠금을 풉니다 |
+| 11:39 | 리뷰어 에이전트 | #657을 승인합니다 |
 
 ### 실행 1: 막혔고, 그렇다고 말한다
 
@@ -228,48 +231,68 @@ construct에서 함수의 메모리를 512 MB로 설정하는 네 줄과, 그 �
 설명은 그 한계도 숨기지 않습니다. "Not verified on a deployed stage. The fix only takes effect once deployed."
 (배포된 stage에서 검증되지 않음. 수정은 배포된 뒤에야 효과가 있음.)
 
-그리고 테스터는 멈췄습니다. merge하지 않았고, 배포하지도 않았습니다. Agent Lock이 새 pull request를 잠갔고,
-[PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986)가 초록색으로 끝났으며, `openhands-review`
-label이 이를 리뷰어 에이전트에게 넘겼습니다. merge는 다른 PR과 마찬가지로 사람이 합니다. 테스트 issue
+그리고 테스터는 멈췄습니다. merge하지 않았고, 배포하지도 않았습니다.
+[PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986)가 초록색으로 끝났고, `openhands-review`
+label이 이를 리뷰어 에이전트에게 넘겼습니다. 리뷰는 어떤 에이전트도 잘못하지 않은 일 때문에 40분 동안 멈춰
+있었습니다. pull request가 잠겨 있었고, GitHub는 잠긴 pull request에 대한 리뷰를 받지 않습니다. 잠금이 풀리자
+리뷰어가 이를 승인했습니다. Discava가 pull request 잠그기를 그만둔 이유가 이것입니다
+([누가 댓글을 달 수 있나](#누가-댓글을-달-수-있나) 참고). merge는 다른 PR과 마찬가지로 사람이 합니다. 테스트 issue
 [#654](https://github.com/AlexTo/discava/issues/654)는 결제가 정산되는 stage에서 환불 자체가 테스트될 때까지 열린
 채로 남습니다. 테스터의 마지막 보고서에는 남겨 둔 테스트 데이터가 나열되어 있습니다. 강좌와 `pending` 주문입니다.
 
 스크린샷은 워크스테이션에, Discava checkout의 `tmp/screenshots/pr-<pr>/` 아래에 남습니다. 보고서는 각 파일의
 이름을 적고 무엇을 보여 주는지 말합니다. 위의 네 장은 이 페이지를 위해 거기서 복사한 것입니다.
 
-## Agent Lock
+## 누가 댓글을 달 수 있나
 
 Discava는 공개 저장소이므로, 누구나 그 issue와 pull request에 댓글을 달 수 있습니다. 에이전트는 push할 수 있는
 토큰을 가진 채로 그 댓글을 읽고, 테스터는 AWS 접근 권한과 테스트 사용자의 비밀번호도 가지고 있습니다. 따라서
-댓글은 에이전트에게 지시를 내리는 수단이 됩니다.
+댓글은 에이전트에게 지시를 내리는 수단, 곧 프롬프트 인젝션이 됩니다. 프롬프트는 각 에이전트에게 읽는 것을
+데이터로 다루라고 지시하지만, 프롬프트는 요청일 뿐 보장이 아닙니다.
 
-답은 에이전트에게 넘겨지는 모든 대화를 잠그는 것입니다. 잠긴 issue나 pull request는 쓰기 권한이 있는
-collaborator의 댓글만 받으며, 에이전트 자신의 토큰도 여기에 포함됩니다.
+그래서 Discava는 두 가지 방법으로 낯선 사람을 대화에서 배제합니다.
 
-| 무엇을 | 잠그는 주체 |
+| 계층 | 하는 일 |
 | --- | --- |
-| Agent Issues가 여는 구현 issue | 그 자체의 스크립트, `openhands`를 붙이기 전에 |
-| 테스트 issue, 그것이 테스트하는 pull request, 그 pull request가 닫는 issue | Post-merge Verify의 스크립트, `openhands-test`를 붙이기 전에 |
-| 누군가 직접 `openhands`나 `openhands-test` label을 붙인 issue | **Agent Lock** (`.github/workflows/agent-lock.yml`), `issues: labeled`에서 |
-| fork에서 온 것이 아닌 `openhands/` 브랜치에서 에이전트가 여는 pull request | **Agent Lock**, `pull_request: opened`와 `reopened`에서 |
-
-스크립트가 자기 issue를 직접 잠그는 것은, workflow의 토큰이 붙인 label에 대해서는 GitHub가 workflow를 시작하지
-않기 때문입니다. 순서도 중요합니다. label 없이 열고, 잠그고, 그다음 label을 붙이므로, 낯선 사람이 아직 댓글을 달
-수 있는 동안 에이전트가 issue를 가져가는 일은 없습니다. 공유 코드는 `src/helpers/conversation-lock.ts`이고,
-workflow의 규칙은 `src/agent-lock/`에 있습니다.
+| **Interaction limit** | GitHub의 **Settings → Moderation options → Interaction limits**를 **Limit to repository collaborators**로 설정합니다. 그 밖의 누구도 저장소 어디에서든 댓글을 달거나, issue를 열거나, pull request를 열 수 없습니다 |
+| **잠긴 에이전트 issue** | Agent Issues와 Post-merge Verify는 각 issue를 label 없이 열고, 잠근 다음(테스트 issue라면 그것이 테스트하는 pull request와 그 pull request가 닫는 issue도 함께), 그제야 label을 붙입니다. 하나라도 잠글 수 없으면 label은 끝내 붙지 않고 실행이 실패합니다. 공유 코드는 `src/helpers/conversation-lock.ts`입니다 |
 
 함께 따라오는 규칙이 두 가지 더 있습니다.
 
 - **마커는 작성자를 보고 신뢰합니다.** workflow는 숨겨진 마커로 자신이 이전에 연 issue를 찾습니다. 마커는
   `github-actions[bot]`이나 쓰기 권한이 있는 사람이 연 issue에서만 인정되므로(`src/helpers/issue-author.ts`), 낯선
   사람이 마커가 든 issue를 열어 사슬을 멈추거나 테스트를 막을 수는 없습니다.
-- **잠긴 PR에는 봇 댓글이 달리지 않습니다.** GitHub는 Actions 토큰이 잠긴 대화에 댓글을 다는 것을 거부하므로,
-  [E2E screenshots](../pr-checks/#ui-screenshots와-e2e-screenshots-댓글) 목록은 대신 job summary로 갑니다.
+- **테스터는 workflow의 issue만 테스트합니다.** 테스터의 automation은 `github-actions[bot]`이 열지 않은 테스트
+  issue를 모두 건너뛰며, 테스터의 지시 사항은 issue가 아니라 언제나 자신의 프롬프트입니다.
 
-<Aside type="caution">
-issue에 label이 붙기 전에 쓰인 댓글은 그대로 남습니다. 기존 issue에 직접 label을 붙일 때는 먼저 그 댓글을
-읽으세요.
+<Aside type="caution" title="공개 저장소에는 interaction limit이 필요합니다">
+저장소가 공개라면, 테스터 에이전트를 켜기 전에, 가능하면 어떤 에이전트든 켜기 전에 interaction limit을
+**collaborator만**으로 설정하세요. 그렇지 않으면 누구나 테스트 issue나 그것이 테스트하는 pull request에 댓글을 달
+수 있고, 테스터는 클라우드 자격 증명과 테스트 사용자의 비밀번호를 가진 채로 그 댓글을 읽습니다.
+
+이 제한은 최대 6개월 동안 유지됩니다. Discava의 제한은 2027년 5월 20일까지입니다. 제한이 만료되어도 아무것도
+경고해 주지 않으므로, 갱신 일정을 캘린더에 넣어 두세요. 비공개 저장소에는 필요하지 않습니다. 그곳에서는 접근
+권한이 있는 사람만 댓글을 달 수 있습니다.
+
+제한을 설정하기 전에, 또는 issue에 label이 붙기 전에 쓰인 댓글은 그대로 남습니다. 기존 issue에 직접 label을 붙이기
+전에 그 댓글을 읽으세요.
 </Aside>
+
+### Discava가 pull request 잠그기를 그만둔 이유
+
+[#658](https://github.com/AlexTo/discava/pull/658) 이전까지는 **Agent Lock**이라는 workflow가 에이전트가 여는 모든
+pull request와, 누군가 에이전트를 위해 직접 label을 붙인 모든 issue도 잠갔습니다. 낯선 사람을 막아 주기는 했지만,
+두 가지 비용이 있었습니다.
+
+- **리뷰어 에이전트가 리뷰할 수 없었습니다.** GitHub는 쓰기 권한이 있는 계정이라도 잠긴 pull request에 대한
+  네이티브 리뷰를 거부합니다. 수정 PR [#657](https://github.com/AlexTo/discava/pull/657)은 10:49에 잠기고 10:54에
+  리뷰용 label이 붙었지만, 11:34에 직접 잠금을 풀 때까지 리뷰를 받지 못했습니다. 리뷰어는 그 5분 뒤에 이를
+  승인했습니다.
+- **E2E screenshots를 게시할 수 없었습니다.** GitHub는 Actions 토큰이 잠긴 대화에 댓글을 다는 것도 거부하므로,
+  [스크린샷 목록](../pr-checks/#ui-screenshots와-e2e-screenshots-댓글)은 job summary로 옮겨 가야 했습니다.
+
+interaction limit은 에이전트가 써야 하는 곳을 아무것도 잠그지 않고, 저장소 전체에 대해 같은 일을 합니다. Agent
+Lock과 그 스크립트는 제거되었고, 그것이 잠갔던 에이전트 pull request 네 개는 직접 잠금을 풀었습니다.
 
 ## Dry run
 

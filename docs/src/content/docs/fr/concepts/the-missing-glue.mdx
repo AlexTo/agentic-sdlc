@@ -63,15 +63,19 @@ commentaires. Ils récupèrent la **branche par défaut**, jamais la pull reques
 agent ou un contributeur a écrit ne s'exécute avec ce token. Tout ce qui est lu depuis la PR (noms de
 branche, corps) est vérifié selon un motif strict avant d'être utilisé.
 
-### Verrouiller ce que lit l'agent
+### Tenir les inconnus à l'écart de ce que lit l'agent
 
 N'importe qui peut commenter les issues et les pull requests d'un dépôt public, et un agent lit ces
 commentaires tout en détenant un token qui peut pousser. Le Testeur détient aussi un accès au stage
-déployé. Chaque issue et chaque pull request confiée à un agent est donc d'abord **verrouillée**, ce
-qui réserve les commentaires aux personnes avec un accès en écriture. Une issue est ouverte sans son
-label, verrouillée, et seulement ensuite labellisée, donc l'agent ne la prend jamais en charge tant
-qu'un inconnu peut encore commenter. Et le marqueur caché d'une issue ne compte que si l'issue a été
-ouverte par le workflow ou par quelqu'un avec un accès en écriture.
+déployé. Sur un dépôt public, réglez donc la **limite d'interaction** de GitHub sur les
+collaborateurs uniquement : personne d'autre ne peut commenter, ouvrir une issue ou ouvrir une pull
+request. Les issues qu'un workflow ouvre pour un agent sont aussi **verrouillées** : ouvertes sans
+leur label, verrouillées, et seulement ensuite labellisées. Et le marqueur caché d'une issue ne
+compte que si l'issue a été ouverte par le workflow ou par quelqu'un avec un accès en écriture.
+
+Ne verrouillez pas pour autant les pull requests des agents. GitHub refuse une review sur une pull
+request verrouillée, même venant d'un compte avec un accès en écriture, donc l'agent Relecteur ne
+peut pas en publier.
 
 ### Être idempotent
 

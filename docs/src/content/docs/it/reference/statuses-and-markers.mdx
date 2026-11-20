@@ -53,5 +53,5 @@ citare la frase di passaggio non conta.
 | `openhands/issue-<n>` | Automazione issue-to-PR | L'unico branch che il worker rivede, e l'unico a cui rispondono i workflow di correzione |
 | `openhands/issue-<n>-2`, … | Automazione issue-to-PR, su una issue a cui è stata riapplicata l'label | Mai rivisto in automatico |
 | `openhands/test-fix-<n>` | Automazione issue tester, per la issue di test `<n>` | Una correzione che il Tester ha trovato durante il test. Mai rivisto in automatico |
-| qualsiasi nome che inizia con `openhands/` | Branch degli agenti | Il merge di uno di essi fa avanzare la catena. In Discava, a una pull request aperta da uno di essi viene messo il lock all'apertura |
+| qualsiasi nome che inizia con `openhands/` | Branch degli agenti | Il merge di uno di essi fa avanzare la catena |
 | `spec/<name>` (qualsiasi altro nome) | Persone | Fa avanzare la catena solo con `spec-ready` |

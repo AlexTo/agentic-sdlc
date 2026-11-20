@@ -1,6 +1,6 @@
 ---
 title: Post-merge verify
-description: How each pull request deployed to discava-development becomes a test issue for the Tester agent, and how everything the agents read is locked.
+description: How each pull request deployed to discava-development becomes a test issue for the Tester agent, and how only collaborators can comment on what the agents read.
 sidebar:
   order: 9.5
 ---
@@ -132,6 +132,9 @@ passed over. All times are UTC, on 20 November 2026.
 | 10:45 | The stage | Both webhook deliveries time out. The order stays `pending` |
 | 10:48 | Tester agent | Opens the fix, [#657](https://github.com/AlexTo/discava/pull/657) |
 | 10:49 | Tester agent | [Third report](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120): **fail**, with the cause and the fix |
+| 10:54 | A person | Adds `openhands-review` to #657 |
+| 11:34 | A person | Unlocks #657, which Agent Lock had locked when it opened |
+| 11:39 | Reviewer agent | Approves #657 |
 
 ### Run 1: blocked, and it says so
 
@@ -236,35 +239,32 @@ and a twelve-line test that fails without them (`Missing key 'MemorySize'`). It 
 The description is also plain about its limit: "Not verified on a deployed stage. The fix only
 takes effect once deployed."
 
-Then the Tester stopped. It didn't merge, and it didn't deploy. Agent Lock locked the new pull
-request, [PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986) ran green, and the `openhands-review` label handed it to the Reviewer agent. A
-person merges it, like any other. Test issue [#654](https://github.com/AlexTo/discava/issues/654) stays open until the refund itself is tested on a
+Then the Tester stopped. It didn't merge, and it didn't deploy. [PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986)
+ran green, and the `openhands-review` label handed it to the Reviewer agent. The review stalled
+for forty minutes on something no agent had done wrong: the pull request was locked, and GitHub
+won't take a review on a locked pull request. Once it was unlocked, the Reviewer approved it. That
+is why Discava stopped locking pull requests (see [Who can comment](#who-can-comment)). A person
+merges it, like any other. Test issue [#654](https://github.com/AlexTo/discava/issues/654) stays open until the refund itself is tested on a
 stage where payments settle. The Tester's last report lists the test data it left behind: the
 course and the `pending` order.
 
 Screenshots stay on the workstation, under `tmp/screenshots/pr-<pr>/` in the Discava checkout. The
 reports name each file and say what it shows. The four above were copied from there for this page.
 
-## Agent Lock
+## Who can comment
 
 Discava is a public repository, so anyone can comment on its issues and pull requests. The agents
 read those comments while holding a token that can push, and the Tester also holds AWS access and
-the test users' passwords. A comment is therefore a way to give an agent instructions.
+the test users' passwords. A comment is therefore a way to give an agent instructions: a prompt
+injection. The prompts tell each agent to treat what it reads as data, but a prompt is a request,
+not a guarantee.
 
-The answer is to lock every conversation an agent is handed. A locked issue or pull request takes
-comments only from collaborators with write access, the agents' own token among them.
+So Discava keeps strangers out of the conversation, in two ways:
 
-| What | Locked by |
+| Layer | What it does |
 | --- | --- |
-| An implementation issue Agent Issues opens | Its own script, before it adds `openhands` |
-| A test issue, the pull request it tests and the issues that pull request closes | Post-merge Verify's script, before it adds `openhands-test` |
-| An issue someone labels `openhands` or `openhands-test` by hand | **Agent Lock** (`.github/workflows/agent-lock.yml`), on `issues: labeled` |
-| A pull request an agent opens, on an `openhands/` branch that isn't from a fork | **Agent Lock**, on `pull_request: opened` and `reopened` |
-
-The scripts lock their own issues because GitHub starts no workflow for a label that a workflow's
-token applied. The order matters too: open without the label, lock, then label, so the agent never
-picks an issue up while a stranger can still comment. The shared code is
-`src/helpers/conversation-lock.ts`, and the workflow's rules are in `src/agent-lock/`.
+| **Interaction limit** | GitHub's **Settings → Moderation options → Interaction limits** is set to **Limit to repository collaborators**. Nobody else can comment, open an issue or open a pull request anywhere in the repository |
+| **Locked agent issues** | Agent Issues and Post-merge Verify open each issue without its label, lock it (and, for a test issue, the pull request it tests and the issues that one closes), and only then add the label. If anything can't be locked, the label is never added and the run fails. The shared code is `src/helpers/conversation-lock.ts` |
 
 Two more rules come with it:
 
@@ -272,14 +272,41 @@ Two more rules come with it:
   A marker counts only in an issue opened by `github-actions[bot]` or by someone with write access
   (`src/helpers/issue-author.ts`), so a stranger can't stall a chain or stop a test by opening an
   issue with a marker in it.
-- **A locked PR gets no bot comment.** GitHub refuses the Actions token a comment on a locked
-  conversation, so the [E2E screenshots](../pr-checks/#ui-screenshots-and-the-e2e-screenshots-comment)
-  list goes to the job summary instead.
+- **The Tester tests only the workflow's issues.** Its automation skips any test issue not opened
+  by `github-actions[bot]`, and its instructions are its own prompt, never the issue.
 
-<Aside type="caution">
-Comments written before an issue was labelled stay. When you label an existing issue by hand, read
-its comments first.
+<Aside type="caution" title="A public repository needs the interaction limit">
+If your repository is public, set the interaction limit to **collaborators only** before you turn
+on the Tester agent, and preferably before any agent. Without it, anyone can comment on a test
+issue or the pull request it tests, and the Tester reads that comment while it holds cloud
+credentials and the test users' passwords.
+
+The limit lasts at most six months. Discava's runs to 20 May 2027. Put the renewal in a calendar,
+because nothing warns you when it lapses. A private repository doesn't need it: only people with
+access can comment there.
+
+Comments written before the limit was set, or before an issue was labelled, stay. Read them before
+you label an existing issue by hand.
 </Aside>
+
+### Why Discava stopped locking pull requests
+
+Until [#658](https://github.com/AlexTo/discava/pull/658), a workflow called **Agent Lock** also locked every pull request an
+agent opened, and any issue someone labelled for an agent by hand. It kept strangers out, but it
+had two costs:
+
+- **The Reviewer agent couldn't review.** GitHub refuses a native review on a locked pull request,
+  even from an account with write access. Fix PR [#657](https://github.com/AlexTo/discava/pull/657) was locked at 10:49 and
+  labelled for review at 10:54, and got no review until it was unlocked by hand at 11:34. The
+  Reviewer approved it five minutes later.
+- **The E2E screenshots couldn't be posted.** GitHub refuses the Actions token a comment on a
+  locked conversation too, so the
+  [screenshot list](../pr-checks/#ui-screenshots-and-the-e2e-screenshots-comment) had to move to
+  the job summary.
+
+The interaction limit does the same job for the whole repository, without locking anything the
+agents have to write to. Agent Lock and its script were removed, and the four agent pull requests
+it had locked were unlocked by hand.
 
 ## Dry run
 

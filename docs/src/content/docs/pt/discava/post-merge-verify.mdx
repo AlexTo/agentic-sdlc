@@ -1,6 +1,6 @@
 ---
 title: Verificação pós-merge
-description: Como cada pull request que sai no deploy do discava-development vira uma issue de teste para o agent Testador, e como tudo o que os agents leem é trancado.
+description: Como cada pull request que sai no deploy do discava-development vira uma issue de teste para o agent Testador, e como só colaboradores podem comentar no que os agents leem.
 sidebar:
   order: 9.5
 ---
@@ -132,6 +132,9 @@ deixado passar. Todos os horários são UTC, em 20 de novembro de 2026.
 | 10:45 | O stage | As duas entregas do webhook dão timeout. O pedido continua `pending` |
 | 10:48 | Agent Testador | Abre a correção, o [#657](https://github.com/AlexTo/discava/pull/657) |
 | 10:49 | Agent Testador | [Terceiro relatório](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120): **falha**, com a causa e a correção |
+| 10:54 | Uma pessoa | Adiciona `openhands-review` ao #657 |
+| 11:34 | Uma pessoa | Destranca o #657, que o Agent Lock tinha trancado quando ele foi aberto |
+| 11:39 | Agent Revisor | Aprova o #657 |
 
 ### Execução 1: bloqueado, e ele diz isso
 
@@ -236,35 +239,32 @@ e um teste de doze linhas que falha sem elas (`Missing key 'MemorySize'`). Ele s
 A descrição também é franca sobre o seu limite: "Not verified on a deployed stage. The fix only
 takes effect once deployed." (não verificado em um stage com deploy; a correção só vale depois do deploy).
 
-Então o Testador parou. Ele não fez merge e não fez deploy. O Agent Lock trancou o novo pull
-request, o [PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986) rodou verde, e o label `openhands-review` o entregou ao agent Revisor. Uma
-pessoa faz o merge dele, como de qualquer outro. A issue de teste [#654](https://github.com/AlexTo/discava/issues/654) fica aberta até que o próprio reembolso seja testado em um
+Então o Testador parou. Ele não fez merge e não fez deploy. O [PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986)
+rodou verde, e o label `openhands-review` o entregou ao agent Revisor. O review ficou parado
+por quarenta minutos por algo que nenhum agent tinha feito errado: o pull request estava trancado, e o GitHub
+não aceita um review em um pull request trancado. Depois que ele foi destrancado, o Revisor o aprovou. É
+por isso que o Discava parou de trancar pull requests (veja [Quem pode comentar](#quem-pode-comentar)). Uma pessoa
+faz o merge dele, como de qualquer outro. A issue de teste [#654](https://github.com/AlexTo/discava/issues/654) fica aberta até que o próprio reembolso seja testado em um
 stage onde os pagamentos são concluídos. O último relatório do Testador lista os dados de teste que ele deixou: o
 curso e o pedido `pending`.
 
 Os screenshots ficam na workstation, em `tmp/screenshots/pr-<pr>/` no checkout do Discava. Os
 relatórios nomeiam cada arquivo e dizem o que ele mostra. Os quatro acima foram copiados de lá para esta página.
 
-## Agent Lock
+## Quem pode comentar
 
 O Discava é um repositório público, então qualquer pessoa pode comentar nas issues e nos pull requests dele. Os agents
 leem esses comentários enquanto têm em mãos um token que pode fazer push, e o Testador também tem acesso à AWS e
-as senhas dos usuários de teste. Um comentário é, portanto, um jeito de dar instruções a um agent.
+as senhas dos usuários de teste. Um comentário é, portanto, um jeito de dar instruções a um agent: uma prompt
+injection. Os prompts mandam cada agent tratar o que ele lê como dado, mas um prompt é um pedido,
+não uma garantia.
 
-A resposta é trancar toda conversa entregue a um agent. Uma issue ou um pull request trancado só aceita
-comentários de colaboradores com acesso de escrita, entre eles o token dos próprios agents.
+Por isso o Discava mantém os estranhos fora da conversa, de duas formas:
 
-| O quê | Trancado por |
+| Camada | O que ela faz |
 | --- | --- |
-| Uma issue de implementação que o Agent Issues abre | O próprio script dele, antes de adicionar `openhands` |
-| Uma issue de teste, o pull request que ela testa e as issues que esse pull request fecha | O script do Post-merge Verify, antes de adicionar `openhands-test` |
-| Uma issue em que alguém aplica `openhands` ou `openhands-test` à mão | **Agent Lock** (`.github/workflows/agent-lock.yml`), em `issues: labeled` |
-| Um pull request que um agent abre, em uma branch `openhands/` que não vem de um fork | **Agent Lock**, em `pull_request: opened` e `reopened` |
-
-Os scripts trancam suas próprias issues porque o GitHub não inicia nenhum workflow para um label que o token de um
-workflow aplicou. A ordem também importa: abrir sem o label, trancar, depois aplicar o label, para que o agent nunca
-pegue uma issue enquanto um estranho ainda pode comentar. O código compartilhado é
-`src/helpers/conversation-lock.ts`, e as regras do workflow estão em `src/agent-lock/`.
+| **Limite de interação** | O **Settings → Moderation options → Interaction limits** do GitHub está configurado como **Limit to repository collaborators**. Mais ninguém pode comentar, abrir uma issue ou abrir um pull request em qualquer lugar do repositório |
+| **Issues de agent trancadas** | O Agent Issues e o Post-merge Verify abrem cada issue sem o label, trancam a issue (e, no caso de uma issue de teste, o pull request que ela testa e as issues que ele fecha) e só então adicionam o label. Se algo não puder ser trancado, o label nunca é adicionado e a execução falha. O código compartilhado é `src/helpers/conversation-lock.ts` |
 
 Mais duas regras vêm junto:
 
@@ -272,14 +272,41 @@ Mais duas regras vêm junto:
   Um marcador só conta em uma issue aberta pelo `github-actions[bot]` ou por alguém com acesso de escrita
   (`src/helpers/issue-author.ts`), então um estranho não consegue travar uma cadeia nem impedir um teste abrindo uma
   issue com um marcador dentro.
-- **Um PR trancado não recebe comentário de bot.** O GitHub recusa ao token do Actions um comentário em uma
-  conversa trancada, então a lista de [E2E screenshots](../pr-checks/#ui-screenshots-e-o-comentário-e2e-screenshots)
-  vai para o resumo do job.
+- **O Testador testa só as issues do workflow.** A automation dele pula qualquer issue de teste que não tenha sido aberta
+  pelo `github-actions[bot]`, e as instruções dele são o seu próprio prompt, nunca a issue.
 
-<Aside type="caution">
-Os comentários escritos antes de uma issue receber o label continuam lá. Quando você aplicar o label a uma issue existente à mão, leia
-os comentários dela antes.
+<Aside type="caution" title="Um repositório público precisa do limite de interação">
+Se o seu repositório é público, configure o limite de interação como **só colaboradores** antes de ativar
+o agent Testador, e de preferência antes de qualquer agent. Sem ele, qualquer pessoa pode comentar em uma issue
+de teste ou no pull request que ela testa, e o Testador lê esse comentário enquanto tem em mãos credenciais
+de nuvem e as senhas dos usuários de teste.
+
+O limite dura no máximo seis meses. O do Discava vai até 20 de maio de 2027. Coloque a renovação em uma agenda,
+porque nada avisa você quando ele expira. Um repositório privado não precisa dele: só pessoas com
+acesso podem comentar ali.
+
+Os comentários escritos antes de o limite ser configurado, ou antes de uma issue receber o label, continuam lá. Leia-os antes
+de aplicar o label a uma issue existente à mão.
 </Aside>
+
+### Por que o Discava parou de trancar pull requests
+
+Até o [#658](https://github.com/AlexTo/discava/pull/658), um workflow chamado **Agent Lock** também trancava todo pull request que um
+agent abria, e qualquer issue em que alguém aplicava à mão um label para um agent. Ele mantinha os estranhos fora, mas
+tinha dois custos:
+
+- **O agent Revisor não conseguia fazer o review.** O GitHub recusa um review nativo em um pull request trancado,
+  mesmo vindo de uma conta com acesso de escrita. O PR de correção [#657](https://github.com/AlexTo/discava/pull/657) foi trancado às 10:49,
+  recebeu o label de review às 10:54, e não teve review nenhum até ser destrancado à mão às 11:34. O
+  Revisor o aprovou cinco minutos depois.
+- **Os E2E screenshots não podiam ser publicados.** O GitHub também recusa ao token do Actions um comentário em uma
+  conversa trancada, então a
+  [lista de screenshots](../pr-checks/#ui-screenshots-e-o-comentário-e2e-screenshots) teve de ir para
+  o resumo do job.
+
+O limite de interação faz o mesmo trabalho para o repositório inteiro, sem trancar nada em que os
+agents precisam escrever. O Agent Lock e o script dele foram removidos, e os quatro pull requests de agent
+que ele tinha trancado foram destrancados à mão.
 
 ## Dry run
 

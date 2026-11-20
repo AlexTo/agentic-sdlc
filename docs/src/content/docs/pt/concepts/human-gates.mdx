@@ -63,7 +63,7 @@ falha.
 | Editar `.github/workflows/` | Constitution e instruções da issue. O Revisor e o review humano pegam isso. Os workflows de cola rodam o código da branch padrão, então um workflow editado em um PR não consegue alterá-los |
 | Enfraquecer um teste para fazê-lo passar | Constitution ("tests are a specification"), instruções da issue, agent Revisor |
 | Fazer deploy ou mudar a infraestrutura | Nenhum agent recebe uma role de deploy. O deploy usa roles OIDC de curta duração de um GitHub environment. O Desenvolvedor e o Revisor não precisam de nenhum acesso à nuvem. O Testador alcança só o stage de desenvolvimento, e o prompt dele o limita a ler e aos dados de teste que ele cria pelo app |
-| Receber instruções de um estranho | Toda issue e todo pull request entregue a um agent é trancado, então só pessoas com acesso de escrita podem comentar. O Testador testa só issues que o workflow abriu, e as instruções dele são o seu próprio prompt, não a issue |
+| Receber instruções de um estranho | Em um repositório público, um limite de interação deixa só colaboradores comentarem, abrirem issues ou abrirem pull requests. As issues que os workflows abrem para um agent também são trancadas. O Testador testa só issues que o workflow abriu, e as instruções dele são o seu próprio prompt, não a issue |
 | Trabalhar fora do seu intervalo de tarefas | A issue nomeia o intervalo. A próxima issue só abre quando toda tarefa de agent estiver marcada |
 | Tentar de novo para sempre | Cinco tentativas por loop, contadas em labels |
 

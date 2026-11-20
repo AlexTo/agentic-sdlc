@@ -52,7 +52,8 @@ sidebar:
 | Issue test đã mở, Tester không bao giờ nhận nó | Issue không có label `openhands-test` vì thứ gì đó nó trỏ đến không khóa được, hoặc nó được mở bởi một tài khoản mà automation không tin cậy | Lần chạy Post-merge Verify thất bại và nêu tên thứ cần khóa. Khóa nó, rồi thêm label thủ công |
 | Tester đã báo cáo, và bạn muốn chạy thêm lần nữa | Mỗi lần gắn label được test một lần | Gỡ và gắn lại `openhands-test` |
 | Báo cáo nói "blocked" | Stage thiếu thứ gì đó mà thay đổi cần, như một tài khoản thanh toán đã kết nối | Sửa stage, rồi gắn lại label |
-| Comment **E2E screenshots** bị thiếu trên một agent PR | PR bị khóa, và GitHub từ chối cho token của Actions comment trên một cuộc hội thoại đã khóa | Đọc danh sách trong summary của job `E2E screenshots` |
+| Comment **E2E screenshots** bị thiếu trên một PR | PR bị khóa, và GitHub từ chối cho token của Actions comment trên một cuộc hội thoại đã khóa | Đọc danh sách trong summary của job `E2E screenshots`, hoặc mở khóa PR |
+| Agent Reviewer không bao giờ đăng review, và PR bị khóa | GitHub từ chối một review gốc trên một pull request đã khóa, kể cả từ một tài khoản có quyền ghi | Mở khóa nó. Để giữ người lạ ở ngoài, hãy dùng interaction limit của repository thay vì khóa pull request |
 
 ## Deploy
 

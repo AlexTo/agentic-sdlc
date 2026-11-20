@@ -44,7 +44,7 @@ cada pieza.
 | Sin nube para el agente | Sustitutos locales de cada servicio de AWS | `pnpm dev`, `packages/tooling/local-dev/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
 | El merge no publica nada | CI en `main` y después Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
 | Secretos y dependencias vulnerables | Trivy en el CI y antes del despliegue, git-secrets en cada commit | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
-| El cambio fusionado nunca se prueba donde se ejecuta | Post-merge Verify abre una issue de test por cada PR desplegado, el agente Tester lo prueba, y Agent Lock bloquea lo que leen los agentes | `.github/workflows/post-merge-verify.yml`, `agent-lock.yml`, `src/post-merge-test/`, `src/agent-lock/`, `src/helpers/conversation-lock.ts` |
+| El cambio fusionado nunca se prueba donde se ejecuta | Post-merge Verify abre una issue de test por cada PR desplegado, el agente Tester lo prueba, y solo los colaboradores pueden comentar en lo que leen los agentes | `.github/workflows/post-merge-verify.yml`, `src/post-merge-test/`, `src/helpers/conversation-lock.ts`, el límite de interacción del repositorio |
 
 El pegamento vive en `packages/tooling/agent/` (`@discava/tooling-agent`). Las rutas `src/…` de esta
 sección son relativas a él.

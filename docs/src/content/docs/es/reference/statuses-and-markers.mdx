@@ -53,5 +53,5 @@ menciona la frase de pasada no cuenta.
 | `openhands/issue-<n>` | Automatización issue-to-PR | Es la única rama que revisa el worker, y la única a la que responden los workflows de corrección |
 | `openhands/issue-<n>-2`, … | Automatización issue-to-PR, en una issue con la label puesta de nuevo | Nunca se revisa automáticamente |
 | `openhands/test-fix-<n>` | Automatización issue tester, para la issue de test `<n>` | Una corrección que el Tester encontró mientras probaba. Nunca se revisa automáticamente |
-| cualquiera que empiece por `openhands/` | Ramas de agente | Fusionar una hace avanzar la cadena. En Discava, un pull request de una de ellas se bloquea (lock) cuando se abre |
+| cualquiera que empiece por `openhands/` | Ramas de agente | Fusionar una hace avanzar la cadena |
 | `spec/<name>` (cualquier otro nombre) | Personas | Solo hace avanzar la cadena con `spec-ready` |

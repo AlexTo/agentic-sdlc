@@ -17,7 +17,6 @@ sidebar:
 | Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | なし（PR 番号を `gh` に渡す） |
 | Deploy (Discava) | `deploy.yml` | `main` での CI の `workflow_run`、`workflow_dispatch(stage)` | `contents: read`、`id-token: write` | CI が検証したコミット |
 | Post-merge Verify (Discava) | `post-merge-verify.yml` | Deploy の `workflow_run`、`completed`、`workflow_dispatch(pr_number)` | `contents: read`、`actions: read`、`issues: write`、`pull-requests: write` | デフォルトブランチ |
-| Agent Lock (Discava) | `agent-lock.yml` | `issues: labeled`、`pull_request: [opened, reopened]` | `contents: read`、`issues: write`、`pull-requests: write` | デフォルトブランチ |
 
 ## ブランチ保護で必須にするジョブ名
 
@@ -56,9 +55,8 @@ sidebar:
 | `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH` |
 | `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`、`GITHUB_ACTIONS`（注釈用） |
 
-Discava は同じターゲットを `@discava/tooling-agent` に置いていて、テスト担当のためにさらに 2 つあります。
+Discava は同じターゲットを `@discava/tooling-agent` に置いていて、テスト担当のためにさらに 1 つあります。
 
 | ターゲット | エントリポイント | 読む環境変数 |
 | --- | --- | --- |
 | `post-merge-test` | `src/post-merge-test/main.ts` | `GH_TOKEN`、`GH_REPO`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_NAME`、`GITHUB_EVENT_PATH`、`PR_NUMBER`、`TEST_STAGE`、`DRY_RUN` |
-| `agent-lock` | `src/agent-lock/main.ts` | `GH_TOKEN`、`GH_REPO`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_NAME`、`GITHUB_EVENT_PATH` |

@@ -61,15 +61,19 @@ Hacen checkout de la **rama por defecto**, nunca del pull request, así que nada
 un agente o un colaborador se ejecuta con ese token. Todo lo que se lee del PR (nombres de rama,
 cuerpos) se comprueba contra un patrón estricto antes de usarlo.
 
-### Bloquea lo que lee el agente
+### Mantén a los desconocidos fuera de lo que lee el agente
 
 Cualquiera puede comentar en las issues y los pull requests de un repositorio público, y un agente
 lee esos comentarios mientras tiene un token que puede hacer push. El Tester tiene además acceso al
-stage desplegado. Por eso cada issue y cada pull request que se le entrega a un agente se **bloquea**
-(lock) antes, lo que deja los comentarios a las personas con acceso de escritura. Una issue se abre
-sin su label, se bloquea y solo entonces se etiqueta, así que el agente nunca la recoge mientras un
-desconocido todavía puede comentar. Y el marcador oculto de una issue solo cuenta cuando la issue la
-abrió el workflow o alguien con acceso de escritura.
+stage desplegado. Así que, en un repositorio público, pon el **límite de interacción** de GitHub en
+solo colaboradores: nadie más puede comentar, abrir una issue ni abrir un pull request. Las issues que
+un workflow abre para un agente además se **bloquean** (lock): se abren sin su label, se bloquean y
+solo entonces se etiquetan. Y el marcador oculto de una issue solo cuenta cuando la issue la abrió el
+workflow o alguien con acceso de escritura.
+
+Eso sí, no bloquees los pull requests de los agentes. GitHub rechaza una review en un pull request
+bloqueado, incluso desde una cuenta con acceso de escritura, así que el agente Revisor no puede
+publicar la suya.
 
 ### Sé idempotente
 

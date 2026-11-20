@@ -61,15 +61,20 @@ del **branch di default**, mai della pull request, così niente di ciò che ha s
 contributor gira con quel token. Tutto ciò che viene letto dalla PR (nomi dei branch, corpi) viene
 verificato rispetto a un pattern rigoroso prima di essere usato.
 
-### Metti il lock a ciò che l'agente legge
+### Tieni gli estranei fuori da ciò che l'agente legge
 
 Chiunque può commentare le issue e le pull request di un repository pubblico, e un agente legge quei
 commenti mentre ha in mano un token che può fare push. Il Tester ha in mano anche l'accesso allo
-stage deployato. Per questo a ogni issue e pull request consegnata a un agente viene prima messo il
-**lock**, che lascia i commenti alle persone con accesso in scrittura. Una issue viene aperta senza
-la sua label, riceve il lock, e solo allora la label, così l'agente non la prende mai in carico
-mentre un estraneo può ancora commentare. E il marcatore nascosto di una issue conta solo quando la
-issue è stata aperta dal workflow o da qualcuno con accesso in scrittura.
+stage deployato. Per questo, su un repository pubblico, imposta il **limite di interazione** di
+GitHub su solo collaboratori: nessun altro può commentare, aprire una issue o aprire una pull
+request. Anche alle issue che un workflow apre per un agente viene messo il **lock**: vengono
+aperte senza la loro label, ricevono il lock, e solo allora la label. E il marcatore nascosto di
+una issue conta solo quando la issue è stata aperta dal workflow o da qualcuno con accesso in
+scrittura.
+
+Non mettere però il lock alle pull request degli agenti. GitHub rifiuta una review su una pull
+request con il lock, anche da un account con accesso in scrittura, quindi l'agente Reviewer non
+può pubblicarne una.
 
 ### Sii idempotente
 

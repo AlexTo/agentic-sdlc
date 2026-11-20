@@ -70,11 +70,12 @@ Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifa
 El agente Revisor lee la misma lista. Los artefactos no tienen URL pública, así que el comentario
 nombra las imágenes y enlaza la ejecución desde la que se pueden descargar.
 
-La misma lista se escribe en el resumen del job. Para el pull request de un agente, es el único sitio
-donde aparece: [Agent Lock](../post-merge-verify/#agent-lock) bloquea cada PR de agente, y GitHub le
-niega al token de Actions un comentario en una conversación bloqueada, tenga los permisos que tenga.
-El job omite el comentario con un aviso en lugar de fallar. Desbloquear el PR para comentar dejaría
-que cualquiera comentase entretanto, que es justo lo que el bloqueo quiere impedir.
+La misma lista se escribe en el resumen del job. Para un pull request bloqueado, es el único sitio
+donde aparece: GitHub le niega al token de Actions un comentario en una conversación bloqueada, tenga
+los permisos que tenga, así que el job omite el comentario con un aviso en lugar de fallar. Discava
+antes bloqueaba cada pull request de agente, y ahora se apoya en un límite de interacción (consulta
+[Quién puede comentar](../post-merge-verify/#quién-puede-comentar)), así que el comentario vuelve a
+publicarse.
 
 ## Mantenerlo rápido
 
