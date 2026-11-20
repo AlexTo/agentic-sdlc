@@ -15,7 +15,13 @@
 This repo guides you step by step through setting up an agentic software lifecycle with
 [OpenHands](https://github.com/OpenHands/OpenHands), [Speckit](https://github.com/github/spec-kit) and
 opinionated GitHub Actions automation, with a working example you can run. It is the same workflow
-used in practice to build [Discava](https://github.com/AlexTo/discava).
+used in practice to build [Discava](https://github.com/AlexTo/discava), a serverless learning
+management system on AWS.
+
+In the six days after the workflow went live on Discava on 14 November 2026, nineteen feature specs
+were written this way and 132 agent pull requests were merged to implement them, each one written,
+fixed and reviewed by agents. Over the same period, 209 commits landed on main. All of this with a
+single maintainer, a dad with a full-time job who works on Discava casually in his spare time. 😅
 
 ## 🐌 The problem: the prompt-wait-fix loop
 
