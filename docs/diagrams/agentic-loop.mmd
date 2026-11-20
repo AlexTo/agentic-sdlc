@@ -24,10 +24,9 @@ _OpenHands, max 5× per loop_`")
 
     PLAN -- "tests pass locally" --> PR("Developer agent raises a PR")
     PR --> VERIFY
-    VERIFY -- "CI green and Reviewer approves" --> HR{{"`Human review
+    VERIFY -- "CI green and Reviewer approves" --> HR{{"`Human reviews and merges the PR
 _A person, does any (human) tasks_`"}}
-    HR -- "approves" --> MERGED("Merge the PR")
-    MERGED --> TICK{{"`Phase's agent tasks
+    HR -- "merged" --> TICK{{"`Phase's agent tasks
 ticked in tasks.md?
 _Agent Issues_`"}}
     TICK -- "yes, a phase is left" --> NEXT("`Next phase's issue opens
@@ -37,7 +36,7 @@ _↻ back to Developer agent implements_`")
 _a person ticks or finishes them_`")
     HR -. "changes requested<br/>+ openhands-review label" .-> VERIFY
 
-    MERGED -- "main is green" --> DEPLOY("`Deploy to the development stage
+    HR -- "main is green" --> DEPLOY("`Deploy to the development stage
 _Automation, optional_`")
     DEPLOY --> TISSUE("`Test issue opens
 _Automation_`")
@@ -57,5 +56,5 @@ _a person decides_`")
     class S,M1 human
     class I,IMPL,PR,FIX,NEXT,DEPLOY,TISSUE agent
     class CI,AR,TICK,TEST gate
-    class HR,MERGED,STALL,TFAIL human
+    class HR,STALL,TFAIL human
     class Done,TDONE done
