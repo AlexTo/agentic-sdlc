@@ -54,8 +54,10 @@ Lưu trong Agent Canvas (**Settings → Secrets**), theo tên:
 | `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | Instructor của Tester |
 | `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | Admin của Tester |
 
-GitHub token là một personal access token trên tài khoản của maintainer, với quyền ghi vào nội dung
-repository, issue, pull request và workflow.
+GitHub token là một personal access token trên `discava-bot`, một tài khoản máy chỉ các automation
+dùng. Tài khoản này là collaborator có quyền ghi, và token có quyền ghi vào nội dung repository,
+issue, pull request và workflow. Trước ngày 21 tháng 11 năm 2026, agent dùng token trên chính tài
+khoản của maintainer.
 
 Sáu secret `DISCAVA_*` là các người dùng test Cognito trên stage development, mỗi vai trò trong ứng
 dụng một người. Tester đăng nhập vào các cổng bằng chúng và lấy API token bằng chúng.
@@ -150,12 +152,12 @@ cạnh.
 Các issue nó poll được mở bởi [Post-merge Verify](../post-merge-verify/). Các comment của Tester kết
 thúc bằng "_This comment was posted by an AI agent (OpenHands)._".
 
-<Aside type="caution" title="Một tài khoản cho mọi thứ">
-Ở Discava, Developer, Reviewer, Tester và maintainer đều dùng cùng một tài khoản GitHub. GitHub
-không cho một tài khoản duyệt PR của chính nó, nên verdict của Reviewer được đăng dưới dạng review
-`COMMENTED`, và glue đọc dòng verdict thay vì trạng thái review. Các báo cáo của Tester hiện là
-comment của maintainer cũng vì lý do đó. Với một team, hãy cho các automation một tài khoản máy
-riêng.
+<Aside title="Một tài khoản cho các agent">
+Ở Discava, Developer, Reviewer và Tester đều đăng dưới tên `discava-bot`, còn maintainer dùng tài
+khoản của mình. Nhờ vậy maintainer có thể duyệt PR của agent bình thường, và dễ thấy comment nào do
+agent viết. Reviewer và Developer vẫn dùng chung một tài khoản, và GitHub không cho một tài khoản
+duyệt PR của chính nó, nên verdict của Reviewer được đăng dưới dạng review `COMMENTED`. Glue đọc dòng
+verdict chứ không đọc trạng thái review, nên điều này không ảnh hưởng gì.
 </Aside>
 
 Tiếp theo: [Prompt của các agent](../agent-prompts/).

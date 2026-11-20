@@ -33,7 +33,7 @@ sidebar:
 | --- | --- | --- |
 | "⏳ Review waiting on checks" e nessuna review | Un check sull'head non è terminato, o è bloccato in coda | Trova il check in sospeso. Un check obbligatorio che non gira mai blocca la review per sempre |
 | La review dice `🔄 CHANGES REQUESTED`, nessuna label `review-fix-*` | Alla review manca il marcatore dell'esecuzione, non viene da un account con accesso in scrittura, o la PR è andata avanti | Leggi l'avviso di Agent Review Status |
-| Le review compaiono come "Commented", non "Approved" | Il Reviewer pubblica con lo stesso account che ha aperto la PR, e GitHub non permette l'auto-approvazione | Previsto con un solo account. Usa un account macchina per gli agenti |
+| Le review compaiono come "Commented", non "Approved" | Il Reviewer pubblica con lo stesso account che ha aperto la PR, e GitHub non permette l'auto-approvazione | Previsto finché il Reviewer e il Developer condividono un account. Il collante legge la riga del verdetto, non lo stato della review |
 
 ## Check
 

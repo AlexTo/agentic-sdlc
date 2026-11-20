@@ -53,8 +53,9 @@ Agent Canvas 1.41.0，从 npm（`@openhands/agent-canvas`）安装，并作为�
 | `DISCAVA_INSTRUCTOR_USERNAME`、`DISCAVA_INSTRUCTOR_PASSWORD` | 测试智能体的讲师用户 |
 | `DISCAVA_ADMIN_USERNAME`、`DISCAVA_ADMIN_PASSWORD` | 测试智能体的管理员用户 |
 
-GitHub token 是维护者账号上的一个 personal access token，具有仓库内容、issue、pull request 和
-workflow 的写权限。
+GitHub token 是 `discava-bot` 上的一个 personal access token。`discava-bot` 是只供自动化使用的机器账号，
+是拥有写权限的协作者，token 具有仓库内容、issue、pull request 和 workflow 的写权限。2026 年 11 月 21 日
+之前，智能体使用的是维护者自己账号上的 token。
 
 六个 `DISCAVA_*` secret 是开发 stage 上的 Cognito 测试用户，应用中的每个角色一个。测试智能体用它们登录
 各个门户，并用它们获取 API token。
@@ -145,11 +146,11 @@ prompt 见[智能体的 prompt](../agent-prompts/)。
 它轮询的 issue 由 [Post-merge Verify](../post-merge-verify/) 打开。测试智能体的评论以
 "_This comment was posted by an AI agent (OpenHands)._" 结尾。
 
-<Aside type="caution" title="所有角色共用一个账号">
-在 Discava 中，开发智能体、评审智能体、测试智能体和维护者都使用同一个 GitHub 账号。GitHub 不允许一个
-账号批准自己的 PR，因此评审智能体的结论以 `COMMENTED` 评审的形式发布，粘合层读取的是结论那一行，而不是
-评审状态。出于同样的原因，测试智能体的报告显示为维护者的评论。对于团队，请给自动化使用一个单独的机器
-账号。
+<Aside title="智能体共用一个账号">
+在 Discava 中，开发智能体、评审智能体和测试智能体都以 `discava-bot` 的身份发帖，维护者使用自己的账号。
+因此维护者可以正常批准智能体的 PR，也能看出哪些评论来自智能体。评审智能体和开发智能体仍共用一个账号，而
+GitHub 不允许一个账号批准自己的 PR，因此评审智能体的结论以 `COMMENTED` 评审的形式发布。粘合层读取的是
+结论那一行，而不是评审状态，所以这没有影响。
 </Aside>
 
 下一步：[智能体的 prompt](../agent-prompts/)。

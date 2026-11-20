@@ -33,7 +33,7 @@ sidebar:
 | --- | --- | --- |
 | "⏳ Review waiting on checks" and no review | A check on the head hasn't finished, or is stuck queued | Find the pending check. A required check that never runs blocks the review forever |
 | Review says `🔄 CHANGES REQUESTED`, no `review-fix-*` label | The review lacks the run marker, isn't from an account with write access, or the PR moved on | Read the Agent Review Status notice |
-| Reviews show as "Commented", not "Approved" | The Reviewer posts as the same account that opened the PR, and GitHub doesn't allow self-approval | Expected with one account. Use a machine account for the agents |
+| Reviews show as "Commented", not "Approved" | The Reviewer posts as the same account that opened the PR, and GitHub doesn't allow self-approval | Expected while the Developer and the Reviewer share an account. The glue reads the verdict line, not the review state |
 
 ## Checks
 

@@ -54,8 +54,10 @@ Guardados en Agent Canvas (**Settings → Secrets**), por nombre:
 | `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | El instructor del Tester |
 | `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | El administrador del Tester |
 
-El token de GitHub es un personal access token de la cuenta del mantenedor, con acceso de escritura
-a contenidos del repositorio, issues, pull requests y workflows.
+El token de GitHub es un personal access token de `discava-bot`, una cuenta de máquina que solo usan
+las automatizaciones. Es colaboradora con permiso de escritura, y el token tiene acceso de escritura a
+contenidos del repositorio, issues, pull requests y workflows. Hasta el 21 de noviembre de 2026, los
+agentes usaban un token de la propia cuenta del mantenedor.
 
 Los seis secretos `DISCAVA_*` son usuarios de prueba de Cognito en el stage de desarrollo, uno por
 cada rol de la app. El Tester inicia sesión en los portales con ellos y obtiene tokens de API con
@@ -153,12 +155,13 @@ En cada sondeo, el worker:
 Las issues que sondea las abre [Post-merge Verify](../post-merge-verify/). Los comentarios del Tester
 terminan con "_This comment was posted by an AI agent (OpenHands)._".
 
-<Aside type="caution" title="Una sola cuenta para todo">
-En Discava, el Desarrollador, el Revisor, el Tester y el mantenedor usan la misma cuenta de GitHub.
-GitHub no permite que una cuenta apruebe su propio PR, así que el veredicto del Revisor se publica
-como una revisión `COMMENTED`, y el pegamento lee la línea del veredicto en lugar del estado de la
-revisión. Los informes del Tester aparecen como comentarios del mantenedor por la misma razón. Para
-un equipo, dale a las automatizaciones una cuenta de máquina aparte.
+<Aside title="Una cuenta para los agentes">
+En Discava, el Desarrollador, el Revisor y el Tester publican como `discava-bot`, y el mantenedor
+usa su propia cuenta. Así el mantenedor puede aprobar el PR de un agente con normalidad, y se ve qué
+comentarios vienen de un agente. El Revisor y el Desarrollador siguen compartiendo cuenta, y GitHub
+no permite que una cuenta apruebe su propio PR, así que el veredicto del Revisor se publica como una
+revisión `COMMENTED`. El pegamento lee la línea del veredicto, no el estado de la revisión, así que
+no importa.
 </Aside>
 
 Siguiente: [Los prompts de los agentes](../agent-prompts/).

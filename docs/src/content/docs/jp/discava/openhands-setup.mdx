@@ -54,8 +54,10 @@ Agent Canvas (**Settings → Secrets**) に、名前ごとに保存されてい�
 | `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | テスト担当の講師 |
 | `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | テスト担当の管理者 |
 
-GitHub トークンはメンテナーのアカウントの personal access token で、リポジトリの contents、
-issues、pull requests、workflows への書き込み権限を持っています。
+GitHub トークンは、automation だけが使うマシンアカウント `discava-bot` の personal access token です。
+このアカウントは書き込み権限を持つコラボレーターで、トークンはリポジトリの contents、issues、
+pull requests、workflows への書き込み権限を持っています。2026 年 11 月 21 日までは、エージェントは
+メンテナー自身のアカウントのトークンを使っていました。
 
 6 つの `DISCAVA_*` シークレットは、開発ステージ上の Cognito のテストユーザーで、アプリのロールごとに 1 人です。
 テスト担当はこれらでポータルにサインインし、API トークンを取得します。
@@ -148,11 +150,12 @@ Discava 独自のものです。それぞれがポーリングで何をするか
 ポーリングの対象になる issue は [Post-merge Verify](../post-merge-verify/) が開きます。テスト担当の
 コメントは "_This comment was posted by an AI agent (OpenHands)._" で終わります。
 
-<Aside type="caution" title="すべてを 1 つのアカウントで">
-Discava では、開発担当、レビュー担当、テスト担当、メンテナーがすべて同じ GitHub アカウントを使っています。
-GitHub ではアカウントが自分の PR を承認できないため、レビュー担当の判定は `COMMENTED` レビューとして
-投稿され、glue はレビューの状態ではなく判定の行を読みます。同じ理由で、テスト担当のレポートはメンテナーの
-コメントとして表示されます。チームで使う場合は、automation に別のマシンアカウントを与えてください。
+<Aside title="エージェント用に 1 つのアカウント">
+Discava では、開発担当、レビュー担当、テスト担当がすべて `discava-bot` として投稿し、メンテナーは自分の
+アカウントを使います。そのため、メンテナーはエージェントの PR を通常どおり承認でき、どのコメントがエージェントから
+来たのかもわかります。レビュー担当と開発担当は今もアカウントを共有しており、GitHub ではアカウントが自分の PR を
+承認できないため、レビュー担当の判定は `COMMENTED` レビューとして投稿されます。glue はレビューの状態ではなく
+判定の行を読むので、問題にはなりません。
 </Aside>
 
 次へ: [エージェントのプロンプト](../agent-prompts/)。

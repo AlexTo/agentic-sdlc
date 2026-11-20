@@ -54,8 +54,10 @@ Salvati in Agent Canvas (**Settings → Secrets**), per nome:
 | `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | L'istruttore del Tester |
 | `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | L'admin del Tester |
 
-Il token GitHub è un personal access token sull'account del maintainer, con accesso in scrittura a
-contenuti del repository, issue, pull request e workflow.
+Il token GitHub è un personal access token su `discava-bot`, un account macchina usato solo dalle
+automazioni. È un collaboratore con accesso in scrittura, e il token ha accesso in scrittura a
+contenuti del repository, issue, pull request e workflow. Fino al 21 novembre 2026 gli agenti usavano
+un token sull'account del maintainer.
 
 I sei secret `DISCAVA_*` sono utenti di test Cognito sullo stage di sviluppo, uno per ogni ruolo
 dell'app. Il Tester li usa per accedere ai portali e per ottenere i token delle API.
@@ -152,12 +154,13 @@ A ogni polling, il worker:
 Le issue di cui fa polling vengono aperte da [Post-merge Verify](../post-merge-verify/). I commenti
 del Tester terminano con "_This comment was posted by an AI agent (OpenHands)._".
 
-<Aside type="caution" title="Un solo account per tutto">
-In Discava il Developer, il Reviewer, il Tester e il maintainer usano tutti lo stesso account
-GitHub. GitHub non permette a un account di approvare la propria PR, quindi il verdetto del Reviewer
-viene pubblicato come review `COMMENTED`, e il collante legge la riga del verdetto invece dello
-stato della review. I report del Tester compaiono come commenti del maintainer per lo stesso motivo.
-Per un team, dai alle automazioni un account macchina separato.
+<Aside title="Un account per gli agenti">
+In Discava il Developer, il Reviewer e il Tester pubblicano tutti come `discava-bot`, e il maintainer
+usa il proprio account. Così il maintainer può approvare normalmente la PR di un agente, e si vede
+quali commenti vengono da un agente. Il Reviewer e il Developer condividono ancora un account, e
+GitHub non permette a un account di approvare la propria PR, quindi il verdetto del Reviewer viene
+pubblicato come review `COMMENTED`. Il collante legge la riga del verdetto, non lo stato della
+review, quindi non è un problema.
 </Aside>
 
 Avanti: [I prompt degli agenti](../agent-prompts/).

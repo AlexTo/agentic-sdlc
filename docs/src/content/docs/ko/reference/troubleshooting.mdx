@@ -33,7 +33,7 @@ sidebar:
 | --- | --- | --- |
 | "⏳ Review waiting on checks"만 있고 리뷰가 없음 | head의 검사가 끝나지 않았거나, queue에서 멈춰 있습니다 | 대기 중인 검사를 찾습니다. 절대 실행되지 않는 필수 검사는 리뷰를 영원히 막습니다 |
 | 리뷰가 `🔄 CHANGES REQUESTED`인데 `review-fix-*` label이 없음 | 리뷰에 run 마커가 없거나, write 권한이 있는 계정의 리뷰가 아니거나, PR이 이미 진행되었습니다 | Agent Review Status notice를 읽습니다 |
-| 리뷰가 "Approved"가 아니라 "Commented"로 표시됨 | 리뷰어가 PR을 연 것과 같은 계정으로 게시하는데, GitHub는 자기 승인을 허용하지 않습니다 | 계정이 하나라면 예상된 동작입니다. 에이전트에게 machine account를 사용하세요 |
+| 리뷰가 "Approved"가 아니라 "Commented"로 표시됨 | 리뷰어가 PR을 연 것과 같은 계정으로 게시하는데, GitHub는 자기 승인을 허용하지 않습니다 | 리뷰어와 개발자가 계정을 공유하는 동안은 예상된 동작입니다. glue는 리뷰 상태가 아니라 판정 줄을 읽습니다 |
 
 ## Check
 

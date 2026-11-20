@@ -54,8 +54,10 @@ Guardados no Agent Canvas (**Settings → Secrets**), por nome:
 | `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | O instrutor do Testador |
 | `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | O admin do Testador |
 
-O token do GitHub é um personal access token na conta do mantenedor, com acesso de escrita a conteúdo do repositório,
-issues, pull requests e workflows.
+O token do GitHub é um personal access token em `discava-bot`, uma conta de máquina que só as
+automations usam. Ela é colaboradora com acesso de escrita, e o token tem acesso de escrita a conteúdo
+do repositório, issues, pull requests e workflows. Até 21 de novembro de 2026, os agents usavam um
+token na conta do próprio mantenedor.
 
 Os seis secrets `DISCAVA_*` são usuários de teste do Cognito no stage de desenvolvimento, um por papel no
 app. O Testador faz login nos portais com eles e obtém tokens de API com eles.
@@ -150,12 +152,12 @@ A cada poll, o worker:
 As issues que ele procura são abertas pelo [Post-merge Verify](../post-merge-verify/). Os comentários do
 Testador terminam com "_This comment was posted by an AI agent (OpenHands)._".
 
-<Aside type="caution" title="Uma conta para tudo">
-No Discava, o Desenvolvedor, o Revisor, o Testador e o mantenedor usam a mesma conta do
-GitHub. O GitHub não permite que uma conta aprove o próprio PR, então o veredito do Revisor é publicado como um
-review `COMMENTED`, e a cola lê a linha do veredito em vez do estado do review. Os relatórios do
-Testador aparecem como comentários do mantenedor pelo mesmo motivo. Para uma equipe, dê às automations uma
-conta de máquina separada.
+<Aside title="Uma conta para os agents">
+No Discava, o Desenvolvedor, o Revisor e o Testador postam como `discava-bot`, e o mantenedor usa a
+própria conta. Assim o mantenedor pode aprovar o PR de um agent normalmente, e dá para ver quais
+comentários vieram de um agent. O Revisor e o Desenvolvedor ainda compartilham uma conta, e o GitHub
+não permite que uma conta aprove o próprio PR, então o veredito do Revisor é publicado como um review
+`COMMENTED`. A cola lê a linha do veredito, não o estado do review, então isso não importa.
 </Aside>
 
 Próximo: [Os prompts dos agents](../agent-prompts/).

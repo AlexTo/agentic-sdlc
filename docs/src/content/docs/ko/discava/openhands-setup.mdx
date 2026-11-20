@@ -53,8 +53,9 @@ Agent Canvas(**Settings → Secrets**)에 이름으로 저장됩니다.
 | `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | 테스터의 강사 사용자 |
 | `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | 테스터의 관리자 사용자 |
 
-GitHub 토큰은 메인테이너 계정의 personal access token이며, 저장소 contents, issues, pull requests, workflows에 대한
-쓰기 권한이 있습니다.
+GitHub 토큰은 automation만 사용하는 머신 계정 `discava-bot`의 personal access token입니다. 이 계정은 write
+권한이 있는 collaborator이며, 토큰에는 저장소 contents, issues, pull requests, workflows에 대한 쓰기 권한이
+있습니다. 2026년 11월 21일까지는 에이전트가 메인테이너 본인 계정의 토큰을 사용했습니다.
 
 여섯 개의 `DISCAVA_*` secret은 development stage의 Cognito 테스트 사용자로, 앱의 역할마다 하나씩입니다. 테스터는
 이들로 포털에 로그인하고 API 토큰을 받습니다.
@@ -146,11 +147,12 @@ revise 턴은 에이전트에게 끝난 뒤 `openhands-review` label을 다시 �
 worker가 폴링하는 issue는 [Post-merge Verify](../post-merge-verify/)가 엽니다. 테스터의 댓글은
 "_This comment was posted by an AI agent (OpenHands)._"로 끝납니다.
 
-<Aside type="caution" title="모든 것에 계정 하나">
-Discava에서는 개발자 에이전트, 리뷰어 에이전트, 테스터 에이전트, 메인테이너가 모두 같은 GitHub 계정을 사용합니다.
-GitHub는 계정이 자기 PR을 승인하도록 허용하지 않으므로, 리뷰어의 판정은 `COMMENTED` 리뷰로 게시되고, glue는 리뷰
-상태가 아니라 판정 줄을 읽습니다. 같은 이유로 테스터의 보고서는 메인테이너의 댓글로 표시됩니다. 팀이라면
-automation에 별도의 머신 계정을 주세요.
+<Aside title="에이전트용 계정 하나">
+Discava에서는 개발자 에이전트, 리뷰어 에이전트, 테스터 에이전트가 모두 `discava-bot`으로 게시하고, 메인테이너는
+자신의 계정을 사용합니다. 그래서 메인테이너는 에이전트의 PR을 평소처럼 승인할 수 있고, 어떤 댓글이 에이전트에게서
+왔는지 알 수 있습니다. 리뷰어와 개발자는 여전히 계정을 공유하고, GitHub는 계정이 자기 PR을 승인하도록 허용하지
+않으므로, 리뷰어의 판정은 `COMMENTED` 리뷰로 게시됩니다. glue는 리뷰 상태가 아니라 판정 줄을 읽으므로 문제가
+되지 않습니다.
 </Aside>
 
 다음: [에이전트 프롬프트](../agent-prompts/).

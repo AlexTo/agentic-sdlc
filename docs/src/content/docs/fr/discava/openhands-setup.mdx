@@ -54,8 +54,10 @@ Stockés dans Agent Canvas (**Settings → Secrets**), par nom :
 | `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | Le formateur du Testeur |
 | `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | L'admin du Testeur |
 
-Le token GitHub est un personal access token sur le compte du mainteneur, avec un accès en écriture
-au contenu du dépôt, aux issues, aux pull requests et aux workflows.
+Le token GitHub est un personal access token sur `discava-bot`, un compte machine que seules les
+automatisations utilisent. C'est un collaborateur avec un accès en écriture, et le token a un accès en
+écriture au contenu du dépôt, aux issues, aux pull requests et aux workflows. Jusqu'au 21 novembre
+2026, les agents utilisaient un token sur le compte du mainteneur.
 
 Les six secrets `DISCAVA_*` sont des utilisateurs de test Cognito sur le stage de développement, un
 par rôle de l'application. Le Testeur se connecte aux portails avec eux et obtient des tokens d'API
@@ -156,12 +158,13 @@ catalogue, avec son prompt dans un fichier à côté de lui.
 Les issues qu'il recherche sont ouvertes par [Post-merge Verify](../post-merge-verify/). Les
 commentaires du Testeur se terminent par « _This comment was posted by an AI agent (OpenHands)._ ».
 
-<Aside type="caution" title="Un seul compte pour tout">
-Dans Discava, le Développeur, le Relecteur, le Testeur et le mainteneur utilisent tous le même
-compte GitHub. GitHub ne permet pas à un compte d'approuver sa propre PR, donc le verdict du
-Relecteur est publié sous forme de revue `COMMENTED`, et la glue lit la ligne du verdict plutôt que
-l'état de la revue. Les rapports du Testeur apparaissent comme des commentaires du mainteneur pour
-la même raison. Pour une équipe, donnez aux automatisations un compte machine distinct.
+<Aside title="Un compte pour les agents">
+Dans Discava, le Développeur, le Relecteur et le Testeur publient tous en tant que `discava-bot`, et
+le mainteneur utilise son propre compte. Le mainteneur peut donc approuver normalement la PR d'un
+agent, et on voit quels commentaires viennent d'un agent. Le Relecteur et le Développeur partagent
+toujours un compte, et GitHub ne permet pas à un compte d'approuver sa propre PR, donc le verdict du
+Relecteur est publié sous forme de revue `COMMENTED`. La glue lit la ligne du verdict, pas l'état de
+la revue, donc cela ne pose pas de problème.
 </Aside>
 
 Suite : [Les prompts des agents](../agent-prompts/).

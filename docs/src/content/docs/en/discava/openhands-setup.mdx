@@ -54,8 +54,10 @@ Stored in Agent Canvas (**Settings → Secrets**), by name:
 | `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | The Tester's instructor |
 | `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | The Tester's admin |
 
-The GitHub token is a personal access token on the maintainer's account, with repository contents,
-issues, pull requests and workflows write access.
+The GitHub token is a personal access token on `discava-bot`, a machine account that only the
+automations use. It is a collaborator with write access, and the token has repository contents,
+issues, pull requests and workflows write access. Until 21 November 2026 the agents used a token on
+the maintainer's own account.
 
 The six `DISCAVA_*` secrets are Cognito test users on the development stage, one per role in the
 app. The Tester signs in to the portals with them and gets API tokens with them.
@@ -150,12 +152,12 @@ On each poll, the worker:
 The issues it polls for are opened by [Post-merge Verify](../post-merge-verify/). The Tester's
 comments end with "_This comment was posted by an AI agent (OpenHands)._".
 
-<Aside type="caution" title="One account for everything">
-In Discava the Developer, the Reviewer, the Tester and the maintainer all use the same GitHub
-account. GitHub doesn't let an account approve its own PR, so the Reviewer's verdict is posted as a
-`COMMENTED` review, and the glue reads the verdict line rather than the review state. The Tester's
-reports show as the maintainer's comments for the same reason. For a team, give the automations a
-separate machine account.
+<Aside title="One account for the agents">
+In Discava the Developer, the Reviewer and the Tester all post as `discava-bot`, and the maintainer
+uses their own account. So the maintainer can approve an agent's PR normally, and it's clear which
+comments came from an agent. The Reviewer and the Developer still share an account, and GitHub
+doesn't let an account approve its own PR, so the Reviewer's verdict is posted as a `COMMENTED`
+review. The glue reads the verdict line, not the review state, so this doesn't matter.
 </Aside>
 
 Next: [The agents' prompts](../agent-prompts/).
