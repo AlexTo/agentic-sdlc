@@ -22,7 +22,8 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    [http://127.0.0.1:8000](http://127.0.0.1:8000) を開きます。起動したままにしてください。automation は
    Agent Canvas が動いている間だけポーリングします。
 
-2. エージェントが使うアカウントで **GitHub トークンを作成します**。fork に限定した fine-grained トークンで、
+2. [手順 2](../github-repository/) で用意したエージェントのアカウントでサインインした状態で
+   **GitHub トークンを作成します**。fork に限定した fine-grained トークンで、
    **Contents**、**Issues**、**Pull requests**、**Workflows** を読み書きに設定します。
 
    エージェントが workflow を編集することはありませんが、ブランチが `.github/workflows/` に触れると

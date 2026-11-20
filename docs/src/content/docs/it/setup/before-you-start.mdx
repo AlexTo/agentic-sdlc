@@ -18,7 +18,8 @@ passare dalla PR della spec alle PR degli agenti unite.
 
 | Requisito | Perché |
 | --- | --- |
-| Un account GitHub | Per fare il fork, e per possedere il token usato dagli agenti |
+| Un account GitHub | Per fare il fork, scrivere le spec e fare review |
+| Un secondo account GitHub per gli agenti | Possiede il token usato dagli agenti, così le loro PR e i loro commenti sono loro e puoi approvarli. Quello di Discava è `discava-bot` |
 | Node.js 24 e pnpm | Per eseguire il repository e Agent Canvas |
 | `uv` | Agent Canvas avvia il suo backend con `uvx` |
 | Docker | Solo per eseguire in locale l'app di note e i suoi test e2e. La CI li esegue per l'agente |
@@ -35,7 +36,7 @@ webhook. Gli agenti lavorano solo mentre è in esecuzione.
 | # | Passaggio | Alla fine avrai |
 | --- | --- | --- |
 | 1 | [Fai il fork del repository](../fork/) | La tua copia, con Actions e Issues attivi |
-| 2 | [Configura il repository](../github-repository/) | Le label, e un `main` protetto |
+| 2 | [Configura il repository](../github-repository/) | Le label, un `main` protetto, e l'account degli agenti come collaboratore |
 | 3 | [Installa OpenHands](../openhands/) | Agent Canvas in esecuzione, un token GitHub, due profili agente |
 | 4 | [Crea le due automazioni](../automations/) | Gli agenti Developer e Reviewer che implementano e fanno review nel tuo fork |
 | 5 | [Esegui la tua prima feature](../first-feature/) | Una spec per l'app di note, portata dagli agenti fino al codice unito |

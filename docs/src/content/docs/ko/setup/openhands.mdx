@@ -22,7 +22,8 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    [http://127.0.0.1:8000](http://127.0.0.1:8000)을 엽니다. 계속 실행해 두세요. automation은
    Agent Canvas가 실행 중일 때만 폴링합니다.
 
-2. 에이전트가 사용할 계정으로 **GitHub 토큰을 만듭니다**. fork로 범위를 제한한 fine-grained 토큰으로,
+2. [2단계](../github-repository/)의 에이전트 계정으로 로그인한 상태에서 **GitHub 토큰을 만듭니다**.
+   fork로 범위를 제한한 fine-grained 토큰으로,
    **Contents**, **Issues**, **Pull requests**, **Workflows**를 read and write로 설정합니다.
 
    에이전트는 workflow를 수정하지 않지만, 브랜치가 `.github/workflows/`를 건드릴 때마다

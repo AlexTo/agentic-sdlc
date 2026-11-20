@@ -18,7 +18,8 @@ passer de la PR de spec aux PR d'agents mergées.
 
 | Besoin | Pourquoi |
 | --- | --- |
-| Un compte GitHub | Pour forker, et pour posséder le token qu'utilisent les agents |
+| Un compte GitHub | Pour forker, écrire les specs et relire |
+| Un second compte GitHub pour les agents | Il possède le token qu'utilisent les agents, donc leurs PR et leurs commentaires sont les leurs et vous pouvez les approuver. Celui de Discava est `discava-bot` |
 | Node.js 24 et pnpm | Pour faire tourner le dépôt et Agent Canvas |
 | `uv` | Agent Canvas démarre son backend avec `uvx` |
 | Docker | Seulement pour lancer l'application de notes et ses tests e2e en local. La CI les lance pour l'agent |
@@ -35,7 +36,7 @@ webhook. Les agents ne travaillent que tant qu'il tourne.
 | # | Étape | Résultat |
 | --- | --- | --- |
 | 1 | [Forker le dépôt](../fork/) | Votre propre copie, avec Actions et Issues activés |
-| 2 | [Configurer le dépôt](../github-repository/) | Les labels, et une branche `main` protégée |
+| 2 | [Configurer le dépôt](../github-repository/) | Les labels, une branche `main` protégée, et le compte des agents comme collaborateur |
 | 3 | [Installer OpenHands](../openhands/) | Agent Canvas en marche, un token GitHub, deux profils d'agent |
 | 4 | [Créer les deux automatisations](../automations/) | Les agents Développeur et Relecteur qui implémentent et relisent dans votre fork |
 | 5 | [Lancer votre première fonctionnalité](../first-feature/) | Une spec pour l'application de notes, menée jusqu'au code mergé par les agents |

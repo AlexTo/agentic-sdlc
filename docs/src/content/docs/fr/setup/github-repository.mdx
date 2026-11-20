@@ -8,7 +8,8 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **Résultat :** tous les labels qu'utilise le workflow, une branche `main` qui n'accepte que des pull
-requests avec des checks au vert et une approbation, et des commentaires limités aux collaborateurs.
+requests avec des checks au vert et une approbation, des commentaires limités aux collaborateurs, et le
+compte propre aux agents comme collaborateur.
 
 <Steps>
 
@@ -43,8 +44,8 @@ requests avec des checks au vert et une approbation, et des commentaires limité
    et `UI Screenshots`. GitHub ne propose un check dans le champ de recherche qu'après qu'il a tourné une fois, donc
    ouvrez d'abord une PR quelconque s'il en manque un.
 
-   Laisser le contournement autorisé vous permet, en tant que propriétaire, de merger les PR que les agents ont ouvertes avec votre propre
-   token (voir l'avertissement ci-dessous).
+   Laisser le contournement autorisé vous permet, en tant que propriétaire, de merger une PR que vous avez
+   ouverte vous-même, comme une PR de spec, que GitHub ne vous laisse pas approuver.
 
    <Aside type="caution">
    N'exigez pas le statut `software-factory/review`. C'est un signal destiné à l'agent, publié uniquement
@@ -69,21 +70,22 @@ requests avec des checks au vert et une approbation, et des commentaires limité
    Voir [Qui peut commenter](../../discava/post-merge-verify/#qui-peut-commenter).
    </Aside>
 
-</Steps>
+5. **Ajoutez le compte des agents.** Les agents travaillent sous leur propre compte GitHub, un compte
+   machine que rien d'autre n'utilise. Celui de Discava est `discava-bot`. Créez-en un, puis ouvrez
+   **Settings → Collaborators** dans votre fork, invitez-le avec le rôle **Write**, et acceptez
+   l'invitation en étant connecté avec ce compte. Son token est celui que vous créez à
+   l'[étape 3](../openhands/).
 
-<Aside type="caution" title="Un compte ou deux">
-Pour un premier essai, les agents peuvent utiliser un token de votre propre compte. GitHub ne
-laisse cependant pas un compte approuver sa propre PR. Votre approbation et celle de l'agent Relecteur apparaissent alors comme
-des commentaires, et vous mergez en tant qu'administrateur du dépôt. Pour une équipe, donnez aux agents un compte GitHub
-séparé avec un accès en écriture, et utilisez son token à l'[étape 3](../openhands/). Les personnes peuvent alors
-approuver les PR des agents normalement. Les agents de Discava utilisent leur propre compte,
-`discava-bot`.
-</Aside>
+   Les PR et les commentaires des agents apparaissent alors sous ce compte, et vous approuvez leurs
+   PR comme celles de n'importe qui.
+
+</Steps>
 
 ## Vérifier que ça marche
 
 La page **Issues → Labels** du fork liste les 16 nouveaux labels, **Settings → Branches** affiche la
 règle sur `main` avec six checks requis, et **Settings → Moderation options → Interaction limits**
-affiche la limite réservée aux collaborateurs avec sa date de fin.
+affiche la limite réservée aux collaborateurs avec sa date de fin. **Settings → Collaborators** liste
+le compte des agents avec le rôle **Write**.
 
 Suite : [3. Installer OpenHands](../openhands/).

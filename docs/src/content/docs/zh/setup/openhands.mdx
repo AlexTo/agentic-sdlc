@@ -20,7 +20,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
    打开 [http://127.0.0.1:8000](http://127.0.0.1:8000)。保持它运行：只有 Agent Canvas 在运行时，automation 才会轮询。
 
-2. 为智能体将要使用的账号**创建一个 GitHub token**：一个 fine-grained token，仅限于你的 fork，并把 **Contents**、**Issues**、**Pull requests** 和 **Workflows** 设为读写。
+2. 以[第 2 步](../github-repository/)中智能体的账号登录，**创建一个 GitHub token**：一个 fine-grained token，仅限于你的 fork，并把 **Contents**、**Issues**、**Pull requests** 和 **Workflows** 设为读写。
 
    智能体从不编辑 workflow，但只要分支改动了 `.github/workflows/`（例如通过合并 `main`），GitHub 就会拒绝来自缺少 **Workflows** 权限的 token 的整次 push。
 

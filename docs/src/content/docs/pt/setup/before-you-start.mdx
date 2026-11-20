@@ -18,7 +18,8 @@ acompanha o caminho dela, do PR de spec até os PRs dos agents mergeados.
 
 | Item | Por quê |
 | --- | --- |
-| Uma conta no GitHub | Para fazer o fork e ser dono do token que os agents usam |
+| Uma conta no GitHub | Para fazer o fork, escrever specs e revisar |
+| Uma segunda conta no GitHub para os agents | Ela é dona do token que os agents usam, então os PRs e comentários são deles e você pode aprová-los. A do Discava é `discava-bot` |
 | Node.js 24 e pnpm | Para rodar o repositório e o Agent Canvas |
 | `uv` | O Agent Canvas inicia o backend com `uvx` |
 | Docker | Só para rodar o app de notas e os testes e2e localmente. O CI roda eles para o agent |
@@ -35,7 +36,7 @@ endereço público nem de webhook. Os agents só trabalham enquanto ele está ro
 | # | Passo | No final você terá |
 | --- | --- | --- |
 | 1 | [Faça um fork do repositório](../fork/) | Sua própria cópia, com Actions e Issues ativados |
-| 2 | [Configure o repositório](../github-repository/) | Labels e uma `main` protegida |
+| 2 | [Configure o repositório](../github-repository/) | Labels, uma `main` protegida e a conta dos agents como colaboradora |
 | 3 | [Instale o OpenHands](../openhands/) | O Agent Canvas rodando, um token do GitHub, dois perfis de agent |
 | 4 | [Crie as duas automações](../automations/) | Os agents Desenvolvedor e Revisor implementando e revisando no seu fork |
 | 5 | [Rode sua primeira feature](../first-feature/) | Uma spec para o app de notas, levada até código mergeado pelos agents |

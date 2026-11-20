@@ -18,7 +18,8 @@ pasa de PR de spec a PR de agentes fusionados.
 
 | Necesitas | Por qué |
 | --- | --- |
-| Una cuenta de GitHub | Para hacer el fork y ser dueño del token que usan los agentes |
+| Una cuenta de GitHub | Para hacer el fork, escribir specs y hacer review |
+| Una segunda cuenta de GitHub para los agentes | Es la dueña del token que usan los agentes, así que sus PR y comentarios son suyos y puedes aprobarlos. La de Discava es `discava-bot` |
 | Node.js 24 y pnpm | Para ejecutar el repositorio y Agent Canvas |
 | `uv` | Agent Canvas arranca su backend con `uvx` |
 | Docker | Solo para ejecutar la app de notas y sus tests e2e en local. CI los ejecuta para el agente |
@@ -35,7 +36,7 @@ webhook. Los agentes solo trabajan mientras está en ejecución.
 | # | Paso | Al terminar tendrás |
 | --- | --- | --- |
 | 1 | [Haz fork del repositorio](../fork/) | Tu propia copia, con Actions e Issues activados |
-| 2 | [Configura el repositorio](../github-repository/) | Labels y un `main` protegido |
+| 2 | [Configura el repositorio](../github-repository/) | Labels, un `main` protegido y la cuenta de los agentes como colaboradora |
 | 3 | [Instala OpenHands](../openhands/) | Agent Canvas en ejecución, un token de GitHub y dos perfiles de agente |
 | 4 | [Crea las dos automatizaciones](../automations/) | Los agentes Desarrollador y Revisor implementando y haciendo review en tu fork |
 | 5 | [Ejecuta tu primera feature](../first-feature/) | Una spec para la app de notas, llevada hasta código fusionado por agentes |

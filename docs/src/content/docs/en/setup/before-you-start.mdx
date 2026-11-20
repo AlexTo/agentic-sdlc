@@ -18,7 +18,8 @@ go from spec PR to merged agent PRs.
 
 | Need | Why |
 | --- | --- |
-| A GitHub account | To fork, and to own the token the agents use |
+| A GitHub account | To fork, write specs and review |
+| A second GitHub account for the agents | It owns the token the agents use, so their PRs and comments are theirs and you can approve them. Discava's is `discava-bot` |
 | Node.js 24 and pnpm | To run the repository and Agent Canvas |
 | `uv` | Agent Canvas starts its backend with `uvx` |
 | Docker | Only to run the notes app and its e2e tests locally. CI runs them for the agent |
@@ -35,7 +36,7 @@ webhook. The agents only work while it is running.
 | # | Step | You'll end with |
 | --- | --- | --- |
 | 1 | [Fork the repository](../fork/) | Your own copy, with Actions and Issues on |
-| 2 | [Configure the repository](../github-repository/) | Labels, and a protected `main` |
+| 2 | [Configure the repository](../github-repository/) | Labels, a protected `main`, and the agents' account as a collaborator |
 | 3 | [Install OpenHands](../openhands/) | Agent Canvas running, a GitHub token, two agent profiles |
 | 4 | [Create the two automations](../automations/) | The Developer and Reviewer agents implementing and reviewing in your fork |
 | 5 | [Run your first feature](../first-feature/) | A spec for the notes app, carried to merged code by agents |

@@ -8,7 +8,8 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **Kết quả:** mọi label mà quy trình dùng, một nhánh `main` chỉ nhận pull request có check xanh
-và một lượt duyệt, và comment được giới hạn cho các collaborator.
+và một lượt duyệt, comment được giới hạn cho các collaborator, và tài khoản riêng của agent là
+một collaborator.
 
 <Steps>
 
@@ -43,8 +44,8 @@ và một lượt duyệt, và comment được giới hạn cho các collaborat
    `UI Screenshots`. GitHub chỉ gợi ý một check trong ô tìm kiếm sau khi nó đã chạy một lần, nên
    nếu thiếu check nào, hãy mở một PR bất kỳ trước.
 
-   Để bypass được phép cho bạn, với tư cách chủ sở hữu, merge các PR mà agent mở bằng token của
-   chính bạn (xem lưu ý bên dưới).
+   Để bypass được phép cho bạn, với tư cách chủ sở hữu, merge một PR do chính bạn mở, chẳng hạn
+   spec PR, vốn là PR mà GitHub không cho bạn duyệt.
 
    <Aside type="caution">
    Đừng yêu cầu status `software-factory/review`. Nó là một tín hiệu cho agent, chỉ bao giờ được
@@ -69,21 +70,22 @@ và một lượt duyệt, và comment được giới hạn cho các collaborat
    [Ai có thể comment](../../discava/post-merge-verify/#ai-có-thể-comment).
    </Aside>
 
-</Steps>
+5. **Thêm tài khoản của agent.** Agent làm việc dưới tài khoản GitHub riêng của chúng, một tài khoản
+   máy không dùng cho việc gì khác. Tài khoản của Discava là `discava-bot`. Hãy tạo một tài khoản, rồi
+   mở **Settings → Collaborators** trong bản fork của bạn, mời nó với vai trò **Write**, và chấp nhận
+   lời mời trong khi đăng nhập bằng tài khoản đó. Token của nó là token bạn tạo ở
+   [bước 3](../openhands/).
 
-<Aside type="caution" title="Một tài khoản hay hai">
-Lần thử đầu, agent có thể dùng token từ tài khoản của chính bạn. Tuy nhiên, GitHub
-không cho một tài khoản duyệt PR của chính nó. Khi đó lượt duyệt của bạn và của agent Reviewer hiện
-dưới dạng comment, và bạn merge với tư cách admin của repository. Với một team, hãy cho agent một tài
-khoản GitHub riêng có quyền ghi, và dùng token của nó ở [bước 3](../openhands/). Khi đó mọi người có
-thể duyệt agent PR bình thường. Agent của Discava dùng tài khoản riêng,
-`discava-bot`.
-</Aside>
+   Khi đó PR và comment của agent hiện dưới tài khoản đó, và bạn duyệt PR của chúng như PR của bất kỳ
+   ai khác.
+
+</Steps>
 
 ## Kiểm tra kết quả
 
 Trang **Issues → Labels** của bản fork liệt kê 16 label mới, **Settings → Branches** hiện rule
 trên `main` với sáu check bắt buộc, và **Settings → Moderation options → Interaction limits** hiện
-giới hạn chỉ collaborator cùng ngày kết thúc của nó.
+giới hạn chỉ collaborator cùng ngày kết thúc của nó. **Settings → Collaborators** liệt kê tài khoản
+của agent với vai trò **Write**.
 
 Tiếp theo: [3. Cài OpenHands](../openhands/).

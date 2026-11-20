@@ -8,7 +8,8 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **完了時の状態:** workflow が使うすべてのラベル、チェックがグリーンで承認済みの pull request だけを
-受け付ける `main` ブランチ、そしてコラボレーターに限定されたコメント。
+受け付ける `main` ブランチ、コラボレーターに限定されたコメント、そしてコラボレーターとして追加された
+エージェント専用のアカウント。
 
 <Steps>
 
@@ -43,8 +44,8 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    `UI Screenshots`。GitHub は一度実行されたチェックしか検索ボックスに表示しないので、見つからない場合は
    先に何か PR を開いてください。
 
-   バイパスを許可したままにしておくと、オーナーであるあなたが、自分のトークンでエージェントが開いた PR を
-   マージできます(下の注意を参照)。
+   バイパスを許可したままにしておくと、オーナーであるあなたが、spec PR のように自分で開いた PR を
+   マージできます。そうした PR は GitHub では自分で承認できません。
 
    <Aside type="caution">
    `software-factory/review` ステータスを必須にしないでください。これはエージェントへのシグナルで、
@@ -66,21 +67,21 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    この制限です。[誰がコメントできるか](../../discava/post-merge-verify/#誰がコメントできるか)を参照してください。
    </Aside>
 
-</Steps>
+5. **エージェントのアカウントを追加します。** エージェントは、ほかの用途には使わないマシンアカウントである
+   専用の GitHub アカウントで作業します。Discava では `discava-bot` です。アカウントを作成したら、fork の
+   **Settings → Collaborators** を開いて **Write** ロールで招待し、そのアカウントでサインインした状態で
+   招待を承認します。[手順 3](../openhands/) で作成するのは、このアカウントのトークンです。
 
-<Aside type="caution" title="アカウントは 1 つか 2 つか">
-最初に試すときは、エージェントが自分のアカウントのトークンを使ってもかまいません。
-ただし GitHub では、アカウントが自分の PR を承認することはできません。その場合、あなたの承認とレビュー担当エージェントの
-承認はコメントとして表示され、リポジトリの管理者としてマージすることになります。チームで使う場合は、書き込み権限を持つ
-エージェント用の別の GitHub アカウントを用意し、そのトークンを [手順 3](../openhands/) で使います。そうすれば、
-人がエージェントの PR を通常どおり承認できます。Discava のエージェントは、専用のアカウント `discava-bot` を
-使っています。
-</Aside>
+   これでエージェントの PR とコメントはそのアカウントの名前で表示され、エージェントの PR もほかの人の PR と
+   同じように承認できます。
+
+</Steps>
 
 ## 動作を確認する
 
 fork の **Issues → Labels** ページに新しい 16 個のラベルが一覧され、**Settings → Branches** に
 6 つの必須チェックを持つ `main` のルールが表示され、**Settings → Moderation options → Interaction limits** に
-終了日付きのコラボレーターのみの制限が表示されます。
+終了日付きのコラボレーターのみの制限が表示されます。**Settings → Collaborators** には、
+エージェントのアカウントが **Write** ロールで一覧されます。
 
 次へ: [3. OpenHands をインストールする](../openhands/)。

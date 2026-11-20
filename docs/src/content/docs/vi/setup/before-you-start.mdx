@@ -18,7 +18,8 @@ cài OpenHands trỏ vào bản fork. Sau đó bạn viết một spec cho ứng
 
 | Cần | Vì sao |
 | --- | --- |
-| Một tài khoản GitHub | Để fork, và để sở hữu token mà agent dùng |
+| Một tài khoản GitHub | Để fork, viết spec và review |
+| Một tài khoản GitHub thứ hai cho agent | Nó sở hữu token mà agent dùng, nên PR và comment của agent là của chính chúng và bạn có thể duyệt chúng. Tài khoản của Discava là `discava-bot` |
 | Node.js 24 và pnpm | Để chạy repository và Agent Canvas |
 | `uv` | Agent Canvas khởi động backend của nó bằng `uvx` |
 | Docker | Chỉ để chạy ứng dụng ghi chú và e2e test của nó ở local. CI chạy chúng cho agent |
@@ -35,7 +36,7 @@ webhook. Agent chỉ làm việc khi nó đang chạy.
 | # | Bước | Kết quả |
 | --- | --- | --- |
 | 1 | [Fork repository](../fork/) | Bản sao của riêng bạn, đã bật Actions và Issues |
-| 2 | [Cấu hình repository](../github-repository/) | Các label, và một `main` được bảo vệ |
+| 2 | [Cấu hình repository](../github-repository/) | Các label, một `main` được bảo vệ, và tài khoản của agent là một collaborator |
 | 3 | [Cài OpenHands](../openhands/) | Agent Canvas đang chạy, một GitHub token, hai agent profile |
 | 4 | [Tạo hai automation](../automations/) | Các agent Developer và Reviewer triển khai và review trong bản fork của bạn |
 | 5 | [Chạy tính năng đầu tiên](../first-feature/) | Một spec cho ứng dụng ghi chú, được agent đưa đến code đã merge |

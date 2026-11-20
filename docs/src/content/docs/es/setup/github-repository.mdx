@@ -8,7 +8,8 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **Al terminar tendrás:** todas las labels que usa el workflow, una rama `main` que solo acepta pull
-requests con checks en verde y una aprobación, y los comentarios limitados a los colaboradores.
+requests con checks en verde y una aprobación, los comentarios limitados a los colaboradores, y la
+cuenta propia de los agentes como colaboradora.
 
 <Steps>
 
@@ -43,8 +44,8 @@ requests con checks en verde y una aprobación, y los comentarios limitados a lo
    y `UI Screenshots`. GitHub solo ofrece un check en el cuadro de búsqueda después de que se haya ejecutado una vez, así que
    abre antes cualquier PR si falta alguno.
 
-   Dejar permitido el bypass te permite, como propietario, fusionar PR que los agentes abrieron con tu propio
-   token (consulta la advertencia de abajo).
+   Dejar permitido el bypass te permite, como propietario, fusionar un PR que abriste tú mismo, como un PR
+   de spec, que GitHub no te deja aprobar.
 
    <Aside type="caution">
    No hagas obligatorio el status `software-factory/review`. Es una señal para el agente, que solo se
@@ -69,21 +70,21 @@ requests con checks en verde y una aprobación, y los comentarios limitados a lo
    [Quién puede comentar](../../discava/post-merge-verify/#quién-puede-comentar).
    </Aside>
 
-</Steps>
+5. **Añade la cuenta de los agentes.** Los agentes trabajan con su propia cuenta de GitHub, una cuenta
+   de máquina que no usa nada más. La de Discava es `discava-bot`. Créala, abre **Settings →
+   Collaborators** en tu fork, invítala con el rol **Write** y acepta la invitación con la sesión
+   iniciada en ella. Su token es el que creas en el [paso 3](../openhands/).
 
-<Aside type="caution" title="Una cuenta o dos">
-Para una primera prueba, los agentes pueden usar un token de tu propia cuenta. Pero GitHub no
-deja que una cuenta apruebe su propio PR. Tu aprobación y la del agente Revisor aparecen entonces como
-comentarios, y fusionas como administrador del repositorio. Para un equipo, dale a los agentes una cuenta de GitHub
-separada con permiso de escritura, y usa su token en el [paso 3](../openhands/). Así las personas pueden
-aprobar los PR de los agentes con normalidad. Los agentes de Discava usan su propia cuenta,
-`discava-bot`.
-</Aside>
+   Los PR y comentarios de los agentes aparecen entonces con esa cuenta, y apruebas sus PR como
+   los de cualquier otra persona.
+
+</Steps>
 
 ## Comprueba que funciona
 
 La página **Issues → Labels** del fork lista las 16 labels nuevas, **Settings → Branches** muestra la
 regla en `main` con seis checks obligatorios, y **Settings → Moderation options → Interaction limits**
-muestra el límite de solo colaboradores con su fecha de fin.
+muestra el límite de solo colaboradores con su fecha de fin. **Settings → Collaborators** lista la
+cuenta de los agentes con el rol **Write**.
 
 Siguiente: [3. Instala OpenHands](../openhands/).

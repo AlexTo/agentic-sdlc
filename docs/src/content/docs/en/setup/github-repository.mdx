@@ -8,7 +8,8 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **You'll end with:** every label the workflow uses, a `main` branch that only takes pull
-requests with green checks and an approval, and comments limited to collaborators.
+requests with green checks and an approval, comments limited to collaborators, and the agents'
+own account as a collaborator.
 
 <Steps>
 
@@ -43,8 +44,8 @@ requests with green checks and an approval, and comments limited to collaborator
    and `UI Screenshots`. GitHub only offers a check in the search box after it has run once, so
    open any PR first if one is missing.
 
-   Leaving bypass allowed lets you, as the owner, merge PRs that the agents opened with your own
-   token (see the caution below).
+   Leaving bypass allowed lets you, as the owner, merge a PR you opened yourself, such as a spec
+   PR, which GitHub won't let you approve.
 
    <Aside type="caution">
    Don't require the `software-factory/review` status. It is a signal to the agent, only ever
@@ -69,20 +70,21 @@ requests with green checks and an approval, and comments limited to collaborator
    [Who can comment](../../discava/post-merge-verify/#who-can-comment).
    </Aside>
 
-</Steps>
+5. **Add the agents' account.** The agents work under their own GitHub account, a machine account
+   that nothing else uses. Discava's is `discava-bot`. Create one, then open **Settings →
+   Collaborators** in your fork, invite it with the **Write** role, and accept the invitation
+   while signed in as it. Its token is the one you create in [step 3](../openhands/).
 
-<Aside type="caution" title="One account or two">
-For a first try, the agents can use a token from your own account. GitHub won't
-let an account approve its own PR, though. Your approval and the Reviewer agent's then show as
-comments, and you merge as the repository admin. For a team, give the agents a separate GitHub
-account with write access, and make its token the one in [step 3](../openhands/). Then people can
-approve agent PRs normally. Discava's agents use their own account, `discava-bot`.
-</Aside>
+   The agents' PRs and comments then show under that account, and you approve their PRs like
+   anyone else's.
+
+</Steps>
 
 ## Check it worked
 
 The fork's **Issues → Labels** page lists the 16 new labels, **Settings → Branches** shows the
 rule on `main` with six required checks, and **Settings → Moderation options → Interaction limits**
-shows the collaborators-only limit with its end date.
+shows the collaborators-only limit with its end date. **Settings → Collaborators** lists the
+agents' account with the **Write** role.
 
 Next: [3. Install OpenHands](../openhands/).
