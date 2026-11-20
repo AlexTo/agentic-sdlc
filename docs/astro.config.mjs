@@ -17,7 +17,7 @@ export default defineConfig({
   },
   integrations: [
     starlight({
-      title: 'Agentic SDLC',
+      title: 'Agentic Software Development Lifecycle',
       social: [
         {
           icon: 'github',

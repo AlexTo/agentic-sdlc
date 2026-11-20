@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🤖 Agentic SDLC</h1>
+  <h1>🤖 Agentic Software Development Lifecycle</h1>
   <h3>Stop micromanaging a single agent. Climb the ladder of trust: the more you build into the environment, the more you can trust agents to do the right thing, and the more of them you can run at once.</h3>
   <p>
     <img alt="OpenHands" src="https://img.shields.io/badge/agent-OpenHands-22c55e?style=for-the-badge&logo=robotframework&logoColor=white">
