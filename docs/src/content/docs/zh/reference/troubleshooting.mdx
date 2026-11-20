@@ -43,3 +43,9 @@ sidebar:
 | 每个 PR 的 e2e job 都要下载 Chromium | 缓存只在 `main` 上保存 | 保留 CI 的 `playwright-cache` job，并使用与 PR Checks 相同的 key |
 | `Check for mutations` 在 `main` 上失败 | 有东西生成了 PR 没有提交的文件 | 在本地运行 `pnpm build` 并提交差异 |
 | 加标签时出现 `Resource not accessible by integration` | workflow token 能写 issue，但不能写 pull request | 给该 workflow 加上 `pull-requests: write` |
+
+## 部署
+
+| 症状 | 发生了什么 | 怎么做 |
+| --- | --- | --- |
+| 部署因为某个此前没有任何 stack 创建过的资源而以 `is not authorized to perform` 回滚 | 某个 stack 开始使用一种 CloudFormation 执行角色的策略没有覆盖的资源 | 把这些操作加进 `setup-stage.sh` 并重新运行它。它是幂等的，并会发布策略的一个新版本 |

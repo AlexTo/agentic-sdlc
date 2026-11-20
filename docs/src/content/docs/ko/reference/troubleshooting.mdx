@@ -43,3 +43,9 @@ sidebar:
 | 모든 PR의 e2e job이 Chromium을 다운로드함 | 캐시는 `main`에서만 저장됩니다 | PR Checks와 같은 key로 CI의 `playwright-cache` job을 유지합니다 |
 | `main`에서 `Check for mutations`가 실패함 | PR이 커밋하지 않은 파일을 무언가가 생성했습니다 | 로컬에서 `pnpm build`를 실행하고 diff를 커밋합니다 |
 | label을 붙일 때 `Resource not accessible by integration` | workflow 토큰이 issue에는 쓸 수 있지만 pull request에는 쓸 수 없습니다 | workflow에 `pull-requests: write`를 추가합니다 |
+
+## 배포
+
+| 증상 | 무슨 일인가 | 해야 할 일 |
+| --- | --- | --- |
+| 이전에 어떤 스택도 만들지 않았던 리소스에 대해 `is not authorized to perform`과 함께 배포가 롤백됨 | 어떤 스택이 CloudFormation 실행 역할의 정책이 다루지 않는 종류의 리소스를 사용하기 시작했습니다 | `setup-stage.sh`에 액션을 추가하고 다시 실행합니다. 멱등하며 정책의 새 버전을 발행합니다 |

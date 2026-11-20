@@ -71,6 +71,12 @@ workflow. Nó hỏi mọi thứ và đặt mặc định cho những gì nó dò
   nó liệt kê ra và dừng trước khi thay đổi bất cứ thứ gì. Các tên miền được lưu thành stage override
   trên GitHub environment (bước 3 ở trên)
 
+Script này idempotent, và được chạy lại mỗi khi các stack vượt quá phạm vi của execution role. Khi
+một stack bắt đầu tạo một loại resource mà các policy của role không bao phủ, mọi lần deploy đều
+rollback cho đến khi các action được thêm vào script và script được chạy lại, việc này phát hành một
+phiên bản mới của policy. Discava đã gặp chuyện này vào ngày stack websites của nó có thêm
+CloudFront Functions và một Lambda function URL.
+
 ### Production chờ một người
 
 Mỗi stage deploy từ GitHub environment cùng tên. Một stage kiểu production có **required reviewers**

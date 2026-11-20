@@ -66,6 +66,8 @@ development stage에 도달합니다. 설정하지 않으면 사람 없이는 �
   스크립트가 각각에 대해 발급된 인증서를 찾습니다. 하나라도 없으면 그것을 나열하고 아무것도 바꾸기 전에 멈춥니다.
   도메인은 GitHub environment에 stage override로 저장됩니다(위의 3단계)
 
+이 스크립트는 멱등하며, 스택이 실행 역할의 범위를 넘어설 때마다 다시 실행합니다. 어떤 스택이 역할의 정책이 다루지 않는 종류의 리소스를 만들기 시작하면, 스크립트에 액션을 추가하고 다시 실행해 정책의 새 버전이 발행될 때까지 모든 배포가 롤백됩니다. Discava는 websites 스택에 CloudFront Functions와 Lambda 함수 URL이 추가된 날 이 일을 겪었습니다.
+
 ### 프로덕션은 사람을 기다린다
 
 각 stage는 같은 이름의 GitHub environment에서 배포됩니다. 프로덕션과 같은 stage는 environment에 **required

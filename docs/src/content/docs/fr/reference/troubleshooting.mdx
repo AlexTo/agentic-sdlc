@@ -43,3 +43,9 @@ sidebar:
 | Le job e2e de chaque PR télécharge Chromium | Le cache n'est enregistré que sur `main` | Gardez le job `playwright-cache` de la CI, avec la même clé que PR Checks |
 | `Check for mutations` échoue sur `main` | Quelque chose a généré des fichiers que la PR n'a pas committés | Lancez `pnpm build` en local et committez le diff |
 | `Resource not accessible by integration` lors de la pose d'un label | Le token du workflow peut écrire dans les issues mais pas dans les pull requests | Ajoutez `pull-requests: write` au workflow |
+
+## Déploiement
+
+| Symptôme | Ce qui se passe | Quoi faire |
+| --- | --- | --- |
+| Le déploiement est annulé avec `is not authorized to perform` sur une ressource qu'aucune stack n'avait créée auparavant | Une stack a commencé à utiliser un type de ressource que les politiques du rôle d'exécution CloudFormation ne couvrent pas | Ajoutez les actions à `setup-stage.sh` et relancez-le. Il est idempotent et publie une nouvelle version de la politique |

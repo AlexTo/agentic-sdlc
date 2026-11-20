@@ -74,6 +74,12 @@ workflow. Pregunta por todo y pone por defecto lo que puede detectar. Crea:
   uno. Si falta alguno, lo lista y se detiene antes de cambiar nada. Los dominios se guardan como
   overrides del stage en el environment de GitHub (paso 3 anterior)
 
+El script es idempotente, y se vuelve a ejecutar cada vez que los stacks superan al rol de
+ejecución. Cuando un stack empieza a crear un tipo de recurso que las políticas del rol no cubren,
+cada deploy se revierte hasta que se añaden las acciones al script y se ejecuta de nuevo, lo que
+publica una nueva versión de la política. Discava se topó con esto el día en que su stack de
+websites ganó CloudFront Functions y una URL de función Lambda.
+
 ### Producción espera a una persona
 
 Cada stage se despliega desde el environment de GitHub del mismo nombre. Un stage tipo producción

@@ -43,3 +43,9 @@ sidebar:
 | すべての PR の e2e ジョブが Chromium をダウンロードする | キャッシュは `main` でしか保存されない | PR Checks と同じキーで、CI の `playwright-cache` ジョブを残す |
 | `main` で `Check for mutations` が失敗する | 何かが、PR でコミットされていないファイルを生成した | ローカルで `pnpm build` を実行し、差分をコミットする |
 | ラベル付けのときに `Resource not accessible by integration` | workflow のトークンは issue には書き込めるが pull request には書き込めない | workflow に `pull-requests: write` を追加する |
+
+## デプロイ
+
+| 症状 | 何が起きているか | どうするか |
+| --- | --- | --- |
+| 以前はどのスタックも作っていなかったリソースについて `is not authorized to perform` でデプロイがロールバックする | あるスタックが、CloudFormation 実行ロールのポリシーでカバーされていない種類のリソースを使い始めた | `setup-stage.sh` にアクションを追加して再実行する。冪等で、ポリシーの新しいバージョンを発行する |

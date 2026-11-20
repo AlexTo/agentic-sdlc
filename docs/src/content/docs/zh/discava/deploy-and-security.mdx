@@ -65,6 +65,8 @@ deploy -> prod
   子域名查找已签发的证书。如果缺少某个证书，它会列出来，并在做任何修改之前停止。这些域名作为 stage
   覆盖项存储在 GitHub environment 上（上面的第 3 步）
 
+这个脚本是幂等的，每当各个 stack 超出执行角色的范围时就重新运行它。当某个 stack 开始创建一种该角色的策略没有覆盖的资源时，每次部署都会回滚，直到把这些操作加进脚本并再运行一次，这会发布策略的一个新版本。Discava 在它的 websites stack 加入 CloudFront Functions 和一个 Lambda 函数 URL 的那天就遇到了这种情况。
+
 ### 生产环境等待一个人
 
 每个 stage 都从同名的 GitHub environment 部署。类生产的 stage 会在其 environment 上设置**必需审核者**：

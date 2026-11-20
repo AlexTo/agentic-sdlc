@@ -74,6 +74,12 @@ workflow. Chiede tutto ciò che serve e propone come default ciò che riesce a r
   Se ne manca uno, lo elenca e si ferma prima di cambiare qualsiasi cosa. I domini vengono salvati
   come override dello stage sull'environment GitHub (passo 3 sopra)
 
+Lo script è idempotente, e lo si riesegue ogni volta che gli stack superano l'execution role. Quando
+uno stack inizia a creare un tipo di risorsa che le policy del ruolo non coprono, ogni deploy viene
+annullato finché le azioni non vengono aggiunte allo script e questo non viene rieseguito, il che
+pubblica una nuova versione della policy. Discava ci è passata il giorno in cui il suo stack
+websites ha acquisito CloudFront Functions e una URL di funzione Lambda.
+
 ### La produzione aspetta una persona
 
 Ogni stage fa il deploy dall'environment GitHub con lo stesso nome. Uno stage simile alla produzione

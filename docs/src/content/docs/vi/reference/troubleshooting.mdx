@@ -43,3 +43,9 @@ sidebar:
 | Job e2e của mọi PR đều tải Chromium | Cache chỉ được lưu trên `main` | Giữ job `playwright-cache` của CI, với cùng key như PR Checks |
 | `Check for mutations` thất bại trên `main` | Có thứ đã sinh ra file mà PR không commit | Chạy `pnpm build` ở local và commit phần diff |
 | `Resource not accessible by integration` khi gắn label | Token của workflow ghi được issue nhưng không ghi được pull request | Thêm `pull-requests: write` vào workflow |
+
+## Deploy
+
+| Triệu chứng | Chuyện gì đang xảy ra | Cần làm gì |
+| --- | --- | --- |
+| Deploy rollback với `is not authorized to perform` trên một resource mà trước đó chưa stack nào tạo | Một stack bắt đầu dùng một loại resource mà các policy của CloudFormation execution role không bao phủ | Thêm các action vào `setup-stage.sh` và chạy lại. Nó idempotent và phát hành một phiên bản mới của policy |

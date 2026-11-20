@@ -69,6 +69,12 @@ workflow. It prompts for everything and defaults what it can detect. It creates:
   lists it and stops before changing anything. The domains are stored as stage overrides on the
   GitHub environment (step 3 above)
 
+The script is idempotent, and it is re-run whenever the stacks outgrow the execution role. When a
+stack starts creating a resource type the role's policies don't cover, every deploy rolls back
+until the actions are added to the script and it is run again, which publishes a new version of
+the policy. Discava hit this the day its websites stack gained CloudFront Functions and a Lambda
+function URL.
+
 ### Production waits for a person
 
 Each stage deploys from the GitHub environment of the same name. A production-like stage gets

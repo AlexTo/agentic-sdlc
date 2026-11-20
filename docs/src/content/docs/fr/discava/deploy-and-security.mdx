@@ -74,6 +74,12 @@ workflow. Il demande tout ce dont il a besoin et propose par défaut ce qu'il pe
   pour chacun. S'il en manque un, il le liste et s'arrête avant de modifier quoi que ce soit. Les
   domaines sont stockés comme surcharges du stage dans l'environnement GitHub (étape 3 ci-dessus)
 
+Le script est idempotent, et on le relance chaque fois que les stacks dépassent le rôle d'exécution.
+Quand une stack commence à créer un type de ressource que les politiques du rôle ne couvrent pas,
+chaque déploiement est annulé jusqu'à ce que les actions soient ajoutées au script et qu'il soit
+relancé, ce qui publie une nouvelle version de la politique. Discava l'a vécu le jour où sa stack
+websites a gagné des CloudFront Functions et une URL de fonction Lambda.
+
 ### La production attend une personne
 
 Chaque stage se déploie depuis l'environnement GitHub du même nom. Un stage de type production reçoit
