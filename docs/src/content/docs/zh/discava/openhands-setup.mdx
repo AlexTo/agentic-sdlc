@@ -53,8 +53,8 @@ Agent Canvas 1.41.0，从 npm（`@openhands/agent-canvas`）安装，并作为�
 | `DISCAVA_INSTRUCTOR_USERNAME`、`DISCAVA_INSTRUCTOR_PASSWORD` | 测试智能体的讲师用户 |
 | `DISCAVA_ADMIN_USERNAME`、`DISCAVA_ADMIN_PASSWORD` | 测试智能体的管理员用户 |
 
-GitHub token 是 `discava-bot` 上的一个 personal access token。`discava-bot` 是只供自动化使用的机器账号，
-是拥有写权限的协作者，token 具有仓库内容、issue、pull request 和 workflow 的写权限。
+GitHub token 是 `discava-bot` 上的一个 classic personal access token。`discava-bot` 是只供自动化使用的
+机器账号，是拥有写权限的协作者，token 具有 `repo` 和 `workflow` scope。
 
 六个 `DISCAVA_*` secret 是开发 stage 上的 Cognito 测试用户，应用中的每个角色一个。测试智能体用它们登录
 各个门户，并用它们获取 API token。

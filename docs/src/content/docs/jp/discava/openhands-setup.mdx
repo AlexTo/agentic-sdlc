@@ -54,9 +54,9 @@ Agent Canvas (**Settings → Secrets**) に、名前ごとに保存されてい�
 | `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | テスト担当の講師 |
 | `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | テスト担当の管理者 |
 
-GitHub トークンは、automation だけが使うマシンアカウント `discava-bot` の personal access token です。
-このアカウントは書き込み権限を持つコラボレーターで、トークンはリポジトリの contents、issues、
-pull requests、workflows への書き込み権限を持っています。
+GitHub トークンは、automation だけが使うマシンアカウント `discava-bot` の classic の personal access token
+です。このアカウントは書き込み権限を持つコラボレーターで、トークンは `repo` と `workflow` のスコープを
+持っています。
 
 6 つの `DISCAVA_*` シークレットは、開発ステージ上の Cognito のテストユーザーで、アプリのロールごとに 1 人です。
 テスト担当はこれらでポータルにサインインし、API トークンを取得します。

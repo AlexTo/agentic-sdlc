@@ -53,9 +53,8 @@ Agent Canvas(**Settings → Secrets**)에 이름으로 저장됩니다.
 | `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | 테스터의 강사 사용자 |
 | `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | 테스터의 관리자 사용자 |
 
-GitHub 토큰은 automation만 사용하는 머신 계정 `discava-bot`의 personal access token입니다. 이 계정은 write
-권한이 있는 collaborator이며, 토큰에는 저장소 contents, issues, pull requests, workflows에 대한 쓰기 권한이
-있습니다.
+GitHub 토큰은 automation만 사용하는 머신 계정 `discava-bot`의 classic personal access token입니다. 이 계정은
+write 권한이 있는 collaborator이며, 토큰에는 `repo`와 `workflow` scope가 있습니다.
 
 여섯 개의 `DISCAVA_*` secret은 development stage의 Cognito 테스트 사용자로, 앱의 역할마다 하나씩입니다. 테스터는
 이들로 포털에 로그인하고 API 토큰을 받습니다.

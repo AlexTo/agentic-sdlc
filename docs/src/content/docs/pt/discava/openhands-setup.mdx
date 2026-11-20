@@ -54,9 +54,9 @@ Guardados no Agent Canvas (**Settings → Secrets**), por nome:
 | `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | O instrutor do Testador |
 | `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | O admin do Testador |
 
-O token do GitHub é um personal access token em `discava-bot`, uma conta de máquina que só as
-automations usam. Ela é colaboradora com acesso de escrita, e o token tem acesso de escrita a conteúdo
-do repositório, issues, pull requests e workflows.
+O token do GitHub é um personal access token clássico em `discava-bot`, uma conta de máquina que só
+as automations usam. Ela é colaboradora com acesso de escrita, e o token tem os scopes `repo` e
+`workflow`.
 
 Os seis secrets `DISCAVA_*` são usuários de teste do Cognito no stage de desenvolvimento, um por papel no
 app. O Testador faz login nos portais com eles e obtém tokens de API com eles.

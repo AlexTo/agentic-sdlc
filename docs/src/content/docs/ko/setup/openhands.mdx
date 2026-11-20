@@ -23,11 +23,11 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    Agent Canvas가 실행 중일 때만 폴링합니다.
 
 2. [2단계](../github-repository/)의 에이전트 계정으로 로그인한 상태에서 **GitHub 토큰을 만듭니다**.
-   fork로 범위를 제한한 fine-grained 토큰으로,
-   **Contents**, **Issues**, **Pull requests**, **Workflows**를 read and write로 설정합니다.
+   `repo`와 `workflow` scope가 있는 classic personal access token입니다. fine-grained 토큰은 자기
+   계정이나 organization이 소유한 저장소에만 접근할 수 있어서 여러분의 fork에는 쓸 수 없습니다.
 
    에이전트는 workflow를 수정하지 않지만, 브랜치가 `.github/workflows/`를 건드릴 때마다
-   (예를 들어 `main`을 merge하면서) GitHub는 **Workflows** 권한이 없는 토큰의 push 전체를 거부합니다.
+   (예를 들어 `main`을 merge하면서) GitHub는 `workflow` scope가 없는 토큰의 push 전체를 거부합니다.
 
 3. Agent Canvas의 **Settings → Secrets**에서 **토큰을 secret으로 저장**합니다. 이름은
    `GITHUB_PERSONAL_ACCESS_TOKEN`입니다.

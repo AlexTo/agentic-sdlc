@@ -24,12 +24,12 @@ Relecteur.
    que tant qu'Agent Canvas est en marche.
 
 2. **Créez un token GitHub** en étant connecté avec le compte des agents de
-   l'[étape 2](../github-repository/) : un token fine-grained, limité à
-   votre fork, avec **Contents**, **Issues**, **Pull requests** et **Workflows** en lecture et
-   écriture.
+   l'[étape 2](../github-repository/) : un personal access token classique avec les scopes `repo` et
+   `workflow`. Un token fine-grained n'atteint que les dépôts de son propre compte ou de son
+   organisation, il ne peut donc pas atteindre votre fork.
 
    L'agent ne modifie jamais les workflows, mais GitHub rejette entièrement un push venant d'un token sans
-   **Workflows** dès que la branche touche `.github/workflows/`, par exemple via un merge de
+   le scope `workflow` dès que la branche touche `.github/workflows/`, par exemple via un merge de
    `main`.
 
 3. **Stockez le token comme secret** nommé `GITHUB_PERSONAL_ACCESS_TOKEN` dans Agent Canvas, sous

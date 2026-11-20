@@ -54,9 +54,9 @@ Lưu trong Agent Canvas (**Settings → Secrets**), theo tên:
 | `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | Instructor của Tester |
 | `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | Admin của Tester |
 
-GitHub token là một personal access token trên `discava-bot`, một tài khoản máy chỉ các automation
-dùng. Tài khoản này là collaborator có quyền ghi, và token có quyền ghi vào nội dung repository,
-issue, pull request và workflow.
+GitHub token là một classic personal access token trên `discava-bot`, một tài khoản máy chỉ các
+automation dùng. Tài khoản này là collaborator có quyền ghi, và token có các scope `repo` và
+`workflow`.
 
 Sáu secret `DISCAVA_*` là các người dùng test Cognito trên stage development, mỗi vai trò trong ứng
 dụng một người. Tester đăng nhập vào các cổng bằng chúng và lấy API token bằng chúng.

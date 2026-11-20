@@ -23,12 +23,12 @@ secret, và hai agent profile: `developer` cho agent Developer và `reviewer` ch
    khi Agent Canvas đang hoạt động.
 
 2. **Tạo một GitHub token** trong khi đăng nhập bằng tài khoản của agent từ
-   [bước 2](../github-repository/): một fine-grained token, giới hạn trong
-   bản fork của bạn, với **Contents**, **Issues**, **Pull requests** và **Workflows** đặt là read and
-   write.
+   [bước 2](../github-repository/): một classic personal access token với các scope `repo` và
+   `workflow`. Fine-grained token chỉ truy cập được các repository do chính tài khoản hoặc
+   organization của nó sở hữu, nên không truy cập được bản fork của bạn.
 
-   Agent không bao giờ sửa workflow, nhưng GitHub từ chối toàn bộ một lần push từ token thiếu
-   **Workflows** mỗi khi nhánh chạm vào `.github/workflows/`, ví dụ qua một lần merge
+   Agent không bao giờ sửa workflow, nhưng GitHub từ chối toàn bộ một lần push từ token thiếu scope
+   `workflow` mỗi khi nhánh chạm vào `.github/workflows/`, ví dụ qua một lần merge
    `main`.
 
 3. **Lưu token dưới dạng secret** tên `GITHUB_PERSONAL_ACCESS_TOKEN` trong Agent Canvas, ở

@@ -24,7 +24,7 @@ sidebar:
 | PR đỏ, đã thêm `ci-fix-1`, agent không bao giờ sửa lại | Worker chỉ sửa lại đúng `openhands/issue-<n>`, hoặc issue đã bị đóng | Kiểm tra tên nhánh. Mở lại issue |
 | Không có label `ci-fix-*` sau một lần chạy đỏ | Agent CI Status không chạy, hoặc đã bỏ qua nó (xem notice) | Mở lần chạy Agent CI Status và đọc notice, ví dụ `the pull request has a newer commit than this run` |
 | Agent sửa lại, rồi không có gì review head mới | Agent không gắn lại `openhands-review` | Gắn lại thủ công |
-| Push bị từ chối: `refusing to allow a Personal Access Token to create or update workflow` | Token thiếu quyền workflows, và nhánh chạm vào `.github/workflows/` (thường qua một lần merge `main`) | Thêm quyền. Lần poll kế sẽ thử lại |
+| Push bị từ chối: `refusing to allow a Personal Access Token to create or update workflow` | Token thiếu scope `workflow`, và nhánh chạm vào `.github/workflows/` (thường qua một lần merge `main`) | Thêm scope. Lần poll kế sẽ thử lại |
 | `ci-fix-exhausted` | Năm lượt fix-up không hội tụ | Đọc lần thất bại cuối. Thường là spec hoặc kế hoạch mơ hồ. Sửa nó, gỡ các label, chạy lại |
 
 ## Review

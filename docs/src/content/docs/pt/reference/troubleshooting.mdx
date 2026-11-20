@@ -24,7 +24,7 @@ sidebar:
 | PR vermelho, `ci-fix-1` adicionado, o agent nunca revisa | O worker só revisa exatamente `openhands/issue-<n>`, ou a issue foi fechada | Confira o nome da branch. Reabra a issue |
 | Nenhum label `ci-fix-*` depois de uma execução vermelha | O Agent CI Status não rodou, ou o ignorou (veja o aviso dele) | Abra a execução do Agent CI Status e leia o aviso, por exemplo `the pull request has a newer commit than this run` |
 | O agent revisa, depois nada faz review do novo head | O agent não aplicou de novo `openhands-review` | Aplique de novo manualmente |
-| Push rejeitado: `refusing to allow a Personal Access Token to create or update workflow` | O token não tem a permissão de workflows, e a branch mexe em `.github/workflows/` (muitas vezes por um merge da `main`) | Adicione a permissão. O próximo polling tenta de novo |
+| Push rejeitado: `refusing to allow a Personal Access Token to create or update workflow` | O token não tem o scope `workflow`, e a branch mexe em `.github/workflows/` (muitas vezes por um merge da `main`) | Adicione o scope. O próximo polling tenta de novo |
 | `ci-fix-exhausted` | Cinco correções não convergiram | Leia a última falha. Geralmente a spec ou o plan está ambíguo. Corrija, remova os labels, rode de novo |
 
 ## Reviews

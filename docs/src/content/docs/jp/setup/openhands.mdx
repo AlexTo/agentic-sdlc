@@ -23,11 +23,12 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    Agent Canvas が動いている間だけポーリングします。
 
 2. [手順 2](../github-repository/) で用意したエージェントのアカウントでサインインした状態で
-   **GitHub トークンを作成します**。fork に限定した fine-grained トークンで、
-   **Contents**、**Issues**、**Pull requests**、**Workflows** を読み書きに設定します。
+   **GitHub トークンを作成します**。`repo` と `workflow` のスコープを持つ classic の personal access token
+   です。fine-grained トークンは自分のアカウントか organization が所有するリポジトリにしか届かないため、
+   あなたの fork には使えません。
 
    エージェントが workflow を編集することはありませんが、ブランチが `.github/workflows/` に触れると
-   (たとえば `main` のマージによって)、GitHub は **Workflows** 権限のないトークンからの push 全体を拒否します。
+   (たとえば `main` のマージによって)、GitHub は `workflow` スコープのないトークンからの push 全体を拒否します。
 
 3. Agent Canvas の **Settings → Secrets** で、トークンを `GITHUB_PERSONAL_ACCESS_TOKEN` という名前の
    **シークレットとして保存します**。

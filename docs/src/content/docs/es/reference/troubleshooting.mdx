@@ -24,7 +24,7 @@ sidebar:
 | El PR está en rojo, se añadió `ci-fix-1`, el agente nunca lo revisa | El worker solo revisa exactamente `openhands/issue-<n>`, o la issue se cerró | Comprueba el nombre de la rama. Vuelve a abrir la issue |
 | Sin label `ci-fix-*` tras una ejecución en rojo | Agent CI Status no se ejecutó, o la ignoró (consulta su aviso) | Abre la ejecución de Agent CI Status y lee el aviso, p. ej. `the pull request has a newer commit than this run` |
 | El agente revisa y después nada hace review del nuevo head | El agente no volvió a poner `openhands-review` | Vuelve a ponerla a mano |
-| Push rechazado: `refusing to allow a Personal Access Token to create or update workflow` | Al token le falta el permiso de workflows, y la rama toca `.github/workflows/` (a menudo por un merge de `main`) | Añade el permiso. La siguiente consulta lo reintenta |
+| Push rechazado: `refusing to allow a Personal Access Token to create or update workflow` | Al token le falta el scope `workflow`, y la rama toca `.github/workflows/` (a menudo por un merge de `main`) | Añade el scope. La siguiente consulta lo reintenta |
 | `ci-fix-exhausted` | Cinco correcciones no llegaron a converger | Lee el último fallo. Normalmente la spec o el plan son ambiguos. Corrígelo, quita las labels y vuelve a ejecutar |
 
 ## Reviews
