@@ -69,7 +69,7 @@ spec PR은 코드처럼 리뷰됩니다. **`spec-ready` label과 함께** 이를
 | 신호 | 무슨 일이 있었나 | 해야 할 일 |
 | --- | --- | --- |
 | `ci-fix-exhausted` | 자동 수정 후에도 CI가 다섯 번 실패했습니다 | 마지막 실패를 읽으세요. 가이드를 댓글로 달거나, 직접 고치거나, spec을 고치세요. 그런 다음 [루프를 초기화](../../reference/labels/#루프-초기화)하세요 |
-| `review-fix-exhausted` | 다섯 번의 라운드 후에도 리뷰어가 여전히 변경을 요청합니다 | 리뷰어가 옳은지 판단하세요. spec이 모호한 경우가 많습니다 |
+| `review-fix-exhausted` | 다섯 번의 라운드 후에도 리뷰어 에이전트가 여전히 변경을 요청합니다 | 리뷰어 에이전트가 옳은지 판단하세요. spec이 모호한 경우가 많습니다 |
 | 에이전트가 issue에 남긴 댓글 | 지시받은 대로, 막혀서 멈췄습니다 | 답을 달고, `openhands` label을 제거했다가 다시 붙이세요 |
 | merge된 PR의 댓글: "the next implementation issue … was not opened" | 해당 phase의 작업이 모두 체크되지 않았습니다 | 체크하거나 마무리한 뒤, 해당 spec 폴더에 대해 Agent Issues를 직접 실행하세요 |
 | 실패했거나 막혔다는 보고서와 함께 열린 채 남은 테스트 issue | 테스터가 merge된 변경이 개발 stage에서 동작하지 않는다는 것을 발견했거나, 테스트할 수 없었습니다 | 보고서를 읽으세요. 수정 PR이 열렸다면 merge하거나, stage를 고치거나, 작업을 작성하세요. 다시 테스트하려면 `openhands-test`를 다시 붙이세요 |

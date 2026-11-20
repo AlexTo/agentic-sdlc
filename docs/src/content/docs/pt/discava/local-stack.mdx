@@ -31,7 +31,7 @@ formulário "Someone else" para quaisquer claims. Sem senhas, sem Cognito.
 
 ## Quem a roda
 
-O **agent implementador não roda**. A issue dele diz para não usar `pnpm dev`, Docker nem o runner de e2e.
+O **agent Desenvolvedor não roda**. A issue dele diz para não usar `pnpm dev`, Docker nem o runner de e2e.
 Ele escreve os cenários, e o **CI do PR** os roda: cada shard de e2e inicia seu próprio `pnpm dev` em um
 runner novo. A máquina do agent continua simples, e o resultado que ele lê sempre vem de uma
 stack limpa.

@@ -72,7 +72,7 @@ bạn phải xử lý.
 | Tín hiệu | Chuyện gì đã xảy ra | Cần làm gì |
 | --- | --- | --- |
 | `ci-fix-exhausted` | CI thất bại năm lần sau các lần sửa tự động | Đọc lần thất bại cuối. Comment hướng dẫn, tự sửa, hoặc sửa spec. Rồi [reset vòng lặp](../../reference/labels/#reset-một-vòng-lặp) |
-| `review-fix-exhausted` | Reviewer vẫn yêu cầu thay đổi sau năm vòng | Quyết định reviewer có đúng không. Thường là spec mơ hồ |
+| `review-fix-exhausted` | Agent Reviewer vẫn yêu cầu thay đổi sau năm vòng | Quyết định agent Reviewer có đúng không. Thường là spec mơ hồ |
 | Một comment trên issue từ agent | Nó bị chặn và dừng lại, như được hướng dẫn | Trả lời nó, rồi gỡ và gắn lại label `openhands` |
 | Một comment trên PR đã merge: "the next implementation issue … was not opened" | Các task của giai đoạn chưa được đánh dấu hết | Đánh dấu hoặc hoàn thành chúng, rồi chạy Agent Issues thủ công cho thư mục spec |
 | Một issue test còn để mở, với báo cáo thất bại hoặc bị chặn | Tester thấy thay đổi đã merge không hoạt động trên stage development, hoặc không test được nó | Đọc báo cáo. Merge fix PR của nó nếu nó đã mở một cái, sửa stage, hoặc viết một task. Gắn lại `openhands-test` để test lại |

@@ -28,7 +28,7 @@ Un nouveau push démarre sans le statut, donc le worker arrête de réviser dès
 | `<!-- agent-issue spec:<folder> group:<n> -->` | Première ligne d'une issue d'implémentation | Agent Issues | Retrouver le dossier de spec à partir d'une PR d'agent mergée (via son `Closes #n`), et ne jamais ouvrir une seconde issue pour le même groupe |
 | `<!-- post-merge-test pr:<n> -->` | Première ligne d'une issue de test | Post-merge Verify | Ne jamais ouvrir une seconde issue de test pour la même pull request |
 | `<!-- openhands-review-run: <id> -->` | Chaque review de l'agent Relecteur | Automatisation de code review | Agent Review Status n'agit que sur les reviews qui le portent |
-| `<!-- openhands-review-gate:waiting:<sha> -->` | Commentaire « Review waiting on checks » | Automatisation de code review | La trace que garde le reviewer du fait qu'il attend ce head |
+| `<!-- openhands-review-gate:waiting:<sha> -->` | Commentaire « Review waiting on checks » | Automatisation de code review | La trace que garde l'agent Relecteur du fait qu'il attend ce head |
 | `<!-- e2e-screenshots -->` | Le commentaire E2E screenshots | PR Checks | Mettre à jour l'unique commentaire au lieu d'en ajouter un nouveau à chaque exécution |
 
 Un marqueur dans une issue ne compte que si l'issue a été ouverte par le compte propre du workflow ou par

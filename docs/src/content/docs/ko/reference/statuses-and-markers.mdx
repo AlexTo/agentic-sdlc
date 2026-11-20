@@ -28,7 +28,7 @@ sidebar:
 | `<!-- agent-issue spec:<folder> group:<n> -->` | 구현 issue의 첫 줄 | Agent Issues | merge된 에이전트 PR에서 (그 PR의 `Closes #n`을 통해) spec 폴더를 찾고, 같은 그룹에 두 번째 issue를 열지 않기 위해 |
 | `<!-- post-merge-test pr:<n> -->` | 테스트 issue의 첫 줄 | Post-merge Verify | 같은 pull request에 두 번째 테스트 issue를 열지 않기 위해 |
 | `<!-- openhands-review-run: <id> -->` | 리뷰어 에이전트의 각 리뷰 | Code review automation | Agent Review Status는 이것이 있는 리뷰에만 반응합니다 |
-| `<!-- openhands-review-gate:waiting:<sha> -->` | "Review waiting on checks" 댓글 | Code review automation | 그 head를 기다리고 있다는 리뷰어 자신의 기록 |
+| `<!-- openhands-review-gate:waiting:<sha> -->` | "Review waiting on checks" 댓글 | Code review automation | 그 head를 기다리고 있다는 리뷰어 에이전트 자신의 기록 |
 | `<!-- e2e-screenshots -->` | E2E screenshots 댓글 | PR Checks | 실행할 때마다 새 댓글을 추가하는 대신 하나의 댓글을 업데이트하기 위해 |
 
 issue의 마커는 workflow 자체의 계정이나 쓰기 권한이 있는 사람이 연 issue일 때만 인정됩니다. 마커가 들어 있는

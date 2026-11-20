@@ -28,7 +28,7 @@ A new push starts without the status, so the worker stops revising once the agen
 | `<!-- agent-issue spec:<folder> group:<n> -->` | First line of an implementation issue | Agent Issues | Finding the spec folder from a merged agent PR (through its `Closes #n`), and never opening a second issue for the same group |
 | `<!-- post-merge-test pr:<n> -->` | First line of a test issue | Post-merge Verify | Never opening a second test issue for the same pull request |
 | `<!-- openhands-review-run: <id> -->` | Each Reviewer agent review | Code review automation | Agent Review Status only acts on reviews that carry it |
-| `<!-- openhands-review-gate:waiting:<sha> -->` | "Review waiting on checks" comment | Code review automation | The reviewer's own record that it is waiting on that head |
+| `<!-- openhands-review-gate:waiting:<sha> -->` | "Review waiting on checks" comment | Code review automation | The Reviewer agent's own record that it is waiting on that head |
 | `<!-- e2e-screenshots -->` | The E2E screenshots comment | PR Checks | Updating the one comment instead of adding a new one each run |
 
 A marker in an issue counts only when the issue was opened by the workflow's own account or by

@@ -52,7 +52,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 4. **ゲートを見守ります。**
 
    ✅ PR Checks が実行されます。どれかが失敗すると、**Agent CI Status** が `ci-fix-1` を付け、次のポーリングで
-   エージェントが同じ PR を修正します。すべてのチェックが終わると、レビュアーエージェントが head をレビューし、
+   開発担当エージェントが同じ PR を修正します。すべてのチェックが終わると、レビュー担当エージェントが head をレビューし、
    `✅ APPROVED` または `🔄 CHANGES REQUESTED` で終えます。変更要求があった場合も、`review-fix-1` 付きで
    エージェントに差し戻されます。
 
@@ -83,7 +83,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 - [ ] `spec-ready` の spec PR をマージすると、誰も手で開かなくても issue が開かれた。
 - [ ] エージェントが `openhands/issue-<n>` に PR を開き、ちょうど自分のタスクだけにチェックを付けた。
 - [ ] 失敗した CI 実行でエージェントが差し戻され、PR に `ci-fix-1` が付いている。
-- [ ] チェックが終わった後、レビュアーエージェントが PR の head をレビューした。
+- [ ] チェックが終わった後、レビュー担当エージェントが PR の head をレビューした。
 - [ ] エージェントの PR をマージすると、次のフェーズの issue が開かれた。
 - [ ] ウェブサイトの変更には、PR に一覧されたスクリーンショットが付いていた。
 - [ ] 最後のマージでは何も開かれなかった。

@@ -52,8 +52,8 @@ qualcosa di concreto da fare. Il [tutorial](../../tutorial/the-case/) tratta ogn
 
 4. **Osserva i controlli.**
 
-   ✅ Partono i PR Checks. Se uno fallisce, **Agent CI Status** aggiunge `ci-fix-1` e l'agente rivede la
-   stessa PR al poll successivo. Quando tutti i check sono terminati, l'agente reviewer fa la review dell'head
+   ✅ Partono i PR Checks. Se uno fallisce, **Agent CI Status** aggiunge `ci-fix-1` e l'agente Developer rivede la
+   stessa PR al poll successivo. Quando tutti i check sono terminati, l'agente Reviewer fa la review dell'head
    e termina con `✅ APPROVED` o `🔄 CHANGES REQUESTED`. Una richiesta di modifiche rimanda indietro anche
    l'agente, con `review-fix-1`.
 
@@ -84,7 +84,7 @@ Hai lo stesso workflow di Discava quando puoi rispondere sì a tutte queste:
 - [ ] Il merge di una PR della spec `spec-ready` ha aperto una issue, senza che nessuno la aprisse a mano.
 - [ ] L'agente ha aperto una PR su `openhands/issue-<n>` e ha spuntato esattamente i suoi task.
 - [ ] Un'esecuzione rossa della CI ha rimandato indietro l'agente, e la PR ha `ci-fix-1`.
-- [ ] L'agente reviewer ha fatto la review dell'head della PR una volta terminati i suoi check.
+- [ ] L'agente Reviewer ha fatto la review dell'head della PR una volta terminati i suoi check.
 - [ ] Il merge della PR dell'agente ha aperto la issue della fase successiva.
 - [ ] La modifica al sito è arrivata con gli screenshot elencati sulla PR.
 - [ ] L'ultimo merge non ha aperto nulla.

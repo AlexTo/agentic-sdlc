@@ -63,7 +63,7 @@ agire.
 | Mai | Garantito da |
 | --- | --- |
 | Fare merge, o push su `main` | Branch protection che richiede una review di approvazione. Il token dell'agente viene usato solo per il suo branch |
-| Modificare `.github/workflows/` | Constitution e istruzioni della issue. La review del reviewer e quella umana lo intercettano. I workflow del collante eseguono il codice del branch di default, quindi un workflow modificato in una PR non può cambiarli |
+| Modificare `.github/workflows/` | Constitution e istruzioni della issue. La review del Reviewer e quella umana lo intercettano. I workflow del collante eseguono il codice del branch di default, quindi un workflow modificato in una PR non può cambiarli |
 | Indebolire un test per farlo passare | Constitution ("tests are a specification"), istruzioni della issue, agente Reviewer |
 | Fare deploy, o modificare l'infrastruttura | A nessun agente viene dato un ruolo di deploy. Il deploy usa ruoli OIDC a breve durata da un environment di GitHub. Al Developer e al Reviewer non serve alcun accesso al cloud. Il Tester raggiunge solo lo stage di sviluppo, e il suo prompt lo limita alla lettura e ai dati di test che crea tramite l'app |
 | Prendere istruzioni da un estraneo | Ogni issue e pull request consegnata a un agente ha il lock, quindi solo le persone con accesso in scrittura possono commentare. Il Tester testa solo le issue aperte dal workflow, e le sue istruzioni sono il suo prompt, non la issue |
@@ -75,7 +75,7 @@ agire.
 | Segnale | Cosa è successo | Cosa fare |
 | --- | --- | --- |
 | `ci-fix-exhausted` | La CI è fallita cinque volte dopo le correzioni automatiche | Leggi l'ultimo fallimento. Commenta con indicazioni, correggi tu stesso o correggi la spec. Poi [azzera il loop](../../reference/labels/#azzerare-un-loop) |
-| `review-fix-exhausted` | Il reviewer chiede ancora modifiche dopo cinque giri | Decidi se il reviewer ha ragione. Spesso la spec è ambigua |
+| `review-fix-exhausted` | L'agente Reviewer chiede ancora modifiche dopo cinque giri | Decidi se l'agente Reviewer ha ragione. Spesso la spec è ambigua |
 | Un commento dell'agente sulla issue | Era bloccato e si è fermato, come da istruzioni | Rispondi, poi rimuovi e riapplica la label `openhands` |
 | Un commento su una PR mergiata: "the next implementation issue … was not opened" | I task della fase non sono tutti spuntati | Spuntali o completali, poi esegui a mano Agent Issues per la cartella della spec |
 | Una issue di test lasciata aperta, con un report di fallimento o di blocco | Il Tester ha scoperto che la modifica mergiata non funziona sullo stage di sviluppo, o non è riuscito a testarla | Leggi il report. Fai il merge della sua PR di correzione se ne ha aperta una, sistema lo stage, o scrivi un task. Riapplica `openhands-test` per testare di nuovo |

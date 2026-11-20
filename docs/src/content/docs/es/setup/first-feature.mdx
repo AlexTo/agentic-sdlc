@@ -52,8 +52,8 @@ algo real que hacer. El [tutorial](../../tutorial/the-case/) cubre cada etapa co
 
 4. **Observa los controles.**
 
-   ✅ Se ejecutan los PR Checks. Si uno falla, **Agent CI Status** añade `ci-fix-1` y el agente revisa el
-   mismo PR en la siguiente consulta. Cuando han terminado todos los checks, el agente revisor hace review del head
+   ✅ Se ejecutan los PR Checks. Si uno falla, **Agent CI Status** añade `ci-fix-1` y el agente Desarrollador revisa el
+   mismo PR en la siguiente consulta. Cuando han terminado todos los checks, el agente Revisor hace review del head
    y termina en `✅ APPROVED` o `🔄 CHANGES REQUESTED`. Una petición de cambios también devuelve al agente,
    con `review-fix-1`.
 
@@ -84,7 +84,7 @@ Tienes el mismo workflow que Discava cuando puedes responder que sí a todo esto
 - [ ] Fusionar un PR de spec con `spec-ready` abrió una issue, sin que nadie la abriera a mano.
 - [ ] El agente abrió un PR en `openhands/issue-<n>` y marcó exactamente sus tareas.
 - [ ] Una ejecución de CI en rojo devolvió al agente, y el PR lleva `ci-fix-1`.
-- [ ] El agente revisor hizo review del head del PR cuando terminaron sus checks.
+- [ ] El agente Revisor hizo review del head del PR cuando terminaron sus checks.
 - [ ] Fusionar el PR del agente abrió la issue de la siguiente fase.
 - [ ] El cambio del sitio web vino con capturas de pantalla listadas en el PR.
 - [ ] El último merge no abrió nada.

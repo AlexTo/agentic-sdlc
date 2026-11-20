@@ -60,7 +60,7 @@ falha.
 | Nunca | Garantido por |
 | --- | --- |
 | Fazer merge ou push na `main` | Branch protection exigindo um review de aprovação. O token do agent só é usado na própria branch dele |
-| Editar `.github/workflows/` | Constitution e instruções da issue. O revisor e o review humano pegam isso. Os workflows de cola rodam o código da branch padrão, então um workflow editado em um PR não consegue alterá-los |
+| Editar `.github/workflows/` | Constitution e instruções da issue. O Revisor e o review humano pegam isso. Os workflows de cola rodam o código da branch padrão, então um workflow editado em um PR não consegue alterá-los |
 | Enfraquecer um teste para fazê-lo passar | Constitution ("tests are a specification"), instruções da issue, agent Revisor |
 | Fazer deploy ou mudar a infraestrutura | Nenhum agent recebe uma role de deploy. O deploy usa roles OIDC de curta duração de um GitHub environment. O Desenvolvedor e o Revisor não precisam de nenhum acesso à nuvem. O Testador alcança só o stage de desenvolvimento, e o prompt dele o limita a ler e aos dados de teste que ele cria pelo app |
 | Receber instruções de um estranho | Toda issue e todo pull request entregue a um agent é trancado, então só pessoas com acesso de escrita podem comentar. O Testador testa só issues que o workflow abriu, e as instruções dele são o seu próprio prompt, não a issue |
@@ -72,7 +72,7 @@ falha.
 | Sinal | O que aconteceu | O que fazer |
 | --- | --- | --- |
 | `ci-fix-exhausted` | O CI falhou cinco vezes depois das correções automáticas | Leia a última falha. Comente com orientações, corrija você mesmo ou corrija a spec. Depois [reinicie o loop](../../reference/labels/#reiniciando-um-loop) |
-| `review-fix-exhausted` | O revisor continua pedindo mudanças depois de cinco rodadas | Decida se o revisor tem razão. Muitas vezes a spec é ambígua |
+| `review-fix-exhausted` | O agent Revisor continua pedindo mudanças depois de cinco rodadas | Decida se o agent Revisor tem razão. Muitas vezes a spec é ambígua |
 | Um comentário do agent na issue | Ele ficou bloqueado e parou, como instruído | Responda e depois remova e aplique de novo o label `openhands` |
 | Um comentário em um PR mergeado: "the next implementation issue … was not opened" | Nem todas as tarefas da fase estão marcadas | Marque ou termine as tarefas e depois rode o Agent Issues à mão para a pasta da spec |
 | Uma issue de teste deixada aberta, com um relatório de falha ou de bloqueio | O Testador descobriu que a mudança mergeada não funciona no stage de desenvolvimento, ou não conseguiu testá-la | Leia o relatório. Faça o merge do PR de correção, se ele abriu um, corrija o stage ou escreva uma tarefa. Aplique de novo `openhands-test` para testar outra vez |

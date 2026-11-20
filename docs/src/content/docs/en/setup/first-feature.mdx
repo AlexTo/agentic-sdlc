@@ -52,8 +52,8 @@ something real to do. The [tutorial](../../tutorial/the-case/) covers each stage
 
 4. **Watch the gates.**
 
-   ✅ PR Checks run. If one fails, **Agent CI Status** adds `ci-fix-1` and the agent revises the
-   same PR on the next poll. Once every check has finished, the reviewer agent reviews the head
+   ✅ PR Checks run. If one fails, **Agent CI Status** adds `ci-fix-1` and the Developer agent revises the
+   same PR on the next poll. Once every check has finished, the Reviewer agent reviews the head
    and ends `✅ APPROVED` or `🔄 CHANGES REQUESTED`. A request for changes sends the agent back
    too, with `review-fix-1`.
 
@@ -84,7 +84,7 @@ You have the same workflow as Discava when you can say yes to all of these:
 - [ ] Merging a `spec-ready` spec PR opened an issue, with nobody opening it by hand.
 - [ ] The agent opened a PR on `openhands/issue-<n>` and ticked exactly its tasks.
 - [ ] A red CI run sent the agent back, and the PR carries `ci-fix-1`.
-- [ ] The reviewer agent reviewed the PR's head once its checks had finished.
+- [ ] The Reviewer agent reviewed the PR's head once its checks had finished.
 - [ ] Merging the agent's PR opened the next phase's issue.
 - [ ] The website change came with screenshots listed on the PR.
 - [ ] The last merge opened nothing.

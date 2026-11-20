@@ -33,7 +33,7 @@ Cognito.
 
 ## Qui la fait tourner
 
-L'**agent d'implémentation, non**. Son issue lui dit de ne pas utiliser `pnpm dev`, Docker ni
+L'**agent Développeur, non**. Son issue lui dit de ne pas utiliser `pnpm dev`, Docker ni
 l'exécuteur e2e. Il écrit les scénarios, et c'est la **CI de la PR** qui les exécute : chaque shard
 e2e démarre son propre `pnpm dev` sur un runner neuf. La machine de l'agent reste simple, et le
 résultat qu'il lit vient toujours d'une stack propre.

@@ -28,7 +28,7 @@ Một lần push mới bắt đầu mà không có status, nên worker ngừng s
 | `<!-- agent-issue spec:<folder> group:<n> -->` | Dòng đầu của một issue triển khai | Agent Issues | Tìm thư mục spec từ một agent PR đã merge (qua `Closes #n` của nó), và không bao giờ mở issue thứ hai cho cùng một nhóm |
 | `<!-- post-merge-test pr:<n> -->` | Dòng đầu của một issue test | Post-merge Verify | Không bao giờ mở issue test thứ hai cho cùng một pull request |
 | `<!-- openhands-review-run: <id> -->` | Mỗi review của agent Reviewer | Automation code review | Agent Review Status chỉ hành động với review mang marker này |
-| `<!-- openhands-review-gate:waiting:<sha> -->` | Comment "Review waiting on checks" | Automation code review | Ghi chép riêng của reviewer rằng nó đang chờ head đó |
+| `<!-- openhands-review-gate:waiting:<sha> -->` | Comment "Review waiting on checks" | Automation code review | Ghi chép riêng của agent Reviewer rằng nó đang chờ head đó |
 | `<!-- e2e-screenshots -->` | Comment E2E screenshots | PR Checks | Cập nhật một comment duy nhất thay vì thêm comment mới mỗi lần chạy |
 
 Một marker trong một issue chỉ được tính khi issue đó do chính tài khoản của workflow hoặc một người

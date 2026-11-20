@@ -30,7 +30,7 @@ constitution 原则 III：每个 AWS 服务都有一个本地替身，`pnpm dev`
 
 ## 谁来运行它
 
-**实现智能体不运行它**。它的 issue 说明不要使用 `pnpm dev`、Docker 或 e2e runner。它编写场景，由
+**开发智能体不运行它**。它的 issue 说明不要使用 `pnpm dev`、Docker 或 e2e runner。它编写场景，由
 **PR CI** 运行它们：每个 e2e 分片都会在一个全新的 runner 上启动自己的 `pnpm dev`。智能体的机器保持简单，
 它读到的结果也总是来自一个干净的栈。
 

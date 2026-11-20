@@ -33,7 +33,7 @@ sin Cognito.
 
 ## Quién lo ejecuta
 
-El **agente implementador no**. Su issue le dice que no use `pnpm dev`, Docker ni el runner de e2e.
+El **agente Desarrollador no**. Su issue le dice que no use `pnpm dev`, Docker ni el runner de e2e.
 Escribe los escenarios, y el **CI del PR** los ejecuta: cada shard de e2e arranca su propio
 `pnpm dev` en un runner recién creado. La máquina del agente sigue siendo sencilla, y el resultado
 que lee siempre procede de un stack limpio.

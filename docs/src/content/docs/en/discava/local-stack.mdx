@@ -31,7 +31,7 @@ The local sign-in page offers fixed users (an instructor, two students, an admin
 
 ## Who runs it
 
-The **implementing agent doesn't**. Its issue says not to use `pnpm dev`, Docker or the e2e runner.
+The **Developer agent doesn't**. Its issue says not to use `pnpm dev`, Docker or the e2e runner.
 It writes the scenarios, and **PR CI** runs them: each e2e shard starts its own `pnpm dev` on a
 fresh runner. The agent's machine stays simple, and the result it reads is always from a clean
 stack.

@@ -28,7 +28,7 @@ sidebar:
 | `<!-- agent-issue spec:<folder> group:<n> -->` | 实现 issue 的第一行 | Agent Issues | 从已合并的智能体 PR（通过其 `Closes #n`）找到 spec 文件夹，并且绝不为同一组开第二个 issue |
 | `<!-- post-merge-test pr:<n> -->` | 测试 issue 的第一行 | Post-merge Verify | 绝不为同一个 pull request 开第二个测试 issue |
 | `<!-- openhands-review-run: <id> -->` | 评审智能体的每条评审 | 代码评审 automation | Agent Review Status 只处理带有它的评审 |
-| `<!-- openhands-review-gate:waiting:<sha> -->` | “Review waiting on checks” 评论 | 代码评审 automation | 评审者自己记录它正在等待该 head |
+| `<!-- openhands-review-gate:waiting:<sha> -->` | “Review waiting on checks” 评论 | 代码评审 automation | 评审智能体自己记录它正在等待该 head |
 | `<!-- e2e-screenshots -->` | E2E 截图评论 | PR Checks | 每次运行都更新同一条评论，而不是新增一条 |
 
 issue 中的标记只有在该 issue 由 workflow 自己的账号或有写权限的人开出时才算数。任何人都可以开一个带有标记的 issue。

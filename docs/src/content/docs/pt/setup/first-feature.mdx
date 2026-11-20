@@ -52,8 +52,8 @@ real para fazer. O [tutorial](../../tutorial/the-case/) cobre cada etapa com mai
 
 4. **Acompanhe os gates.**
 
-   ✅ Os PR Checks rodam. Se um falhar, o **Agent CI Status** adiciona `ci-fix-1` e o agent revisa
-   o mesmo PR no próximo polling. Quando todos os checks terminam, o agent revisor faz o review do
+   ✅ Os PR Checks rodam. Se um falhar, o **Agent CI Status** adiciona `ci-fix-1` e o agent Desenvolvedor revisa
+   o mesmo PR no próximo polling. Quando todos os checks terminam, o agent Revisor faz o review do
    head e termina com `✅ APPROVED` ou `🔄 CHANGES REQUESTED`. Um pedido de mudanças também manda o
    agent de volta, com `review-fix-1`.
 
@@ -84,7 +84,7 @@ Você tem o mesmo workflow do Discava quando consegue responder sim a todos este
 - [ ] O merge de um PR de spec com `spec-ready` abriu uma issue, sem ninguém abri-la manualmente.
 - [ ] O agent abriu um PR em `openhands/issue-<n>` e marcou exatamente as tasks dele.
 - [ ] Uma execução vermelha do CI mandou o agent de volta, e o PR tem `ci-fix-1`.
-- [ ] O agent revisor fez o review do head do PR quando os checks dele terminaram.
+- [ ] O agent Revisor fez o review do head do PR quando os checks dele terminaram.
 - [ ] O merge do PR do agent abriu a issue da próxima fase.
 - [ ] A mudança no site veio com screenshots listados no PR.
 - [ ] O último merge não abriu nada.

@@ -28,7 +28,7 @@ Un push nuevo empieza sin el status, así que el worker deja de revisar en cuant
 | `<!-- agent-issue spec:<folder> group:<n> -->` | Primera línea de una issue de implementación | Agent Issues | Encontrar la carpeta de la spec a partir de un PR de agente fusionado (a través de su `Closes #n`), y no abrir nunca una segunda issue para el mismo grupo |
 | `<!-- post-merge-test pr:<n> -->` | Primera línea de una issue de test | Post-merge Verify | No abrir nunca una segunda issue de test para el mismo pull request |
 | `<!-- openhands-review-run: <id> -->` | Cada review del agente Revisor | Automatización de code review | Agent Review Status solo actúa sobre las reviews que lo llevan |
-| `<!-- openhands-review-gate:waiting:<sha> -->` | Comentario "Review waiting on checks" | Automatización de code review | El registro propio del revisor de que está esperando a ese head |
+| `<!-- openhands-review-gate:waiting:<sha> -->` | Comentario "Review waiting on checks" | Automatización de code review | El registro propio del agente Revisor de que está esperando a ese head |
 | `<!-- e2e-screenshots -->` | El comentario E2E screenshots | PR Checks | Actualizar ese único comentario en lugar de añadir uno nuevo en cada ejecución |
 
 Un marcador en una issue solo cuenta cuando la issue la abrió la propia cuenta del workflow o alguien

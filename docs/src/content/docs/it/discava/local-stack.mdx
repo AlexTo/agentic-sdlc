@@ -32,7 +32,7 @@ La pagina di login locale offre utenti fissi (un istruttore, due studenti, un ad
 
 ## Chi lo esegue
 
-L'**agente che implementa no**. La sua issue gli dice di non usare `pnpm dev`, Docker o il runner
+L'**agente Developer no**. La sua issue gli dice di non usare `pnpm dev`, Docker o il runner
 e2e. Scrive gli scenari, e la **CI della PR** li esegue: ogni shard e2e avvia il proprio `pnpm dev`
 su un runner nuovo. La macchina dell'agente resta semplice, e il risultato che legge viene sempre da
 uno stack pulito.
