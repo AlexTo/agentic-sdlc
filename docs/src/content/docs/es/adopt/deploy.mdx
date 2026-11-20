@@ -1,6 +1,6 @@
 ---
-title: 9. Despliegue y escaneos de seguridad (opcional)
-description: Despliega cada main en verde a un stage de desarrollo, deja producción detrás de una aprobación y escanea antes de cada despliegue.
+title: 9. Despliegue, escaneos de seguridad y tests post-merge (opcional)
+description: Despliega cada main en verde a un stage de desarrollo, deja producción detrás de una aprobación, escanea antes de cada despliegue y haz que el agente Tester pruebe lo desplegado.
 sidebar:
   order: 9
 ---
@@ -8,7 +8,8 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **Al terminar tendrás:** un escaneo de Trivy en cada push a `main`, un workflow Deploy que lleva cada
-`main` en verde a un stage de desarrollo, y despliegues a producción que esperan a una persona.
+`main` en verde a un stage de desarrollo, despliegues a producción que esperan a una persona y, si lo
+quieres, un agente Tester que prueba cada cambio fusionado en el stage de desarrollo.
 
 Este paso es específico de Discava en sus detalles (AWS, CDK), pero la estructura sirve para cualquier nube. La
 app de notas de ejemplo de este repositorio no tiene despliegue, así que copia de
@@ -73,6 +74,34 @@ app de notas de ejemplo de este repositorio no tiene despliegue, así que copia 
    y añade **Required reviewers**. Para desplegarlo, abre **Actions → Deploy → Run
    workflow** e introduce el stage de producción. El job espera entonces la aprobación.
 
+6. **Añade el agente Tester**, si quieres que se pruebe cada cambio desplegado (hueco 11). Es la pieza
+   más reciente, y vive en Discava, no en este repositorio. Copia de allí:
+
+   - `packages/tooling/agent/src/post-merge-test/`, `src/agent-lock/` y `src/helpers/`, con sus
+     targets de Nx `post-merge-test` y `agent-lock`
+   - `.github/workflows/post-merge-verify.yml` y `agent-lock.yml`
+   - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`, para abrir una issue de test a mano
+
+   Después ajusta a tu repositorio el nombre del stage (`TEST_STAGE`) y las rutas que nunca llegan a
+   un stack desplegado (`NOT_DEPLOYED` en `plan.ts`).
+
+   En el lado de OpenHands, añade un perfil de agente `tester` y una automatización que sondee las
+   issues con la label `openhands-test`. No hay plantilla de catálogo para ella. El worker de Discava
+   y su prompt se describen en
+   [Configuración de OpenHands](../../discava/openhands-setup/#tester-github-issue-tester)
+   y en [Los prompts de los agentes](../../discava/agent-prompts/#tester). Dale al Tester:
+
+   - una CLI de la nube con sesión iniciada en la cuenta de desarrollo, con el mínimo acceso que
+     necesiten las pruebas
+   - un usuario de prueba por cada rol de tu app, guardados como secretos de OpenHands
+   - un navegador que pueda manejar, como Playwright con Chromium
+
+   <Aside type="caution">
+   El Tester lee issues y pull requests mientras tiene esas credenciales. Conserva el bloqueo
+   (`agent-lock.yml` y `helpers/conversation-lock.ts`), deja el "cómo probar" en el prompt de la
+   propia automatización y no en la issue, y nunca lo apuntes a un stage cuyos datos importen.
+   </Aside>
+
 </Steps>
 
 ## Comprueba que funciona
@@ -81,9 +110,14 @@ Fusiona cualquier PR. CI se ejecuta y después **Deploy** arranca solo con el st
 a mano sobre un commit más antiguo: Deploy registra `Skipping deploy: no longer main's latest commit` y
 no despliega nada.
 
+Con el Tester configurado: después de ese despliegue, **Post-merge Verify** abre una issue bloqueada
+(locked) titulada `test(post-merge): verify #<pr> …`, con la label `openhands-test`. En un sondeo como
+mucho, el Tester arranca, y su informe aparece como comentario en la issue.
+
 <Aside type="note">
-El agente nunca despliega y nunca ve estos roles. Su conversación solo tiene el token de GitHub.
-El rol de despliegue solo lo asume un workflow que se ejecuta desde `main`, en el environment del stage.
+Ningún agente despliega, y ninguno ve estos roles. El Desarrollador y el Revisor solo necesitan el
+token de GitHub. El acceso del Tester a la cuenta de desarrollo es independiente del rol de despliegue,
+que solo lo asume un workflow que se ejecuta desde `main`, en el environment del stage.
 </Aside>
 
 Siguiente: tu repositorio ya tiene todo lo que tiene un fork de este. Continúa desde

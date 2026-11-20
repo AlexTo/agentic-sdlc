@@ -9,6 +9,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 **결과:** OpenHands가 5분마다 fork를 폴링합니다. `openhands` label이 붙은 issue를 구현하고,
 실패로 표시된 PR을 수정하고, `openhands-review` label이 붙은 PR을 리뷰합니다.
+이들이 개발자 에이전트와 리뷰어 에이전트입니다.
 
 두 automation 모두 Agent Canvas의 **automation catalog**에서 가져옵니다. form을 채우면
 catalog가 테스트를 거친 worker를 여러분의 설정과 함께 패키징합니다. 코드를 작성하거나 업로드할 필요가 없습니다.
@@ -22,14 +23,14 @@ catalog가 테스트를 거친 worker를 여러분의 설정과 함께 패키징
    | Repositories | `<you>/agentic-sdlc` |
    | Trigger label | `openhands` |
    | Branch prefix | `openhands/issue` |
-   | Pull request mode | Draft |
+   | Pull request mode | Ready for review |
    | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-   | Agent profile | `default` |
+   | Agent profile | `developer` |
    | Check frequency | `*/5 * * * *` |
    | Timezone | 여러분의 시간대 |
 
    Discava는 템플릿 버전 1.2.4를 사용합니다. worker prompt는 에이전트에게 PR을 연 뒤
-   `openhands-review` label을 추가하라고 지시하므로, 새 PR은 draft 상태여도 리뷰어에게 전달됩니다.
+   `openhands-review` label을 추가하라고 지시하므로, 새 PR은 모두 리뷰어 에이전트에게 전달됩니다.
 
 2. catalog에서 **"GitHub code review"를 추가**합니다.
 
@@ -63,14 +64,20 @@ catalog가 테스트를 거친 worker를 여러분의 설정과 함께 패키징
 1. 테스트 issue를 만듭니다: "Add a line to README.md saying hello". 그리고 `openhands` label을 추가합니다.
 2. 한 번의 폴링 안에 해당 issue의 대화가 Agent Canvas에 나타납니다.
 3. 에이전트가 끝나면 `openhands/issue-<n>`에 `[#<n>] <issue
-   title>` 제목의 draft PR이 나타나고, `openhands-review`가 추가되어 있습니다.
-4. 검사가 끝나면 리뷰어가 리뷰를 게시합니다. 리뷰는
+   title>` 제목의 PR이 나타나고, `openhands-review`가 추가되어 있습니다.
+4. 검사가 끝나면 리뷰어 에이전트가 리뷰를 게시합니다. 리뷰는
    "_This review was posted by an AI agent (OpenHands)._"로 시작하고 `✅ APPROVED` 또는
    `🔄 CHANGES REQUESTED`로 끝납니다.
 
 확인이 끝나면 PR을 닫고 브랜치를 삭제합니다.
 
 각 automation이 폴링 때마다 무엇을 하는지는 [에이전트 런타임](../../concepts/the-agent-runtime/)에 있습니다.
+
+<Aside type="tip" title="세 번째 역할: 테스터">
+Discava는 세 번째 automation인 테스터를 실행하며, 테스터는 merge된 각 변경을 배포된 development stage에서
+테스트합니다. 테스트할 배포가 필요하므로 이 설정에는 포함되지 않습니다. 여러분의 저장소가 스스로 배포하게 되면
+[merge 후 검증](../../discava/post-merge-verify/)과 [에이전트 프롬프트](../../discava/agent-prompts/)를 참고하세요.
+</Aside>
 
 <Aside type="note">
 에이전트가 issue를 처음부터 다시 시도하게 하려면 `openhands` label을 제거했다가 다시 붙입니다.

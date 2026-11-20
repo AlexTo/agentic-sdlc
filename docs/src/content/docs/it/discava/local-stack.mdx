@@ -24,7 +24,7 @@ un sostituto locale, e `pnpm dev` li avvia tutti con Docker.
 
 Il codice di backend cambia comportamento con `LOCAL_DEV=true`. Le impostazioni condivise stanno in
 un solo package (`common-server-utils/local-dev`), così ogni Lambda risolve gli endpoint allo stesso
-modo. Ogni sostituto è un target Nx in `packages/common/scripts`, che scarica e avvia il suo
+modo. Ogni sostituto è un target Nx in `packages/tooling/local-dev`, che scarica e avvia il suo
 container.
 
 La pagina di login locale offre utenti fissi (un istruttore, due studenti, un admin) e un form

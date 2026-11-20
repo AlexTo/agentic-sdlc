@@ -8,7 +8,8 @@ sidebar:
 This guide shows you how to run a software lifecycle in which **agents write the code and people
 make two decisions**: approve the spec, and approve the result. Everything in between (opening
 issues, writing code and tests, reacting to CI, answering a review) runs on its own, through the
-normal GitHub process.
+normal GitHub process. Three agent roles do that work: a **Developer**, a **Reviewer** and a
+**Tester**.
 
 The workflow runs every day on [Discava](https://github.com/AlexTo/discava), a serverless learning
 management system on AWS. In the six days after it went live on 14 November 2026, sixteen feature
@@ -24,12 +25,12 @@ Three off-the-shelf tools do most of the work:
 | Tool | What it does here |
 | --- | --- |
 | [Speckit](https://github.com/github/spec-kit) | Turns an idea into `spec.md`, `plan.md` and `tasks.md`, checked against a project constitution |
-| [OpenHands](https://github.com/OpenHands/OpenHands) | Turns a labelled issue into a pull request, and revises the pull request when told something is wrong. A second OpenHands automation reviews it |
+| [OpenHands](https://github.com/OpenHands/OpenHands) | Runs the three agent roles, one automation each. The Developer turns a labelled issue into a pull request, and revises it when told something is wrong. The Reviewer reviews it. The Tester tests the merged change on a deployed stage |
 | GitHub Actions | Runs the checks, and holds the glue between the other two |
 
-None of them knows about the others. **This guide is mostly about the glue**: ten small, tested
-pieces of automation that connect a finished spec to the agent, CI to the agent, and the reviewer to
-the agent, with limits so that nothing loops forever.
+None of them knows about the others. **This guide is mostly about the glue**: eleven small, tested
+pieces of automation that connect a finished spec to the Developer, CI and the Reviewer back to
+the Developer, and a deploy to the Tester, with limits so that nothing loops forever.
 
 ## Who this is for
 

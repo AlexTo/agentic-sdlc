@@ -1,6 +1,6 @@
 ---
 title: Feedback loops
-description: Como uma execução vermelha do CI ou um review "changes requested" manda o agent de volta, e por que cada loop para depois de cinco tentativas.
+description: Como uma execução vermelha do CI ou um review "changes requested" manda o agent Desenvolvedor de volta, por que cada loop para depois de cinco tentativas, e o que o agent Testador acrescenta depois do merge.
 sidebar:
   order: 6
 ---
@@ -8,17 +8,18 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 
 **A versão curta:** quando algo falha, um workflow marca o commit head do PR com um status de
-falha. O worker do OpenHands vê isso no próximo poll e pede à mesma conversa do agent que corrija
-o mesmo PR. Cada loop tem um contador em um label, e para em cinco.
+falha. O worker do OpenHands vê isso no próximo poll e pede à mesma conversa do Desenvolvedor que
+corrija o mesmo PR. Cada loop tem um contador em um label, e para em cinco. Um terceiro loop começa
+depois do merge: o agent Testador testa a mudança no stage com deploy.
 
 ## Os dois loops
 
 ```d2
 direction: right
 
-pr: o agent faz push {shape: page}
+pr: o agent Desenvolvedor faz push {shape: page}
 checks: PR Checks
-review: agent revisor
+review: agent Revisor
 you: review humano
 
 actions: GitHub Actions {
@@ -43,7 +44,7 @@ worker -> pr: revisa o mesmo PR
 
 | | Loop de CI | Loop de review |
 | --- | --- | --- |
-| Disparado por | O workflow PR Checks terminando com `failure` ou `timed_out` | Um review no PR escrito pelo agent revisor, terminando em `🔄 CHANGES REQUESTED` |
+| Disparado por | O workflow PR Checks terminando com `failure` ou `timed_out` | Um review no PR escrito pelo agent Revisor, terminando em `🔄 CHANGES REQUESTED` |
 | Workflow | Agent CI Status | Agent Review Status |
 | Labels de contador | `ci-fix-1` … `ci-fix-5` | `review-fix-1` … `review-fix-5` |
 | Quando desiste | `ci-fix-exhausted`, mais um comentário | `review-fix-exhausted`, mais um comentário |
@@ -62,7 +63,7 @@ Cada script se recusa a agir a menos que tudo isto seja verdade:
 3. A execução ou o review é do commit head **atual** do PR. Uma execução mais antiga está obsoleta.
 4. Esse commit ainda não foi mandado de volta. Rodar de novo os mesmos checks não pode gastar outra
    tentativa.
-5. Para reviews: o review carrega o marcador oculto de execução do revisor e vem de uma conta com
+5. Para reviews: o review carrega o marcador oculto de execução do Revisor e vem de uma conta com
    acesso de escrita, para que uma pessoa citando o veredito não o dispare.
 6. Menos de cinco tentativas foram usadas.
 
@@ -87,5 +88,44 @@ a spec e depois deixe o agent tentar de novo.
 
 Para dar ao agent mais uma rodada depois disso, veja
 [Reiniciando um loop](../../reference/labels/#reiniciando-um-loop).
+
+## Depois do merge: o loop de teste
+
+Os dois loops acima terminam no merge. Tudo o que eles verificaram rodou em uma stack local, então
+uma pergunta continua em aberto: a mudança funciona onde ela está em deploy? Quando o repositório
+faz deploy da `main` em um stage de desenvolvimento, um terceiro loop responde a ela.
+
+```d2
+direction: down
+
+deploy: "Deploy\n(os PRs mergeados chegam ao stage de desenvolvimento)"
+verify: "Post-merge Verify\n(GitHub Actions)"
+issue: "issue de teste\nopenhands-test" {shape: page}
+tester: agent Testador
+stage: stage de desenvolvimento {shape: cylinder}
+report: relatório na issue {shape: document}
+you: uma pessoa
+
+deploy -> verify: deploy feito
+verify -> issue: uma por PR
+issue -> tester: próximo poll
+tester -> stage: "UI, APIs, dados armazenados"
+tester -> report
+report -> you: fica aberta em caso de falha
+```
+
+| | Loop de teste |
+| --- | --- |
+| Disparado por | Um deploy da `main` no stage de desenvolvimento terminando |
+| Workflow | O Post-merge Verify abre uma issue de teste por PR mergeado que mudou algo que entra no deploy |
+| Agent | O Testador: ele clica pela mudança em um navegador de verdade, chama as APIs e depois verifica o que foi gravado no armazenamento (registros do banco de dados, arquivos armazenados, documentos de busca) e os logs |
+| Quando passa | Um relatório com cada verificação e sua evidência, e a issue é fechada |
+| Quando falha | O mesmo relatório com os passos para reproduzir, e a issue fica aberta. Se a causa for clara e a correção pequena, o Testador também abre um PR de correção, que passa pelos mesmos checks, pelo Revisor e pelo review humano como qualquer outro |
+
+Este loop não tem contador, porque nada é mandado de volta sozinho. Um teste que falha termina em uma
+pessoa: ela lê o relatório e decide se faz o merge do PR de correção, escreve uma nova tarefa ou muda a spec.
+Para testar de novo, remova e aplique de novo o label `openhands-test`.
+
+[Verificação pós-merge](../../discava/post-merge-verify/) mostra o workflow do Discava e um relatório real.
 
 Próximo: [Camadas de confiança](../layers-of-trust/).

@@ -9,6 +9,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 **完了時の状態:** OpenHands が 5 分ごとに fork をポーリングします。`openhands` ラベルの付いた
 issue を実装し、失敗とマークされた PR を修正し、`openhands-review` ラベルの付いた PR をレビューします。
+これらが開発担当エージェントとレビュー担当エージェントです。
 
 どちらの automation も Agent Canvas の **automation catalog** から追加します。フォームに入力すると、
 カタログがテスト済みのワーカーを設定付きでパッケージ化します。コードを書いたりアップロードしたりする必要はありません。
@@ -22,14 +23,14 @@ issue を実装し、失敗とマークされた PR を修正し、`openhands-re
    | Repositories | `<you>/agentic-sdlc` |
    | Trigger label | `openhands` |
    | Branch prefix | `openhands/issue` |
-   | Pull request mode | Draft |
+   | Pull request mode | Ready for review |
    | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-   | Agent profile | `default` |
+   | Agent profile | `developer` |
    | Check frequency | `*/5 * * * *` |
    | Timezone | ご自身のタイムゾーン |
 
    Discava はテンプレートのバージョン 1.2.4 を使っています。ワーカーのプロンプトは、PR を開いた後に
-   `openhands-review` ラベルを付けるようエージェントに指示するので、新しい PR はドラフトのままでもレビュアーに届きます。
+   `openhands-review` ラベルを付けるようエージェントに指示するので、新しい PR はすべてレビュー担当に届きます。
 
 2. カタログから **「GitHub code review」を追加** します:
 
@@ -62,15 +63,22 @@ issue を実装し、失敗とマークされた PR を修正し、`openhands-re
 
 1. テスト用の issue「Add a line to README.md saying hello」を作成し、`openhands` ラベルを付けます。
 2. 1 回のポーリング以内に、その issue の会話が Agent Canvas に表示されます。
-3. エージェントが完了すると、`openhands/issue-<n>` にドラフト PR が作成されます。タイトルは `[#<n>] <issue
+3. エージェントが完了すると、`openhands/issue-<n>` に PR が作成されます。タイトルは `[#<n>] <issue
    title>` で、`openhands-review` が付いています。
-4. チェックが終わると、レビュアーが
+4. チェックが終わると、レビュー担当エージェントが
    「_This review was posted by an AI agent (OpenHands)._」で始まり、`✅ APPROVED` または
    `🔄 CHANGES REQUESTED` で終わるレビューを投稿します。
 
 確認が終わったら PR を閉じ、ブランチを削除します。
 
 各 automation がポーリングごとに何をするかは [エージェントのランタイム](../../concepts/the-agent-runtime/) にあります。
+
+<Aside type="tip" title="3 つ目の役割: テスト担当">
+Discava は 3 つ目の automation であるテスト担当を動かしています。マージされた変更を毎回、デプロイされた開発ステージで
+テストするものです。テストするにはデプロイが必要なので、このセットアップには含まれていません。あなたのリポジトリが
+自動でデプロイするようになったら、[マージ後の検証](../../discava/post-merge-verify/) と
+[エージェントのプロンプト](../../discava/agent-prompts/) を参照してください。
+</Aside>
 
 <Aside type="note">
 issue をエージェントに最初からやり直させるには、`openhands` ラベルを外して付け直します。

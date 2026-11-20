@@ -1,6 +1,6 @@
 ---
-title: 9. Deploy và quét bảo mật (tùy chọn)
-description: Deploy mọi main xanh lên một stage development, giữ production sau một lượt duyệt, và quét trước mỗi lần deploy.
+title: 9. Deploy, quét bảo mật và test sau merge (tùy chọn)
+description: Deploy mọi main xanh lên một stage development, giữ production sau một lượt duyệt, quét trước mỗi lần deploy, và để agent Tester test những gì đã được deploy.
 sidebar:
   order: 9
 ---
@@ -8,7 +8,8 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **Kết quả:** một lần quét Trivy trên mọi lần push lên `main`, một workflow Deploy ship mỗi `main` xanh
-lên một stage development, và các lần deploy production chờ một người.
+lên một stage development, các lần deploy production chờ một người, và, nếu bạn muốn, một agent
+Tester test mỗi thay đổi đã merge trên stage development.
 
 Chi tiết của bước này là riêng cho Discava (AWS, CDK), nhưng cấu trúc thì dùng được cho mọi cloud. Ứng
 dụng ghi chú ví dụ trong repository này không có deploy, nên hãy chép từ
@@ -72,6 +73,32 @@ dụng ghi chú ví dụ trong repository này không có deploy, nên hãy ché
    và thêm **Required reviewers**. Để deploy nó, mở **Actions → Deploy → Run workflow** và nhập
    stage production. Job khi đó chờ được duyệt.
 
+6. **Thêm agent Tester**, nếu bạn muốn mỗi thay đổi đã deploy được test (khoảng trống 11). Đây là
+   mảnh mới nhất, và nó nằm trong Discava, không phải trong repository này. Hãy chép từ đó:
+
+   - `packages/tooling/agent/src/post-merge-test/`, `src/agent-lock/` và `src/helpers/`, cùng các
+     Nx target `post-merge-test` và `agent-lock` của chúng
+   - `.github/workflows/post-merge-verify.yml` và `agent-lock.yml`
+   - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`, để mở một issue test thủ công
+
+   Sau đó đặt tên stage (`TEST_STAGE`), và các đường dẫn không bao giờ đến một stack đã deploy
+   (`NOT_DEPLOYED` trong `plan.ts`), cho khớp với repository của bạn.
+
+   Ở phía OpenHands, thêm một agent profile `tester` và một automation poll các issue có label
+   `openhands-test`. Không có template catalog nào cho nó. Worker của Discava và prompt của nó được
+   mô tả ở [Thiết lập OpenHands](../../discava/openhands-setup/#tester-github-issue-tester)
+   và [Prompt của các agent](../../discava/agent-prompts/#tester). Hãy cấp cho Tester:
+
+   - một cloud CLI đã đăng nhập vào tài khoản development, với quyền truy cập ít nhất mà việc test cần
+   - một người dùng test cho mỗi vai trò trong ứng dụng của bạn, lưu dưới dạng secret của OpenHands
+   - một trình duyệt nó điều khiển được, như Playwright với Chromium
+
+   <Aside type="caution">
+   Tester đọc issue và pull request trong khi đang giữ các thông tin đăng nhập đó. Hãy giữ việc khóa
+   (`agent-lock.yml` và `helpers/conversation-lock.ts`), giữ phần "test như thế nào" trong prompt
+   riêng của automation thay vì trong issue, và đừng bao giờ trỏ nó vào một stage có dữ liệu quan trọng.
+   </Aside>
+
 </Steps>
 
 ## Kiểm tra kết quả
@@ -79,9 +106,14 @@ dụng ghi chú ví dụ trong repository này không có deploy, nên hãy ché
 Merge một PR bất kỳ. CI chạy, rồi **Deploy** tự khởi động với stage development. Chạy lại CI thủ công
 trên một commit cũ hơn: Deploy log `Skipping deploy: no longer main's latest commit` và không ship gì.
 
+Khi đã thiết lập Tester: sau lần deploy đó, **Post-merge Verify** mở một issue đã khóa có tiêu đề
+`test(post-merge): verify #<pr> …`, với label `openhands-test`. Trong vòng một lần poll, Tester khởi
+động, và báo cáo của nó xuất hiện dưới dạng một comment trên issue.
+
 <Aside type="note">
-Agent không bao giờ deploy và không bao giờ thấy các role này. Cuộc hội thoại của nó chỉ có GitHub
-token. Deploy role chỉ được assume bởi một workflow chạy từ `main`, trong environment của stage.
+Không agent nào deploy, và không agent nào thấy các role này. Developer và Reviewer chỉ cần GitHub
+token. Quyền truy cập của Tester vào tài khoản development tách biệt với deploy role, vốn chỉ được
+assume bởi một workflow chạy từ `main`, trong environment của stage.
 </Aside>
 
 Tiếp theo: repository của bạn giờ đã có mọi thứ mà một bản fork của repository này có. Tiếp tục từ

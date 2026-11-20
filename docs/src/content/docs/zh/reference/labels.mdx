@@ -8,8 +8,10 @@ sidebar:
 | 标签 | 作用于 | 设置者 | 读取者 | 含义 |
 | --- | --- | --- | --- | --- |
 | `spec-ready` | Spec PR | 人 | Agent Issues | 合并这个 PR 即开始实现。给已经合并的 PR 加上它也一样 |
-| `openhands` | Issue | Agent Issues，或人 | Issue-to-PR automation | 实现这个 issue。移除后重新加上，会在新分支上重新尝试 |
-| `openhands-review` | PR | 负责实现的智能体，在开启或修订 PR 之后 | 代码评审 automation | 评审这个 PR 当前的 head |
+| `openhands` | Issue | Agent Issues，或人 | Issue-to-PR automation（开发智能体） | 实现这个 issue。移除后重新加上，会在新分支上重新尝试 |
+| `openhands-review` | PR | 开发智能体，在开启或修订 PR 之后 | 代码评审 automation（评审智能体） | 评审这个 PR 当前的 head |
+| `openhands-test` | Issue | Post-merge Verify，或人 | Issue tester automation（测试智能体） | 在已部署的开发 stage 上测试这个 issue 指明的已合并 pull request。移除后重新加上，会再测试一次 |
+| `skip-deploy-test` | PR | 人 | Post-merge Verify | 这个 pull request 部署后不为它开测试 issue |
 | `ci-fix-1` … `ci-fix-5` | 智能体 PR | Agent CI Status | Agent CI Status | 已用掉这么多次针对 CI 失败的自动修复 |
 | `ci-fix-exhausted` | 智能体 PR | Agent CI Status | Agent CI Status、人 | CI 修复次数已用完，由人接手 |
 | `review-fix-1` … `review-fix-5` | 智能体 PR | Agent Review Status | Agent Review Status | 已用掉这么多次针对“要求修改”的修复 |

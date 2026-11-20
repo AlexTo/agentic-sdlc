@@ -16,6 +16,8 @@ sidebar:
 | Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` | La branche par défaut |
 | Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | Rien (passe le numéro de la PR à `gh`) |
 | Deploy (Discava) | `deploy.yml` | `workflow_run` de CI sur `main`, `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | Le commit vérifié par la CI |
+| Post-merge Verify (Discava) | `post-merge-verify.yml` | `workflow_run` de Deploy, `completed`, `workflow_dispatch(pr_number)` | `contents: read`, `actions: read`, `issues: write`, `pull-requests: write` | La branche par défaut |
+| Agent Lock (Discava) | `agent-lock.yml` | `issues: labeled`, `pull_request: [opened, reopened]` | `contents: read`, `issues: write`, `pull-requests: write` | La branche par défaut |
 
 ## Noms de jobs à exiger dans la protection de branche
 
@@ -36,6 +38,7 @@ sidebar:
 | Agent CI Status | `agent-ci-<head branch>` | non |
 | Agent Review Status | `agent-review-<PR number>` | non |
 | Deploy | `deploy-<stage>` | non |
+| Post-merge Verify | `post-merge-verify` | non : une exécution à la fois, pour que deux déploiements rapprochés n'ouvrent jamais deux issues pour une même PR |
 
 Les workflows des agents n'annulent jamais. Chaque exécution doit compter sa tentative ou ouvrir son issue exactement une fois,
 et les groupes par PR font que des PR sans rapport ne s'attendent jamais entre elles.
@@ -52,3 +55,10 @@ Toutes dans `@your-scope/common-scripts` :
 | `agent-review-status` | `src/agent-review/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
 | `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH` |
 | `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`, `GITHUB_ACTIONS` (pour les annotations) |
+
+Discava garde les mêmes cibles dans `@discava/tooling-agent`, avec deux de plus pour le Testeur :
+
+| Cible | Point d'entrée | Variables d'environnement lues |
+| --- | --- | --- |
+| `post-merge-test` | `src/post-merge-test/main.ts` | `GH_TOKEN`, `GH_REPO`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH`, `PR_NUMBER`, `TEST_STAGE`, `DRY_RUN` |
+| `agent-lock` | `src/agent-lock/main.ts` | `GH_TOKEN`, `GH_REPO`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH` |

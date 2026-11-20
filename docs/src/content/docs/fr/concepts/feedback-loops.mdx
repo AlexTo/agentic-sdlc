@@ -1,6 +1,6 @@
 ---
 title: Boucles de retour
-description: Comment une exécution de CI rouge ou une revue « changes requested » renvoie l'agent au travail, et pourquoi chaque boucle s'arrête après cinq essais.
+description: Comment une exécution de CI rouge ou une revue « changes requested » renvoie l'agent Développeur au travail, pourquoi chaque boucle s'arrête après cinq essais, et ce que l'agent Testeur ajoute après le merge.
 sidebar:
   order: 6
 ---
@@ -9,17 +9,18 @@ import { Aside } from '@astrojs/starlight/components';
 
 **La version courte :** quand quelque chose échoue, un workflow marque le commit de tête de la PR avec
 un statut en échec. Le worker OpenHands le voit à son prochain passage et demande à la même
-conversation d'agent de corriger la même PR. Chaque boucle a un compteur dans un label, et s'arrête à
-cinq.
+conversation du Développeur de corriger la même PR. Chaque boucle a un compteur dans un label, et
+s'arrête à cinq. Une troisième boucle démarre après le merge : l'agent Testeur teste le changement
+sur le stage déployé.
 
 ## Les deux boucles
 
 ```d2
 direction: right
 
-pr: l'agent pousse {shape: page}
+pr: l'agent Développeur pousse {shape: page}
 checks: PR Checks
-review: agent relecteur
+review: agent Relecteur
 you: revue humaine
 
 actions: GitHub Actions {
@@ -44,7 +45,7 @@ worker -> pr: révise la même PR
 
 | | Boucle CI | Boucle de revue |
 | --- | --- | --- |
-| Déclenchée par | Le workflow PR Checks qui se termine en `failure` ou `timed_out` | Une revue sur la PR écrite par l'agent relecteur, qui se termine par `🔄 CHANGES REQUESTED` |
+| Déclenchée par | Le workflow PR Checks qui se termine en `failure` ou `timed_out` | Une revue sur la PR écrite par l'agent Relecteur, qui se termine par `🔄 CHANGES REQUESTED` |
 | Workflow | Agent CI Status | Agent Review Status |
 | Labels compteurs | `ci-fix-1` … `ci-fix-5` | `review-fix-1` … `review-fix-5` |
 | Quand elle abandonne | `ci-fix-exhausted`, plus un commentaire | `review-fix-exhausted`, plus un commentaire |
@@ -64,7 +65,7 @@ Chaque script refuse d'agir à moins que toutes ces conditions soient réunies :
    ancienne est périmée.
 4. Ce commit n'a pas déjà été renvoyé. Une réexécution des mêmes checks ne doit pas consommer une
    autre tentative.
-5. Pour les revues : la revue porte le marqueur d'exécution caché du relecteur et vient d'un compte
+5. Pour les revues : la revue porte le marqueur d'exécution caché du Relecteur et vient d'un compte
    avec accès en écriture, pour qu'une personne qui cite le verdict ne la déclenche pas.
 6. Moins de cinq tentatives ont été utilisées.
 
@@ -91,5 +92,46 @@ deux interprétations à la fois. Corrigez la spec, puis laissez l'agent réessa
 
 Pour donner ensuite un tour de plus à l'agent, voir
 [Réinitialiser une boucle](../../reference/labels/#réinitialiser-une-boucle).
+
+## Après le merge : la boucle de test
+
+Les deux boucles ci-dessus s'arrêtent au merge. Tout ce qu'elles ont vérifié s'est exécuté sur une
+stack locale, donc une question reste ouverte : le changement fonctionne-t-il là où il est déployé ?
+Quand le dépôt déploie `main` sur un stage de développement, une troisième boucle y répond.
+
+```d2
+direction: down
+
+deploy: "Deploy\n(les PR mergées atteignent le stage de développement)"
+verify: "Post-merge Verify\n(GitHub Actions)"
+issue: "issue de test\nopenhands-test" {shape: page}
+tester: agent Testeur
+stage: stage de développement {shape: cylinder}
+report: rapport sur l'issue {shape: document}
+you: une personne
+
+deploy -> verify: déployé
+verify -> issue: une par PR
+issue -> tester: prochain passage
+tester -> stage: "UI, API, données stockées"
+tester -> report
+report -> you: laissée ouverte en cas d'échec
+```
+
+| | Boucle de test |
+| --- | --- |
+| Déclenchée par | La fin d'un déploiement de `main` sur le stage de développement |
+| Workflow | Post-merge Verify ouvre une issue de test par PR mergée qui a changé quelque chose de déployé |
+| Agent | Le Testeur : il parcourt le changement dans un vrai navigateur, appelle les API, puis vérifie ce qui a été écrit dans le stockage (enregistrements en base, fichiers stockés, documents de recherche) et les logs |
+| En cas de succès | Un rapport avec chaque vérification et sa preuve, et l'issue est fermée |
+| En cas d'échec | Le même rapport avec les étapes pour reproduire, et l'issue reste ouverte. Si la cause est claire et la correction petite, le Testeur ouvre aussi une PR de correction, qui passe par les mêmes checks, le même Relecteur et la même revue humaine que n'importe quelle autre |
+
+Cette boucle n'a pas de compteur, parce que rien n'est renvoyé automatiquement. Un test en échec
+aboutit à une personne : elle lit le rapport et décide de merger la PR de correction, d'écrire une
+nouvelle tâche, ou de changer la spec. Pour tester à nouveau, retirez et remettez le label
+`openhands-test`.
+
+[Vérification après merge](../../discava/post-merge-verify/) montre le workflow de Discava et un
+vrai rapport.
 
 Suite : [Couches de confiance](../layers-of-trust/).

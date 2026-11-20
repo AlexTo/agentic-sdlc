@@ -1,0 +1,294 @@
+---
+title: Post-merge verify
+description: How each pull request deployed to discava-development becomes a test issue for the Tester agent, and how everything the agents read is locked.
+sidebar:
+  order: 9.5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Gap 11: every check before the merge ran against local stand-ins, and nobody looks at the change
+where it actually runs. Discava closes it with a third agent role. After each deploy to
+`discava-development`, a workflow opens a test issue for every pull request the deploy carried,
+and the **Tester agent** tests that change on the stage: the portals in a real browser, the APIs
+as the test users, and the data the change wrote.
+
+```d2
+direction: down
+
+deploy: "Deploy\n(discava-development)"
+verify: "Post-merge Verify\npost-merge-test"
+issue: "test issue\nlocked, then openhands-test" {shape: page}
+tester: "Tester agent\n(OpenHands, next poll)"
+stage: discava-development {shape: cylinder}
+report: "report on the issue" {shape: document}
+fix: "fix PR\nopenhands/test-fix-<n>" {shape: page}
+
+deploy -> verify: completed
+verify -> issue: one per deployed PR
+issue -> tester
+tester -> stage: "Playwright, APIs, AWS CLI"
+tester -> report
+tester -> fix: "small, clear fix only" {style.stroke-dash: 3}
+```
+
+## Post-merge Verify
+
+`.github/workflows/post-merge-verify.yml` runs on `workflow_run`, when **Deploy** completes, and
+by hand with a pull request number. It checks out the default branch and runs `post-merge-test`.
+Runs share one concurrency group, so two deploys close together can't open two issues for the same
+pull request.
+
+The script (`src/post-merge-test/`):
+
+1. **Checks that the run deployed the test stage.** It reads the Deploy run's jobs. A run whose
+   `Deploy` step was skipped (its commit was no longer `main`'s latest) deployed nothing, and a run
+   for another stage isn't tested.
+2. **Finds what the deploy carried.** One deploy can hold several merges, because a skipped deploy
+   leaves its commit to the next one. So it takes the commits between the stage's previous
+   successful deploy and this one, and the pull request each merged as.
+3. **Decides, per pull request** (`decide()` in `plan.ts`). No issue when:
+   - one already exists for it (found by its hidden marker)
+   - it carries the `skip-deploy-test` label
+   - it changes nothing that is deployed: only docs, specs, tests, tooling, CI or other files that
+     never reach a stack
+4. **Renders the issue** (`renderIssue()`). It says only what to test.
+5. **Opens it without a label, locks, then labels.** The issue, the pull request it tests and the
+   issues that pull request closes are all locked. Only then does `openhands-test` go on. If
+   anything can't be locked, the label is never added and the run fails, naming what to lock by
+   hand.
+
+Run by hand with a pull request number, it opens an issue even if one exists. That is how a change
+is tested again from scratch.
+
+## The issue it opens
+
+A real one, [#654](https://github.com/AlexTo/discava/issues/654):
+
+```markdown
+<!-- post-merge-test pr:647 -->
+
+## What to test
+
+- Pull request: #647 (feat(stripe-checkout): a refund takes access away)
+- Issue it closes: #646
+- Merged as `b4dc4f7…`, deployed to `discava-development` at `b4dc4f7…` ([Deploy run](…))
+- Kind: **UI change**. It changes a portal: sign in as the user the change is for and click
+  through the flow with Playwright, then call the APIs behind it and check the stored data.
+
+<details><summary>Deployed files it changes (4)</summary>
+
+- `packages/events/src/local/stripe-stand-in.ts`
+- `packages/events/src/payments/events/charge-refunded.ts`
+- `packages/events/src/payments/stripe-webhook.ts`
+- `packages/websites/student-portal/src/routes/learn/$courseId/-components/enrolment-actions.tsx`
+
+</details>
+```
+
+The title is `test(post-merge): verify #647 a refund takes access away`: a Conventional Commit
+header of at most 100 characters, so the Tester can reuse it. The kind is `UI change` when the pull
+request touches a portal or the shared components, and `backend change or fix` otherwise.
+
+<Aside type="note" title="What to test, never how">
+The issue has no instructions. How to test (the tools, the test users, the checks, the report) is
+the Tester's own [prompt](../agent-prompts/#tester) in OpenHands, so nobody who can edit an issue
+can change it. `.github/ISSUE_TEMPLATE/test-deployed-pr.md` is the same form for opening one by
+hand.
+</Aside>
+
+## What the Tester does
+
+On its next poll, the `github-issue-tester` automation picks the issue up and starts the Tester.
+Its prompt has eight steps:
+
+1. Work out what changed, from the pull request, its diff, the issue it closes and its spec, and
+   write down what should now be true.
+2. Test the UI, if there is one: sign in on the Cognito hosted page with Playwright, click through
+   the flow, take a screenshot at each step, and look at every one.
+3. Call the APIs with a test user's access token, including the error cases.
+4. Check the stored data: DynamoDB items, OpenSearch documents, S3 objects, and the Lambdas' logs.
+5. Use its own data, named `pmt-<pr>-<what>`.
+6. Report on the issue: what it tested, a table of every check with pass or fail and its evidence,
+   and a verdict.
+7. Close the issue on a pass. On a fail, leave it open with steps to reproduce. Open a fix pull
+   request only when the cause is clear and the fix is small.
+8. Never change infrastructure, IAM, users or stage configuration, deploy, touch another stage,
+   edit workflows, or merge.
+
+## A real run: the payment that never settled
+
+The first test issue the workflow opened found a defect that every check before the merge had
+passed over. All times are UTC, on 20 November 2026.
+
+| Time | Who | What happened |
+| --- | --- | --- |
+| 07:02 | A person | Merges [#647](https://github.com/AlexTo/discava/pull/647), "a refund takes access away", which closes issue [#646](https://github.com/AlexTo/discava/issues/646). The Developer agent wrote it and fixed two red CI runs by itself, and the Reviewer agent had [approved](https://github.com/AlexTo/discava/pull/647#pullrequestreview-5988208805) |
+| 07:08 | Deploy | [Ships](https://github.com/AlexTo/discava/actions/runs/44692771527) `main` to `discava-development`, in nine minutes |
+| 07:18 | Post-merge Verify | Opens [#654](https://github.com/AlexTo/discava/issues/654), locks it, then adds `openhands-test` |
+| 07:26 | Tester agent | [First report](https://github.com/AlexTo/discava/issues/654#issuecomment-7033260676): **blocked**. No payment account is connected on the stage |
+| 10:27 | Tester agent | [Second report](https://github.com/AlexTo/discava/issues/654#issuecomment-7037199284): **still blocked**. Nothing has changed |
+| 10:43 | Tester agent | With Stripe now connected in test mode, buys a course as the student |
+| 10:45 | The stage | Both webhook deliveries time out. The order stays `pending` |
+| 10:48 | Tester agent | Opens the fix, [#657](https://github.com/AlexTo/discava/pull/657) |
+| 10:49 | Tester agent | [Third report](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120): **fail**, with the cause and the fix |
+
+### Run 1: blocked, and it says so
+
+The change ends a student's enrolment when Stripe reports a refund. To test that, there has to be
+a paid order to refund, and the stage had no payment account. The Tester didn't pass the test and
+didn't guess. Its [verdict](https://github.com/AlexTo/discava/issues/654#issuecomment-7033260676) was "blocked, not verified", with the evidence: the admin API's
+`payment.status` answered `not-connected`, and the core table held no orders.
+
+It then checked what it could without a payment: the deployed webhook function contains the new
+`charge.refunded` handler, the served portal bundle has the new "You're no longer enrolled" screen,
+a forged refund notice is refused with a 400 and writes nothing, and the course pages still work
+for a free course. Nine checks passed. It listed the six things it had *not* verified, and what
+would unblock them.
+
+It also said what it would not do. Connecting a payment account means saving a Stripe key, which
+changes the stage's configuration, and its [prompt](../agent-prompts/#tester) forbids that. So it
+left the issue open for a person.
+
+### Run 3: a real purchase
+
+Once a Stripe test-mode account was connected to the stage, the Tester started from the beginning
+of the flow, because a refund needs a purchase. Every step below is a row in its
+[third report](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120):
+
+1. As the instructor, through the API, it created a course named `pmt-647-course`, priced it at
+   USD 19.99 and published it.
+2. As the student, in a real browser, it signed in on the Cognito hosted page, opened the course,
+   chose **Buy now**, and paid on Stripe's hosted checkout with a test card.
+3. It came back to the course page, which said "Confirming your payment", and watched three
+   things: the page, the order's record in DynamoDB, and the webhook function's logs.
+
+The screenshots below are the Tester's own, saved at each step as its prompt asks. They are named
+in its report, and they are what a person would have seen.
+
+The course it created, as the student sees it before buying
+(`01-paid-course-before-purchase.png`):
+
+<p>
+  <img alt="The student portal on the development stage, showing the course pmt-647-course at $19.99 with a Buy now button" src="/agentic-sdlc/screenshots/post-merge-test-647/01-paid-course-before-purchase.png" width="620" />
+</p>
+
+Stripe's hosted checkout in sandbox mode, filled in with a test card
+(`03-stripe-checkout-filled.png`):
+
+<p>
+  <img alt="Stripe hosted checkout marked Sandbox, for pmt-647-course at US$19.99, filled in with the test card 4242 4242 4242 4242 and a test student email" src="/agentic-sdlc/screenshots/post-merge-test-647/03-stripe-checkout-filled.png" width="620" />
+</p>
+
+Back on the course page after paying (`04-returned-from-checkout.png`):
+
+<p>
+  <img alt="The same course page, now showing Confirming your payment with a progress bar where the Buy now button was" src="/agentic-sdlc/screenshots/post-merge-test-647/04-returned-from-checkout.png" width="620" />
+</p>
+
+And after the wait (`05-failure-still-not-enrolled-webhook-timeout.png`):
+
+<p>
+  <img alt="The same course page, showing $19.99 and the Buy now button again, with no Start learning button" src="/agentic-sdlc/screenshots/post-merge-test-647/05-failure-still-not-enrolled-webhook-timeout.png" width="620" />
+</p>
+
+The last picture is the same as the first, and that is the failure. The payment went through, yet
+the order never left `pending`, no enrolment appeared, and the page went back to showing
+**Buy now**. Nothing on the screen says anything is wrong: no error, no failed request in the
+console. The Tester caught it because it also read the order's record and the function's logs,
+which showed why:
+
+```text
+REPORT … Duration: 10000.00 ms … Memory Size: 128 MB  Max Memory Used: 117 MB  Status: timeout
+REPORT … Duration: 10000.00 ms … Memory Size: 128 MB  Max Memory Used: 117 MB  Status: timeout
+```
+
+Stripe's notice that the checkout was paid never got in. The function that receives it was running
+on Lambda's default 128 MB, and its cold start (the core table's entities, AppConfig, the Stripe
+SDK) didn't finish inside the 10-second timeout. A timed-out runtime is thrown away, so each of
+Stripe's retries started cold and failed the same way. The Tester compared it with the checkout
+function, which has 256 MB and took 8.1 seconds to start.
+
+The refund under test was never reached. What the Tester found sits one step before it, and is
+worse: on the deployed stage, a student could pay for a course and never get it.
+
+### Why nothing caught it earlier
+
+The defect is older than the pull request under test, and it had passed every layer:
+
+- **Unit tests** exercise the handler's logic, which is correct.
+- **E2E tests** run against the local stack, where a stand-in plays Stripe and nothing has a memory
+  limit or a 10-second timeout.
+- **The Reviewer agent** and **the person** read a diff in which no memory setting appears, because
+  the missing line is the defect.
+
+It exists only where the function is deployed. That is the gap the Tester is there for.
+
+### The fix PR
+
+The cause was clear and the fix small, so the Tester's prompt allowed a pull request.
+[#657](https://github.com/AlexTo/discava/pull/657) is one [commit](https://github.com/AlexTo/discava/commit/854760c3c30a5ceb1ee7c7e52ebd596bef3374f1) that changes
+two files: four lines in the `StripeWebhookApi` construct that set the function's memory to 512 MB,
+and a twelve-line test that fails without them (`Missing key 'MemorySize'`). It branched from
+`main` as `openhands/test-fix-654`, and its description refers to both [#647](https://github.com/AlexTo/discava/pull/647) and
+[#654](https://github.com/AlexTo/discava/issues/654).
+
+The description is also plain about its limit: "Not verified on a deployed stage. The fix only
+takes effect once deployed."
+
+Then the Tester stopped. It didn't merge, and it didn't deploy. Agent Lock locked the new pull
+request, [PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986) ran green, and the `openhands-review` label handed it to the Reviewer agent. A
+person merges it, like any other. Test issue [#654](https://github.com/AlexTo/discava/issues/654) stays open until the refund itself is tested on a
+stage where payments settle. The Tester's last report lists the test data it left behind: the
+course and the `pending` order.
+
+Screenshots stay on the workstation, under `tmp/screenshots/pr-<pr>/` in the Discava checkout. The
+reports name each file and say what it shows. The four above were copied from there for this page.
+
+## Agent Lock
+
+Discava is a public repository, so anyone can comment on its issues and pull requests. The agents
+read those comments while holding a token that can push, and the Tester also holds AWS access and
+the test users' passwords. A comment is therefore a way to give an agent instructions.
+
+The answer is to lock every conversation an agent is handed. A locked issue or pull request takes
+comments only from collaborators with write access, the agents' own token among them.
+
+| What | Locked by |
+| --- | --- |
+| An implementation issue Agent Issues opens | Its own script, before it adds `openhands` |
+| A test issue, the pull request it tests and the issues that pull request closes | Post-merge Verify's script, before it adds `openhands-test` |
+| An issue someone labels `openhands` or `openhands-test` by hand | **Agent Lock** (`.github/workflows/agent-lock.yml`), on `issues: labeled` |
+| A pull request an agent opens, on an `openhands/` branch that isn't from a fork | **Agent Lock**, on `pull_request: opened` and `reopened` |
+
+The scripts lock their own issues because GitHub starts no workflow for a label that a workflow's
+token applied. The order matters too: open without the label, lock, then label, so the agent never
+picks an issue up while a stranger can still comment. The shared code is
+`src/helpers/conversation-lock.ts`, and the workflow's rules are in `src/agent-lock/`.
+
+Two more rules come with it:
+
+- **Markers are trusted by author.** The workflows find their earlier issues by a hidden marker.
+  A marker counts only in an issue opened by `github-actions[bot]` or by someone with write access
+  (`src/helpers/issue-author.ts`), so a stranger can't stall a chain or stop a test by opening an
+  issue with a marker in it.
+- **A locked PR gets no bot comment.** GitHub refuses the Actions token a comment on a locked
+  conversation, so the [E2E screenshots](../pr-checks/#ui-screenshots-and-the-e2e-screenshots-comment)
+  list goes to the job summary instead.
+
+<Aside type="caution">
+Comments written before an issue was labelled stay. When you label an existing issue by hand, read
+its comments first.
+</Aside>
+
+## Dry run
+
+```bash
+DRY_RUN=true GITHUB_REPOSITORY=AlexTo/discava GITHUB_EVENT_NAME=workflow_dispatch PR_NUMBER=647 \
+  pnpm nx run @discava/tooling-agent:post-merge-test
+```
+
+This prints the title and body of the issue it would open, and creates nothing. It still reads the
+pull request through `gh`, so you need to be signed in.
+
+Next: [A real feature](../a-real-feature/).

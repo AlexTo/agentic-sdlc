@@ -17,29 +17,34 @@ React 门户、三个运行在 Lambda 上的 tRPC API、一张 DynamoDB 表、�
 | 工具 | 版本 | 角色 |
 | --- | --- | --- |
 | Speckit（`specify-cli`） | 1.3.2 | 生成 spec、计划和任务，带有它的 `git` 扩展 |
-| OpenHands Agent Canvas | 1.41.0 | 智能体运行时和两个自动化，作为一台 Linux 机器上的用户服务运行 |
-| `github-issue-to-pr` 自动化 | 1.2.4 | 实现带标签的 issue，修改失败的 PR |
-| `github-pr-reviewer` 自动化 | 1.11.2 | 在检查结束后评审 PR |
-| 用于实现的智能体 | 通过 ACP 接入的 Claude Code，Sonnet | `default` agent profile |
-| 用于评审的智能体 | 通过 ACP 接入的 Claude Code，Opus | `reviewer` agent profile |
+| OpenHands Agent Canvas | 1.41.0 | 智能体运行时和三个自动化，作为一台 Linux 机器上的用户服务运行 |
+| `github-issue-to-pr` 自动化 | 1.2.4 | 开发智能体：实现带标签的 issue，修改失败的 PR |
+| `github-pr-reviewer` 自动化 | 1.11.2 | 评审智能体：在检查结束后评审 PR |
+| `github-issue-tester` 自动化 | 手写 | 测试智能体：在已部署的开发 stage 上测试已合并的 PR |
+| 开发智能体 | 通过 ACP 接入的 Claude Code，Sonnet | `developer` agent profile |
+| 评审智能体 | 通过 ACP 接入的 Claude Code，Opus | `reviewer` agent profile |
+| 测试智能体 | 通过 ACP 接入的 Claude Code，Opus | `tester` agent profile |
 | Nx + pnpm | Nx 23 | monorepo，CI 中使用 `nx affected` |
-| Playwright | | 针对本地栈的 E2E 测试，CI 中分为六个分片 |
+| Playwright | | 针对本地栈的 E2E 测试，CI 中分为六个分片。测试智能体也用它来驱动已部署的门户 |
 | Trivy、git-secrets、commitlint | | 安全扫描、pre-commit 密钥检查、commit 消息格式 |
 
 ## 缺口与文件
 
 | 缺口 | Discava 的方案 | 文件 |
 | --- | --- | --- |
-| spec 到 issue | Agent Issues workflow 及其脚本 | `.github/workflows/agent-issues.yml`、`packages/common/scripts/src/agent-issues/` |
+| spec 到 issue | Agent Issues workflow 及其脚本 | `.github/workflows/agent-issues.yml`、`packages/tooling/agent/src/agent-issues/` |
 | CI 失败到智能体 | Agent CI Status | `.github/workflows/agent-ci.yml`、`src/agent-ci/` |
 | 评审到智能体 | Agent Review Status | `.github/workflows/agent-review.yml`、`src/agent-review/` |
 | 无限循环 | 用标签计数的五次尝试上限 | `plan.ts` 中的 `MAX_CI_FIX_ATTEMPTS` 和 `MAX_REVIEW_FIX_ATTEMPTS` |
 | 格式错误的 `tasks.md` | Tasks format job | `pr-checks.yml` 的 `tasks-format`、`src/agent-issues/validate.ts` |
 | 无人看过的 UI 变更 | UI Screenshots job、E2E screenshots 评论 | `pr-checks.yml`、`src/ui-screenshots/`、`packages/e2e/src/helpers/screenshots.ts` |
 | 合并后不继续 | 对已合并的 `openhands/` 分支运行 Agent Issues | `src/agent-issues/gate.ts` |
-| 智能体没有云环境 | 为每个 AWS 服务提供本地替身 | `pnpm dev`、`packages/common/scripts/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
+| 智能体没有云环境 | 为每个 AWS 服务提供本地替身 | `pnpm dev`、`packages/tooling/local-dev/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
 | 合并不发布 | `main` 上的 CI，然后是 Deploy | `.github/workflows/ci.yml`、`deploy.yml`、`scripts/setup-stage.sh` |
 | 密钥和有漏洞的依赖 | CI 中和部署前运行 Trivy，commit 时运行 git-secrets | `ci.yml` 的 `trivy`、`deploy.yml`、`.husky/pre-commit`、`.trivyignore` |
+| 已合并的变更从未在它运行的地方被测试 | Post-merge Verify 为每个已部署的 PR 打开一个测试 issue，测试智能体测试它，Agent Lock 锁定智能体阅读的内容 | `.github/workflows/post-merge-verify.yml`、`agent-lock.yml`、`src/post-merge-test/`、`src/agent-lock/`、`src/helpers/conversation-lock.ts` |
+
+粘合层位于 `packages/tooling/agent/`（`@discava/tooling-agent`）中。本节中的 `src/…` 路径都相对于它。
 
 以及每个智能体都会阅读的文字说明：
 
@@ -49,6 +54,8 @@ React 门户、三个运行在 Lambda 上的 tRPC API、一张 DynamoDB 表、�
 | 命令、架构、约定 | `AGENTS.md` |
 | PR 流程、本地栈、测试 | `CONTRIBUTING.md` |
 | 每个实现 issue 上的指令 | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| 测试 issue 的手动填写表单 | `.github/ISSUE_TEMPLATE/test-deployed-pr.md` |
+| 每个智能体角色的常驻 prompt | 在 OpenHands 中，位于仓库之外。参见[智能体的 prompt](../agent-prompts/) |
 | 为自动化定制的 Speckit 模板 | `.specify/templates/tasks-template.md`、`spec-template.md` |
 
 ## 数据一览

@@ -25,8 +25,9 @@ tra: các kiểm tra rẻ, tự động chạy trước và bắt được nhi�
 | | Kiểm tra file sinh ra | Output của lint hoặc build mà agent quên commit |
 | **Kiểm chứng** | End-to-end test | Luồng người dùng bị hỏng, trong một trình duyệt thật chạy trên local stack |
 | | Ảnh chụp màn hình | Thay đổi UI mà chưa ai nhìn qua |
+| | Test sau merge | Một thay đổi đã qua mọi check mà vẫn thất bại trên stack đã deploy, trên màn hình hoặc trong những gì nó đã lưu. Agent Tester tìm ra nó sau khi merge |
 | **Văn bản hướng dẫn** | Constitution, `AGENTS.md`, skill | Hướng dẫn agent đọc *trước khi* viết, để quy ước được tuân theo thay vì bị bắt lỗi |
-| | Agent reviewer | Vấn đề mà không test nào bao phủ, được đọc như một lần review code |
+| | Agent Reviewer | Vấn đề mà không test nào bao phủ, được đọc như một lần review code |
 | **Người review** | Review cuối | Bất cứ điều gì các lớp trên không đánh giá được. Luôn có một người merge |
 
 ## Kiểm chứng là quan trọng nhất
@@ -56,6 +57,17 @@ Người review mở chín ảnh mới và kiểm tra từng trạng thái: tran
 một công tắc được lưu, email bị dừng và bật lại, một liên kết hủy đăng ký hợp lệ và một liên kết không
 hợp lệ, một lỗi và "thử lại". Mỗi trạng thái đó là một yêu cầu từ spec, được thấy đang hoạt động.
 
+### Sau khi merge, trên stack thật
+
+E2E test chạy trên các bản thay thế local. Chúng không thể thấy một function thiếu bộ nhớ, một quyền
+bị thiếu, hay một cài đặt khác đi trên stage đã deploy. Nên lần kiểm chứng cuối diễn ra sau khi
+merge: khi thay đổi đã được deploy lên stage development, **agent Tester** đăng nhập bằng một người
+dùng test, bấm qua luồng, và gọi các API đứng sau nó. Rồi nó kiểm chứng những gì đã được ghi, không
+chỉ những gì đã được hiển thị: các bản ghi trong database, các object trong nơi lưu trữ file và các
+document trong search index (DynamoDB, S3 và OpenSearch ở Discava), cùng với log. Báo cáo của nó liệt
+kê mọi kiểm tra kèm bằng chứng. Xem
+[vòng test](../feedback-loops/#sau-khi-merge-vòng-test).
+
 ## Văn bản hướng dẫn, code thực thi
 
 Văn bản hướng dẫn (constitution, `AGENTS.md`, hướng dẫn trong issue) rẻ để viết và ngăn được phần
@@ -75,7 +87,7 @@ Quy tắc quan trọng nhất trong constitution của Discava:
 > justifies it, and the PR description says so.
 
 Một agent chịu áp lực phải làm CI xanh, sớm hay muộn, sẽ "sửa" test. Quy tắc này, được lặp lại trong
-issue template và được agent reviewer kiểm tra, là thứ giữ cho bộ test còn ý nghĩa.
+issue template và được agent Reviewer kiểm tra, là thứ giữ cho bộ test còn ý nghĩa.
 
 ## Invariant: test cho dữ liệu
 

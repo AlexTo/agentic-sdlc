@@ -24,7 +24,7 @@ stand-in, and `pnpm dev` starts all of them with Docker.
 
 Backend code switches on `LOCAL_DEV=true`. The shared settings are in one package
 (`common-server-utils/local-dev`), so every Lambda resolves endpoints the same way. Each stand-in
-is an Nx target in `packages/common/scripts`, which pulls and starts its container.
+is an Nx target in `packages/tooling/local-dev`, which pulls and starts its container.
 
 The local sign-in page offers fixed users (an instructor, two students, an admin) and a
 "Someone else" form for any claims. No passwords, no Cognito.

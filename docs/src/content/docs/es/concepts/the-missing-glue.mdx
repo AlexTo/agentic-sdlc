@@ -1,6 +1,6 @@
 ---
 title: El pegamento que falta
-description: Los diez huecos entre Speckit, OpenHands y el CI, y las reglas para cubrirlos.
+description: Los once huecos entre Speckit, OpenHands y el CI, y las reglas para cubrirlos.
 sidebar:
   order: 5
 ---
@@ -18,7 +18,7 @@ Estos son los huecos y lo que cubre cada uno:
 | --- | --- | --- |
 | 1 | Nada convierte una spec terminada en trabajo para el agente | Un workflow lee `tasks.md` y abre la siguiente issue de implementación, un grupo de fases cada vez |
 | 2 | El agente no sabe que el CI ha fallado | Un workflow comunica al agente una ejecución fallida como el commit status que ya vigila |
-| 3 | El "changes requested" de un revisor no lo oye nadie | Un workflow hace lo mismo con el veredicto del agente revisor |
+| 3 | El "changes requested" de un revisor no lo oye nadie | Un workflow hace lo mismo con el veredicto del agente Revisor |
 | 4 | Nada impide que un agente atascado entre en un bucle infinito | Ambos bucles de corrección están limitados a cinco intentos, contados con labels, y después toma el relevo una persona |
 | 5 | `tasks.md` es solo una convención, así que uno mal formado estanca la cadena sin avisar | Un PR check valida su formato |
 | 6 | Los cambios de UI llegan a revisión sin que nadie los haya mirado | Un check exige capturas e2e, y el CI las publica en el PR |
@@ -26,6 +26,7 @@ Estos son los huecos y lo que cubre cada uno:
 | 8 | El agente no puede ejecutar el stack real sin acceso a la nube | Sustitutos locales de cada servicio, para que toda la app y sus tests e2e se ejecuten sin credenciales |
 | 9 | Hacer merge no publica nada | Un build en verde en `main` se despliega solo, omite un commit que ya no es el más reciente, y producción espera a una persona |
 | 10 | Un agente puede hacer commit de un secreto filtrado o de una dependencia vulnerable | Un escaneo de secretos y dependencias en cada build, y otra vez antes de cada despliegue |
+| 11 | Nadie comprueba el cambio fusionado allí donde realmente se ejecuta | Cada despliegue abre una issue de test por cada PR fusionado que llevaba, y el agente Tester prueba el cambio en el stage desplegado |
 
 [Cómo lo hace Discava](../../discava/overview/) relaciona cada fila con sus archivos.
 
@@ -59,6 +60,16 @@ Los workflows de pegamento tienen un token que puede escribir labels, status y c
 Hacen checkout de la **rama por defecto**, nunca del pull request, así que nada de lo que haya escrito
 un agente o un colaborador se ejecuta con ese token. Todo lo que se lee del PR (nombres de rama,
 cuerpos) se comprueba contra un patrón estricto antes de usarlo.
+
+### Bloquea lo que lee el agente
+
+Cualquiera puede comentar en las issues y los pull requests de un repositorio público, y un agente
+lee esos comentarios mientras tiene un token que puede hacer push. El Tester tiene además acceso al
+stage desplegado. Por eso cada issue y cada pull request que se le entrega a un agente se **bloquea**
+(lock) antes, lo que deja los comentarios a las personas con acceso de escritura. Una issue se abre
+sin su label, se bloquea y solo entonces se etiqueta, así que el agente nunca la recoge mientras un
+desconocido todavía puede comentar. Y el marcador oculto de una issue solo cuenta cuando la issue la
+abrió el workflow o alguien con acceso de escritura.
 
 ### Sé idempotente
 

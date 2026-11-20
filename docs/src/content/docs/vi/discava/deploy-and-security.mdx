@@ -1,6 +1,6 @@
 ---
 title: Deploy và bảo mật
-description: Một main xanh tự deploy như thế nào, và các lần quét chặn một secret bị lộ hoặc một dependency có lỗ hổng.
+description: Một main xanh tự deploy và giao mỗi thay đổi cho agent Tester như thế nào, và các lần quét chặn một secret bị lộ hoặc một dependency có lỗ hổng.
 sidebar:
   order: 9
 ---
@@ -55,6 +55,10 @@ Các bước, theo thứ tự:
 `AUTO_DEPLOY_STAGE` là một biến của repository. Discava đặt nó là `discava-development`, nên mọi
 `main` xanh đều đến được stage development. Để trống thì không có gì deploy mà không có một người.
 
+Một lần deploy lên stage development chưa phải là kết thúc. Khi lần chạy xong, **Post-merge Verify**
+mở một issue test cho mỗi pull request mà nó mang theo, và agent Tester test thay đổi đó trên stage.
+Xem [Kiểm chứng sau merge](../post-merge-verify/).
+
 ### Thiết lập một stage
 
 `scripts/setup-stage.sh` được chạy một lần cho mỗi stage, từ một bản clone của repository chạy
@@ -102,4 +106,4 @@ Hook pre-commit cũng chạy `lint-staged` (Biome), và làm thất bại commit
 Conventional Commits.
 </Aside>
 
-Tiếp theo: [Một tính năng thật](../a-real-feature/).
+Tiếp theo: [Kiểm chứng sau merge](../post-merge-verify/).

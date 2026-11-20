@@ -1,6 +1,6 @@
 ---
 title: Loop di feedback
-description: Agent CI Status e Agent Review Status, i due workflow che rimandano indietro l'agente.
+description: Agent CI Status e Agent Review Status, i due workflow che rimandano indietro l'agente Developer.
 sidebar:
   order: 6
 ---
@@ -16,7 +16,9 @@ chiamato `software-factory/review` in stato `failure` sul commit di testa della 
 
 `.github/workflows/agent-ci.yml` gira su `workflow_run`, quando **PR Checks** termina con `failure`
 o `timed_out` per una pull request su un branch `openhands/issue-`. Fa il checkout del branch di
-default ed esegue `agent-ci-status`.
+default ed esegue `agent-ci-status`. I passi che i due workflow condividono stanno in un unico
+workflow riutilizzabile, `agent-status.yml`. Ogni chiamante mantiene il proprio trigger, la propria
+condizione, il proprio gruppo di concorrenza e i propri permessi.
 
 `workflow_run` è importante. Gira nel contesto del branch di default, con un token che può scrivere,
 anche se PR Checks è girato sul codice della PR con un token in sola lettura.
@@ -51,14 +53,15 @@ esplicitamente il checkout del branch di default, ed esegue `agent-review-status
 | Controllo | Perché |
 | --- | --- |
 | L'author association è `OWNER`, `MEMBER` o `COLLABORATOR` | Solo chi ha accesso in scrittura può attivarlo |
-| Il corpo contiene `<!-- openhands-review-run: … -->` | È la review dell'agente reviewer, non una persona che la cita |
+| Il corpo contiene `<!-- openhands-review-run: … -->` | È la review dell'agente Reviewer, non una persona che la cita |
 | Il corpo ha una riga che è esattamente `🔄 CHANGES REQUESTED` | Il verdetto, non una sua menzione |
 
 Poi gli stessi passi della CI: `review-fix-<n>`, lo status di fallimento collegato alla review, e
 `review-fix-exhausted` dopo cinque.
 
-Il reviewer rifà la review da solo dopo il push dell'agente, perché il prompt di revisione dice
-all'agente di riapplicare `openhands-review`, e un nuovo commit di testa conta come una nuova review.
+Il Reviewer rifà la review da solo dopo il push del Developer, perché il
+[prompt di revisione](../agent-prompts/#developer) dice al Developer di riapplicare
+`openhands-review`, e un nuovo commit di testa conta come una nuova review.
 
 ## Come appare su una PR
 
@@ -70,10 +73,10 @@ Da [#470](https://github.com/AlexTo/discava/pull/470), "ratings in search":
    the failing `E2E tests (4/4)` shard: my new scenario […] hit a strict-mode violation, because
    `getByText('4.5')` matched both the rating and the `4.5 and up` option […]. I fixed both
    locators."*
-4. Il reviewer vede che sul nuovo commit di testa i check stanno ancora girando e commenta "⏳ Review
+4. Il Reviewer vede che sul nuovo commit di testa i check stanno ancora girando e commenta "⏳ Review
    waiting on checks". A una scansione successiva è tutto verde. Revisiona `94b9ee3` e chiude con
    `✅ APPROVED`.
-5. `main` viene mergiato nel branch. Il reviewer revisiona di nuovo il nuovo commit di testa e lo
+5. `main` viene mergiato nel branch. Il Reviewer revisiona di nuovo il nuovo commit di testa e lo
    approva.
 6. Una persona fa il merge.
 
@@ -81,5 +84,8 @@ Da [#470](https://github.com/AlexTo/discava/pull/470), "ratings in search":
 Entrambi gli script accettano `DRY_RUN=true`, che stampa il piano come JSON e non cambia nulla. Punta
 `GITHUB_EVENT_PATH` a un payload di evento salvato per riprodurre un caso reale.
 </Aside>
+
+Cosa succede dopo il merge, quando subentra l'agente Tester, è in
+[Verifica post-merge](../post-merge-verify/).
 
 Avanti: [Check delle PR](../pr-checks/).

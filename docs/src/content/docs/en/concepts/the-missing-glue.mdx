@@ -1,6 +1,6 @@
 ---
 title: The missing glue
-description: The ten gaps between Speckit, OpenHands and CI, and the rules for filling them.
+description: The eleven gaps between Speckit, OpenHands and CI, and the rules for filling them.
 sidebar:
   order: 5
 ---
@@ -18,7 +18,7 @@ These are the gaps, and what fills each one:
 | --- | --- | --- |
 | 1 | Nothing turns a finished spec into work for the agent | A workflow reads `tasks.md` and opens the next implementation issue, one group of phases at a time |
 | 2 | The agent doesn't know CI failed | A workflow reports a failing run back to the agent as the commit status it already watches |
-| 3 | A reviewer's "changes requested" goes unheard | A workflow does the same for the reviewer agent's verdict |
+| 3 | A reviewer's "changes requested" goes unheard | A workflow does the same for the Reviewer agent's verdict |
 | 4 | Nothing stops a stuck agent looping forever | Both fix-up loops are capped at five attempts, counted with labels, then a person takes over |
 | 5 | `tasks.md` is only a convention, so a malformed one silently stalls the chain | A PR check validates its format |
 | 6 | UI changes reach review without anyone looking at them | A check requires e2e screenshots, and CI posts them on the PR |
@@ -26,6 +26,7 @@ These are the gaps, and what fills each one:
 | 8 | The agent can't run the real stack without cloud access | Local stand-ins for every service, so the whole app and its e2e tests run with no credentials |
 | 9 | Merging doesn't ship anything | A green build on `main` deploys by itself, skips a commit that is no longer the latest, and production waits for a person |
 | 10 | An agent can commit a leaked secret or a vulnerable dependency | A secret and dependency scan on every build, and again before each deploy |
+| 11 | Nobody checks the merged change where it actually runs | Each deploy opens a test issue for every merged PR it carried, and the Tester agent tests the change on the deployed stage |
 
 [How Discava does it](../../discava/overview/) maps each row to its files.
 
@@ -58,6 +59,15 @@ The glue workflows hold a token that can write labels, statuses and comments. Th
 **default branch**, never the pull request, so nothing an agent or a contributor wrote runs with
 that token. Anything read from the PR (branch names, bodies) is checked against a strict pattern
 before it is used.
+
+### Lock what the agent reads
+
+Anyone can comment on a public repository's issues and pull requests, and an agent reads those
+comments while holding a token that can push. The Tester also holds access to the deployed stage.
+So every issue and pull request an agent is handed is **locked** first, which leaves commenting to
+people with write access. An issue is opened without its label, locked, and labelled only then, so
+the agent never picks it up while a stranger can still comment. And an issue's hidden marker
+counts only when the issue was opened by the workflow or by someone with write access.
 
 ### Be idempotent
 

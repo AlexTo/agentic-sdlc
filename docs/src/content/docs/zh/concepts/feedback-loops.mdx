@@ -1,6 +1,6 @@
 ---
 title: 反馈循环
-description: 红色的 CI 运行或 "changes requested" 评审如何把智能体送回去，以及为什么每个循环在五次尝试后停止。
+description: 红色的 CI 运行或 "changes requested" 评审如何把开发智能体送回去，为什么每个循环在五次尝试后停止，以及测试智能体在合并之后补上了什么。
 sidebar:
   order: 6
 ---
@@ -8,15 +8,15 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 
 **简短版本：**当某处失败时，一个 workflow 会给 PR 的 head commit 标上失败状态。OpenHands worker
-在下一次轮询时看到它，并让同一个智能体会话去修复同一个 PR。每个循环都有一个记在标签里的计数器，
-到五次就停止。
+在下一次轮询时看到它，并让同一个开发智能体会话去修复同一个 PR。每个循环都有一个记在标签里的计数器，
+到五次就停止。第三个循环在合并之后开始：测试智能体在已部署的 stage 上测试这个变更。
 
 ## 两个循环
 
 ```d2
 direction: right
 
-pr: 智能体推送 {shape: page}
+pr: 开发智能体推送 {shape: page}
 checks: PR Checks
 review: 评审智能体
 you: 人工评审
@@ -60,7 +60,7 @@ worker -> pr: 修改同一个 PR
 2. PR 处于打开状态。
 3. 这次运行或评审针对的是 PR **当前**的 head commit。较早的运行已经过时。
 4. 该 commit 还没有被送回过。重新运行相同的检查不能消耗另一次尝试。
-5. 对于评审：评审带有评审者的隐藏运行标记，并且来自一个有写权限的账号，这样某个人引用该结论时
+5. 对于评审：评审带有评审智能体的隐藏运行标记，并且来自一个有写权限的账号，这样某个人引用该结论时
    不会触发它。
 6. 已用的尝试次数少于五次。
 
@@ -83,5 +83,42 @@ worker -> pr: 修改同一个 PR
 </Aside>
 
 如果之后想再给智能体一轮机会，请参阅[重置循环](../../reference/labels/#重置循环)。
+
+## 合并之后：测试循环
+
+上面的两个循环到合并为止。它们检查过的一切都运行在本地栈上，所以还有一个问题悬而未决：这个变更在它
+被部署的地方能正常工作吗？当仓库把 `main` 部署到开发 stage 时，第三个循环会回答这个问题。
+
+```d2
+direction: down
+
+deploy: "Deploy\n（已合并的 PR 到达开发 stage）"
+verify: "Post-merge Verify\n（GitHub Actions）"
+issue: "测试 issue\nopenhands-test" {shape: page}
+tester: 测试智能体
+stage: 开发 stage {shape: cylinder}
+report: issue 上的报告 {shape: document}
+you: 一个人
+
+deploy -> verify: 已部署
+verify -> issue: 每个 PR 一个
+issue -> tester: 下一次轮询
+tester -> stage: "UI、API、存储的数据"
+tester -> report
+report -> you: 失败时保持打开
+```
+
+| | 测试循环 |
+| --- | --- |
+| 触发条件 | 一次把 `main` 部署到开发 stage 的部署结束 |
+| Workflow | Post-merge Verify 为每个改动了已部署内容的已合并 PR 打开一个测试 issue |
+| 智能体 | 测试智能体：它在真实浏览器中点完这个变更，调用 API，然后验证写入存储的内容（数据库记录、存储的文件、搜索文档）以及日志 |
+| 通过时 | 一份列出每项检查及其证据的报告，然后 issue 被关闭 |
+| 失败时 | 同样的报告，外加复现步骤，issue 保持打开。如果原因清楚且修复很小，测试智能体还会打开一个修复 PR，它和其他任何 PR 一样要经过同样的检查、评审智能体和人工评审 |
+
+这个循环没有计数器，因为没有任何东西会被自动送回去。失败的测试最终交到人手上：由人阅读报告，并决定
+是合并修复 PR、写一个新任务，还是修改 spec。要再测试一次，移除并重新加上 `openhands-test` 标签。
+
+[合并后验证](../../discava/post-merge-verify/)展示了 Discava 的 workflow 和一份真实的报告。
 
 下一步：[信任的层次](../layers-of-trust/)。

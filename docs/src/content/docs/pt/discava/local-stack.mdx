@@ -24,7 +24,7 @@ local, e o `pnpm dev` inicia todos eles com Docker.
 
 O código de back end muda de comportamento com `LOCAL_DEV=true`. As configurações compartilhadas ficam em um pacote
 (`common-server-utils/local-dev`), para que toda Lambda resolva endpoints do mesmo jeito. Cada substituto
-é um target Nx em `packages/common/scripts`, que baixa e inicia o seu container.
+é um target Nx em `packages/tooling/local-dev`, que baixa e inicia o seu container.
 
 A página de login local oferece usuários fixos (um instrutor, dois alunos, um admin) e um
 formulário "Someone else" para quaisquer claims. Sem senhas, sem Cognito.

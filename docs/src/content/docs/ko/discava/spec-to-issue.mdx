@@ -56,7 +56,7 @@ exists -> stalled: 예
 exists -> open: 아니요
 ```
 
-`src/agent-issues/`의 `pnpm nx run @discava/common-scripts:agent-issue`:
+`src/agent-issues/`의 `pnpm nx run @discava/tooling-agent:agent-issue`:
 
 1. **게이트** (`gate.ts`). `decide()`가 PR을 `spec`, `implementation`, `ignore` 중 하나로 분류합니다.
 2. **spec 폴더 찾기** (`discover.ts`). 에이전트 PR이면, PR이 닫는 issue를 읽고 그 issue의 숨겨진 마커에서 폴더를
@@ -67,12 +67,16 @@ exists -> open: 아니요
 5. **다음 그룹 고르기**: **(human)**이 아닌 체크되지 않은 작업이 있는 첫 그룹.
 6. **기존 issue 확인.** 모든 issue 본문은 `<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->` 같은
    마커로 시작합니다. 이 그룹에 대한 issue가 이미 있으면(열려 있든 닫혀 있든) 스크립트는 또 하나를 열지 않습니다.
-   대신 PR에 댓글을 답니다. 예를 들면 다음과 같습니다.
+   마커는 workflow나 쓰기 권한이 있는 사람이 연 issue에서만 인정되므로, 낯선 사람의 issue가 spec의 사슬을 멈출
+   수는 없습니다. 대신 PR에 댓글을 답니다. 예를 들면 다음과 같습니다.
 
    > The next implementation issue for `specs/…/` was not opened: an issue for "Ratings in search"
    > already exists, and these tasks in its `tasks.md` are not ticked: T017, T018.
 
-7. **issue 렌더링과 생성** (`issue.ts`), `openhands` label을 붙입니다.
+7. **issue 렌더링과 생성** (`issue.ts`), label 없이 만듭니다.
+8. **잠근 다음 label 붙이기** (`helpers/conversation-lock.ts`). issue를 잠가서 개발자 에이전트가 읽게 될 것에 쓰기
+   권한이 있는 사람만 댓글을 달 수 있게 하고, 그제야 `openhands` label을 붙입니다. 잠금이 실패하면 label은 끝내
+   붙지 않고 실행이 실패하며, 직접 잠그고 label을 붙여야 할 issue를 알려 줍니다.
 
 ## 열리는 issue
 
@@ -112,7 +116,7 @@ subject는 소문자이고 최대 100자이므로, 에이전트가 commitlint에
 ```bash
 DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=workflow_dispatch \
   SPEC_FOLDER=20261116-013307-course-reviews \
-  pnpm nx run @discava/common-scripts:agent-issue
+  pnpm nx run @discava/tooling-agent:agent-issue
 ```
 
 이 명령은 열게 될 issue의 제목과 본문을 출력합니다. 그래도 `gh`로 기존 issue를 읽으므로, 로그인되어 있어야 합니다.
@@ -123,7 +127,7 @@ DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=workflow_dispatch \
 `specs/*/tasks.md`를 바꾸는 `main` push에서, 그리고 수동으로 실행됩니다. 마지막 체크는 보통 Agent Issues가 무시하는
 PR 안의 **(human)** 작업이므로, 자체 트리거가 필요합니다.
 
-`src/agent-issues/archive-specs.ts`의 `pnpm nx run @discava/common-scripts:archive-specs`:
+`src/agent-issues/archive-specs.ts`의 `pnpm nx run @discava/tooling-agent:archive-specs`:
 
 1. **(human)** 작업을 포함해 모든 작업이 체크된 활성 spec을 각각 찾습니다.
 2. 열린 에이전트 issue가 있는 spec, 그리고 이미 아카이브 PR이 있었던 spec은 건너뜁니다. 그 PR을 merge하지 않고 닫으면

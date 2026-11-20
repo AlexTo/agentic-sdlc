@@ -8,7 +8,8 @@ sidebar:
 Este guia mostra como rodar um ciclo de vida de software em que **agents escrevem o código e pessoas
 tomam duas decisões**: aprovar a spec e aprovar o resultado. Tudo o que fica no meio (abrir
 issues, escrever código e testes, reagir ao CI, responder a um review) roda sozinho, pelo processo
-normal do GitHub.
+normal do GitHub. Três papéis de agent fazem esse trabalho: um **Desenvolvedor**, um **Revisor** e um
+**Testador**.
 
 O workflow roda todos os dias no [Discava](https://github.com/AlexTo/discava), um sistema de gestão de
 aprendizagem serverless na AWS. Nos seis dias depois de entrar no ar, em 14 de novembro de 2026, dezesseis
@@ -24,12 +25,12 @@ Três ferramentas prontas fazem a maior parte do trabalho:
 | Ferramenta | O que ela faz aqui |
 | --- | --- |
 | [Speckit](https://github.com/github/spec-kit) | Transforma uma ideia em `spec.md`, `plan.md` e `tasks.md`, verificados contra uma constitution do projeto |
-| [OpenHands](https://github.com/OpenHands/OpenHands) | Transforma uma issue com label em um pull request, e revisa o pull request quando avisado de que algo está errado. Uma segunda automation do OpenHands faz o review |
+| [OpenHands](https://github.com/OpenHands/OpenHands) | Roda os três papéis de agent, uma automation para cada. O Desenvolvedor transforma uma issue com label em um pull request, e o revisa quando avisado de que algo está errado. O Revisor faz o review dele. O Testador testa a mudança mergeada em um stage com deploy |
 | GitHub Actions | Roda os checks e guarda a cola entre os outros dois |
 
-Nenhuma delas sabe das outras. **Este guia é, em grande parte, sobre a cola**: dez peças pequenas e
-testadas de automação que conectam uma spec concluída ao agent, o CI ao agent e o revisor ao
-agent, com limites para que nada fique em loop para sempre.
+Nenhuma delas sabe das outras. **Este guia é, em grande parte, sobre a cola**: onze peças pequenas e
+testadas de automação que conectam uma spec concluída ao Desenvolvedor, o CI e o Revisor de volta ao
+Desenvolvedor, e um deploy ao Testador, com limites para que nada fique em loop para sempre.
 
 ## Para quem é
 

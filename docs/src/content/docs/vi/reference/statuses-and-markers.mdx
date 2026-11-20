@@ -26,9 +26,13 @@ Một lần push mới bắt đầu mà không có status, nên worker ngừng s
 | Marker | Ở đâu | Viết bởi | Dùng để |
 | --- | --- | --- | --- |
 | `<!-- agent-issue spec:<folder> group:<n> -->` | Dòng đầu của một issue triển khai | Agent Issues | Tìm thư mục spec từ một agent PR đã merge (qua `Closes #n` của nó), và không bao giờ mở issue thứ hai cho cùng một nhóm |
-| `<!-- openhands-review-run: <id> -->` | Mỗi review của agent reviewer | Automation code review | Agent Review Status chỉ hành động với review mang marker này |
+| `<!-- post-merge-test pr:<n> -->` | Dòng đầu của một issue test | Post-merge Verify | Không bao giờ mở issue test thứ hai cho cùng một pull request |
+| `<!-- openhands-review-run: <id> -->` | Mỗi review của agent Reviewer | Automation code review | Agent Review Status chỉ hành động với review mang marker này |
 | `<!-- openhands-review-gate:waiting:<sha> -->` | Comment "Review waiting on checks" | Automation code review | Ghi chép riêng của reviewer rằng nó đang chờ head đó |
 | `<!-- e2e-screenshots -->` | Comment E2E screenshots | PR Checks | Cập nhật một comment duy nhất thay vì thêm comment mới mỗi lần chạy |
+
+Một marker trong một issue chỉ được tính khi issue đó do chính tài khoản của workflow hoặc một người
+có quyền ghi mở. Ai cũng có thể mở một issue có marker trong đó.
 
 ## Dòng verdict
 
@@ -48,5 +52,6 @@ cụm từ này thoáng qua không được tính.
 | --- | --- | --- |
 | `openhands/issue-<n>` | Automation issue-to-PR | Nhánh duy nhất mà worker sửa lại, và nhánh duy nhất các workflow fix-up phản hồi |
 | `openhands/issue-<n>-2`, … | Automation issue-to-PR, trên một issue được gắn lại label | Không bao giờ được sửa lại tự động |
-| bất cứ thứ gì bắt đầu bằng `openhands/` | Nhánh của agent | Merge một nhánh như vậy đẩy chuỗi tiến lên |
+| `openhands/test-fix-<n>` | Automation issue tester, cho issue test `<n>` | Một bản sửa Tester tìm ra khi đang test. Không bao giờ được sửa lại tự động |
+| bất cứ thứ gì bắt đầu bằng `openhands/` | Nhánh của agent | Merge một nhánh như vậy đẩy chuỗi tiến lên. Ở Discava, một pull request từ nhánh như vậy bị khóa khi nó mở |
 | `spec/<name>` (bất kỳ tên nào khác) | Con người | Chỉ đẩy chuỗi tiến lên khi có `spec-ready` |

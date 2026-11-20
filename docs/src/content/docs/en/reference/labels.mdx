@@ -8,8 +8,10 @@ sidebar:
 | Label | On | Set by | Read by | Means |
 | --- | --- | --- | --- | --- |
 | `spec-ready` | Spec PR | A person | Agent Issues | Merging this PR starts implementation. Adding it to an already merged PR does too |
-| `openhands` | Issue | Agent Issues, or a person | Issue-to-PR automation | Implement this issue. Remove and re-apply it for a fresh attempt on a new branch |
-| `openhands-review` | PR | The implementing agent, after opening or revising | Code review automation | Review this PR's current head |
+| `openhands` | Issue | Agent Issues, or a person | Issue-to-PR automation (Developer) | Implement this issue. Remove and re-apply it for a fresh attempt on a new branch |
+| `openhands-review` | PR | The Developer agent, after opening or revising | Code review automation (Reviewer) | Review this PR's current head |
+| `openhands-test` | Issue | Post-merge Verify, or a person | Issue tester automation (Tester) | Test the merged pull request this issue names on the deployed development stage. Remove and re-apply it to test again |
+| `skip-deploy-test` | PR | A person | Post-merge Verify | Open no test issue for this pull request when it is deployed |
 | `ci-fix-1` … `ci-fix-5` | Agent PR | Agent CI Status | Agent CI Status | That many automatic fix-ups for red CI have been used |
 | `ci-fix-exhausted` | Agent PR | Agent CI Status | Agent CI Status, people | CI fix-ups are used up. A person takes over |
 | `review-fix-1` … `review-fix-5` | Agent PR | Agent Review Status | Agent Review Status | That many fix-ups for "changes requested" have been used |

@@ -25,8 +25,9 @@ person.
 | | Generated files check | Lint or build output the agent forgot to commit |
 | **Verification** | End-to-end tests | Broken user flows, in a real browser against the local stack |
 | | Screenshots | UI changes nobody has looked at |
+| | Post-merge test | A change that passed every check and still fails on the deployed stack, on screen or in what it stored. The Tester agent finds it after the merge |
 | **Prose** | Constitution, `AGENTS.md`, skills | Guidance the agent reads *before* it writes, so conventions are followed instead of caught |
-| | Agent reviewer | Problems no test covers, read like a code review |
+| | Reviewer agent | Problems no test covers, read like a code review |
 | **Human review** | Final review | Whatever the layers above can't judge. A person always merges |
 
 ## Verification matters most
@@ -52,9 +53,20 @@ notification settings:
   <img alt="A github-actions comment titled E2E screenshots, listing the nine screenshots added by the pull request, such as notification-settings/02-emails-stopped.png, and linking to the run's artifacts" src="/agentic-sdlc/screenshots/e2e-screenshots-comment.png" width="620" />
 </p>
 
-The reviewer opens the nine new screenshots and checks each state: settings with every type listed,
+The person reviewing opens the nine new screenshots and checks each state: settings with every type listed,
 a switch saved, emails stopped and turned back on, a valid and an invalid unsubscribe link, an error
 and "try again". Each of those is a requirement from the spec, seen working.
+
+### After the merge, on the real stack
+
+E2E tests run against local stand-ins. They can't see a function that is short of memory, a
+missing permission, or a setting that differs on the deployed stage. So the last verification
+happens after the merge: once the change is deployed to the development stage, the **Tester agent**
+signs in as a test user, clicks through the flow, and calls the APIs behind it. Then it verifies
+what was written, not only what was shown: the records in the database, the objects in file
+storage and the documents in the search index (DynamoDB, S3 and OpenSearch in Discava), plus the
+logs. Its report lists every check with its evidence. See
+[the test loop](../feedback-loops/#after-the-merge-the-test-loop).
 
 ## Prose guides, code enforces
 
@@ -74,7 +86,7 @@ The most important rule in Discava's constitution:
 > justifies it, and the PR description says so.
 
 An agent under pressure to turn CI green will, sooner or later, "fix" the test. This rule, repeated
-in the issue template and checked by the reviewer agent, is what keeps the test suite meaning
+in the issue template and checked by the Reviewer agent, is what keeps the test suite meaning
 something.
 
 ## Invariants: tests for data

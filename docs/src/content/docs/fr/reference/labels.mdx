@@ -8,8 +8,10 @@ sidebar:
 | Label | Sur | Posé par | Lu par | Signification |
 | --- | --- | --- | --- | --- |
 | `spec-ready` | PR de spec | Une personne | Agent Issues | Merger cette PR démarre l'implémentation. L'ajouter à une PR déjà mergée aussi |
-| `openhands` | Issue | Agent Issues, ou une personne | Automatisation issue-to-PR | Implémenter cette issue. Retirez-le et remettez-le pour un nouvel essai sur une nouvelle branche |
-| `openhands-review` | PR | L'agent d'implémentation, après avoir ouvert ou révisé | Automatisation de code review | Relire le head actuel de cette PR |
+| `openhands` | Issue | Agent Issues, ou une personne | Automatisation issue-to-PR (Développeur) | Implémenter cette issue. Retirez-le et remettez-le pour un nouvel essai sur une nouvelle branche |
+| `openhands-review` | PR | L'agent Développeur, après avoir ouvert ou révisé | Automatisation de code review (Relecteur) | Relire le head actuel de cette PR |
+| `openhands-test` | Issue | Post-merge Verify, ou une personne | Automatisation issue tester (Testeur) | Tester sur le stage de développement déployé la pull request mergée que cette issue nomme. Retirez-le et remettez-le pour tester à nouveau |
+| `skip-deploy-test` | PR | Une personne | Post-merge Verify | N'ouvrir aucune issue de test pour cette pull request quand elle est déployée |
 | `ci-fix-1` … `ci-fix-5` | PR d'agent | Agent CI Status | Agent CI Status | Ce nombre de corrections automatiques pour une CI en rouge a été utilisé |
 | `ci-fix-exhausted` | PR d'agent | Agent CI Status | Agent CI Status, personnes | Les corrections CI sont épuisées. Une personne prend le relais |
 | `review-fix-1` … `review-fix-5` | PR d'agent | Agent Review Status | Agent Review Status | Ce nombre de corrections pour « changes requested » a été utilisé |

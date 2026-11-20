@@ -1,6 +1,6 @@
 ---
 title: Deploy e segurança
-description: Como uma main verde faz deploy sozinha, e as varreduras que barram um segredo vazado ou uma dependência vulnerável.
+description: Como uma main verde faz deploy sozinha e entrega cada mudança ao agent Testador, e as varreduras que barram um segredo vazado ou uma dependência vulnerável.
 sidebar:
   order: 9
 ---
@@ -53,6 +53,10 @@ Os passos, em ordem:
 `AUTO_DEPLOY_STAGE` é uma variável do repositório. O Discava a define como `discava-development`, então toda
 `main` verde chega ao stage de desenvolvimento. Deixe-a sem valor e nada faz deploy sem uma pessoa.
 
+Um deploy no stage de desenvolvimento não é o fim. Quando a execução termina, o **Post-merge Verify**
+abre uma issue de teste para cada pull request que ela levou, e o agent Testador testa essa mudança no
+stage. Veja [Verificação pós-merge](../post-merge-verify/).
+
 ### Configurando um stage
 
 O `scripts/setup-stage.sh` roda uma vez por stage, a partir de um clone do repositório que roda o
@@ -101,4 +105,4 @@ working tree, para que o agent faça o stage de novo e commite outra vez. O `com
 configuração de Conventional Commits.
 </Aside>
 
-Próximo: [Uma feature real](../a-real-feature/).
+Próximo: [Verificação pós-merge](../post-merge-verify/).

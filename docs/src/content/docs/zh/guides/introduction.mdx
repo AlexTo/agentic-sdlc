@@ -7,7 +7,7 @@ sidebar:
 
 本指南告诉你如何运行这样一种软件生命周期：**智能体编写代码，人只做两个决定**：批准 spec，
 以及批准结果。中间的一切（开 issue、编写代码和测试、响应 CI、回应评审）都通过常规的 GitHub
-流程自动运行。
+流程自动运行。这些工作由三个智能体角色完成：**开发智能体**、**评审智能体**和**测试智能体**。
 
 这套工作流每天都在 [Discava](https://github.com/AlexTo/discava) 上运行，这是一个构建在 AWS 上的
 serverless 学习管理系统。在 2026 年 11 月 14 日上线后的六天里，用这种方式写出了十六份功能
@@ -22,11 +22,11 @@ main 上落地了 194 个 commit。这一切只靠一位维护者完成，他是
 | 工具 | 在这里的作用 |
 | --- | --- |
 | [Speckit](https://github.com/github/spec-kit) | 把一个想法变成 `spec.md`、`plan.md` 和 `tasks.md`，并对照项目 constitution 进行检查 |
-| [OpenHands](https://github.com/OpenHands/OpenHands) | 把一个带标签的 issue 变成 pull request，并在被告知有问题时修改该 pull request。另一个 OpenHands 自动化负责评审它 |
+| [OpenHands](https://github.com/OpenHands/OpenHands) | 运行三个智能体角色，每个角色一个自动化。开发智能体把一个带标签的 issue 变成 pull request，并在被告知有问题时修改它。评审智能体评审它。测试智能体在已部署的 stage 上测试已合并的变更 |
 | GitHub Actions | 运行检查，并承载另外两者之间的粘合代码 |
 
-它们彼此之间互不知晓。**本指南主要讲的就是这些粘合代码**：十个小而经过测试的自动化部件，把完成的
-spec 连到智能体、把 CI 连到智能体、把评审者连到智能体，并设有上限，确保没有什么会无限循环。
+它们彼此之间互不知晓。**本指南主要讲的就是这些粘合代码**：十一个小而经过测试的自动化部件，把完成的
+spec 连到开发智能体、把 CI 和评审智能体连回开发智能体、把部署连到测试智能体，并设有上限，确保没有什么会无限循环。
 
 ## 面向哪些读者
 

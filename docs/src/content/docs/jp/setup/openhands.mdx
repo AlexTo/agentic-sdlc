@@ -1,6 +1,6 @@
 ---
 title: 3. OpenHands をインストールする
-description: npm で Agent Canvas をインストールして実行し、GitHub トークンを追加して、2 つのエージェントプロファイルを作成します。
+description: npm で Agent Canvas をインストールして実行し、GitHub トークンを追加して、開発担当とレビュー担当のエージェントプロファイルを作成します。
 sidebar:
   order: 3
 ---
@@ -8,7 +8,7 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **完了時の状態:** 自分のマシンで動く OpenHands Agent Canvas、シークレットとして保存された GitHub トークン、
-そして実装用の `default` とレビュー用の `reviewer` の 2 つのエージェントプロファイル。
+そして開発担当エージェント用の `developer` とレビュー担当エージェント用の `reviewer` の 2 つのエージェントプロファイル。
 
 <Steps>
 
@@ -42,21 +42,24 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
    コーディングエージェントは、このマシンに同じユーザーでインストールされ、サインインしている必要があります。
 
-5. **2 つのエージェントプロファイルを作成します:**
+5. エージェントの役割ごとに 1 つ、**2 つのエージェントプロファイルを作成します:**
 
-   | プロファイル | Agent | Model |
-   | --- | --- | --- |
-   | `default` | ACP、`claude-code` | `sonnet` |
-   | `reviewer` | ACP、`claude-code` | `opus` |
+   | プロファイル | 役割 | Agent | Model |
+   | --- | --- | --- | --- |
+   | `developer` | 開発担当 | ACP、`claude-code` | `sonnet` |
+   | `reviewer` | レビュー担当 | ACP、`claude-code` | `opus` |
 
-   どのエージェントとモデルでも動きます。レビュアーは少なくとも実装者と同等の強さにしてください。
+   どのエージェントとモデルでも動きます。レビュー担当は少なくとも開発担当と同等の強さにしてください。
    あなたの前の最後のチェックだからです。
+
+   Discava には 3 つ目のプロファイル `tester` があり、テスト担当エージェントが使います。テスト担当はマージされた変更を
+   デプロイされたステージでテストしますが、notes アプリにはそれがないので、ここでは不要です。
 
 </Steps>
 
 ## 動作を確認する
 
-Agent Canvas で `default` プロファイルを使って会話を始め、
+Agent Canvas で `developer` プロファイルを使って会話を始め、
 `GITHUB_PERSONAL_ACCESS_TOKEN` シークレットを渡します。次のように依頼します:
 
 ```text

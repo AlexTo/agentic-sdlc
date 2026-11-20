@@ -1,6 +1,6 @@
 ---
 title: Deploy and security
-description: How a green main deploys by itself, and the scans that stop a leaked secret or a vulnerable dependency.
+description: How a green main deploys by itself and hands each change to the Tester agent, and the scans that stop a leaked secret or a vulnerable dependency.
 sidebar:
   order: 9
 ---
@@ -53,6 +53,10 @@ The steps, in order:
 `AUTO_DEPLOY_STAGE` is a repository variable. Discava sets it to `discava-development`, so every
 green `main` reaches the development stage. Leave it unset and nothing deploys without a person.
 
+A deploy to the development stage is not the end. When the run finishes, **Post-merge Verify**
+opens a test issue for each pull request it carried, and the Tester agent tests that change on the
+stage. See [Post-merge verify](../post-merge-verify/).
+
 ### Setting up a stage
 
 `scripts/setup-stage.sh` is run once per stage, from a clone of the repository that runs the
@@ -101,4 +105,4 @@ working tree, so the agent restages and commits again. `commit-msg` runs commitl
 Conventional Commits config.
 </Aside>
 
-Next: [A real feature](../a-real-feature/).
+Next: [Post-merge verify](../post-merge-verify/).

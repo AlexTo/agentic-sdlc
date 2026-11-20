@@ -25,8 +25,9 @@ pueden juzgar llega a una persona.
 | | Check de archivos generados | Salida de lint o de build que el agente olvidó hacer commit |
 | **Verificación** | Tests end-to-end | Flujos de usuario rotos, en un navegador real contra el stack local |
 | | Capturas | Cambios de UI que nadie ha mirado |
+| | Test post-merge | Un cambio que pasó todos los checks y aun así falla en el stack desplegado, en pantalla o en lo que guardó. El agente Tester lo encuentra después del merge |
 | **Texto** | Constitución, `AGENTS.md`, skills | Guía que el agente lee *antes* de escribir, para que las convenciones se sigan en lugar de detectarse |
-| | Agente revisor | Problemas que ningún test cubre, leídos como en una revisión de código |
+| | Agente Revisor | Problemas que ningún test cubre, leídos como en una revisión de código |
 | **Revisión humana** | Revisión final | Lo que las capas anteriores no pueden juzgar. Siempre hace merge una persona |
 
 ## La verificación es lo que más importa
@@ -53,10 +54,22 @@ notificaciones:
   <img alt="Un comentario de github-actions titulado E2E screenshots, que lista las nueve capturas añadidas por el pull request, como notification-settings/02-emails-stopped.png, y enlaza a los artefactos de la ejecución" src="/agentic-sdlc/screenshots/e2e-screenshots-comment.png" width="620" />
 </p>
 
-El revisor abre las nueve capturas nuevas y comprueba cada estado: los ajustes con todos los tipos
+La persona que revisa abre las nueve capturas nuevas y comprueba cada estado: los ajustes con todos los tipos
 listados, un interruptor guardado, los correos detenidos y vueltos a activar, un enlace de baja
 válido y otro no válido, un error y "volver a intentarlo". Cada uno de ellos es un requisito de la
 spec, visto funcionando.
+
+### Después del merge, en el stack real
+
+Los tests e2e se ejecutan contra sustitutos locales. No pueden ver una función que se queda corta de
+memoria, un permiso que falta o un ajuste que es distinto en el stage desplegado. Por eso la última
+verificación ocurre después del merge: una vez desplegado el cambio en el stage de desarrollo, el
+**agente Tester** inicia sesión como un usuario de prueba, recorre el flujo y llama a las API que hay
+detrás. Después verifica lo que se escribió, no solo lo que se mostró: los registros de la base de
+datos, los objetos del almacenamiento de archivos y los documentos del índice de búsqueda (DynamoDB,
+S3 y OpenSearch en Discava), además de los logs. Su informe lista cada comprobación con su evidencia.
+Consulta
+[el bucle de test](../feedback-loops/#después-del-merge-el-bucle-de-test).
 
 ## El texto guía, el código obliga
 
@@ -77,7 +90,7 @@ La regla más importante de la constitución de Discava:
 > justifies it, and the PR description says so.
 
 Un agente presionado para poner el CI en verde acabará, tarde o temprano, "arreglando" el test. Esta
-regla, repetida en la plantilla de la issue y comprobada por el agente revisor, es lo que hace que la
+regla, repetida en la plantilla de la issue y comprobada por el agente Revisor, es lo que hace que la
 suite de tests siga significando algo.
 
 ## Invariantes: tests para los datos

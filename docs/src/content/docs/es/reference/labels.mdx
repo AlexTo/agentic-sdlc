@@ -8,8 +8,10 @@ sidebar:
 | Label | En | La pone | La lee | Significa |
 | --- | --- | --- | --- | --- |
 | `spec-ready` | PR de spec | Una persona | Agent Issues | Fusionar este PR inicia la implementación. Añadirla a un PR ya fusionado también |
-| `openhands` | Issue | Agent Issues, o una persona | Automatización issue-to-PR | Implementa esta issue. Quítala y vuelve a ponerla para un intento nuevo en una rama nueva |
-| `openhands-review` | PR | El agente implementador, tras abrir o revisar | Automatización de code review | Haz review del head actual de este PR |
+| `openhands` | Issue | Agent Issues, o una persona | Automatización issue-to-PR (Desarrollador) | Implementa esta issue. Quítala y vuelve a ponerla para un intento nuevo en una rama nueva |
+| `openhands-review` | PR | El agente Desarrollador, tras abrir o revisar | Automatización de code review (Revisor) | Haz review del head actual de este PR |
+| `openhands-test` | Issue | Post-merge Verify, o una persona | Automatización issue tester (Tester) | Prueba en el stage de desarrollo desplegado el pull request fusionado que indica esta issue. Quítala y vuelve a ponerla para probar de nuevo |
+| `skip-deploy-test` | PR | Una persona | Post-merge Verify | No abras ninguna issue de test para este pull request cuando se despliegue |
 | `ci-fix-1` … `ci-fix-5` | PR del agente | Agent CI Status | Agent CI Status | Se han usado ese número de correcciones automáticas por CI en rojo |
 | `ci-fix-exhausted` | PR del agente | Agent CI Status | Agent CI Status, personas | Se han agotado las correcciones de CI. Una persona toma el relevo |
 | `review-fix-1` … `review-fix-5` | PR del agente | Agent Review Status | Agent Review Status | Se han usado ese número de correcciones por "changes requested" |

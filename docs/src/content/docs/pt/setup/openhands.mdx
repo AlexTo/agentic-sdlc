@@ -1,6 +1,6 @@
 ---
 title: 3. Instale o OpenHands
-description: Instale o Agent Canvas com npm, rode ele, adicione o token do GitHub e crie os dois perfis de agent.
+description: Instale o Agent Canvas com npm, rode ele, adicione o token do GitHub e crie os perfis de agent do Desenvolvedor e do Revisor.
 sidebar:
   order: 3
 ---
@@ -8,7 +8,8 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **No final você terá:** o OpenHands Agent Canvas rodando na sua máquina, um token do GitHub salvo
-como secret, e dois perfis de agent: `default` para implementar e `reviewer` para revisar.
+como secret, e dois perfis de agent: `developer` para o agent Desenvolvedor e `reviewer` para o agent
+Revisor.
 
 <Steps>
 
@@ -44,21 +45,24 @@ como secret, e dois perfis de agent: `default` para implementar e `reviewer` par
 
    O coding agent precisa estar instalado e com login feito nesta máquina, com o mesmo usuário.
 
-5. **Crie dois perfis de agent:**
+5. **Crie dois perfis de agent**, um por papel de agent:
 
-   | Perfil | Agent | Modelo |
-   | --- | --- | --- |
-   | `default` | ACP, `claude-code` | `sonnet` |
-   | `reviewer` | ACP, `claude-code` | `opus` |
+   | Perfil | Papel | Agent | Modelo |
+   | --- | --- | --- | --- |
+   | `developer` | Desenvolvedor | ACP, `claude-code` | `sonnet` |
+   | `reviewer` | Revisor | ACP, `claude-code` | `opus` |
 
-   Qualquer agent e modelo funciona. Mantenha o revisor pelo menos tão forte quanto o
-   implementador: ele é o último check antes de você.
+   Qualquer agent e modelo funciona. Mantenha o Revisor pelo menos tão forte quanto o
+   Desenvolvedor: ele é o último check antes de você.
+
+   O Discava tem um terceiro perfil, `tester`, para o agent Testador. Ele testa mudanças mergeadas em um
+   stage com deploy, que o app de notas não tem, então você não precisa dele aqui.
 
 </Steps>
 
 ## Confira se funcionou
 
-No Agent Canvas, inicie uma conversa com o perfil `default` e dê a ela o secret
+No Agent Canvas, inicie uma conversa com o perfil `developer` e dê a ela o secret
 `GITHUB_PERSONAL_ACCESS_TOKEN`. Peça:
 
 ```text

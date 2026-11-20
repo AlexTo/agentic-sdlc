@@ -33,7 +33,7 @@ sidebar:
 | --- | --- | --- |
 | « ⏳ Review waiting on checks » et pas de review | Un check sur le head n'est pas terminé, ou est bloqué en file d'attente | Trouvez le check en attente. Un check requis qui ne tourne jamais bloque la review pour toujours |
 | La review indique `🔄 CHANGES REQUESTED`, pas de label `review-fix-*` | La review n'a pas le marqueur d'exécution, ne vient pas d'un compte avec accès en écriture, ou la PR a avancé | Lisez la notice d'Agent Review Status |
-| Les reviews s'affichent en « Commented », pas en « Approved » | Le reviewer publie avec le même compte que celui qui a ouvert la PR, et GitHub n'autorise pas l'auto-approbation | Attendu avec un seul compte. Utilisez un compte machine pour les agents |
+| Les reviews s'affichent en « Commented », pas en « Approved » | Le Relecteur publie avec le même compte que celui qui a ouvert la PR, et GitHub n'autorise pas l'auto-approbation | Attendu avec un seul compte. Utilisez un compte machine pour les agents |
 
 ## Checks
 
@@ -43,6 +43,16 @@ sidebar:
 | Le job e2e de chaque PR télécharge Chromium | Le cache n'est enregistré que sur `main` | Gardez le job `playwright-cache` de la CI, avec la même clé que PR Checks |
 | `Check for mutations` échoue sur `main` | Quelque chose a généré des fichiers que la PR n'a pas committés | Lancez `pnpm build` en local et committez le diff |
 | `Resource not accessible by integration` lors de la pose d'un label | Le token du workflow peut écrire dans les issues mais pas dans les pull requests | Ajoutez `pull-requests: write` au workflow |
+
+## Tests après merge
+
+| Symptôme | Ce qui se passe | Quoi faire |
+| --- | --- | --- |
+| Une PR a été déployée, pas d'issue de test | Elle n'a rien changé qui soit déployé (docs, specs, tests, outillage ou CI uniquement), elle porte `skip-deploy-test`, ou l'exécution de Deploy n'a rien livré parce que son commit n'était plus le dernier de `main` | Lisez les notices de l'exécution de Post-merge Verify. Pour la tester quand même, lancez le workflow à la main avec le numéro de la PR |
+| Issue de test ouverte, le Testeur ne la prend jamais en charge | L'issue n'a pas le label `openhands-test` parce qu'un élément vers lequel elle pointe n'a pas pu être verrouillé, ou elle a été ouverte par un compte auquel l'automatisation ne fait pas confiance | L'exécution de Post-merge Verify échoue et nomme ce qu'il faut verrouiller. Verrouillez-le, puis ajoutez le label à la main |
+| Le Testeur a rendu son rapport, et vous voulez une autre exécution | Chaque pose du label est testée une fois | Retirez et remettez `openhands-test` |
+| Le rapport indique « blocked » | Il manque au stage quelque chose dont le changement a besoin, comme un compte de paiement connecté | Corrigez le stage, puis remettez le label |
+| Le commentaire **E2E screenshots** manque sur une PR d'agent | La PR est verrouillée, et GitHub refuse au token d'Actions un commentaire sur une conversation verrouillée | Lisez la liste dans le résumé du job `E2E screenshots` |
 
 ## Déploiement
 

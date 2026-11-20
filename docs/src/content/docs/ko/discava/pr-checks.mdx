@@ -18,7 +18,7 @@ Status가 수정 시도로 바꾸므로, 에이전트의 주된 피드백 원천
 | `Invariant coverage` | `invariant-coverage`, 핵심 테이블에 쓸 수 있는 코드가 바뀌었을 때만 | invariant 변경 없이 생긴 공유 레코드의 새 writer. [로컬 스택](../local-stack/#모든-테스트-후의-invariant) 참고 |
 | `E2E tests (1/6)` … `(6/6)` | `pnpm nx affected --target e2e`, 샤드로 나눠서 | 깨진 사용자 흐름, 깨진 invariant, 경쟁 상태 |
 | `E2E tests` | 여섯 샤드를 하나의 결과로 모읍니다 | 샤드 수와 상관없이 branch protection에 안정적인 이름 하나를 제공합니다 |
-| `E2E screenshots` | `screenshots-comment` | PR에 이미지를 올립니다 |
+| `E2E screenshots` | `screenshots-comment` | PR과 job summary에 이미지를 나열합니다 |
 
 `fail-fast: false`는 에이전트에게 중요합니다. lint *와* 테스트가 함께 실패하면, 에이전트는 시도마다 하나씩이 아니라
 한 라운드에 둘 다 듣게 됩니다.
@@ -65,6 +65,12 @@ Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifa
 
 리뷰어 에이전트도 같은 목록을 읽습니다. artifact에는 공개 URL이 없으므로, 댓글은 이미지 이름을 적고 이를 내려받을
 수 있는 실행에 링크합니다.
+
+같은 목록이 job의 summary에도 기록됩니다. 에이전트의 pull request에서는 그곳이 목록이 나타나는 유일한 곳입니다.
+[Agent Lock](../post-merge-verify/#agent-lock)이 모든 에이전트 PR을 잠그고, GitHub는 권한이 무엇이든 Actions
+토큰이 잠긴 대화에 댓글을 다는 것을 거부하기 때문입니다. job은 실패하는 대신 notice를 남기고 댓글을 건너뜁니다.
+댓글을 달려고 PR의 잠금을 풀면 그사이에 누구나 댓글을 달 수 있게 되는데, 잠금은 바로 그것을 막으려고 있는
+것입니다.
 
 ## 빠르게 유지하기
 

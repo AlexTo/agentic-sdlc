@@ -8,7 +8,8 @@ sidebar:
 Ce guide vous montre comment faire tourner un cycle de vie logiciel dans lequel **les agents écrivent
 le code et les personnes prennent deux décisions** : approuver la spec, et approuver le résultat.
 Tout ce qui se passe entre les deux (ouvrir des issues, écrire le code et les tests, réagir à la CI,
-répondre à une revue) tourne tout seul, à travers le processus GitHub habituel.
+répondre à une revue) tourne tout seul, à travers le processus GitHub habituel. Trois rôles d'agent
+font ce travail : un **Développeur**, un **Relecteur** et un **Testeur**.
 
 Le workflow tourne tous les jours sur [Discava](https://github.com/AlexTo/discava), un système de
 gestion de l'apprentissage serverless sur AWS. Dans les six jours qui ont suivi sa mise en service le
@@ -24,12 +25,12 @@ Trois outils du marché font l'essentiel du travail :
 | Outil | Ce qu'il fait ici |
 | --- | --- |
 | [Speckit](https://github.com/github/spec-kit) | Transforme une idée en `spec.md`, `plan.md` et `tasks.md`, vérifiés par rapport à une constitution du projet |
-| [OpenHands](https://github.com/OpenHands/OpenHands) | Transforme une issue labellisée en pull request, et révise la pull request quand on lui signale un problème. Une seconde automatisation OpenHands la relit |
+| [OpenHands](https://github.com/OpenHands/OpenHands) | Exécute les trois rôles d'agent, une automatisation chacun. Le Développeur transforme une issue labellisée en pull request, et la révise quand on lui signale un problème. Le Relecteur la relit. Le Testeur teste le changement mergé sur un stage déployé |
 | GitHub Actions | Exécute les checks, et contient la glue entre les deux autres |
 
-Aucun d'eux ne connaît les autres. **Ce guide parle surtout de la glue** : dix petites pièces
-d'automatisation testées qui relient une spec terminée à l'agent, la CI à l'agent, et le relecteur à
-l'agent, avec des limites pour que rien ne boucle indéfiniment.
+Aucun d'eux ne connaît les autres. **Ce guide parle surtout de la glue** : onze petites pièces
+d'automatisation testées qui relient une spec terminée au Développeur, la CI et le Relecteur au
+Développeur, et un déploiement au Testeur, avec des limites pour que rien ne boucle indéfiniment.
 
 ## À qui il s'adresse
 

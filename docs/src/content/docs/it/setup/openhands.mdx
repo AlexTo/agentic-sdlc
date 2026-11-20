@@ -1,6 +1,6 @@
 ---
 title: 3. Installa OpenHands
-description: Installa Agent Canvas con npm, avvialo, aggiungi il token GitHub e crea i due profili agente.
+description: Installa Agent Canvas con npm, avvialo, aggiungi il token GitHub e crea i profili agente Developer e Reviewer.
 sidebar:
   order: 3
 ---
@@ -8,7 +8,8 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **Alla fine avrai:** OpenHands Agent Canvas in esecuzione sulla tua macchina, un token GitHub salvato come
-secret, e due profili agente: `default` per implementare e `reviewer` per fare review.
+secret, e due profili agente: `developer` per l'agente Developer e `reviewer` per l'agente
+Reviewer.
 
 <Steps>
 
@@ -44,21 +45,24 @@ secret, e due profili agente: `default` per implementare e `reviewer` per fare r
 
    Il coding agent deve essere installato e con accesso effettuato su questa macchina, con lo stesso utente.
 
-5. **Crea due profili agente:**
+5. **Crea due profili agente**, uno per ogni ruolo degli agenti:
 
-   | Profilo | Agente | Modello |
-   | --- | --- | --- |
-   | `default` | ACP, `claude-code` | `sonnet` |
-   | `reviewer` | ACP, `claude-code` | `opus` |
+   | Profilo | Ruolo | Agente | Modello |
+   | --- | --- | --- | --- |
+   | `developer` | Developer | ACP, `claude-code` | `sonnet` |
+   | `reviewer` | Reviewer | ACP, `claude-code` | `opus` |
 
-   Va bene qualsiasi agente e modello. Tieni il reviewer forte almeno quanto l'implementatore: è
+   Va bene qualsiasi agente e modello. Tieni il Reviewer forte almeno quanto il Developer: è
    l'ultimo controllo prima di te.
+
+   Discava ha un terzo profilo, `tester`, per l'agente Tester. Testa le modifiche unite su uno
+   stage deployato, che l'app di note non ha, quindi qui non ti serve.
 
 </Steps>
 
 ## Verifica che funzioni
 
-In Agent Canvas, avvia una conversazione con il profilo `default` e dagli il secret
+In Agent Canvas, avvia una conversazione con il profilo `developer` e dagli il secret
 `GITHUB_PERSONAL_ACCESS_TOKEN`. Chiedigli:
 
 ```text

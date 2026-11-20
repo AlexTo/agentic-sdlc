@@ -1,6 +1,6 @@
 ---
 title: Come funziona
-description: Il percorso di una funzionalità dall'idea al codice mergiato, in undici passi.
+description: Il percorso di una funzionalità dall'idea al codice mergiato e testato, in dodici passi.
 sidebar:
   order: 2
 ---
@@ -9,20 +9,25 @@ Questa pagina segue una funzionalità attraverso tutto il loop. Ogni passo indic
 lascia dietro di sé.
 
 ```d2
-grid-rows: 2
+grid-rows: 3
 grid-columns: 4
 horizontal-gap: 140
 vertical-gap: 90
 
-# Top row runs left to right, bottom row right to left, so the loop wraps.
+# Top row runs left to right, middle row right to left, so the loop wraps.
+# The bottom row is what happens after the merge.
 spec: "PR della spec\n(tu)" {shape: document}
 issues: "Agent Issues\n(GitHub Actions)"
 issue: issue {shape: page}
-implement: "implementazione\n(OpenHands)"
+implement: "implementazione\n(agente Developer)"
 merge: "merge\n(tu)"
-review: "review\n(OpenHands)"
+review: "review\n(agente Reviewer)"
 checks: "PR Checks\n(GitHub Actions)"
 pr: pull request {shape: page}
+deploy: "deploy\n(GitHub Actions)"
+testissue: issue di test {shape: page}
+test: "test sullo stage\n(agente Tester)"
+report: report {shape: document}
 
 spec -> issues: spec-ready
 issues -> issue
@@ -32,7 +37,14 @@ pr -> checks
 checks -> review: verde
 review -> merge: approvata
 merge -> issues: fase successiva
+merge -> deploy: main è verde
+deploy -> testissue
+testissue -> test
+test -> report
 ```
+
+I tre agenti sono automazioni di OpenHands: il **Developer** scrive il codice, il **Reviewer** lo
+revisiona, e il **Tester** lo testa una volta deployato.
 
 ## I passi
 
@@ -43,19 +55,24 @@ merge -> issues: fase successiva
 | 3 | 🧑🤖&nbsp;Tu + agente | `/speckit-tasks` scrive una lista ordinata di task, raggruppati in fasi. `/speckit-analyze` confronta tra loro i tre file | `tasks.md` |
 | 4 | 🧑&nbsp;**Tu** | Apri la PR della spec, la revisioni come codice, aggiungi la label `spec-ready`, fai il merge | Una PR della spec mergiata. **Gate umano 1** |
 | 5 | ⚙️&nbsp;Automazione | Il workflow **Agent Issues** legge `tasks.md` e apre una issue per il primo gruppo di fasi, con la label `openhands` | Una issue di implementazione |
-| 6 | 🤖&nbsp;OpenHands | Al polling successivo, l'agente prende la issue, scrive prima i test, implementa, spunta i suoi task e apre una PR su `openhands/issue-<n>` | Una pull request |
+| 6 | 🤖&nbsp;Agente Developer | Al polling successivo, l'agente prende la issue, scrive prima i test, implementa, spunta i suoi task e apre una PR su `openhands/issue-<n>` | Una pull request |
 | 7 | ⚙️&nbsp;CI | I check della PR eseguono lint, unit test, build, il controllo del formato di `tasks.md`, i test e2e e il controllo degli screenshot | Risultati dei check |
-| 8 | ⚙️🤖&nbsp;Automazione + OpenHands | Se un'esecuzione è rossa, **Agent CI Status** segna la PR come fallita. L'agente se ne accorge al polling successivo e rivede la stessa PR | Label da `ci-fix-1` a `ci-fix-5` |
-| 9 | 🤖&nbsp;OpenHands | Quando tutti i check sono finiti, l'agente reviewer revisiona il commit di testa e chiude con `✅ APPROVED` o `🔄 CHANGES REQUESTED`. Nel secondo caso **Agent Review Status** rimanda indietro l'agente | Una review, ed eventualmente label `review-fix-N` |
+| 8 | ⚙️🤖&nbsp;Automazione + agente Developer | Se un'esecuzione è rossa, **Agent CI Status** segna la PR come fallita. L'agente Developer se ne accorge al polling successivo e rivede la stessa PR | Label da `ci-fix-1` a `ci-fix-5` |
+| 9 | 🤖&nbsp;Agente Reviewer | Quando tutti i check sono finiti, l'agente Reviewer revisiona il commit di testa e chiude con `✅ APPROVED` o `🔄 CHANGES REQUESTED`. Nel secondo caso **Agent Review Status** rimanda indietro l'agente Developer | Una review, ed eventualmente label `review-fix-N` |
 | 10 | 🧑&nbsp;**Tu** | Leggi la descrizione della PR e il commento **E2E screenshots**, svolgi gli eventuali task **(human)** e fai il merge | Una PR mergiata. **Gate umano 2** |
 | 11 | ⚙️&nbsp;Automazione | Il merge esegue di nuovo **Agent Issues**. Apre la issue per la fase successiva che ha task degli agenti non spuntati, e i passi da 6 a 10 si ripetono finché non ne restano più | La issue successiva, oppure fine |
+| 12 | ⚙️🤖&nbsp;Automazione + agente Tester | Dove `main` fa il deploy da solo: una volta che il merge è sullo stage di sviluppo, **Post-merge Verify** apre una issue di test per quel merge. L'agente Tester percorre la modifica cliccando, chiama le API, verifica i dati che ha scritto nel database, nel file storage e nell'indice di ricerca, e fa il report | Un report di test. La issue si chiude se il test passa |
+
+Il passo 12 richiede uno stage deployato. Discava ne ha uno. L'app di esempio in questo repository
+no, quindi un fork si ferma al passo 11.
 
 ## Cosa fai davvero tu
 
 Per ogni funzionalità, scrivi e approvi la spec una volta. Per ogni pull request, fai una review e
 clicchi merge. Vieni coinvolto prima solo quando un loop esaurisce i tentativi (`ci-fix-exhausted` o
-`review-fix-exhausted`), o quando l'agente commenta che è bloccato. Mentre gli agenti lavorano, puoi
-scrivere la spec successiva.
+`review-fix-exhausted`), quando l'agente commenta che è bloccato, o quando il Tester lascia aperta
+una issue di test perché la modifica è fallita sullo stage. Mentre gli agenti lavorano, puoi scrivere
+la spec successiva.
 
 ## Dove sta ogni pezzo
 
@@ -69,8 +86,9 @@ scrivere la spec successiva.
 | Dalla CI all'agente | `.github/workflows/agent-ci.yml` |
 | Dal reviewer all'agente | `.github/workflows/agent-review.yml` |
 | Check | `.github/workflows/pr-checks.yml`, `ui-screenshots.yml`, `ci.yml` |
+| Dal deploy alla issue di test (solo Discava) | `.github/workflows/deploy.yml`, `post-merge-verify.yml`, `agent-lock.yml` |
 | Le regole dietro il collante, con unit test | `packages/common/scripts/src/agent-*`, `ui-screenshots/` |
-| Il runtime dell'agente | OpenHands Agent Canvas, fuori dal repository |
+| Il runtime dell'agente e il prompt di ogni ruolo | OpenHands Agent Canvas, fuori dal repository |
 
 I dettagli sono nei Concetti: [come le fasi diventano issue](../../concepts/one-phase-at-a-time/), e
 [come un fallimento rimanda indietro l'agente](../../concepts/feedback-loops/).

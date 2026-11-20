@@ -33,7 +33,7 @@ sidebar:
 | --- | --- | --- |
 | 「⏳ Review waiting on checks」と出てレビューがない | head のチェックが終わっていない、またはキューで止まっている | 保留中のチェックを見つける。実行されない必須チェックはレビューを永遠にブロックする |
 | レビューに `🔄 CHANGES REQUESTED` とあるが、`review-fix-*` ラベルがない | レビューに実行マーカーがない、書き込み権限のあるアカウントからではない、または PR が先に進んだ | Agent Review Status の notice を読む |
-| レビューが「Approved」ではなく「Commented」と表示される | レビュアーが PR を開いたのと同じアカウントで投稿しており、GitHub は自己承認を許可しない | アカウントが 1 つなら想定どおり。エージェントにはマシンアカウントを使う |
+| レビューが「Approved」ではなく「Commented」と表示される | レビュー担当が PR を開いたのと同じアカウントで投稿しており、GitHub は自己承認を許可しない | アカウントが 1 つなら想定どおり。エージェントにはマシンアカウントを使う |
 
 ## チェック
 
@@ -43,6 +43,16 @@ sidebar:
 | すべての PR の e2e ジョブが Chromium をダウンロードする | キャッシュは `main` でしか保存されない | PR Checks と同じキーで、CI の `playwright-cache` ジョブを残す |
 | `main` で `Check for mutations` が失敗する | 何かが、PR でコミットされていないファイルを生成した | ローカルで `pnpm build` を実行し、差分をコミットする |
 | ラベル付けのときに `Resource not accessible by integration` | workflow のトークンは issue には書き込めるが pull request には書き込めない | workflow に `pull-requests: write` を追加する |
+
+## マージ後テスト
+
+| 症状 | 何が起きているか | どうするか |
+| --- | --- | --- |
+| PR がデプロイされたが、テスト issue がない | デプロイされるものを何も変更していない（docs、spec、テスト、ツール、CI のみ）、`skip-deploy-test` が付いている、またはコミットがもう `main` の最新ではなかったため Deploy の実行が何も出荷しなかった | Post-merge Verify の実行の notice を読む。それでもテストするには、PR 番号を指定して workflow を手動で実行する |
+| テスト issue は開かれたが、テスト担当が着手しない | その issue が指すものをロックできなかったため `openhands-test` ラベルがない、または automation が信頼していないアカウントが開いた | Post-merge Verify の実行は失敗し、何をロックすべきかを示す。それをロックしてから、手動でラベルを付ける |
+| テスト担当が報告したが、もう一度実行したい | ラベル付け 1 回につきテストは 1 回 | `openhands-test` を外して付け直す |
+| レポートに「blocked」とある | 接続済みの決済アカウントなど、変更に必要なものがステージに欠けている | ステージを直してから、ラベルを付け直す |
+| エージェントの PR に **E2E screenshots** コメントがない | PR がロックされていて、GitHub はロックされた会話への Actions トークンによるコメントを拒否する | `E2E screenshots` ジョブのサマリーにあるリストを読む |
 
 ## デプロイ
 

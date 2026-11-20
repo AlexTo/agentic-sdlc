@@ -39,7 +39,7 @@ branch protection, gli serve l'accesso in scrittura.
 
 ## Gate 2: approvare il risultato
 
-Ogni PR degli agenti ti arriva dopo che la CI è verde e l'agente reviewer ha approvato. Il tuo
+Ogni PR degli agenti ti arriva dopo che la CI è verde e l'agente Reviewer ha approvato. Il tuo
 compito è giudicare il risultato, non andare a caccia di problemi:
 
 - Leggi la descrizione della PR: cosa è cambiato, quali task, quali task **(human)** restano a te.
@@ -49,9 +49,14 @@ compito è giudicare il risultato, non andare a caccia di problemi:
 - Svolgi i task **(human)**: controlli manuali su uno stack locale o su uno stage di cui è stato
   fatto il deploy.
 - Fai il merge, o richiedi modifiche. Per farle fare all'agente, aggiungi la label `openhands-review`
-  dopo la tua review: l'agente reviewer rivede la PR, e il suo verdetto "changes requested" rimanda
-  l'agente che implementa nel loop di correzione della review, contato con le stesse label
+  dopo la tua review: l'agente Reviewer rivede la PR, e il suo verdetto "changes requested" rimanda
+  l'agente Developer nel loop di correzione della review, contato con le stesse label
   `review-fix-*`.
+
+Con i deploy automatici, l'agente Tester testa poi ciò che hai mergiato sullo stage di sviluppo e
+fa il report su una issue di test. Quel report arriva dopo il gate, non prima: ti dice se la
+modifica funziona dove gira, sullo schermo e nei dati che ha salvato, e se fallisce tocca a te
+agire.
 
 ## Cosa gli agenti non possono mai fare
 
@@ -59,8 +64,9 @@ compito è giudicare il risultato, non andare a caccia di problemi:
 | --- | --- |
 | Fare merge, o push su `main` | Branch protection che richiede una review di approvazione. Il token dell'agente viene usato solo per il suo branch |
 | Modificare `.github/workflows/` | Constitution e istruzioni della issue. La review del reviewer e quella umana lo intercettano. I workflow del collante eseguono il codice del branch di default, quindi un workflow modificato in una PR non può cambiarli |
-| Indebolire un test per farlo passare | Constitution ("tests are a specification"), istruzioni della issue, agente reviewer |
-| Toccare le credenziali cloud | Non vengono mai date alla conversazione. Il deploy usa ruoli OIDC a breve durata da un environment di GitHub |
+| Indebolire un test per farlo passare | Constitution ("tests are a specification"), istruzioni della issue, agente Reviewer |
+| Fare deploy, o modificare l'infrastruttura | A nessun agente viene dato un ruolo di deploy. Il deploy usa ruoli OIDC a breve durata da un environment di GitHub. Al Developer e al Reviewer non serve alcun accesso al cloud. Il Tester raggiunge solo lo stage di sviluppo, e il suo prompt lo limita alla lettura e ai dati di test che crea tramite l'app |
+| Prendere istruzioni da un estraneo | Ogni issue e pull request consegnata a un agente ha il lock, quindi solo le persone con accesso in scrittura possono commentare. Il Tester testa solo le issue aperte dal workflow, e le sue istruzioni sono il suo prompt, non la issue |
 | Lavorare fuori dal suo intervallo di task | La issue indica l'intervallo. La issue successiva non si apre finché ogni task degli agenti non è spuntato |
 | Riprovare all'infinito | Cinque tentativi per loop, contati nelle label |
 
@@ -72,6 +78,7 @@ compito è giudicare il risultato, non andare a caccia di problemi:
 | `review-fix-exhausted` | Il reviewer chiede ancora modifiche dopo cinque giri | Decidi se il reviewer ha ragione. Spesso la spec è ambigua |
 | Un commento dell'agente sulla issue | Era bloccato e si è fermato, come da istruzioni | Rispondi, poi rimuovi e riapplica la label `openhands` |
 | Un commento su una PR mergiata: "the next implementation issue … was not opened" | I task della fase non sono tutti spuntati | Spuntali o completali, poi esegui a mano Agent Issues per la cartella della spec |
+| Una issue di test lasciata aperta, con un report di fallimento o di blocco | Il Tester ha scoperto che la modifica mergiata non funziona sullo stage di sviluppo, o non è riuscito a testarla | Leggi il report. Fai il merge della sua PR di correzione se ne ha aperta una, sistema lo stage, o scrivi un task. Riapplica `openhands-test` per testare di nuovo |
 
 ## La produzione è un terzo gate, facoltativo
 

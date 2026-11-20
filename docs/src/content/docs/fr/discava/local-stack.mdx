@@ -24,7 +24,7 @@ service AWS a un équivalent local, et `pnpm dev` les démarre tous avec Docker.
 
 Le code backend bascule sur `LOCAL_DEV=true`. Les paramètres partagés se trouvent dans un seul package
 (`common-server-utils/local-dev`), donc chaque Lambda résout les endpoints de la même façon. Chaque
-équivalent local est une cible Nx dans `packages/common/scripts`, qui récupère et démarre son
+équivalent local est une cible Nx dans `packages/tooling/local-dev`, qui récupère et démarre son
 conteneur.
 
 La page de connexion locale propose des utilisateurs fixes (un formateur, deux étudiants, un admin)

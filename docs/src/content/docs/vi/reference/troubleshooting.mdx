@@ -44,6 +44,16 @@ sidebar:
 | `Check for mutations` thất bại trên `main` | Có thứ đã sinh ra file mà PR không commit | Chạy `pnpm build` ở local và commit phần diff |
 | `Resource not accessible by integration` khi gắn label | Token của workflow ghi được issue nhưng không ghi được pull request | Thêm `pull-requests: write` vào workflow |
 
+## Test sau merge
+
+| Triệu chứng | Chuyện gì đang xảy ra | Cần làm gì |
+| --- | --- | --- |
+| Một PR đã được deploy, không có issue test | Nó không thay đổi thứ gì được deploy (chỉ docs, spec, test, tooling hoặc CI), nó mang `skip-deploy-test`, hoặc lần chạy Deploy không ship gì vì commit của nó không còn là mới nhất của `main` | Đọc các notice của lần chạy Post-merge Verify. Để vẫn test nó, chạy workflow thủ công với số PR |
+| Issue test đã mở, Tester không bao giờ nhận nó | Issue không có label `openhands-test` vì thứ gì đó nó trỏ đến không khóa được, hoặc nó được mở bởi một tài khoản mà automation không tin cậy | Lần chạy Post-merge Verify thất bại và nêu tên thứ cần khóa. Khóa nó, rồi thêm label thủ công |
+| Tester đã báo cáo, và bạn muốn chạy thêm lần nữa | Mỗi lần gắn label được test một lần | Gỡ và gắn lại `openhands-test` |
+| Báo cáo nói "blocked" | Stage thiếu thứ gì đó mà thay đổi cần, như một tài khoản thanh toán đã kết nối | Sửa stage, rồi gắn lại label |
+| Comment **E2E screenshots** bị thiếu trên một agent PR | PR bị khóa, và GitHub từ chối cho token của Actions comment trên một cuộc hội thoại đã khóa | Đọc danh sách trong summary của job `E2E screenshots` |
+
 ## Deploy
 
 | Triệu chứng | Chuyện gì đang xảy ra | Cần làm gì |

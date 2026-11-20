@@ -25,9 +25,15 @@ front end**, come farebbe una persona:
 - **Occhi:** leggere cosa torna indietro: risposte, log, i dati rimasti nel database, e screenshot di
   ogni stato che un reviewer vorrebbe vedere.
 
-L'agente non lo fa sulla propria macchina. Scrive gli scenari e2e, e la CI li esegue su ogni PR su
-uno stack locale nuovo. I risultati, le violazioni degli invarianti e gli screenshot tornano sulla
-PR, così l'agente scopre da solo i propri errori e ogni PR arriva con le prove.
+L'agente Developer non lo fa sulla propria macchina. Scrive gli scenari e2e, e la CI li esegue su
+ogni PR su uno stack locale nuovo. I risultati, le violazioni degli invarianti e gli screenshot
+tornano sulla PR, così l'agente scopre da solo i propri errori e ogni PR arriva con le prove.
+
+Dopo il merge, un secondo agente lo fa per davvero. L'agente Tester prende ogni modifica sullo
+stage di sviluppo deployato, con un browser vero, un login vero e dati veri. Usa sia le mani sia
+gli occhi: dopo ogni azione rilegge ciò che è stato scritto nel database, nel file storage e
+nell'indice di ricerca, e controlla che sia giusto. Una schermata può sembrare corretta sopra un
+record sbagliato.
 
 Costruisci per questo fin dal primo giorno: ogni servizio cloud ha bisogno di un sostituto locale,
 ogni flusso utente di uno scenario e2e, e ogni stato della UI di uno screenshot. Tutto ciò che
@@ -41,8 +47,8 @@ correggere il codice a mano lasciando che la spec diventi obsoleta.
 
 ## 3. Il feedback lo danno i gate automatici, non tu<Icon name="approve-check-circle" class="heading-icon" />
 
-Lint, typecheck, unit test, invarianti, test e2e, test di concorrenza, screenshot e un agente
-reviewer girano su ogni PR. Un risultato rosso torna dritto all'agente che ha scritto la modifica.
+Lint, typecheck, unit test, invarianti, test e2e, test di concorrenza, screenshot e l'agente
+Reviewer girano su ogni PR. Un risultato rosso torna dritto all'agente che ha scritto la modifica.
 Nessuno incolla un messaggio di errore.
 
 ## 4. Le persone tengono le due decisioni che contano<Icon name="star" class="heading-icon" />
@@ -79,9 +85,9 @@ essere ignorato. Un workflow no.
 
 ## 7. Autonomia limitata<Icon name="padlock" class="heading-icon" />
 
-L'agente non può fare merge, non può modificare i workflow, non può toccare le credenziali cloud e
-non può indebolire un test per avere il verde. Ogni loop di correzione è limitato a cinque tentativi.
-Poi si ferma e chiede a una persona.
+Nessun agente può fare merge, modificare i workflow, fare deploy o indebolire un test per avere il
+verde. Solo il Tester può raggiungere uno stage deployato, e solo quello di sviluppo. Ogni loop di
+correzione è limitato a cinque tentativi. Poi si ferma e chiede a una persona.
 
 ## 8. Unità di lavoro piccole e delimitate<Icon name="list-format" class="heading-icon" />
 
@@ -101,7 +107,7 @@ l'ultimo.
 | --- | --- |
 | 1. Verifica | [Livelli di fiducia](../layers-of-trust/#la-verifica-conta-più-di-tutto), [Stack locale in Discava](../../discava/local-stack/) |
 | 2. Spec come fonte di verità | [Sviluppo guidato dalle spec](../spec-driven-development/) |
-| 3. Gate automatici | [Livelli di fiducia](../layers-of-trust/), [Loop di feedback](../feedback-loops/) |
+| 3. Gate automatici | [Livelli di fiducia](../layers-of-trust/), [Loop di feedback](../feedback-loops/), [Il runtime dell'agente](../the-agent-runtime/#i-tre-ruoli) |
 | 4. Decisioni umane | [Gate umani](../human-gates/) |
 | 5. Regole e skill deterministiche | [Check delle PR in Discava](../../discava/pr-checks/), [Constitution e istruzioni](../../discava/constitution-and-guidance/) |
 | 6. Il collante è codice | [Il collante mancante](../the-missing-glue/) |

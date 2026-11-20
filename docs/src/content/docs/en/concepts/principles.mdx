@@ -24,9 +24,14 @@ agent has to **run what it built, from the back end to the front end**, the way 
 - **Eyes:** read what comes back: responses, logs, the data left in the database, and screenshots
   of every state a reviewer would want to see.
 
-The agent doesn't do this on its own machine. It writes the e2e scenarios, and CI runs them on
-every PR against a fresh local stack. The results, invariant failures and screenshots come back on
-the PR, so the agent catches its own mistakes and every PR arrives with evidence.
+The Developer agent doesn't do this on its own machine. It writes the e2e scenarios, and CI runs
+them on every PR against a fresh local stack. The results, invariant failures and screenshots come
+back on the PR, so the agent catches its own mistakes and every PR arrives with evidence.
+
+After the merge, a second agent does it for real. The Tester agent takes each change on the
+deployed development stage, with a real browser, real sign-in and real data. It uses the hands and
+the eyes both: after each action it reads back what was written to the database, file storage and
+search index, and checks that it is right. A screen can look correct over a wrong record.
 
 Build for this from day one: every cloud service needs a local stand-in, every user flow an e2e
 scenario, and every UI state a screenshot. Anything the agent can't run is a task a person has to
@@ -40,8 +45,8 @@ by hand and let the spec go stale.
 
 ## 3. Automated gates give the feedback, not you<Icon name="approve-check-circle" class="heading-icon" />
 
-Lint, typecheck, unit tests, invariants, e2e tests, concurrency tests, screenshots and an agent
-reviewer run on every PR. A red result goes straight back to the agent that wrote the change.
+Lint, typecheck, unit tests, invariants, e2e tests, concurrency tests, screenshots and the
+Reviewer agent run on every PR. A red result goes straight back to the agent that wrote the change.
 Nobody pastes an error message.
 
 ## 4. Humans keep the two decisions that matter<Icon name="star" class="heading-icon" />
@@ -77,8 +82,8 @@ workflow can't.
 
 ## 7. Bounded autonomy<Icon name="padlock" class="heading-icon" />
 
-The agent can't merge, can't edit workflows, can't touch cloud credentials, and can't weaken a test
-to get green. Each fix-up loop is capped at five attempts. Then it stops and asks a person.
+No agent can merge, edit workflows, deploy, or weaken a test to get green. Only the Tester can reach
+a deployed stage, and only the development one. Each fix-up loop is capped at five attempts. Then it stops and asks a person.
 
 ## 8. Small, scoped units of work<Icon name="list-format" class="heading-icon" />
 
@@ -97,7 +102,7 @@ teammate or a new agent can pick up where the last one stopped.
 | --- | --- |
 | 1. Verification | [Layers of trust](../layers-of-trust/#verification-matters-most), [Local stack in Discava](../../discava/local-stack/) |
 | 2. Spec as source of truth | [Spec-driven development](../spec-driven-development/) |
-| 3. Automated gates | [Layers of trust](../layers-of-trust/), [Feedback loops](../feedback-loops/) |
+| 3. Automated gates | [Layers of trust](../layers-of-trust/), [Feedback loops](../feedback-loops/), [The agent runtime](../the-agent-runtime/#the-three-roles) |
 | 4. Human decisions | [Human gates](../human-gates/) |
 | 5. Deterministic rules and skills | [PR checks in Discava](../../discava/pr-checks/), [Constitution and guidance](../../discava/constitution-and-guidance/) |
 | 6. Glue is code | [The missing glue](../the-missing-glue/) |

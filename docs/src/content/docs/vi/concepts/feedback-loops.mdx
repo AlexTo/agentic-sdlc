@@ -1,6 +1,6 @@
 ---
 title: Vòng phản hồi
-description: Một lần CI đỏ hoặc một review "changes requested" gửi agent quay lại như thế nào, và vì sao mỗi vòng dừng sau năm lần thử.
+description: Một lần CI đỏ hoặc một review "changes requested" gửi agent Developer quay lại như thế nào, vì sao mỗi vòng dừng sau năm lần thử, và agent Tester bổ sung gì sau khi merge.
 sidebar:
   order: 6
 ---
@@ -8,17 +8,18 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 
 **Phiên bản ngắn gọn:** khi có gì đó thất bại, một workflow đánh dấu commit head của PR bằng một
-status thất bại. Worker OpenHands thấy nó ở lần poll kế tiếp và yêu cầu chính cuộc hội thoại agent đó
-sửa chính PR đó. Mỗi vòng có một bộ đếm nằm trong label, và dừng ở năm.
+status thất bại. Worker OpenHands thấy nó ở lần poll kế tiếp và yêu cầu chính cuộc hội thoại
+Developer đó sửa chính PR đó. Mỗi vòng có một bộ đếm nằm trong label, và dừng ở năm. Một vòng thứ ba
+bắt đầu sau khi merge: agent Tester test thay đổi trên stage đã deploy.
 
 ## Hai vòng lặp
 
 ```d2
 direction: right
 
-pr: agent push {shape: page}
+pr: agent Developer push {shape: page}
 checks: PR Checks
-review: agent reviewer
+review: agent Reviewer
 you: người review
 
 actions: GitHub Actions {
@@ -43,7 +44,7 @@ worker -> pr: sửa lại chính PR đó
 
 | | Vòng CI | Vòng review |
 | --- | --- | --- |
-| Kích hoạt bởi | Workflow PR Checks kết thúc với `failure` hoặc `timed_out` | Một review trên PR do agent reviewer viết, kết thúc bằng `🔄 CHANGES REQUESTED` |
+| Kích hoạt bởi | Workflow PR Checks kết thúc với `failure` hoặc `timed_out` | Một review trên PR do agent Reviewer viết, kết thúc bằng `🔄 CHANGES REQUESTED` |
 | Workflow | Agent CI Status | Agent Review Status |
 | Label bộ đếm | `ci-fix-1` … `ci-fix-5` | `review-fix-1` … `review-fix-5` |
 | Khi nào bỏ cuộc | `ci-fix-exhausted`, kèm một comment | `review-fix-exhausted`, kèm một comment |
@@ -61,7 +62,7 @@ Mỗi script từ chối hành động trừ khi tất cả các điều sau đ�
 2. PR đang mở.
 3. Lần chạy hoặc review là cho commit head **hiện tại** của PR. Một lần chạy cũ hơn là lỗi thời.
 4. Commit đó chưa được gửi quay lại. Chạy lại cùng các check không được dùng thêm một lượt thử.
-5. Với review: review mang marker lần chạy ẩn của reviewer và đến từ một tài khoản có quyền ghi,
+5. Với review: review mang marker lần chạy ẩn của Reviewer và đến từ một tài khoản có quyền ghi,
    để một người trích dẫn verdict không kích hoạt nó.
 6. Đã dùng ít hơn năm lượt thử.
 
@@ -87,5 +88,45 @@ nghĩa là spec hoặc kế hoạch mơ hồ, và agent đang cố thỏa mãn h
 
 Để cho agent thêm một vòng sau đó, xem
 [Reset một vòng lặp](../../reference/labels/#reset-một-vòng-lặp).
+
+## Sau khi merge: vòng test
+
+Hai vòng lặp ở trên kết thúc ở lần merge. Mọi thứ chúng kiểm tra đều chạy trên local stack, nên vẫn
+còn một câu hỏi bỏ ngỏ: thay đổi có hoạt động ở nơi nó được deploy không? Khi repository deploy `main`
+lên một stage development, một vòng thứ ba trả lời câu hỏi đó.
+
+```d2
+direction: down
+
+deploy: "Deploy\n(các PR đã merge đến stage development)"
+verify: "Post-merge Verify\n(GitHub Actions)"
+issue: "issue test\nopenhands-test" {shape: page}
+tester: agent Tester
+stage: stage development {shape: cylinder}
+report: báo cáo trên issue {shape: document}
+you: một người
+
+deploy -> verify: đã deploy
+verify -> issue: mỗi PR một issue
+issue -> tester: lần poll kế
+tester -> stage: "UI, API, dữ liệu đã lưu"
+tester -> report
+report -> you: để mở khi thất bại
+```
+
+| | Vòng test |
+| --- | --- |
+| Kích hoạt bởi | Một lần deploy `main` lên stage development hoàn tất |
+| Workflow | Post-merge Verify mở một issue test cho mỗi PR đã merge có thay đổi thứ gì đó được deploy |
+| Agent | Tester: nó bấm qua thay đổi trong một trình duyệt thật, gọi các API, rồi kiểm chứng những gì đã được ghi vào nơi lưu trữ (bản ghi trong database, file đã lưu, document tìm kiếm) và log |
+| Khi pass | Một báo cáo với mọi kiểm tra và bằng chứng của nó, và issue được đóng |
+| Khi thất bại | Cùng báo cáo đó kèm các bước tái hiện, và issue vẫn mở. Nếu nguyên nhân rõ ràng và bản sửa nhỏ, Tester cũng mở một fix PR, đi qua cùng các check, Reviewer và người review như mọi PR khác |
+
+Vòng này không có bộ đếm, vì không có gì tự được gửi quay lại. Một lần test thất bại kết thúc ở một
+người: họ đọc báo cáo và quyết định merge fix PR, viết một task mới, hay thay đổi spec. Để test lại,
+gỡ và gắn lại label `openhands-test`.
+
+[Kiểm chứng sau merge](../../discava/post-merge-verify/) cho thấy workflow của Discava và một báo cáo
+thật.
 
 Tiếp theo: [Các lớp niềm tin](../layers-of-trust/).

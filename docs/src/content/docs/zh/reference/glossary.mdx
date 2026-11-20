@@ -12,9 +12,11 @@ sidebar:
 | **Agent profile** | OpenHands 的一项设置，指定一次对话使用的智能体和模型 |
 | **`AGENTS.md`** | 仓库根目录下的智能体指引文件：命令、架构、约定 |
 | **Automation** | 按计划运行的 OpenHands worker，读取 GitHub 并启动智能体对话 |
+| **智能体角色** | 智能体承担的三种工作之一：开发智能体、评审智能体或测试智能体。每个角色都是一个 OpenHands automation，有自己的 prompt 和 agent profile |
 | **Constitution** | `.specify/memory/constitution.md`。每份计划都要对照检查的项目规则 |
 | **Constitution Check** | `plan.md` 中对照 constitution 检查计划的部分 |
-| **修复轮次** | 一轮自动把智能体打回去修改的过程。由 `ci-fix-<n>` 或 `review-fix-<n>` 计数 |
+| **开发智能体** | 把一个 issue 实现为 pull request、并在被打回时修订它的角色 |
+| **修复轮次** | 一轮自动把开发智能体打回去修改的过程。由 `ci-fix-<n>` 或 `review-fix-<n>` 计数 |
 | **粘合层** | 在 Speckit、OpenHands 和 CI 之间交接工作的 workflow 和脚本 |
 | **组** | 一个实现 issue 覆盖的若干阶段。第 0 组一直到第一个用户故事为止 |
 | **人工关卡** | 只能由人做出的决定：批准 spec、批准 PR、部署到生产环境 |
@@ -22,9 +24,13 @@ sidebar:
 | **不变式** | 针对全部数据的一条规则，在每个 e2e 测试之后检查 |
 | **标记** | 一段隐藏的 HTML 注释，粘合层用它找到自己的 issue 和评论 |
 | **父 issue** | 一个功能的跟踪 issue，在 `spec.md` 中写明，每个 PR 都会引用它 |
+| **合并后测试** | 测试智能体在已部署的开发 stage 上对一个已合并 pull request 进行的测试 |
 | **阶段** | `tasks.md` 中的一个 `## Phase <n>: <title>` 小节 |
+| **评审智能体** | 在 pull request 的检查结束后评审它的角色 |
 | **修订轮** | 发给已有智能体对话的一条消息，要求它修复自己的 PR |
 | **Spec 文件夹** | `specs/<timestamp>-<name>/`，存放一个功能的 spec、计划和任务 |
 | **`software-factory/review`** | 一个 commit status，状态为 `failure` 时会让 OpenHands 修订 PR |
 | **Speckit** | GitHub 的规格驱动开发工具包（`specify-cli`） |
 | **停滞** | 一个组的 issue 已存在，但其任务没有全部勾选，因此不会开新的 issue |
+| **测试 issue** | Post-merge Verify 为一个已部署的 pull request 开的 issue，带有 `openhands-test` 标签。它说明要测试什么，从不说明如何测试 |
+| **测试智能体** | 在已部署的 stage 上端到端测试一个已合并的变更（UI、API 和写入存储的数据）、并在测试 issue 上报告的角色 |

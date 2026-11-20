@@ -18,29 +18,35 @@ sidebar:
 | ツール | バージョン | 役割 |
 | --- | --- | --- |
 | Speckit (`specify-cli`) | 1.3.2 | spec、plan、task の生成。`git` extension 付き |
-| OpenHands Agent Canvas | 1.41.0 | エージェントのランタイムと 2 つの automation。1 台の Linux マシン上のユーザーサービスとして動作 |
-| `github-issue-to-pr` automation | 1.2.4 | ラベル付きの issue を実装し、失敗した PR を修正する |
-| `github-pr-reviewer` automation | 1.11.2 | チェックが終わった PR をレビューする |
-| 実装用のエージェント | ACP 経由の Claude Code、Sonnet | `default` エージェントプロファイル |
-| レビュー用のエージェント | ACP 経由の Claude Code、Opus | `reviewer` エージェントプロファイル |
+| OpenHands Agent Canvas | 1.41.0 | エージェントのランタイムと 3 つの automation。1 台の Linux マシン上のユーザーサービスとして動作 |
+| `github-issue-to-pr` automation | 1.2.4 | 開発担当: ラベル付きの issue を実装し、失敗した PR を修正する |
+| `github-pr-reviewer` automation | 1.11.2 | レビュー担当: チェックが終わった PR をレビューする |
+| `github-issue-tester` automation | 手書き | テスト担当: マージされた PR をデプロイされた開発ステージでテストする |
+| 開発担当エージェント | ACP 経由の Claude Code、Sonnet | `developer` エージェントプロファイル |
+| レビュー担当エージェント | ACP 経由の Claude Code、Opus | `reviewer` エージェントプロファイル |
+| テスト担当エージェント | ACP 経由の Claude Code、Opus | `tester` エージェントプロファイル |
 | Nx + pnpm | Nx 23 | monorepo、CI での `nx affected` |
-| Playwright | | ローカルスタックに対する E2E テスト。CI では 6 シャード |
+| Playwright | | ローカルスタックに対する E2E テスト。CI では 6 シャード。テスト担当エージェントもこれでデプロイされたポータルを操作する |
 | Trivy, git-secrets, commitlint | | セキュリティスキャン、コミット前のシークレットチェック、コミットメッセージの形式 |
 
 ## ギャップとファイル
 
 | ギャップ | Discava の答え | ファイル |
 | --- | --- | --- |
-| spec から issue へ | Agent Issues ワークフローとそのスクリプト | `.github/workflows/agent-issues.yml`, `packages/common/scripts/src/agent-issues/` |
+| spec から issue へ | Agent Issues ワークフローとそのスクリプト | `.github/workflows/agent-issues.yml`, `packages/tooling/agent/src/agent-issues/` |
 | CI の失敗をエージェントへ | Agent CI Status | `.github/workflows/agent-ci.yml`, `src/agent-ci/` |
 | レビューをエージェントへ | Agent Review Status | `.github/workflows/agent-review.yml`, `src/agent-review/` |
 | 終わらないループ | ラベルによる 5 回の試行上限 | `plan.ts` の `MAX_CI_FIX_ATTEMPTS` と `MAX_REVIEW_FIX_ATTEMPTS` |
 | 不正な形式の `tasks.md` | Tasks format ジョブ | `pr-checks.yml` `tasks-format`, `src/agent-issues/validate.ts` |
 | 見えない UI の変更 | UI Screenshots ジョブ、E2E スクリーンショットのコメント | `pr-checks.yml`, `src/ui-screenshots/`, `packages/e2e/src/helpers/screenshots.ts` |
 | マージしても先に進まない | マージされた `openhands/` ブランチに対する Agent Issues | `src/agent-issues/gate.ts` |
-| エージェントにクラウドがない | すべての AWS サービスのローカル代替 | `pnpm dev`, `packages/common/scripts/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
+| エージェントにクラウドがない | すべての AWS サービスのローカル代替 | `pnpm dev`, `packages/tooling/local-dev/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
 | マージしてもリリースされない | `main` での CI、その後 Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
 | シークレットと脆弱な依存関係 | CI とデプロイ前の Trivy、コミット時の git-secrets | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
+| マージされた変更が、動く場所でテストされない | Post-merge Verify がデプロイされた PR ごとにテスト issue を開き、テスト担当エージェントがそれをテストし、Agent Lock がエージェントの読むものをロックする | `.github/workflows/post-merge-verify.yml`, `agent-lock.yml`, `src/post-merge-test/`, `src/agent-lock/`, `src/helpers/conversation-lock.ts` |
+
+glue は `packages/tooling/agent/` (`@discava/tooling-agent`) にあります。このセクションの `src/…` のパスは、
+そこからの相対パスです。
 
 そして、すべてのエージェントが読む文章です。
 
@@ -50,6 +56,8 @@ sidebar:
 | コマンド、アーキテクチャ、規約 | `AGENTS.md` |
 | PR のプロセス、ローカルスタック、テスト | `CONTRIBUTING.md` |
 | すべての実装 issue に付く指示 | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| テスト issue を手動で開くときの書式 | `.github/ISSUE_TEMPLATE/test-deployed-pr.md` |
+| 各エージェントの役割の常設プロンプト | OpenHands 内、リポジトリの外。[エージェントのプロンプト](../agent-prompts/) を参照 |
 | automation 向けにカスタマイズした Speckit テンプレート | `.specify/templates/tasks-template.md`, `spec-template.md` |
 
 ## 数字で見る

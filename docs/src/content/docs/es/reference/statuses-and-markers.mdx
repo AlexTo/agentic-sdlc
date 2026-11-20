@@ -26,13 +26,17 @@ Un push nuevo empieza sin el status, así que el worker deja de revisar en cuant
 | Marcador | Dónde | Lo escribe | Sirve para |
 | --- | --- | --- | --- |
 | `<!-- agent-issue spec:<folder> group:<n> -->` | Primera línea de una issue de implementación | Agent Issues | Encontrar la carpeta de la spec a partir de un PR de agente fusionado (a través de su `Closes #n`), y no abrir nunca una segunda issue para el mismo grupo |
-| `<!-- openhands-review-run: <id> -->` | Cada review del agente revisor | Automatización de code review | Agent Review Status solo actúa sobre las reviews que lo llevan |
+| `<!-- post-merge-test pr:<n> -->` | Primera línea de una issue de test | Post-merge Verify | No abrir nunca una segunda issue de test para el mismo pull request |
+| `<!-- openhands-review-run: <id> -->` | Cada review del agente Revisor | Automatización de code review | Agent Review Status solo actúa sobre las reviews que lo llevan |
 | `<!-- openhands-review-gate:waiting:<sha> -->` | Comentario "Review waiting on checks" | Automatización de code review | El registro propio del revisor de que está esperando a ese head |
 | `<!-- e2e-screenshots -->` | El comentario E2E screenshots | PR Checks | Actualizar ese único comentario en lugar de añadir uno nuevo en cada ejecución |
 
+Un marcador en una issue solo cuenta cuando la issue la abrió la propia cuenta del workflow o alguien
+con acceso de escritura. Cualquiera puede abrir una issue con un marcador dentro.
+
 ## Líneas de veredicto
 
-El revisor termina cada review con una de estas en su propia línea:
+El Revisor termina cada review con una de estas en su propia línea:
 
 ```text
 ✅ APPROVED
@@ -48,5 +52,6 @@ menciona la frase de pasada no cuenta.
 | --- | --- | --- |
 | `openhands/issue-<n>` | Automatización issue-to-PR | Es la única rama que revisa el worker, y la única a la que responden los workflows de corrección |
 | `openhands/issue-<n>-2`, … | Automatización issue-to-PR, en una issue con la label puesta de nuevo | Nunca se revisa automáticamente |
-| cualquiera que empiece por `openhands/` | Ramas de agente | Fusionar una hace avanzar la cadena |
+| `openhands/test-fix-<n>` | Automatización issue tester, para la issue de test `<n>` | Una corrección que el Tester encontró mientras probaba. Nunca se revisa automáticamente |
+| cualquiera que empiece por `openhands/` | Ramas de agente | Fusionar una hace avanzar la cadena. En Discava, un pull request de una de ellas se bloquea (lock) cuando se abre |
 | `spec/<name>` (cualquier otro nombre) | Personas | Solo hace avanzar la cadena con `spec-ready` |

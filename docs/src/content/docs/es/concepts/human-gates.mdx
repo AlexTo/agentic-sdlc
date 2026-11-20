@@ -39,7 +39,7 @@ protección de ramas, necesita acceso de escritura.
 
 ## Control 2: aprobar el resultado
 
-Cada PR de un agente te llega cuando el CI está en verde y el agente revisor lo ha aprobado. Tu
+Cada PR de un agente te llega cuando el CI está en verde y el agente Revisor lo ha aprobado. Tu
 trabajo es juzgar el resultado, no buscar problemas:
 
 - Lee la descripción del PR: qué ha cambiado, qué tareas y qué tareas **(human)** te quedan a ti.
@@ -48,9 +48,14 @@ trabajo es juzgar el resultado, no buscar problemas:
   para ver un ejemplo.
 - Haz las tareas **(human)**: comprobaciones manuales en un stack local o en un stage desplegado.
 - Haz merge o solicita cambios. Para que los haga el agente, añade la label `openhands-review`
-  después de tu revisión: el agente revisor vuelve a revisar el PR, y su veredicto "changes
-  requested" devuelve al agente implementador al bucle de corrección de la revisión, contado con las
+  después de tu revisión: el agente Revisor vuelve a revisar el PR, y su veredicto "changes
+  requested" devuelve al agente Desarrollador al bucle de corrección de la revisión, contado con las
   mismas labels `review-fix-*`.
+
+Con despliegues automáticos, el agente Tester prueba después lo que has fusionado en el stage de
+desarrollo e informa en una issue de test. Ese informe llega después del control, no antes: te dice
+si el cambio funciona allí donde se ejecuta, en pantalla y en los datos que guardó, y si falla te
+toca a ti actuar.
 
 ## Lo que los agentes nunca pueden hacer
 
@@ -58,8 +63,9 @@ trabajo es juzgar el resultado, no buscar problemas:
 | --- | --- |
 | Hacer merge o push a `main` | La protección de ramas, que exige una revisión aprobatoria. El token del agente solo se usa para su propia rama |
 | Editar `.github/workflows/` | La constitución y las instrucciones de la issue. El revisor y la revisión humana lo detectan. Los workflows de pegamento ejecutan el código de la rama por defecto, así que un workflow editado en un PR no puede cambiarlos |
-| Debilitar un test para que pase | La constitución ("tests are a specification"), las instrucciones de la issue, el agente revisor |
-| Tocar credenciales de la nube | Nunca se le dan a la conversación. El despliegue usa roles OIDC de corta duración desde un environment de GitHub |
+| Debilitar un test para que pase | La constitución ("tests are a specification"), las instrucciones de la issue, el agente Revisor |
+| Desplegar o cambiar la infraestructura | A ningún agente se le da un rol de despliegue. El despliegue usa roles OIDC de corta duración desde un environment de GitHub. El Desarrollador y el Revisor no necesitan ningún acceso a la nube. El Tester solo llega al stage de desarrollo, y su prompt lo limita a leer y a los datos de prueba que crea a través de la app |
+| Recibir instrucciones de un desconocido | Cada issue y cada pull request que se le entrega a un agente está bloqueado (locked), así que solo pueden comentar las personas con acceso de escritura. El Tester solo prueba las issues que abrió el workflow, y sus instrucciones son su propio prompt, no la issue |
 | Trabajar fuera de su rango de tareas | La issue indica el rango. La siguiente issue no se abre hasta que todas las tareas de agente estén marcadas |
 | Reintentar para siempre | Cinco intentos por bucle, contados en labels |
 
@@ -71,6 +77,7 @@ trabajo es juzgar el resultado, no buscar problemas:
 | `review-fix-exhausted` | El revisor sigue pidiendo cambios tras cinco rondas | Decide si el revisor tiene razón. A menudo la spec es ambigua |
 | Un comentario del agente en la issue | Se quedó bloqueado y se detuvo, como se le indica | Respóndele y después quita y vuelve a poner la label `openhands` |
 | Un comentario en un PR fusionado: "the next implementation issue … was not opened" | No están marcadas todas las tareas de la fase | Márcalas o termínalas y después ejecuta Agent Issues a mano para la carpeta de la spec |
+| Una issue de test que queda abierta, con un informe de fallo o de bloqueo | El Tester ha visto que el cambio fusionado no funciona en el stage de desarrollo, o no ha podido probarlo | Lee el informe. Haz merge de su PR de corrección si abrió uno, arregla el stage o escribe una tarea. Vuelve a poner `openhands-test` para probar de nuevo |
 
 ## Producción es un tercer control, opcional
 

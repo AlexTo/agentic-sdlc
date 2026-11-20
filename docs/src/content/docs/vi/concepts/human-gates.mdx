@@ -39,7 +39,7 @@ protection, họ cần quyền ghi.
 
 ## Cổng 2: duyệt kết quả
 
-Mỗi agent PR đến tay bạn sau khi CI xanh và agent reviewer đã duyệt. Việc của bạn là đánh giá kết
+Mỗi agent PR đến tay bạn sau khi CI xanh và agent Reviewer đã duyệt. Việc của bạn là đánh giá kết
 quả, không phải đi săn lỗi:
 
 - Đọc mô tả PR: những gì đã thay đổi, những task nào, những task **(human)** nào để lại cho bạn.
@@ -47,8 +47,13 @@ quả, không phải đi săn lỗi:
   Xem [Kiểm chứng là quan trọng nhất](../layers-of-trust/#kiểm-chứng-là-quan-trọng-nhất) để có ví dụ.
 - Làm các task **(human)**: kiểm tra thủ công trên một local stack hoặc một stage đã deploy.
 - Merge, hoặc yêu cầu thay đổi. Để agent thực hiện chúng, thêm label `openhands-review` sau khi
-  bạn review: agent reviewer review lại PR, và verdict "changes requested" của nó gửi agent triển
-  khai quay lại qua vòng review-fix, được đếm bằng cùng các label `review-fix-*`.
+  bạn review: agent Reviewer review lại PR, và verdict "changes requested" của nó gửi agent
+  Developer quay lại qua vòng review-fix, được đếm bằng cùng các label `review-fix-*`.
+
+Với deploy tự động, agent Tester sau đó test những gì bạn đã merge trên stage development và báo cáo
+trên một issue test. Báo cáo đó đến sau cổng, không phải trước nó: nó cho bạn biết thay đổi có hoạt
+động ở nơi nó chạy không, trên màn hình và trong dữ liệu nó đã lưu, và một báo cáo thất bại là việc
+bạn phải xử lý.
 
 ## Những gì agent không bao giờ được làm
 
@@ -56,8 +61,9 @@ quả, không phải đi săn lỗi:
 | --- | --- |
 | Merge, hoặc push lên `main` | Branch protection yêu cầu một review duyệt. Token của agent chỉ được dùng cho nhánh của chính nó |
 | Sửa `.github/workflows/` | Constitution và hướng dẫn trong issue. Reviewer và người review bắt được nó. Các workflow glue chạy code của nhánh mặc định, nên một workflow bị sửa trong PR không thể thay đổi chúng |
-| Làm yếu một test để nó pass | Constitution ("test là một đặc tả"), hướng dẫn trong issue, agent reviewer |
-| Chạm vào thông tin đăng nhập cloud | Cuộc hội thoại không bao giờ được cấp chúng. Việc deploy dùng role OIDC ngắn hạn từ một GitHub environment |
+| Làm yếu một test để nó pass | Constitution ("test là một đặc tả"), hướng dẫn trong issue, agent Reviewer |
+| Deploy, hoặc thay đổi hạ tầng | Không agent nào được cấp deploy role. Việc deploy dùng role OIDC ngắn hạn từ một GitHub environment. Developer và Reviewer hoàn toàn không cần quyền truy cập cloud. Tester chỉ chạm tới stage development, và prompt của nó giới hạn nó ở việc đọc và ở dữ liệu test nó tạo qua ứng dụng |
+| Nhận chỉ dẫn từ người lạ | Mọi issue và pull request mà một agent được giao đều bị khóa, nên chỉ người có quyền ghi mới comment được. Tester chỉ test các issue do workflow mở, và chỉ dẫn của nó là prompt của chính nó, không phải issue |
 | Làm việc ngoài phạm vi task của nó | Issue nêu tên phạm vi. Issue tiếp theo không mở cho đến khi mọi task agent được đánh dấu |
 | Thử lại mãi mãi | Năm lượt thử mỗi vòng, đếm bằng label |
 
@@ -69,6 +75,7 @@ quả, không phải đi săn lỗi:
 | `review-fix-exhausted` | Reviewer vẫn yêu cầu thay đổi sau năm vòng | Quyết định reviewer có đúng không. Thường là spec mơ hồ |
 | Một comment trên issue từ agent | Nó bị chặn và dừng lại, như được hướng dẫn | Trả lời nó, rồi gỡ và gắn lại label `openhands` |
 | Một comment trên PR đã merge: "the next implementation issue … was not opened" | Các task của giai đoạn chưa được đánh dấu hết | Đánh dấu hoặc hoàn thành chúng, rồi chạy Agent Issues thủ công cho thư mục spec |
+| Một issue test còn để mở, với báo cáo thất bại hoặc bị chặn | Tester thấy thay đổi đã merge không hoạt động trên stage development, hoặc không test được nó | Đọc báo cáo. Merge fix PR của nó nếu nó đã mở một cái, sửa stage, hoặc viết một task. Gắn lại `openhands-test` để test lại |
 
 ## Production là cổng thứ ba, tùy chọn
 

@@ -9,6 +9,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 **Kết quả:** OpenHands poll bản fork của bạn mỗi năm phút. Nó triển khai các issue có label
 `openhands`, sửa lại các PR bị đánh dấu thất bại, và review các PR có label `openhands-review`.
+Đây là các agent Developer và Reviewer.
 
 Cả hai automation đến từ **automation catalog** của Agent Canvas. Bạn điền một form, và catalog
 đóng gói một worker đã được test với các cài đặt của bạn. Bạn không phải viết hay upload code nào.
@@ -22,14 +23,14 @@ Cả hai automation đến từ **automation catalog** của Agent Canvas. Bạn
    | Repositories | `<you>/agentic-sdlc` |
    | Trigger label | `openhands` |
    | Branch prefix | `openhands/issue` |
-   | Pull request mode | Draft |
+   | Pull request mode | Ready for review |
    | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-   | Agent profile | `default` |
+   | Agent profile | `developer` |
    | Check frequency | `*/5 * * * *` |
    | Timezone | múi giờ của bạn |
 
    Discava chạy template phiên bản 1.2.4. Prompt của worker bảo agent thêm label
-   `openhands-review` sau khi mở PR, để PR mới đến được reviewer kể cả khi là draft.
+   `openhands-review` sau khi mở PR, để mọi PR mới đều đến được Reviewer.
 
 2. **Thêm "GitHub code review"** từ catalog:
 
@@ -63,15 +64,22 @@ Sau đó:
 
 1. Tạo một issue thử: "Add a line to README.md saying hello", và thêm label `openhands`.
 2. Trong vòng một lần poll, một cuộc hội thoại cho issue xuất hiện trong Agent Canvas.
-3. Khi agent xong, một draft PR xuất hiện trên `openhands/issue-<n>`, với tiêu đề `[#<n>] <issue
+3. Khi agent xong, một PR xuất hiện trên `openhands/issue-<n>`, với tiêu đề `[#<n>] <issue
    title>`, và đã được thêm `openhands-review`.
-4. Khi các check của nó xong, reviewer đăng một review bắt đầu bằng
+4. Khi các check của nó xong, agent Reviewer đăng một review bắt đầu bằng
    "_This review was posted by an AI agent (OpenHands)._" và kết thúc bằng `✅ APPROVED` hoặc
    `🔄 CHANGES REQUESTED`.
 
 Sau đó đóng PR và xóa nhánh.
 
 Mỗi automation làm gì ở một lần poll được mô tả ở [Runtime của agent](../../concepts/the-agent-runtime/).
+
+<Aside type="tip" title="Vai trò thứ ba: Tester">
+Discava chạy một automation thứ ba, Tester, test mỗi thay đổi đã merge trên stage development đã
+deploy của nó. Nó cần một bản deploy để test, nên nó không thuộc thiết lập này. Khi repository của
+bạn tự deploy, xem [Kiểm chứng sau merge](../../discava/post-merge-verify/) và
+[Prompt của các agent](../../discava/agent-prompts/).
+</Aside>
 
 <Aside type="note">
 Để cho agent thử lại một issue từ đầu, gỡ rồi gắn lại label `openhands`. Để gửi agent quay lại một

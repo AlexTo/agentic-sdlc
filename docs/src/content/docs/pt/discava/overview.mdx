@@ -18,29 +18,35 @@ Esta seção descreve o que o Discava usa, em novembro de 2026, com os arquivos 
 | Ferramenta | Versão | Papel |
 | --- | --- | --- |
 | Speckit (`specify-cli`) | 1.3.2 | Geração de spec, plano e tarefas, com a extensão `git` |
-| OpenHands Agent Canvas | 1.41.0 | Runtime do agent e as duas automations, como um serviço de usuário em uma máquina Linux |
-| Automation `github-issue-to-pr` | 1.2.4 | Implementa issues com label, revisa PRs com falha |
-| Automation `github-pr-reviewer` | 1.11.2 | Faz o review de PRs quando os checks terminam |
-| Agent para implementar | Claude Code via ACP, Sonnet | Agent profile `default` |
-| Agent para revisar | Claude Code via ACP, Opus | Agent profile `reviewer` |
+| OpenHands Agent Canvas | 1.41.0 | Runtime do agent e as três automations, como um serviço de usuário em uma máquina Linux |
+| Automation `github-issue-to-pr` | 1.2.4 | Desenvolvedor: implementa issues com label, revisa PRs com falha |
+| Automation `github-pr-reviewer` | 1.11.2 | Revisor: faz o review de PRs quando os checks terminam |
+| Automation `github-issue-tester` | escrita à mão | Testador: testa PRs mergeados no stage de desenvolvimento com deploy |
+| Agent Desenvolvedor | Claude Code via ACP, Sonnet | Agent profile `developer` |
+| Agent Revisor | Claude Code via ACP, Opus | Agent profile `reviewer` |
+| Agent Testador | Claude Code via ACP, Opus | Agent profile `tester` |
 | Nx + pnpm | Nx 23 | Monorepo, `nx affected` no CI |
-| Playwright | | Testes E2E contra a stack local, seis shards no CI |
+| Playwright | | Testes E2E contra a stack local, seis shards no CI. O agent Testador também controla com ele os portais com deploy |
 | Trivy, git-secrets, commitlint | | Varredura de segurança, verificação de segredos no pre-commit, formato da mensagem de commit |
 
 ## Da lacuna ao arquivo
 
 | Lacuna | A resposta do Discava | Arquivos |
 | --- | --- | --- |
-| Spec para issue | Workflow Agent Issues e seus scripts | `.github/workflows/agent-issues.yml`, `packages/common/scripts/src/agent-issues/` |
+| Spec para issue | Workflow Agent Issues e seus scripts | `.github/workflows/agent-issues.yml`, `packages/tooling/agent/src/agent-issues/` |
 | Falha de CI para o agent | Agent CI Status | `.github/workflows/agent-ci.yml`, `src/agent-ci/` |
 | Review para o agent | Agent Review Status | `.github/workflows/agent-review.yml`, `src/agent-review/` |
 | Loops infinitos | Limites de cinco tentativas com labels | `MAX_CI_FIX_ATTEMPTS` e `MAX_REVIEW_FIX_ATTEMPTS` em `plan.ts` |
 | `tasks.md` malformado | Job de formato de tasks | `pr-checks.yml` `tasks-format`, `src/agent-issues/validate.ts` |
 | Mudanças de UI que ninguém viu | Job UI Screenshots, comentário E2E screenshots | `pr-checks.yml`, `src/ui-screenshots/`, `packages/e2e/src/helpers/screenshots.ts` |
 | O merge não dá continuidade | Agent Issues em branches `openhands/` mergeadas | `src/agent-issues/gate.ts` |
-| Sem nuvem para o agent | Substitutos locais para cada serviço da AWS | `pnpm dev`, `packages/common/scripts/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
+| Sem nuvem para o agent | Substitutos locais para cada serviço da AWS | `pnpm dev`, `packages/tooling/local-dev/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
 | O merge não entrega nada | CI na `main`, depois Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
 | Segredos e dependências vulneráveis | Trivy no CI e antes do deploy, git-secrets no commit | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
+| Mudança mergeada nunca testada onde ela roda | O Post-merge Verify abre uma issue de teste por PR que sai no deploy, o agent Testador a testa, e o Agent Lock tranca o que os agents leem | `.github/workflows/post-merge-verify.yml`, `agent-lock.yml`, `src/post-merge-test/`, `src/agent-lock/`, `src/helpers/conversation-lock.ts` |
+
+A cola fica em `packages/tooling/agent/` (`@discava/tooling-agent`). Os caminhos `src/…` desta
+seção são relativos a ele.
 
 E o texto que todo agent lê:
 
@@ -50,6 +56,8 @@ E o texto que todo agent lê:
 | Comandos, arquitetura, convenções | `AGENTS.md` |
 | Processo de PR, stack local, testes | `CONTRIBUTING.md` |
 | Instruções em toda issue de implementação | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| A forma à mão de uma issue de teste | `.github/ISSUE_TEMPLATE/test-deployed-pr.md` |
+| O prompt fixo de cada papel de agent | No OpenHands, fora do repositório. Veja [Os prompts dos agents](../agent-prompts/) |
 | Templates do Speckit, adaptados para a automação | `.specify/templates/tasks-template.md`, `spec-template.md` |
 
 ## Em números

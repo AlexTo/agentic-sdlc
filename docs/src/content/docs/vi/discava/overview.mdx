@@ -18,29 +18,35 @@ Phần này mô tả những gì Discava chạy, tính đến tháng 11 năm 202
 | Công cụ | Phiên bản | Vai trò |
 | --- | --- | --- |
 | Speckit (`specify-cli`) | 1.3.2 | Sinh spec, kế hoạch và task, với extension `git` |
-| OpenHands Agent Canvas | 1.41.0 | Runtime của agent và hai automation, như một user service trên một máy Linux |
-| Automation `github-issue-to-pr` | 1.2.4 | Triển khai issue có label, sửa lại PR thất bại |
-| Automation `github-pr-reviewer` | 1.11.2 | Review PR khi các check đã xong |
-| Agent triển khai | Claude Code qua ACP, Sonnet | Agent profile `default` |
-| Agent review | Claude Code qua ACP, Opus | Agent profile `reviewer` |
+| OpenHands Agent Canvas | 1.41.0 | Runtime của agent và ba automation, như một user service trên một máy Linux |
+| Automation `github-issue-to-pr` | 1.2.4 | Developer: triển khai issue có label, sửa lại PR thất bại |
+| Automation `github-pr-reviewer` | 1.11.2 | Reviewer: review PR khi các check đã xong |
+| Automation `github-issue-tester` | viết tay | Tester: test các PR đã merge trên stage development đã deploy |
+| Agent Developer | Claude Code qua ACP, Sonnet | Agent profile `developer` |
+| Agent Reviewer | Claude Code qua ACP, Opus | Agent profile `reviewer` |
+| Agent Tester | Claude Code qua ACP, Opus | Agent profile `tester` |
 | Nx + pnpm | Nx 23 | Monorepo, `nx affected` trong CI |
-| Playwright | | E2E test trên local stack, sáu shard trong CI |
+| Playwright | | E2E test trên local stack, sáu shard trong CI. Agent Tester cũng dùng nó để điều khiển các cổng đã deploy |
 | Trivy, git-secrets, commitlint | | Quét bảo mật, kiểm tra secret trước commit, định dạng commit message |
 
 ## Từ khoảng trống đến file
 
 | Khoảng trống | Câu trả lời của Discava | File |
 | --- | --- | --- |
-| Spec sang issue | Workflow Agent Issues và các script của nó | `.github/workflows/agent-issues.yml`, `packages/common/scripts/src/agent-issues/` |
+| Spec sang issue | Workflow Agent Issues và các script của nó | `.github/workflows/agent-issues.yml`, `packages/tooling/agent/src/agent-issues/` |
 | CI thất bại sang agent | Agent CI Status | `.github/workflows/agent-ci.yml`, `src/agent-ci/` |
 | Review sang agent | Agent Review Status | `.github/workflows/agent-review.yml`, `src/agent-review/` |
 | Vòng lặp vô tận | Giới hạn năm lượt thử với label | `MAX_CI_FIX_ATTEMPTS` và `MAX_REVIEW_FIX_ATTEMPTS` trong `plan.ts` |
 | `tasks.md` sai định dạng | Job Tasks format | `pr-checks.yml` `tasks-format`, `src/agent-issues/validate.ts` |
 | Thay đổi UI chưa ai xem | Job UI Screenshots, comment E2E screenshots | `pr-checks.yml`, `src/ui-screenshots/`, `packages/e2e/src/helpers/screenshots.ts` |
 | Merge không tiếp tục chuỗi | Agent Issues trên các nhánh `openhands/` đã merge | `src/agent-issues/gate.ts` |
-| Agent không có cloud | Bản thay thế local cho mọi dịch vụ AWS | `pnpm dev`, `packages/common/scripts/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
+| Agent không có cloud | Bản thay thế local cho mọi dịch vụ AWS | `pnpm dev`, `packages/tooling/local-dev/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
 | Merge không ship | CI trên `main`, rồi Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
 | Secret và dependency có lỗ hổng | Trivy trong CI và trước deploy, git-secrets khi commit | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
+| Thay đổi đã merge không bao giờ được test ở nơi nó chạy | Post-merge Verify mở một issue test cho mỗi PR đã deploy, agent Tester test nó, và Agent Lock khóa những gì các agent đọc | `.github/workflows/post-merge-verify.yml`, `agent-lock.yml`, `src/post-merge-test/`, `src/agent-lock/`, `src/helpers/conversation-lock.ts` |
+
+Phần glue nằm trong `packages/tooling/agent/` (`@discava/tooling-agent`). Các đường dẫn `src/…` trong
+phần này là tương đối so với nó.
 
 Và văn bản hướng dẫn mà mọi agent đọc:
 
@@ -50,6 +56,8 @@ Và văn bản hướng dẫn mà mọi agent đọc:
 | Lệnh, kiến trúc, quy ước | `AGENTS.md` |
 | Quy trình PR, local stack, testing | `CONTRIBUTING.md` |
 | Hướng dẫn trên mọi issue triển khai | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| Dạng mở thủ công của một issue test | `.github/ISSUE_TEMPLATE/test-deployed-pr.md` |
+| Prompt cố định của mỗi vai trò agent | Trong OpenHands, bên ngoài repository. Xem [Prompt của các agent](../agent-prompts/) |
 | Template Speckit, tùy biến cho automation | `.specify/templates/tasks-template.md`, `spec-template.md` |
 
 ## Qua các con số

@@ -1,0 +1,266 @@
+---
+title: 合并后验证
+description: 部署到 discava-development 的每个 pull request 如何变成交给测试智能体的测试 issue，以及智能体阅读的一切如何被锁定。
+sidebar:
+  order: 9.5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+缺口 11：合并之前的每项检查都是针对本地替身运行的，没有人在变更实际运行的地方看过它。Discava 用第三个
+智能体角色来填补这个缺口。每次部署到 `discava-development` 之后，一个 workflow 会为这次部署带上的每个
+pull request 打开一个测试 issue，由**测试智能体**在该 stage 上测试这个变更：在真实浏览器中打开门户，以
+测试用户的身份调用 API，并检查变更写入的数据。
+
+```d2
+direction: down
+
+deploy: "Deploy\n（discava-development）"
+verify: "Post-merge Verify\npost-merge-test"
+issue: "测试 issue\n先锁定，再加 openhands-test" {shape: page}
+tester: "测试智能体\n（OpenHands，下一次轮询）"
+stage: discava-development {shape: cylinder}
+report: "issue 上的报告" {shape: document}
+fix: "修复 PR\nopenhands/test-fix-<n>" {shape: page}
+
+deploy -> verify: 已完成
+verify -> issue: 每个已部署的 PR 一个
+issue -> tester
+tester -> stage: "Playwright、API、AWS CLI"
+tester -> report
+tester -> fix: "仅限小而明确的修复" {style.stroke-dash: 3}
+```
+
+## Post-merge Verify
+
+`.github/workflows/post-merge-verify.yml` 在 `workflow_run` 上运行，即当 **Deploy** 完成时，也可以带着一个
+pull request 编号手动运行。它检出默认分支，并运行 `post-merge-test`。所有运行共用一个并发组，所以两次
+相隔很近的部署不会为同一个 pull request 打开两个 issue。
+
+脚本（`src/post-merge-test/`）：
+
+1. **检查这次运行是否部署了测试 stage。** 它读取 Deploy 运行的 job。`Deploy` 步骤被跳过的运行（它的
+   commit 已不是 `main` 的最新提交）什么都没有部署，而针对其他 stage 的运行不会被测试。
+2. **找出这次部署带上了什么。** 一次部署可能包含多次合并，因为被跳过的部署会把它的 commit 留给下一次。
+   所以它取出该 stage 上一次成功部署与这一次之间的 commit，以及每个 commit 对应合并的 pull request。
+3. **逐个 pull request 做决定**（`plan.ts` 中的 `decide()`）。以下情况不开 issue：
+   - 已经有一个针对它的 issue（通过隐藏标记找到）
+   - 它带有 `skip-deploy-test` 标签
+   - 它没有改动任何会被部署的内容：只有文档、spec、测试、工具、CI 或其他永远不会进入栈的文件
+4. **渲染 issue**（`renderIssue()`）。它只说明要测试什么。
+5. **不带标签地打开它，锁定，然后加标签。** 这个 issue、它测试的 pull request，以及该 pull request 关闭的
+   issue 都会被锁定。之后才加上 `openhands-test`。如果有任何一项无法锁定，标签永远不会被加上，运行会
+   失败，并指出需要手动锁定什么。
+
+带着一个 pull request 编号手动运行时，即使已经存在 issue，它也会再打开一个。这就是从头重新测试一个变更
+的方式。
+
+## 它打开的 issue
+
+一个真实的例子，[#654](https://github.com/AlexTo/discava/issues/654)：
+
+```markdown
+<!-- post-merge-test pr:647 -->
+
+## What to test
+
+- Pull request: #647 (feat(stripe-checkout): a refund takes access away)
+- Issue it closes: #646
+- Merged as `b4dc4f7…`, deployed to `discava-development` at `b4dc4f7…` ([Deploy run](…))
+- Kind: **UI change**. It changes a portal: sign in as the user the change is for and click
+  through the flow with Playwright, then call the APIs behind it and check the stored data.
+
+<details><summary>Deployed files it changes (4)</summary>
+
+- `packages/events/src/local/stripe-stand-in.ts`
+- `packages/events/src/payments/events/charge-refunded.ts`
+- `packages/events/src/payments/stripe-webhook.ts`
+- `packages/websites/student-portal/src/routes/learn/$courseId/-components/enrolment-actions.tsx`
+
+</details>
+```
+
+标题是 `test(post-merge): verify #647 a refund takes access away`：一个最多 100 个字符的 Conventional
+Commit 标题行，这样测试智能体就可以复用它。当 pull request 改动了某个门户或共享组件时，类型是
+`UI change`，否则是 `backend change or fix`。
+
+<Aside type="note" title="测试什么，从不说怎么测">
+这个 issue 不含任何指令。如何测试（工具、测试用户、检查、报告）是测试智能体自己在 OpenHands 中的
+[prompt](../agent-prompts/#测试智能体)，所以能编辑 issue 的人没有一个能改动它。
+`.github/ISSUE_TEMPLATE/test-deployed-pr.md` 是同样的表单，用于手动打开一个测试 issue。
+</Aside>
+
+## 测试智能体做什么
+
+在下一次轮询时，`github-issue-tester` 自动化会接手这个 issue 并启动测试智能体。它的 prompt 有八个步骤：
+
+1. 根据 pull request、它的 diff、它关闭的 issue 及其 spec，弄清改了什么，并写下现在应该成立的事情。
+2. 如果有 UI，就测试 UI：用 Playwright 在 Cognito 托管页面上登录，点完整个流程，在每一步截图，并查看
+   每一张截图。
+3. 用测试用户的 access token 调用 API，包括错误情况。
+4. 检查存储的数据：DynamoDB 条目、OpenSearch 文档、S3 对象，以及 Lambda 的日志。
+5. 使用它自己的数据，命名为 `pmt-<pr>-<what>`。
+6. 在 issue 上报告：它测试了什么、一张列出每项检查的通过或失败及其证据的表格，以及一个结论。
+7. 通过时关闭 issue。失败时让它保持打开，并附上复现步骤。只有在原因清楚且修复很小时，才打开修复 pull
+   request。
+8. 绝不更改基础设施、IAM、用户或 stage 配置，绝不部署、触碰其他 stage、编辑 workflow 或合并。
+
+## 一次真实的运行：始终没有结算的付款
+
+这个 workflow 打开的第一个测试 issue，就发现了一个合并之前的每项检查都放过的缺陷。所有时间均为 UTC，
+日期是 2026 年 11 月 20 日。
+
+| 时间 | 谁 | 发生了什么 |
+| --- | --- | --- |
+| 07:02 | 一个人 | 合并 [#647](https://github.com/AlexTo/discava/pull/647)，"a refund takes access away"，它关闭 issue [#646](https://github.com/AlexTo/discava/issues/646)。这个 PR 由开发智能体编写，它自己修复了两次红色的 CI 运行，评审智能体也已[批准](https://github.com/AlexTo/discava/pull/647#pullrequestreview-5988208805) |
+| 07:08 | Deploy | 把 `main` [发布](https://github.com/AlexTo/discava/actions/runs/44692771527)到 `discava-development`，用时九分钟 |
+| 07:18 | Post-merge Verify | 打开 [#654](https://github.com/AlexTo/discava/issues/654)，锁定它，然后加上 `openhands-test` |
+| 07:26 | 测试智能体 | [第一份报告](https://github.com/AlexTo/discava/issues/654#issuecomment-7033260676)：**受阻**。该 stage 上没有连接支付账号 |
+| 10:27 | 测试智能体 | [第二份报告](https://github.com/AlexTo/discava/issues/654#issuecomment-7037199284)：**仍然受阻**。什么都没有改变 |
+| 10:43 | 测试智能体 | 此时 Stripe 已以测试模式连接，它以学生身份购买了一门课程 |
+| 10:45 | 该 stage | 两次 webhook 投递都超时了。订单停留在 `pending` |
+| 10:48 | 测试智能体 | 打开修复 PR [#657](https://github.com/AlexTo/discava/pull/657) |
+| 10:49 | 测试智能体 | [第三份报告](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120)：**失败**，并附上原因和修复 |
+
+### 第 1 次运行：受阻，并且如实说明
+
+这个变更会在 Stripe 报告退款时结束学生的选课。要测试它，必须有一笔已支付的订单可供退款，而该 stage
+没有支付账号。测试智能体没有让测试通过，也没有猜测。它的[结论](https://github.com/AlexTo/discava/issues/654#issuecomment-7033260676)是 "blocked, not verified"，并附上了证据：管理员 API 的
+`payment.status` 返回 `not-connected`，核心表中没有任何订单。
+
+然后它检查了不需要付款就能检查的东西：已部署的 webhook 函数含有新的 `charge.refunded` 处理函数，门户
+提供的包中有新的 "You're no longer enrolled" 界面，伪造的退款通知会被以 400 拒绝并且不写入任何东西，
+免费课程的课程页面仍然正常。九项检查通过。它列出了自己*没有*验证的六件事，以及怎样才能解除阻塞。
+
+它还说明了自己不会做什么。连接支付账号意味着保存一个 Stripe 密钥，这会改变 stage 的配置，而它的
+[prompt](../agent-prompts/#测试智能体) 禁止这样做。所以它让 issue 保持打开，留给人来处理。
+
+### 第 3 次运行：一次真实的购买
+
+一个 Stripe 测试模式账号连接到该 stage 之后，测试智能体从流程的起点开始，因为退款需要先有一次购买。
+下面的每一步都是它的[第三份报告](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120)中的一行：
+
+1. 以讲师身份，通过 API，它创建了一门名为 `pmt-647-course` 的课程，定价 USD 19.99，并发布了它。
+2. 以学生身份，在真实浏览器中，它在 Cognito 托管页面上登录，打开这门课程，选择 **Buy now**，并在
+   Stripe 的托管结账页面上用测试卡付了款。
+3. 它回到课程页面，页面上写着 "Confirming your payment"，然后观察三样东西：页面、订单在 DynamoDB 中的
+   记录，以及 webhook 函数的日志。
+
+下面的截图是测试智能体自己拍的，按照它的 prompt 的要求在每一步保存。它的报告中写明了这些文件的名称，
+它们就是一个人会看到的画面。
+
+它创建的课程，学生在购买之前看到的样子
+（`01-paid-course-before-purchase.png`）：
+
+<p>
+  <img alt="开发 stage 上的学生门户，显示课程 pmt-647-course，价格 $19.99，带有一个 Buy now 按钮" src="/agentic-sdlc/screenshots/post-merge-test-647/01-paid-course-before-purchase.png" width="620" />
+</p>
+
+沙盒模式下的 Stripe 托管结账页面，已填入一张测试卡
+（`03-stripe-checkout-filled.png`）：
+
+<p>
+  <img alt="标有 Sandbox 的 Stripe 托管结账页面，商品为 pmt-647-course，价格 US$19.99，已填入测试卡 4242 4242 4242 4242 和一个测试学生邮箱" src="/agentic-sdlc/screenshots/post-merge-test-647/03-stripe-checkout-filled.png" width="620" />
+</p>
+
+付款之后回到课程页面（`04-returned-from-checkout.png`）：
+
+<p>
+  <img alt="同一个课程页面，原来 Buy now 按钮的位置现在显示 Confirming your payment 和一个进度条" src="/agentic-sdlc/screenshots/post-merge-test-647/04-returned-from-checkout.png" width="620" />
+</p>
+
+以及等待之后（`05-failure-still-not-enrolled-webhook-timeout.png`）：
+
+<p>
+  <img alt="同一个课程页面，再次显示 $19.99 和 Buy now 按钮，没有 Start learning 按钮" src="/agentic-sdlc/screenshots/post-merge-test-647/05-failure-still-not-enrolled-webhook-timeout.png" width="620" />
+</p>
+
+最后一张图和第一张一样，而这正是失败所在。付款成功了，订单却始终没有离开 `pending`，没有出现选课记录，
+页面又回到了显示 **Buy now** 的状态。屏幕上没有任何东西表明出了问题：没有错误，控制台里也没有失败的
+请求。测试智能体之所以发现了它，是因为它还读取了订单的记录和函数的日志，日志说明了原因：
+
+```text
+REPORT … Duration: 10000.00 ms … Memory Size: 128 MB  Max Memory Used: 117 MB  Status: timeout
+REPORT … Duration: 10000.00 ms … Memory Size: 128 MB  Max Memory Used: 117 MB  Status: timeout
+```
+
+Stripe 关于结账已付款的通知始终没能送达。接收它的函数运行在 Lambda 默认的 128 MB 上，它的冷启动（核心表
+的实体、AppConfig、Stripe SDK）没能在 10 秒的超时之内完成。超时的运行时会被丢弃，所以 Stripe 的每次重试
+都从冷启动开始，并以同样的方式失败。测试智能体把它与结账函数做了比较，后者有 256 MB，启动用了 8.1 秒。
+
+被测试的退款根本没有走到。测试智能体发现的问题在它的前一步，而且更糟：在已部署的 stage 上，学生可能
+付了课程的钱却永远拿不到它。
+
+### 为什么之前没有任何东西发现它
+
+这个缺陷比被测试的 pull request 更早，而且它通过了每一层：
+
+- **单元测试**检验的是处理函数的逻辑，而逻辑是正确的。
+- **E2E 测试**针对本地栈运行，在那里由一个替身扮演 Stripe，没有任何东西有内存限制或 10 秒的超时。
+- **评审智能体**和**那个人**读到的 diff 中没有出现任何内存设置，因为缺少的那一行正是缺陷本身。
+
+它只存在于函数被部署的地方。这就是测试智能体要填补的缺口。
+
+### 修复 PR
+
+原因清楚，修复也很小，所以测试智能体的 prompt 允许它开一个 pull request。
+[#657](https://github.com/AlexTo/discava/pull/657) 是一个 [commit](https://github.com/AlexTo/discava/commit/854760c3c30a5ceb1ee7c7e52ebd596bef3374f1)，改动了
+两个文件：`StripeWebhookApi` construct 中把函数内存设为 512 MB 的四行，以及一个没有这四行就会失败的十二行
+测试（`Missing key 'MemorySize'`）。它从 `main` 分出，分支名为 `openhands/test-fix-654`，它的描述同时
+引用了 [#647](https://github.com/AlexTo/discava/pull/647) 和
+[#654](https://github.com/AlexTo/discava/issues/654)。
+
+描述对自身的局限也直言不讳："Not verified on a deployed stage. The fix only takes effect once
+deployed."（未在已部署的 stage 上验证。修复只有在部署之后才会生效。）
+
+然后测试智能体就停下了。它没有合并，也没有部署。Agent Lock 锁定了这个新的 pull request，
+[PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986) 全部通过，`openhands-review` 标签把它交给了评审智能体。和其他任何 PR
+一样，由一个人来合并它。测试 issue [#654](https://github.com/AlexTo/discava/issues/654) 会保持打开，直到退款本身在一个付款能够结算的 stage 上得到测试。
+测试智能体的最后一份报告列出了它留下的测试数据：那门课程和那笔 `pending` 订单。
+
+截图留在工作站上，位于 Discava 检出目录的 `tmp/screenshots/pr-<pr>/` 下。报告会写明每个文件的名称，并
+说明它展示了什么。上面的四张是为了本页从那里复制过来的。
+
+## Agent Lock
+
+Discava 是一个公开仓库，所以任何人都可以在它的 issue 和 pull request 上评论。智能体在阅读这些评论时持有
+一个可以推送的 token，测试智能体还持有 AWS 访问权限和测试用户的密码。因此，一条评论就是向智能体下达指令
+的一种途径。
+
+对策是锁定交给智能体的每一个对话。被锁定的 issue 或 pull request 只接受具有写权限的协作者的评论，其中
+包括智能体自己的 token。
+
+| 对象 | 由谁锁定 |
+| --- | --- |
+| Agent Issues 打开的实现 issue | 它自己的脚本，在加上 `openhands` 之前 |
+| 一个测试 issue、它测试的 pull request，以及该 pull request 关闭的 issue | Post-merge Verify 的脚本，在加上 `openhands-test` 之前 |
+| 有人手动加上 `openhands` 或 `openhands-test` 标签的 issue | **Agent Lock**（`.github/workflows/agent-lock.yml`），在 `issues: labeled` 时 |
+| 智能体在非 fork 的 `openhands/` 分支上打开的 pull request | **Agent Lock**，在 `pull_request: opened` 和 `reopened` 时 |
+
+这些脚本自己锁定自己的 issue，是因为对于由 workflow 的 token 加上的标签，GitHub 不会启动任何 workflow。
+顺序也很重要：不带标签地打开，锁定，然后加标签，这样智能体永远不会在陌生人仍能评论的时候接手一个
+issue。共用的代码是 `src/helpers/conversation-lock.ts`，这个 workflow 的规则在 `src/agent-lock/` 中。
+
+随之而来的还有两条规则：
+
+- **标记按作者决定是否可信。** 这些 workflow 通过隐藏标记找到它们之前的 issue。标记只有在由
+  `github-actions[bot]` 或具有写权限的人打开的 issue 中才算数（`src/helpers/issue-author.ts`），所以
+  陌生人无法通过打开一个带有标记的 issue 来让链条停滞或阻止一次测试。
+- **被锁定的 PR 收不到 bot 评论。** GitHub 拒绝 Actions token 在已锁定的对话上发表评论，所以
+  [E2E screenshots](../pr-checks/#ui-screenshots-与-e2e-screenshots-评论) 列表改为写入 job 摘要。
+
+<Aside type="caution">
+在 issue 被加上标签之前写下的评论会保留。当你手动给一个已有的 issue 加标签时，请先阅读它的评论。
+</Aside>
+
+## 试运行
+
+```bash
+DRY_RUN=true GITHUB_REPOSITORY=AlexTo/discava GITHUB_EVENT_NAME=workflow_dispatch PR_NUMBER=647 \
+  pnpm nx run @discava/tooling-agent:post-merge-test
+```
+
+这会打印出它将要打开的 issue 的标题和正文，而不会创建任何东西。它仍然通过 `gh` 读取 pull request，所以
+你需要处于已登录状态。
+
+下一步：[一个真实的功能](../a-real-feature/)。

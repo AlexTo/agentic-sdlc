@@ -1,6 +1,6 @@
 ---
 title: 3. Installer OpenHands
-description: Installez Agent Canvas avec npm, lancez-le, ajoutez le token GitHub et créez les deux profils d'agent.
+description: Installez Agent Canvas avec npm, lancez-le, ajoutez le token GitHub et créez les profils d'agent Développeur et Relecteur.
 sidebar:
   order: 3
 ---
@@ -8,7 +8,8 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **Résultat :** OpenHands Agent Canvas qui tourne sur votre machine, un token GitHub stocké comme
-secret, et deux profils d'agent : `default` pour implémenter et `reviewer` pour relire.
+secret, et deux profils d'agent : `developer` pour l'agent Développeur et `reviewer` pour l'agent
+Relecteur.
 
 <Steps>
 
@@ -44,21 +45,24 @@ secret, et deux profils d'agent : `default` pour implémenter et `reviewer` pour
 
    L'agent de code doit être installé et connecté sur cette machine, sous le même utilisateur.
 
-5. **Créez deux profils d'agent :**
+5. **Créez deux profils d'agent**, un par rôle d'agent :
 
-   | Profil | Agent | Modèle |
-   | --- | --- | --- |
-   | `default` | ACP, `claude-code` | `sonnet` |
-   | `reviewer` | ACP, `claude-code` | `opus` |
+   | Profil | Rôle | Agent | Modèle |
+   | --- | --- | --- | --- |
+   | `developer` | Développeur | ACP, `claude-code` | `sonnet` |
+   | `reviewer` | Relecteur | ACP, `claude-code` | `opus` |
 
-   N'importe quel agent et modèle conviennent. Gardez le reviewer au moins aussi fort que l'implémenteur : c'est le
+   N'importe quel agent et modèle conviennent. Gardez le Relecteur au moins aussi fort que le Développeur : c'est le
    dernier contrôle avant vous.
+
+   Discava a un troisième profil, `tester`, pour l'agent Testeur. Il teste les changements mergés sur un
+   stage déployé, ce que l'application de notes n'a pas, donc vous n'en avez pas besoin ici.
 
 </Steps>
 
 ## Vérifier que ça marche
 
-Dans Agent Canvas, démarrez une conversation avec le profil `default` et donnez-lui le secret
+Dans Agent Canvas, démarrez une conversation avec le profil `developer` et donnez-lui le secret
 `GITHUB_PERSONAL_ACCESS_TOKEN`. Demandez-lui :
 
 ```text

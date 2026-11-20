@@ -1,6 +1,6 @@
 ---
 title: Deploy e sicurezza
-description: Come un main verde fa il deploy da solo, e le scansioni che bloccano un secret trapelato o una dipendenza vulnerabile.
+description: Come un main verde fa il deploy da solo e passa ogni modifica all'agente Tester, e le scansioni che bloccano un secret trapelato o una dipendenza vulnerabile.
 sidebar:
   order: 9
 ---
@@ -57,6 +57,10 @@ I passi, in ordine:
 ogni `main` verde arriva allo stage di sviluppo. Lasciala vuota e niente viene distribuito senza una
 persona.
 
+Un deploy sullo stage di sviluppo non è la fine. Quando l'esecuzione termina, **Post-merge Verify**
+apre una issue di test per ogni pull request che ha portato con sé, e l'agente Tester testa quella
+modifica sullo stage. Vedi [Verifica post-merge](../post-merge-verify/).
+
 ### Configurare uno stage
 
 `scripts/setup-stage.sh` si esegue una volta per stage, da un clone del repository che esegue il
@@ -106,4 +110,4 @@ ha modificato il working tree, così l'agente rifà lo stage e committa di nuovo
 commitlint con la configurazione Conventional Commits.
 </Aside>
 
-Avanti: [Una funzionalità reale](../a-real-feature/).
+Avanti: [Verifica post-merge](../post-merge-verify/).

@@ -1,6 +1,6 @@
 ---
 title: Phần glue còn thiếu
-description: Mười khoảng trống giữa Speckit, OpenHands và CI, và các quy tắc để lấp chúng.
+description: Mười một khoảng trống giữa Speckit, OpenHands và CI, và các quy tắc để lấp chúng.
 sidebar:
   order: 5
 ---
@@ -18,7 +18,7 @@ issue, để ý thấy CI chuyển đỏ, và bảo agent sửa nó.
 | --- | --- | --- |
 | 1 | Không có gì biến một spec đã xong thành việc cho agent | Một workflow đọc `tasks.md` và mở issue triển khai tiếp theo, mỗi lần một nhóm giai đoạn |
 | 2 | Agent không biết CI đã thất bại | Một workflow báo lần chạy thất bại về cho agent dưới dạng commit status mà nó vốn đã theo dõi |
-| 3 | "Changes requested" của reviewer không được nghe thấy | Một workflow làm điều tương tự với verdict của agent reviewer |
+| 3 | "Changes requested" của reviewer không được nghe thấy | Một workflow làm điều tương tự với verdict của agent Reviewer |
 | 4 | Không có gì ngăn một agent bị kẹt lặp mãi | Cả hai vòng fix-up bị giới hạn ở năm lượt thử, đếm bằng label, sau đó một người tiếp quản |
 | 5 | `tasks.md` chỉ là một quy ước, nên một file sai định dạng âm thầm làm chuỗi đứng lại | Một PR check xác thực định dạng của nó |
 | 6 | Thay đổi UI đến lúc review mà chưa ai nhìn qua | Một check yêu cầu e2e screenshot, và CI đăng chúng lên PR |
@@ -26,6 +26,7 @@ issue, để ý thấy CI chuyển đỏ, và bảo agent sửa nó.
 | 8 | Agent không thể chạy stack thật khi không có quyền truy cập cloud | Bản thay thế local cho mọi dịch vụ, để toàn bộ ứng dụng và e2e test của nó chạy mà không cần thông tin đăng nhập |
 | 9 | Merge không ship được gì | Một build xanh trên `main` tự deploy, bỏ qua commit không còn là mới nhất, và production chờ một người |
 | 10 | Agent có thể commit một secret bị lộ hoặc một dependency có lỗ hổng | Quét secret và dependency trên mọi build, và lần nữa trước mỗi lần deploy |
+| 11 | Không ai kiểm tra thay đổi đã merge ở nơi nó thực sự chạy | Mỗi lần deploy mở một issue test cho mọi PR đã merge mà nó mang theo, và agent Tester test thay đổi trên stage đã deploy |
 
 [Discava làm thế nào](../../discava/overview/) ánh xạ mỗi dòng với các file của nó.
 
@@ -57,6 +58,15 @@ status đó thay vì phát minh một trigger mới. Không cần thay đổi g�
 Các workflow glue giữ một token có thể ghi label, status và comment. Chúng checkout **nhánh mặc
 định**, không bao giờ là pull request, nên không có gì do agent hay contributor viết được chạy với token
 đó. Mọi thứ đọc từ PR (tên nhánh, nội dung) đều được kiểm tra với một pattern chặt chẽ trước khi dùng.
+
+### Khóa những gì agent đọc
+
+Ai cũng có thể comment trên issue và pull request của một repository công khai, và một agent đọc các
+comment đó trong khi đang giữ một token có thể push. Tester còn giữ quyền truy cập vào stage đã
+deploy. Nên mọi issue và pull request mà một agent được giao đều bị **khóa** trước, để việc comment
+chỉ còn dành cho người có quyền ghi. Một issue được mở không có label, được khóa, rồi mới được gắn
+label, nên agent không bao giờ nhận nó trong khi một người lạ vẫn còn comment được. Và marker ẩn của
+một issue chỉ được tính khi issue đó do workflow hoặc một người có quyền ghi mở.
 
 ### Idempotent
 

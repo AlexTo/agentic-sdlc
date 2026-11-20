@@ -1,6 +1,6 @@
 ---
 title: 3. Cài OpenHands
-description: Cài Agent Canvas bằng npm, chạy nó, thêm GitHub token và tạo hai agent profile.
+description: Cài Agent Canvas bằng npm, chạy nó, thêm GitHub token và tạo các agent profile Developer và Reviewer.
 sidebar:
   order: 3
 ---
@@ -8,7 +8,7 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **Kết quả:** OpenHands Agent Canvas đang chạy trên máy bạn, một GitHub token được lưu dưới dạng
-secret, và hai agent profile: `default` để triển khai và `reviewer` để review.
+secret, và hai agent profile: `developer` cho agent Developer và `reviewer` cho agent Reviewer.
 
 <Steps>
 
@@ -44,21 +44,24 @@ secret, và hai agent profile: `default` để triển khai và `reviewer` để
 
    Coding agent phải được cài và đăng nhập trên máy này, dưới cùng một user.
 
-5. **Tạo hai agent profile:**
+5. **Tạo hai agent profile**, mỗi vai trò agent một cái:
 
-   | Profile | Agent | Model |
-   | --- | --- | --- |
-   | `default` | ACP, `claude-code` | `sonnet` |
-   | `reviewer` | ACP, `claude-code` | `opus` |
+   | Profile | Vai trò | Agent | Model |
+   | --- | --- | --- | --- |
+   | `developer` | Developer | ACP, `claude-code` | `sonnet` |
+   | `reviewer` | Reviewer | ACP, `claude-code` | `opus` |
 
-   Agent và model nào cũng được. Hãy giữ reviewer ít nhất mạnh bằng agent triển khai: nó là bước
+   Agent và model nào cũng được. Hãy giữ Reviewer ít nhất mạnh bằng Developer: nó là bước
    kiểm tra cuối trước bạn.
+
+   Discava có một profile thứ ba, `tester`, cho agent Tester. Nó test các thay đổi đã merge trên
+   một stage đã deploy, thứ mà ứng dụng ghi chú không có, nên bạn không cần nó ở đây.
 
 </Steps>
 
 ## Kiểm tra kết quả
 
-Trong Agent Canvas, bắt đầu một cuộc hội thoại với profile `default` và cấp cho nó secret
+Trong Agent Canvas, bắt đầu một cuộc hội thoại với profile `developer` và cấp cho nó secret
 `GITHUB_PERSONAL_ACCESS_TOKEN`. Hỏi nó:
 
 ```text

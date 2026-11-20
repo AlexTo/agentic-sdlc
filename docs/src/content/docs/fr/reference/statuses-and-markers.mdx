@@ -26,13 +26,17 @@ Un nouveau push démarre sans le statut, donc le worker arrête de réviser dès
 | Marqueur | Où | Écrit par | Sert à |
 | --- | --- | --- | --- |
 | `<!-- agent-issue spec:<folder> group:<n> -->` | Première ligne d'une issue d'implémentation | Agent Issues | Retrouver le dossier de spec à partir d'une PR d'agent mergée (via son `Closes #n`), et ne jamais ouvrir une seconde issue pour le même groupe |
-| `<!-- openhands-review-run: <id> -->` | Chaque review de l'agent reviewer | Automatisation de code review | Agent Review Status n'agit que sur les reviews qui le portent |
+| `<!-- post-merge-test pr:<n> -->` | Première ligne d'une issue de test | Post-merge Verify | Ne jamais ouvrir une seconde issue de test pour la même pull request |
+| `<!-- openhands-review-run: <id> -->` | Chaque review de l'agent Relecteur | Automatisation de code review | Agent Review Status n'agit que sur les reviews qui le portent |
 | `<!-- openhands-review-gate:waiting:<sha> -->` | Commentaire « Review waiting on checks » | Automatisation de code review | La trace que garde le reviewer du fait qu'il attend ce head |
 | `<!-- e2e-screenshots -->` | Le commentaire E2E screenshots | PR Checks | Mettre à jour l'unique commentaire au lieu d'en ajouter un nouveau à chaque exécution |
 
+Un marqueur dans une issue ne compte que si l'issue a été ouverte par le compte propre du workflow ou par
+quelqu'un avec un accès en écriture. N'importe qui peut ouvrir une issue contenant un marqueur.
+
 ## Lignes de verdict
 
-Le reviewer termine chaque review par l'une de ces lignes, seule sur sa ligne :
+Le Relecteur termine chaque review par l'une de ces lignes, seule sur sa ligne :
 
 ```text
 ✅ APPROVED
@@ -48,5 +52,6 @@ mentionner l'expression en passant ne compte pas.
 | --- | --- | --- |
 | `openhands/issue-<n>` | Automatisation issue-to-PR | C'est la seule branche que le worker révise, et la seule à laquelle répondent les workflows de correction |
 | `openhands/issue-<n>-2`, … | Automatisation issue-to-PR, sur une issue dont le label a été remis | Jamais révisée automatiquement |
-| tout ce qui commence par `openhands/` | Branches d'agent | En merger une fait avancer la chaîne |
+| `openhands/test-fix-<n>` | Automatisation issue tester, pour l'issue de test `<n>` | Une correction que le Testeur a trouvée en testant. Jamais révisée automatiquement |
+| tout ce qui commence par `openhands/` | Branches d'agent | En merger une fait avancer la chaîne. Dans Discava, une pull request issue d'une telle branche est verrouillée à son ouverture |
 | `spec/<name>` (tout autre nom) | Personnes | Ne fait avancer la chaîne qu'avec `spec-ready` |

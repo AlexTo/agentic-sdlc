@@ -12,9 +12,11 @@ sidebar:
 | **Perfil de agente** | Un ajuste de OpenHands que indica el agente y el modelo que usa una conversación |
 | **`AGENTS.md`** | El archivo de guía para agentes en la raíz del repositorio: comandos, arquitectura, convenciones |
 | **Automatización** | Un worker programado de OpenHands que lee GitHub e inicia conversaciones de agentes |
+| **Rol de agente** | Uno de los tres trabajos que hace un agente: Desarrollador, Revisor o Tester. Cada uno es una automatización de OpenHands con su propio prompt y su propio perfil de agente |
 | **Constitución** | `.specify/memory/constitution.md`. Las reglas del proyecto contra las que se comprueba cada plan |
 | **Constitution Check** | La sección de `plan.md` donde se comprueba el plan contra la constitución |
-| **Intento de corrección** | Una ronda automática de devolver el trabajo al agente. Se cuenta con `ci-fix-<n>` o `review-fix-<n>` |
+| **Agente Desarrollador** | El rol que implementa una issue como un pull request y lo revisa cuando se le devuelve |
+| **Intento de corrección** | Una ronda automática de devolver el trabajo al agente Desarrollador. Se cuenta con `ci-fix-<n>` o `review-fix-<n>` |
 | **Pegamento** | Los workflows y scripts que pasan el trabajo entre Speckit, OpenHands y CI |
 | **Grupo** | Las fases que cubre una issue de implementación. El grupo 0 llega hasta la primera historia de usuario |
 | **Control humano** | Una decisión que solo toma una persona: aprobar la spec, aprobar el PR, desplegar a producción |
@@ -22,9 +24,13 @@ sidebar:
 | **Invariante** | Una regla sobre todos los datos, comprobada después de cada test e2e |
 | **Marcador** | Un comentario HTML oculto que usa el pegamento para encontrar sus propias issues y comentarios |
 | **Issue padre** | La issue de seguimiento de una feature, indicada en `spec.md` y referenciada por cada PR |
+| **Test post-merge** | El test que hace el agente Tester de un pull request fusionado en el stage de desarrollo desplegado |
 | **Fase** | Una sección `## Phase <n>: <title>` de `tasks.md` |
+| **Agente Revisor** | El rol que revisa un pull request cuando han terminado sus checks |
 | **Turno de revisión** | Un mensaje a una conversación de agente existente, pidiéndole que corrija su PR |
 | **Carpeta de spec** | `specs/<timestamp>-<name>/`, que contiene la spec, el plan y las tareas de una feature |
 | **`software-factory/review`** | El commit status que, en estado `failure`, hace que OpenHands revise un PR |
 | **Speckit** | El toolkit de desarrollo guiado por specs de GitHub (`specify-cli`) |
 | **Estancado** | Un grupo cuya issue existe pero cuyas tareas no están todas marcadas, así que no se abre ninguna issue nueva |
+| **Issue de test** | La issue que abre Post-merge Verify para un pull request desplegado, con la label `openhands-test`. Dice qué probar, nunca cómo |
+| **Agente Tester** | El rol que prueba de extremo a extremo un cambio fusionado en el stage desplegado (la UI, las API y los datos escritos en el almacenamiento) e informa en la issue de test |

@@ -9,6 +9,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 **Al terminar tendrás:** OpenHands consultando tu fork cada cinco minutos. Implementa las issues
 con la label `openhands`, revisa de nuevo los PR marcados como fallidos y hace review de los PR con la label `openhands-review`.
+Estos son los agentes Desarrollador y Revisor.
 
 Ambas automatizaciones vienen del **automation catalog** de Agent Canvas. Rellenas un formulario y el
 catálogo empaqueta un worker probado con tu configuración. No escribes ni subes código.
@@ -22,14 +23,14 @@ catálogo empaqueta un worker probado con tu configuración. No escribes ni sube
    | Repositories | `<you>/agentic-sdlc` |
    | Trigger label | `openhands` |
    | Branch prefix | `openhands/issue` |
-   | Pull request mode | Draft |
+   | Pull request mode | Ready for review |
    | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-   | Agent profile | `default` |
+   | Agent profile | `developer` |
    | Check frequency | `*/5 * * * *` |
    | Timezone | la tuya |
 
    Discava usa la versión 1.2.4 de la plantilla. El prompt del worker le indica al agente que añada la
-   label `openhands-review` después de abrir un PR, para que los PR nuevos lleguen al revisor aunque sean drafts.
+   label `openhands-review` después de abrir un PR, para que cada PR nuevo llegue al Revisor.
 
 2. **Añade "GitHub code review"** desde el catálogo:
 
@@ -62,15 +63,23 @@ Una primera ejecución sin nada que hacer registra un recorrido del repositorio 
 
 1. Crea una issue de prueba: "Add a line to README.md saying hello", y añade la label `openhands`.
 2. En una consulta, aparece en Agent Canvas una conversación para la issue.
-3. Cuando el agente termina, aparece un PR en draft en `openhands/issue-<n>`, con el título `[#<n>] <issue
+3. Cuando el agente termina, aparece un PR en `openhands/issue-<n>`, con el título `[#<n>] <issue
    title>`, y con `openhands-review` añadida.
-4. Cuando terminan sus checks, el revisor publica una review que empieza por
+4. Cuando terminan sus checks, el agente Revisor publica una review que empieza por
    "_This review was posted by an AI agent (OpenHands)._" y termina en `✅ APPROVED` o
    `🔄 CHANGES REQUESTED`.
 
 Después, cierra el PR y borra la rama.
 
 Lo que hace cada automatización en cada consulta está en [El runtime del agente](../../concepts/the-agent-runtime/).
+
+<Aside type="tip" title="El tercer rol: Tester">
+Discava ejecuta una tercera automatización, el Tester, que prueba cada cambio fusionado en su stage de
+desarrollo desplegado. Necesita un despliegue que probar, así que no forma parte de esta configuración.
+Cuando tu repositorio se despliegue solo, consulta
+[Verificación post-merge](../../discava/post-merge-verify/) y
+[Los prompts de los agentes](../../discava/agent-prompts/).
+</Aside>
 
 <Aside type="note">
 Para darle al agente otro intento con una issue desde cero, quita y vuelve a poner la label `openhands`.

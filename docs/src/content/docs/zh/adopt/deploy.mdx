@@ -1,13 +1,13 @@
 ---
-title: 9. 部署与安全扫描（可选）
-description: 把每个全绿的 main 部署到开发 stage，让生产环境部署需要批准，并在每次部署前进行扫描。
+title: 9. 部署、安全扫描与合并后测试（可选）
+description: 把每个全绿的 main 部署到开发 stage，让生产环境部署需要批准，在每次部署前进行扫描，并让测试智能体测试已部署的内容。
 sidebar:
   order: 9
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**完成后你将拥有：** 每次推送到 `main` 时运行的 Trivy 扫描、一个把每个全绿的 `main` 发布到开发 stage 的 Deploy workflow，以及需要等人批准的生产部署。
+**完成后你将拥有：** 每次推送到 `main` 时运行的 Trivy 扫描、一个把每个全绿的 `main` 发布到开发 stage 的 Deploy workflow、需要等人批准的生产部署，以及（如果你需要的话）一个在开发 stage 上测试每个已合并变更的测试智能体。
 
 这一步的细节是 Discava 特有的（AWS、CDK），但整体形态适用于任何云。这个仓库中的示例笔记应用没有部署，所以请从 [Discava 的 `deploy.yml`](https://github.com/AlexTo/discava/blob/main/.github/workflows/deploy.yml) 复制。
 
@@ -59,14 +59,35 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 5. **保护生产环境。** 在 **Settings → Environments** 下，打开你的生产 stage 对应的 environment，添加 **Required reviewers**。要部署它，打开 **Actions → Deploy → Run
    workflow** 并输入生产 stage。job 随后会等待批准。
 
+6. **添加测试智能体**，如果你希望每个已部署的变更都得到测试（缺口 11）。这是最新的一个部件，它位于 Discava 中，而不在这个仓库里。从那里复制：
+
+   - `packages/tooling/agent/src/post-merge-test/`、`src/agent-lock/` 和 `src/helpers/`，以及它们的
+     Nx target `post-merge-test` 和 `agent-lock`
+   - `.github/workflows/post-merge-verify.yml` 和 `agent-lock.yml`
+   - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`，用于手动打开测试 issue
+
+   然后设置 stage 名称（`TEST_STAGE`），以及永远不会进入已部署栈的路径（`plan.ts` 中的 `NOT_DEPLOYED`），使它们与你的仓库相符。
+
+   在 OpenHands 这一侧，添加一个 `tester` agent profile，以及一个轮询带 `openhands-test` 标签的 issue 的自动化。目录中没有它的模板。Discava 的 worker 及其提示词见 [OpenHands 配置](../../discava/openhands-setup/#测试智能体github-issue-tester)和[智能体的 prompt](../../discava/agent-prompts/#测试智能体)。给测试智能体提供：
+
+   - 一个已登录开发账号的云 CLI，权限以测试所需的最小范围为限
+   - 应用中每个角色一个测试用户，作为 OpenHands secret 存储
+   - 一个它可以驱动的浏览器，例如带 Chromium 的 Playwright
+
+   <Aside type="caution">
+   测试智能体在持有这些凭证的同时阅读 issue 和 pull request。请保留加锁机制（`agent-lock.yml` 和 `helpers/conversation-lock.ts`），把“如何测试”放在自动化自己的提示词中而不是 issue 里，并且永远不要让它指向数据重要的 stage。
+   </Aside>
+
 </Steps>
 
 ## 检查是否成功
 
 合并任意一个 PR。CI 运行后，**Deploy** 会以开发 stage 自动启动。在一个较旧的 commit 上手动再运行一次 CI：Deploy 会记录 `Skipping deploy: no longer main's latest commit`，并且什么都不发布。
 
+配置好测试智能体之后：这次部署完成后，**Post-merge Verify** 会打开一个已锁定的 issue，标题为 `test(post-merge): verify #<pr> …`，带有 `openhands-test` 标签。在一次轮询之内，测试智能体就会启动，它的报告会以评论的形式出现在该 issue 上。
+
 <Aside type="note">
-智能体从不部署，也从不接触这些角色。它的对话只拥有 GitHub token。部署角色只会被从 `main` 运行、处于该 stage 的 environment 中的 workflow 所承担。
+没有任何智能体会部署，也没有任何智能体会接触这些角色。开发智能体和评审智能体只需要 GitHub token。测试智能体对开发账号的访问与部署角色是分开的，部署角色只会被从 `main` 运行、处于该 stage 的 environment 中的 workflow 所承担。
 </Aside>
 
 下一步：你的仓库现在已经拥有这个仓库的 fork 所拥有的一切。用你自己的仓库代替 fork，从 [2. 配置仓库](../../setup/github-repository/)继续。

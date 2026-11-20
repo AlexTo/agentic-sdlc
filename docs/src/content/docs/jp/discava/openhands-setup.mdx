@@ -1,6 +1,6 @@
 ---
 title: OpenHands のセットアップ
-description: Discava が動かしているとおりの Agent Canvas、エージェントプロファイル、2 つの automation。
+description: Discava が動かしているとおりの Agent Canvas、エージェントプロファイル、3 つの automation (開発担当、レビュー担当、テスト担当)。
 sidebar:
   order: 4
 ---
@@ -32,10 +32,15 @@ Agent Canvas 1.41.0 を npm (`@openhands/agent-canvas`) からインストール
 
 ## エージェントプロファイル
 
-| プロファイル | エージェント | モデル | 使用元 |
-| --- | --- | --- | --- |
-| `default` | Claude Code (ACP) | Sonnet | GitHub issue to PR |
-| `reviewer` | Claude Code (ACP) | Opus | GitHub code review |
+エージェントの役割ごとに 1 つのプロファイルがあります。
+
+| プロファイル | 役割 | エージェント | モデル | 使用元 |
+| --- | --- | --- | --- | --- |
+| `developer` | 開発担当 | Claude Code (ACP) | Sonnet | GitHub issue to PR |
+| `reviewer` | レビュー担当 | Claude Code (ACP) | Opus | GitHub code review |
+| `tester` | テスト担当 | Claude Code (ACP) | Opus | GitHub issue tester |
+
+いずれもプロンプトのタイムアウトは 30 分です。
 
 ## シークレット
 
@@ -43,18 +48,42 @@ Agent Canvas (**Settings → Secrets**) に、名前ごとに保存されてい�
 
 | 名前 | 用途 |
 | --- | --- |
-| `GITHUB_PERSONAL_ACCESS_TOKEN` | automation はこれで GitHub を読む。会話はこれを受け取って clone、push、PR の作成を行う |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | automation はこれで GitHub を読む。会話はこれを受け取って clone、push、PR の作成、レビュー、コメントを行う |
 | `OPENHANDS_AUTOMATION_API_KEY` | automation バックエンド自身のキー |
+| `DISCAVA_STUDENT_USERNAME`, `DISCAVA_STUDENT_PASSWORD` | `discava-development` 上の、テスト担当の受講者 |
+| `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | テスト担当の講師 |
+| `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | テスト担当の管理者 |
 
 GitHub トークンはメンテナーのアカウントの personal access token で、リポジトリの contents、
 issues、pull requests、workflows への書き込み権限を持っています。
 
-## 2 つの automation
+6 つの `DISCAVA_*` シークレットは、開発ステージ上の Cognito のテストユーザーで、アプリのロールごとに 1 人です。
+テスト担当はこれらでポータルにサインインし、API トークンを取得します。
 
-どちらも手で書いたものではなく、Agent Canvas の automation カタログからインストールしました。それぞれが
-ポーリングで何をするかは [エージェントのランタイム](../../concepts/the-agent-runtime/#2-つの-automation) にあります。
+## テスト担当がマシン上で使うもの
 
-### GitHub issue to PR
+開発担当とレビュー担当に必要なのは Node、pnpm、git、`gh` だけです。テスト担当は次のものも使います。
+
+| ツール | 用途 |
+| --- | --- |
+| `discava-development-*` スタックを持つアカウントにサインインした AWS CLI | ステージを見つける (スタックの出力)、Cognito のトークンを取得する、DynamoDB、S3、CloudWatch のログを読む。プロンプトで読み取り専用で使うよう指示されている |
+| Chromium 付きの Playwright | デプロイされたポータルを操作する |
+| Discava のチェックアウトの `tmp/screenshots/` | スクリーンショットの保存先。pull request ごとに 1 フォルダー |
+
+<Aside type="caution">
+Discava でエージェントがクラウドへのアクセスを持って作業するのは、ここだけです。だからこそステージは使い捨てのデータを持つ
+`discava-development` であり、エージェントが読むものはすべて[ロック](../post-merge-verify/#agent-lock)されています。
+チームで使う場合は、テスト担当に専用の読み取り専用ロールと、専用のマシンまたは VM を与えてください。
+</Aside>
+
+## 3 つの automation
+
+最初の 2 つは手で書いたものではなく、Agent Canvas の automation カタログからインストールしました。3 つ目は
+Discava 独自のものです。それぞれがポーリングで何をするかは
+[エージェントのランタイム](../../concepts/the-agent-runtime/#3-つの-automation) に、それぞれがエージェントに渡す
+プロンプトは [エージェントのプロンプト](../agent-prompts/) にあります。
+
+### 開発担当: GitHub issue to PR
 
 | フィールド | 値 |
 | --- | --- |
@@ -62,15 +91,15 @@ issues、pull requests、workflows への書き込み権限を持っています
 | Repository | `AlexTo/discava` |
 | Trigger label | `openhands` |
 | Branch prefix | `openhands/issue` → ブランチ `openhands/issue-<n>` |
-| Pull request mode | Draft |
+| Pull request mode | Ready for review |
 | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
 | Schedule | `*/5 * * * *`、Australia/Sydney |
-| Agent profile | `default` |
+| Agent profile | `developer` |
 
 修正のターンでは、終わったあとに `openhands-review` ラベルを付け直すようエージェントに指示するので、
 新しい head がレビューされます。
 
-### GitHub code review
+### レビュー担当: GitHub code review
 
 | フィールド | 値 |
 | --- | --- |
@@ -84,15 +113,46 @@ issues、pull requests、workflows への書き込み権限を持っています
 | Schedule | `*/5 * * * *`、Australia/Sydney |
 | Agent profile | `reviewer` |
 
-チェックがまだ実行中のあいだ、レビュアーは "⏳ Review waiting on checks" というコメントを投稿し、
+チェックがまだ実行中のあいだ、レビュー担当は "⏳ Review waiting on checks" というコメントを投稿し、
 後のスキャンで再試行します。レビューは "_This review was posted by an AI agent
 (OpenHands)._" で始まり、隠しマーカー `<!-- openhands-review-run: <id> -->` を含みます。
 
+### テスト担当: GitHub issue tester
+
+これにはカタログのテンプレートがありません。カタログのテンプレートが使うのと同じ GitHub と会話のヘルパーの上に作った
+100 行ほどのワーカーで、プロンプトはその隣のファイルにあります。
+
+| フィールド | 値 |
+| --- | --- |
+| Template | なし: 手で書いた `worker.py`、`prompt.md`、`config.json` |
+| Repository | `AlexTo/discava` |
+| Trigger label | `openhands-test` |
+| Issue authors | `github-actions[bot]` |
+| Branch prefix | `openhands/test-fix` → 修正ブランチ `openhands/test-fix-<n>` |
+| New tests per scan | 2 |
+| Prompt file | `prompt.md` |
+| GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+| Schedule | `*/5 * * * *`、Australia/Sydney |
+| Agent profile | `tester` |
+
+ポーリングのたびに、ワーカーは次のことを行います。
+
+1. `openhands-test` が付いた開いている issue を、番号の小さい順に列挙します。
+2. **Issue authors** のいずれかが開いたものではない issue はスキップします。issue の本文はエージェントが読むものの
+   一部になるので、ワークフロー自身の issue だけをテストします。
+3. ラベルを付けた最新のイベントを探します。issue 番号とそのイベントの ID で 1 回の配信になるので、同じラベル付けに対する
+   後のポーリングは無視され、テスト担当自身のコメントが 2 回目のテストを始めることはありません。ラベルを外して付け直すと
+   新しいイベントになり、新しいテストになります。
+4. その issue の会話をプロンプトで開始または再開します。新しいテストはポーリングごとに 2 件までです。
+
+ポーリングの対象になる issue は [Post-merge Verify](../post-merge-verify/) が開きます。テスト担当の
+コメントは "_This comment was posted by an AI agent (OpenHands)._" で終わります。
+
 <Aside type="caution" title="すべてを 1 つのアカウントで">
-Discava では、実装エージェント、レビュアー、メンテナーがすべて同じ GitHub アカウントを使っています。
-GitHub ではアカウントが自分の PR を承認できないため、レビュアーの判定は `COMMENTED` レビューとして
-投稿され、glue はレビューの状態ではなく判定の行を読みます。チームで使う場合は、automation に別の
-マシンアカウントを与えてください。
+Discava では、開発担当、レビュー担当、テスト担当、メンテナーがすべて同じ GitHub アカウントを使っています。
+GitHub ではアカウントが自分の PR を承認できないため、レビュー担当の判定は `COMMENTED` レビューとして
+投稿され、glue はレビューの状態ではなく判定の行を読みます。同じ理由で、テスト担当のレポートはメンテナーの
+コメントとして表示されます。チームで使う場合は、automation に別のマシンアカウントを与えてください。
 </Aside>
 
-次へ: [spec から issue へ](../spec-to-issue/)。
+次へ: [エージェントのプロンプト](../agent-prompts/)。

@@ -33,7 +33,7 @@ sidebar:
 | --- | --- | --- |
 | "⏳ Review waiting on checks" and no review | A check on the head hasn't finished, or is stuck queued | Find the pending check. A required check that never runs blocks the review forever |
 | Review says `🔄 CHANGES REQUESTED`, no `review-fix-*` label | The review lacks the run marker, isn't from an account with write access, or the PR moved on | Read the Agent Review Status notice |
-| Reviews show as "Commented", not "Approved" | The reviewer posts as the same account that opened the PR, and GitHub doesn't allow self-approval | Expected with one account. Use a machine account for the agents |
+| Reviews show as "Commented", not "Approved" | The Reviewer posts as the same account that opened the PR, and GitHub doesn't allow self-approval | Expected with one account. Use a machine account for the agents |
 
 ## Checks
 
@@ -43,6 +43,16 @@ sidebar:
 | Every PR's e2e job downloads Chromium | The cache is only saved on `main` | Keep CI's `playwright-cache` job, with the same key as PR Checks |
 | `Check for mutations` fails on `main` | Something generated files the PR didn't commit | Run `pnpm build` locally and commit the diff |
 | `Resource not accessible by integration` when labelling | The workflow token can write issues but not pull requests | Add `pull-requests: write` to the workflow |
+
+## Post-merge tests
+
+| Symptom | What's happening | What to do |
+| --- | --- | --- |
+| A PR was deployed, no test issue | It changed nothing that is deployed (docs, specs, tests, tooling or CI only), it carries `skip-deploy-test`, or the Deploy run shipped nothing because its commit was no longer `main`'s latest | Read the Post-merge Verify run's notices. To test it anyway, run the workflow by hand with the PR number |
+| Test issue opened, the Tester never picks it up | The issue has no `openhands-test` label because something it points at couldn't be locked, or it was opened by an account the automation doesn't trust | The Post-merge Verify run fails and names what to lock. Lock it, then add the label by hand |
+| The Tester reported, and you want another run | Each labelling is tested once | Remove and re-apply `openhands-test` |
+| Report says "blocked" | The stage is missing something the change needs, such as a connected payment account | Fix the stage, then re-apply the label |
+| The **E2E screenshots** comment is missing on an agent PR | The PR is locked, and GitHub refuses the Actions token a comment on a locked conversation | Read the list in the `E2E screenshots` job's summary |
 
 ## Deploy
 

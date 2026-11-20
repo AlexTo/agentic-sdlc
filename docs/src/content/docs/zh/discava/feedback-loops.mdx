@@ -1,6 +1,6 @@
 ---
 title: 反馈循环
-description: Agent CI Status 和 Agent Review Status，这两个把智能体送回去的 workflow。
+description: Agent CI Status 和 Agent Review Status，这两个把开发智能体送回去的 workflow。
 sidebar:
   order: 6
 ---
@@ -15,6 +15,8 @@ head 上一个名为 `software-factory/review`、状态为 `failure` 的 commit 
 
 `.github/workflows/agent-ci.yml` 在 `workflow_run` 上运行，即当 **PR Checks** 针对 `openhands/issue-`
 分支上的 pull request 以 `failure` 或 `timed_out` 完成时。它检出默认分支，并运行 `agent-ci-status`。
+两个 workflow 共用的步骤放在一个可复用的 workflow `agent-status.yml` 中。每个调用方保留自己的触发器、
+条件、并发组和权限。
 
 `workflow_run` 很关键。它在默认分支的上下文中运行，带有一个可写的 token，即使 PR Checks 是用只读
 token 在 PR 的代码上运行的。
@@ -51,8 +53,8 @@ token 在 PR 的代码上运行的。
 然后是与 CI 相同的步骤：`review-fix-<n>`、链接到该评审的失败状态，以及五次之后的
 `review-fix-exhausted`。
 
-智能体推送之后，评审者会自行重新评审，因为修改 prompt 会让智能体重新加上 `openhands-review`，而新的
-head commit 会被视为一次新的评审。
+开发智能体推送之后，评审智能体会自行重新评审，因为[修改 prompt](../agent-prompts/#开发智能体) 会让
+开发智能体重新加上 `openhands-review`，而新的 head commit 会被视为一次新的评审。
 
 ## 在 PR 上是什么样子
 
@@ -64,14 +66,16 @@ head commit 会被视为一次新的评审。
    failing `E2E tests (4/4)` shard: my new scenario […] hit a strict-mode violation, because
    `getByText('4.5')` matched both the rating and the `4.5 and up` option […]. I fixed both
    locators."*
-4. 评审者看到新 head 上的检查仍在运行，于是评论 "⏳ Review waiting on checks"。在之后的一次扫描中，
+4. 评审智能体看到新 head 上的检查仍在运行，于是评论 "⏳ Review waiting on checks"。在之后的一次扫描中，
    一切都变绿了。它评审 `94b9ee3`，并以 `✅ APPROVED` 结尾。
-5. `main` 被合并进该分支。评审者再次评审新的 head 并批准它。
+5. `main` 被合并进该分支。评审智能体再次评审新的 head 并批准它。
 6. 一个人进行合并。
 
 <Aside type="tip">
 两个脚本都接受 `DRY_RUN=true`，它会把计划以 JSON 打印出来，而不做任何修改。把 `GITHUB_EVENT_PATH`
 指向一个保存下来的事件负载，就可以重放一个真实案例。
 </Aside>
+
+合并之后，当测试智能体接手时会发生什么，见[合并后验证](../post-merge-verify/)。
 
 下一步：[PR 检查](../pr-checks/)。

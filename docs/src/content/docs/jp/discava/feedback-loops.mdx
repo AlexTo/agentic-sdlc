@@ -1,6 +1,6 @@
 ---
 title: フィードバックループ
-description: エージェントを差し戻す 2 つのワークフロー、Agent CI Status と Agent Review Status。
+description: 開発担当エージェントを差し戻す 2 つのワークフロー、Agent CI Status と Agent Review Status。
 sidebar:
   order: 6
 ---
@@ -16,7 +16,8 @@ import { Aside } from '@astrojs/starlight/components';
 
 `.github/workflows/agent-ci.yml` は `workflow_run` で実行されます。`openhands/issue-` ブランチの pull request に
 対して **PR Checks** が `failure` または `timed_out` で完了したときです。デフォルトブランチをチェックアウトし、
-`agent-ci-status` を実行します。
+`agent-ci-status` を実行します。2 つのワークフローに共通する手順は、1 つの再利用可能なワークフロー
+`agent-status.yml` にあります。呼び出し側はそれぞれ、独自のトリガー、条件、concurrency グループ、権限を持ちます。
 
 `workflow_run` であることが重要です。PR Checks は PR のコード上で読み取り専用のトークンで実行されましたが、
 これはデフォルトブランチのコンテキストで、書き込みできるトークンを使って実行されます。
@@ -49,13 +50,13 @@ import { Aside } from '@astrojs/starlight/components';
 | チェック | 理由 |
 | --- | --- |
 | author association が `OWNER`、`MEMBER`、`COLLABORATOR` のいずれか | 書き込み権限を持つ人だけがトリガーできる |
-| 本文に `<!-- openhands-review-run: … -->` がある | 人がそれを引用したのではなく、レビュアーエージェントのレビューである |
+| 本文に `<!-- openhands-review-run: … -->` がある | 人がそれを引用したのではなく、レビュー担当エージェントのレビューである |
 | 本文にちょうど `🔄 CHANGES REQUESTED` である行がある | 判定そのものであって、判定への言及ではない |
 
 その後は CI と同じ手順です: `review-fix-<n>`、レビューにリンクした失敗のステータス、そして 5 回の後は
 `review-fix-exhausted`。
 
-レビュアーは、エージェントが push した後に自分で再レビューします。修正のプロンプトがエージェントに
+レビュー担当は、開発担当が push した後に自分で再レビューします。[修正のプロンプト](../agent-prompts/#開発担当)が開発担当に
 `openhands-review` を付け直すよう指示し、新しい head コミットは新しいレビューとして扱われるからです。
 
 ## PR 上ではどう見えるか
@@ -68,14 +69,17 @@ import { Aside } from '@astrojs/starlight/components';
    failing `E2E tests (4/4)` shard: my new scenario […] hit a strict-mode violation, because
    `getByText('4.5')` matched both the rating and the `4.5 and up` option […]. I fixed both
    locators."*
-4. レビュアーは新しい head でまだチェックが実行中なのを見て、"⏳ Review waiting on
+4. レビュー担当は新しい head でまだチェックが実行中なのを見て、"⏳ Review waiting on
    checks" とコメントします。後のスキャンではすべてグリーンです。`94b9ee3` をレビューし、`✅ APPROVED` で締めくくります。
-5. `main` がブランチにマージされます。レビュアーは新しい head を再びレビューし、承認します。
+5. `main` がブランチにマージされます。レビュー担当は新しい head を再びレビューし、承認します。
 6. 人がマージします。
 
 <Aside type="tip">
 どちらのスクリプトも `DRY_RUN=true` を受け付け、plan を JSON で出力して何も変更しません。
 `GITHUB_EVENT_PATH` を保存したイベントペイロードに向ければ、実際のケースを再現できます。
 </Aside>
+
+マージの後、テスト担当エージェントが引き継いでから何が起きるかは、
+[マージ後の検証](../post-merge-verify/) にあります。
 
 次へ: [PR のチェック](../pr-checks/)。

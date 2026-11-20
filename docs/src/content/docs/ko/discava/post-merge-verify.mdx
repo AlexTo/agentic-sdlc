@@ -1,0 +1,284 @@
+---
+title: merge 후 검증
+description: discava-development에 배포된 각 pull request가 테스터 에이전트를 위한 테스트 issue가 되는 방식, 그리고 에이전트가 읽는 모든 것이 잠기는 방식.
+sidebar:
+  order: 9.5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+빈틈 11: merge 전의 모든 검사는 로컬 대체물을 대상으로 실행되었고, 변경이 실제로 실행되는 곳에서 이를 살펴보는
+사람은 없습니다. Discava는 세 번째 에이전트 역할로 이 빈틈을 메웁니다. `discava-development`로 배포할 때마다
+workflow가 그 배포에 실린 pull request마다 테스트 issue를 열고, **테스터 에이전트**가 stage에서 그 변경을
+테스트합니다. 실제 브라우저에서 포털을, 테스트 사용자로 API를, 그리고 변경이 쓴 데이터를 확인합니다.
+
+```d2
+direction: down
+
+deploy: "Deploy\n(discava-development)"
+verify: "Post-merge Verify\npost-merge-test"
+issue: "테스트 issue\n잠근 다음 openhands-test" {shape: page}
+tester: "테스터 에이전트\n(OpenHands, 다음 폴링)"
+stage: discava-development {shape: cylinder}
+report: "issue에 남긴 보고서" {shape: document}
+fix: "수정 PR\nopenhands/test-fix-<n>" {shape: page}
+
+deploy -> verify: 완료
+verify -> issue: 배포된 PR당 하나
+issue -> tester
+tester -> stage: "Playwright, API, AWS CLI"
+tester -> report
+tester -> fix: "작고 분명한 수정만" {style.stroke-dash: 3}
+```
+
+## Post-merge Verify
+
+`.github/workflows/post-merge-verify.yml`은 **Deploy**가 끝날 때 `workflow_run`으로 실행되고, pull request 번호를
+주어 수동으로도 실행할 수 있습니다. 기본 브랜치를 checkout하고 `post-merge-test`를 실행합니다. 실행들은
+concurrency 그룹 하나를 공유하므로, 연달아 일어난 두 배포가 같은 pull request에 issue 두 개를 열 수 없습니다.
+
+스크립트(`src/post-merge-test/`)는 다음을 합니다.
+
+1. **실행이 테스트 stage를 배포했는지 확인합니다.** Deploy 실행의 job을 읽습니다. `Deploy` 단계가 건너뛰어진
+   실행(커밋이 더 이상 `main`의 최신이 아니었던 경우)은 아무것도 배포하지 않았고, 다른 stage에 대한 실행은
+   테스트하지 않습니다.
+2. **배포에 실린 것을 찾습니다.** 건너뛰어진 배포는 자기 커밋을 다음 배포에 넘기므로, 배포 하나에 merge 여러 개가
+   담길 수 있습니다. 그래서 stage의 직전 성공한 배포와 이번 배포 사이의 커밋들, 그리고 각 커밋이 merge된 pull
+   request를 가져옵니다.
+3. **pull request마다 결정합니다** (`plan.ts`의 `decide()`). 다음 경우에는 issue를 열지 않습니다.
+   - 이미 issue가 있는 경우(숨겨진 마커로 찾습니다)
+   - `skip-deploy-test` label이 붙어 있는 경우
+   - 배포되는 것을 아무것도 바꾸지 않는 경우: 문서, spec, 테스트, 도구, CI 등 스택에 결코 도달하지 않는 파일만
+     바꿈
+4. **issue를 렌더링합니다** (`renderIssue()`). 무엇을 테스트할지만 말합니다.
+5. **label 없이 열고, 잠근 다음, label을 붙입니다.** issue, 그것이 테스트하는 pull request, 그 pull request가 닫는
+   issue가 모두 잠깁니다. 그제야 `openhands-test`가 붙습니다. 하나라도 잠글 수 없으면 label은 끝내 붙지 않고
+   실행이 실패하며, 직접 잠가야 할 것을 알려 줍니다.
+
+pull request 번호를 주어 수동으로 실행하면 issue가 이미 있어도 새로 엽니다. 변경을 처음부터 다시 테스트하는
+방법입니다.
+
+## 열리는 issue
+
+실제 issue [#654](https://github.com/AlexTo/discava/issues/654):
+
+```markdown
+<!-- post-merge-test pr:647 -->
+
+## What to test
+
+- Pull request: #647 (feat(stripe-checkout): a refund takes access away)
+- Issue it closes: #646
+- Merged as `b4dc4f7…`, deployed to `discava-development` at `b4dc4f7…` ([Deploy run](…))
+- Kind: **UI change**. It changes a portal: sign in as the user the change is for and click
+  through the flow with Playwright, then call the APIs behind it and check the stored data.
+
+<details><summary>Deployed files it changes (4)</summary>
+
+- `packages/events/src/local/stripe-stand-in.ts`
+- `packages/events/src/payments/events/charge-refunded.ts`
+- `packages/events/src/payments/stripe-webhook.ts`
+- `packages/websites/student-portal/src/routes/learn/$courseId/-components/enrolment-actions.tsx`
+
+</details>
+```
+
+제목은 `test(post-merge): verify #647 a refund takes access away`입니다. 최대 100자의 Conventional Commit
+헤더이므로 테스터가 그대로 다시 쓸 수 있습니다. kind는 pull request가 포털이나 공유 컴포넌트를 건드리면
+`UI change`이고, 그렇지 않으면 `backend change or fix`입니다.
+
+<Aside type="note" title="무엇을 테스트할지만, 어떻게는 절대 아님">
+issue에는 지시 사항이 없습니다. 어떻게 테스트할지(도구, 테스트 사용자, 확인 항목, 보고서)는 OpenHands에 있는
+테스터 자신의 [프롬프트](../agent-prompts/#테스터)이므로, issue를 편집할 수 있는 누구도 이를 바꿀 수 없습니다.
+`.github/ISSUE_TEMPLATE/test-deployed-pr.md`는 issue를 직접 열 때 쓰는 같은 양식입니다.
+</Aside>
+
+## 테스터가 하는 일
+
+다음 폴링 때 `github-issue-tester` automation이 issue를 가져가서 테스터를 시작합니다. 프롬프트에는 여덟 단계가
+있습니다.
+
+1. pull request, 그 diff, 그것이 닫는 issue, 그 spec으로부터 무엇이 바뀌었는지 파악하고, 이제 무엇이 참이어야
+   하는지 적어 둡니다.
+2. UI가 있으면 테스트합니다. Playwright로 Cognito 호스팅 페이지에서 로그인하고, 흐름을 클릭해 보고, 단계마다
+   스크린샷을 찍고, 하나하나 살펴봅니다.
+3. 테스트 사용자의 access token으로 API를 호출합니다. 오류 사례도 포함합니다.
+4. 저장된 데이터를 확인합니다. DynamoDB 항목, OpenSearch 문서, S3 객체, 그리고 Lambda의 로그입니다.
+5. `pmt-<pr>-<what>`으로 이름 붙인 자기 데이터를 사용합니다.
+6. issue에 보고합니다. 무엇을 테스트했는지, 모든 확인 항목의 통과 여부와 증거를 담은 표, 그리고 판정입니다.
+7. 통과하면 issue를 닫습니다. 실패하면 재현 단계와 함께 열어 둡니다. 원인이 분명하고 수정이 작을 때만 수정 pull
+   request를 엽니다.
+8. 인프라, IAM, 사용자, stage 설정을 바꾸거나, 배포하거나, 다른 stage에 손대거나, workflow를 편집하거나,
+   merge하는 일은 절대 하지 않습니다.
+
+## 실제 실행: 끝내 정산되지 않은 결제
+
+workflow가 연 첫 테스트 issue는 merge 전의 모든 검사가 지나친 결함을 찾아냈습니다. 시각은 모두 2026년 11월 20일의
+UTC입니다.
+
+| 시각 | 누가 | 무슨 일이 있었나 |
+| --- | --- | --- |
+| 07:02 | 사람 | issue [#646](https://github.com/AlexTo/discava/issues/646)을 닫는 [#647](https://github.com/AlexTo/discava/pull/647), "a refund takes access away"를 merge합니다. 개발자 에이전트가 이를 작성하고 빨간 CI 실행 두 번을 스스로 고쳤으며, 리뷰어 에이전트가 [승인](https://github.com/AlexTo/discava/pull/647#pullrequestreview-5988208805)했습니다 |
+| 07:08 | Deploy | `main`을 `discava-development`에 [배포](https://github.com/AlexTo/discava/actions/runs/44692771527)합니다. 9분이 걸립니다 |
+| 07:18 | Post-merge Verify | [#654](https://github.com/AlexTo/discava/issues/654)를 열고, 잠근 다음, `openhands-test`를 붙입니다 |
+| 07:26 | 테스터 에이전트 | [첫 번째 보고서](https://github.com/AlexTo/discava/issues/654#issuecomment-7033260676): **막힘**. stage에 결제 계정이 연결되어 있지 않습니다 |
+| 10:27 | 테스터 에이전트 | [두 번째 보고서](https://github.com/AlexTo/discava/issues/654#issuecomment-7037199284): **여전히 막힘**. 바뀐 것이 없습니다 |
+| 10:43 | 테스터 에이전트 | 이제 Stripe가 테스트 모드로 연결되어, 학생으로 강좌를 구매합니다 |
+| 10:45 | stage | webhook 전달 두 번이 모두 타임아웃됩니다. 주문은 `pending`으로 남습니다 |
+| 10:48 | 테스터 에이전트 | 수정 PR인 [#657](https://github.com/AlexTo/discava/pull/657)을 엽니다 |
+| 10:49 | 테스터 에이전트 | [세 번째 보고서](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120): **실패**, 원인과 수정을 함께 담았습니다 |
+
+### 실행 1: 막혔고, 그렇다고 말한다
+
+이 변경은 Stripe가 환불을 알리면 학생의 수강 등록을 끝냅니다. 이를 테스트하려면 환불할 결제된 주문이 있어야 하는데,
+stage에는 결제 계정이 없었습니다. 테스터는 테스트를 통과시키지도, 추측하지도 않았습니다.
+[판정](https://github.com/AlexTo/discava/issues/654#issuecomment-7033260676)은 "blocked, not verified"였고, 증거가
+함께 있었습니다. admin API의 `payment.status`가 `not-connected`라고 답했고, 핵심 테이블에는 주문이 하나도
+없었습니다.
+
+그런 다음 결제 없이 확인할 수 있는 것을 확인했습니다. 배포된 webhook 함수에 새 `charge.refunded` handler가 들어
+있고, 제공되는 포털 번들에 새 "You're no longer enrolled" 화면이 있으며, 위조된 환불 알림은 400으로 거부되고
+아무것도 쓰지 않으며, 무료 강좌에서는 강좌 페이지가 여전히 동작합니다. 확인 항목 아홉 개가 통과했습니다. 테스터는
+검증하지 *못한* 여섯 가지와, 무엇이 막힌 것을 풀어 줄지를 나열했습니다.
+
+하지 않을 일도 말했습니다. 결제 계정을 연결하려면 Stripe 키를 저장해야 하고, 이는 stage의 설정을 바꾸는 일인데,
+테스터의 [프롬프트](../agent-prompts/#테스터)가 이를 금지합니다. 그래서 사람을 위해 issue를 열어 두었습니다.
+
+### 실행 3: 실제 구매
+
+Stripe 테스트 모드 계정이 stage에 연결되자, 테스터는 흐름의 처음부터 시작했습니다. 환불에는 구매가 필요하기
+때문입니다. 아래의 각 단계는
+[세 번째 보고서](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120)의 행 하나입니다.
+
+1. 강사로서 API를 통해 `pmt-647-course`라는 이름의 강좌를 만들고, 가격을 USD 19.99로 정하고, 공개했습니다.
+2. 학생으로서 실제 브라우저에서 Cognito 호스팅 페이지로 로그인하고, 강좌를 열고, **Buy now**를 선택하고, Stripe의
+   호스팅 checkout에서 테스트 카드로 결제했습니다.
+3. 강좌 페이지로 돌아오자 "Confirming your payment"라고 표시되었고, 테스터는 세 가지를 지켜봤습니다. 페이지,
+   DynamoDB에 있는 주문 레코드, 그리고 webhook 함수의 로그입니다.
+
+아래 스크린샷은 테스터가 직접 찍은 것으로, 프롬프트가 요구하는 대로 단계마다 저장되었습니다. 보고서에 이름이 적혀
+있으며, 사람이 봤을 화면 그대로입니다.
+
+테스터가 만든 강좌, 구매 전에 학생에게 보이는 모습
+(`01-paid-course-before-purchase.png`):
+
+<p>
+  <img alt="development stage의 학생 포털. pmt-647-course 강좌가 $19.99와 Buy now 버튼과 함께 표시됩니다" src="/agentic-sdlc/screenshots/post-merge-test-647/01-paid-course-before-purchase.png" width="620" />
+</p>
+
+샌드박스 모드인 Stripe의 호스팅 checkout, 테스트 카드로 채운 모습
+(`03-stripe-checkout-filled.png`):
+
+<p>
+  <img alt="Sandbox로 표시된 Stripe 호스팅 checkout. US$19.99의 pmt-647-course에 대한 것으로, 테스트 카드 4242 4242 4242 4242와 테스트 학생 이메일이 입력되어 있습니다" src="/agentic-sdlc/screenshots/post-merge-test-647/03-stripe-checkout-filled.png" width="620" />
+</p>
+
+결제 후 강좌 페이지로 돌아온 모습 (`04-returned-from-checkout.png`):
+
+<p>
+  <img alt="같은 강좌 페이지. 이제 Buy now 버튼이 있던 자리에 Confirming your payment와 진행 표시줄이 보입니다" src="/agentic-sdlc/screenshots/post-merge-test-647/04-returned-from-checkout.png" width="620" />
+</p>
+
+그리고 기다린 뒤의 모습 (`05-failure-still-not-enrolled-webhook-timeout.png`):
+
+<p>
+  <img alt="같은 강좌 페이지. 다시 $19.99와 Buy now 버튼이 보이고, Start learning 버튼은 없습니다" src="/agentic-sdlc/screenshots/post-merge-test-647/05-failure-still-not-enrolled-webhook-timeout.png" width="620" />
+</p>
+
+마지막 그림은 첫 번째 그림과 같고, 그것이 바로 실패입니다. 결제는 완료되었는데 주문은 끝내 `pending`을 벗어나지
+못했고, 수강 등록은 나타나지 않았으며, 페이지는 다시 **Buy now**를 보여 주었습니다. 화면의 어떤 것도 무언가
+잘못되었다고 말하지 않습니다. 오류도 없고, 콘솔에 실패한 요청도 없습니다. 테스터가 이를 잡아낸 것은 주문 레코드와
+함수의 로그도 읽었기 때문이며, 로그가 이유를 보여 주었습니다.
+
+```text
+REPORT … Duration: 10000.00 ms … Memory Size: 128 MB  Max Memory Used: 117 MB  Status: timeout
+REPORT … Duration: 10000.00 ms … Memory Size: 128 MB  Max Memory Used: 117 MB  Status: timeout
+```
+
+checkout이 결제되었다는 Stripe의 알림은 끝내 들어오지 못했습니다. 이를 받는 함수는 Lambda의 기본값인 128 MB로
+실행되고 있었고, 콜드 스타트(핵심 테이블의 엔터티, AppConfig, Stripe SDK)가 10초 타임아웃 안에 끝나지 않았습니다.
+타임아웃된 런타임은 버려지므로, Stripe의 재시도는 매번 콜드 상태로 시작해 같은 방식으로 실패했습니다. 테스터는
+이를 256 MB를 가지고 있고 시작에 8.1초가 걸린 checkout 함수와 비교했습니다.
+
+테스트 대상이던 환불에는 끝내 도달하지 못했습니다. 테스터가 찾은 것은 그보다 한 단계 앞에 있고, 더 나쁩니다.
+배포된 stage에서 학생이 강좌 값을 치르고도 강좌를 받지 못할 수 있었습니다.
+
+### 왜 더 일찍 아무것도 잡아내지 못했나
+
+이 결함은 테스트 대상 pull request보다 오래된 것이고, 모든 계층을 통과했습니다.
+
+- **단위 테스트**는 handler의 로직을 검사하는데, 로직은 옳습니다.
+- **E2E 테스트**는 로컬 스택을 대상으로 실행되며, 거기서는 대체물이 Stripe 역할을 하고 메모리 제한이나 10초
+  타임아웃이 있는 것은 아무것도 없습니다.
+- **리뷰어 에이전트**와 **사람**은 메모리 설정이 전혀 나오지 않는 diff를 읽습니다. 빠진 줄이 바로 결함이기
+  때문입니다.
+
+이 결함은 함수가 배포된 곳에만 존재합니다. 테스터가 있는 것은 바로 그 빈틈 때문입니다.
+
+### 수정 PR
+
+원인이 분명하고 수정이 작았으므로, 테스터의 프롬프트는 pull request를 허용했습니다.
+[#657](https://github.com/AlexTo/discava/pull/657)은 파일 두 개를 바꾸는
+[커밋](https://github.com/AlexTo/discava/commit/854760c3c30a5ceb1ee7c7e52ebd596bef3374f1) 하나입니다. `StripeWebhookApi`
+construct에서 함수의 메모리를 512 MB로 설정하는 네 줄과, 그 네 줄이 없으면 실패하는 열두 줄짜리
+테스트(`Missing key 'MemorySize'`)입니다. `main`에서 `openhands/test-fix-654`로 브랜치했고, 설명은
+[#647](https://github.com/AlexTo/discava/pull/647)과 [#654](https://github.com/AlexTo/discava/issues/654)를 모두
+언급합니다.
+
+설명은 그 한계도 숨기지 않습니다. "Not verified on a deployed stage. The fix only takes effect once deployed."
+(배포된 stage에서 검증되지 않음. 수정은 배포된 뒤에야 효과가 있음.)
+
+그리고 테스터는 멈췄습니다. merge하지 않았고, 배포하지도 않았습니다. Agent Lock이 새 pull request를 잠갔고,
+[PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986)가 초록색으로 끝났으며, `openhands-review`
+label이 이를 리뷰어 에이전트에게 넘겼습니다. merge는 다른 PR과 마찬가지로 사람이 합니다. 테스트 issue
+[#654](https://github.com/AlexTo/discava/issues/654)는 결제가 정산되는 stage에서 환불 자체가 테스트될 때까지 열린
+채로 남습니다. 테스터의 마지막 보고서에는 남겨 둔 테스트 데이터가 나열되어 있습니다. 강좌와 `pending` 주문입니다.
+
+스크린샷은 워크스테이션에, Discava checkout의 `tmp/screenshots/pr-<pr>/` 아래에 남습니다. 보고서는 각 파일의
+이름을 적고 무엇을 보여 주는지 말합니다. 위의 네 장은 이 페이지를 위해 거기서 복사한 것입니다.
+
+## Agent Lock
+
+Discava는 공개 저장소이므로, 누구나 그 issue와 pull request에 댓글을 달 수 있습니다. 에이전트는 push할 수 있는
+토큰을 가진 채로 그 댓글을 읽고, 테스터는 AWS 접근 권한과 테스트 사용자의 비밀번호도 가지고 있습니다. 따라서
+댓글은 에이전트에게 지시를 내리는 수단이 됩니다.
+
+답은 에이전트에게 넘겨지는 모든 대화를 잠그는 것입니다. 잠긴 issue나 pull request는 쓰기 권한이 있는
+collaborator의 댓글만 받으며, 에이전트 자신의 토큰도 여기에 포함됩니다.
+
+| 무엇을 | 잠그는 주체 |
+| --- | --- |
+| Agent Issues가 여는 구현 issue | 그 자체의 스크립트, `openhands`를 붙이기 전에 |
+| 테스트 issue, 그것이 테스트하는 pull request, 그 pull request가 닫는 issue | Post-merge Verify의 스크립트, `openhands-test`를 붙이기 전에 |
+| 누군가 직접 `openhands`나 `openhands-test` label을 붙인 issue | **Agent Lock** (`.github/workflows/agent-lock.yml`), `issues: labeled`에서 |
+| fork에서 온 것이 아닌 `openhands/` 브랜치에서 에이전트가 여는 pull request | **Agent Lock**, `pull_request: opened`와 `reopened`에서 |
+
+스크립트가 자기 issue를 직접 잠그는 것은, workflow의 토큰이 붙인 label에 대해서는 GitHub가 workflow를 시작하지
+않기 때문입니다. 순서도 중요합니다. label 없이 열고, 잠그고, 그다음 label을 붙이므로, 낯선 사람이 아직 댓글을 달
+수 있는 동안 에이전트가 issue를 가져가는 일은 없습니다. 공유 코드는 `src/helpers/conversation-lock.ts`이고,
+workflow의 규칙은 `src/agent-lock/`에 있습니다.
+
+함께 따라오는 규칙이 두 가지 더 있습니다.
+
+- **마커는 작성자를 보고 신뢰합니다.** workflow는 숨겨진 마커로 자신이 이전에 연 issue를 찾습니다. 마커는
+  `github-actions[bot]`이나 쓰기 권한이 있는 사람이 연 issue에서만 인정되므로(`src/helpers/issue-author.ts`), 낯선
+  사람이 마커가 든 issue를 열어 사슬을 멈추거나 테스트를 막을 수는 없습니다.
+- **잠긴 PR에는 봇 댓글이 달리지 않습니다.** GitHub는 Actions 토큰이 잠긴 대화에 댓글을 다는 것을 거부하므로,
+  [E2E screenshots](../pr-checks/#ui-screenshots와-e2e-screenshots-댓글) 목록은 대신 job summary로 갑니다.
+
+<Aside type="caution">
+issue에 label이 붙기 전에 쓰인 댓글은 그대로 남습니다. 기존 issue에 직접 label을 붙일 때는 먼저 그 댓글을
+읽으세요.
+</Aside>
+
+## Dry run
+
+```bash
+DRY_RUN=true GITHUB_REPOSITORY=AlexTo/discava GITHUB_EVENT_NAME=workflow_dispatch PR_NUMBER=647 \
+  pnpm nx run @discava/tooling-agent:post-merge-test
+```
+
+이 명령은 열게 될 issue의 제목과 본문을 출력하고, 아무것도 만들지 않습니다. 그래도 `gh`로 pull request를 읽으므로,
+로그인되어 있어야 합니다.
+
+다음: [실제 기능](../a-real-feature/).

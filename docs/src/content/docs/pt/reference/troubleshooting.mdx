@@ -33,7 +33,7 @@ sidebar:
 | --- | --- | --- |
 | "⏳ Review waiting on checks" e nenhum review | Um check no head não terminou, ou está preso na fila | Encontre o check pendente. Um check obrigatório que nunca roda bloqueia o review para sempre |
 | O review diz `🔄 CHANGES REQUESTED`, nenhum label `review-fix-*` | O review não tem o marcador da execução, não é de uma conta com acesso de escrita, ou o PR já avançou | Leia o aviso do Agent Review Status |
-| Os reviews aparecem como "Commented", não "Approved" | O revisor posta com a mesma conta que abriu o PR, e o GitHub não permite autoaprovação | Esperado com uma só conta. Use uma conta de máquina para os agents |
+| Os reviews aparecem como "Commented", não "Approved" | O Revisor posta com a mesma conta que abriu o PR, e o GitHub não permite autoaprovação | Esperado com uma só conta. Use uma conta de máquina para os agents |
 
 ## Checks
 
@@ -43,6 +43,16 @@ sidebar:
 | O job e2e de todo PR baixa o Chromium | O cache só é salvo na `main` | Mantenha o job `playwright-cache` do CI, com a mesma key do PR Checks |
 | `Check for mutations` falha na `main` | Algo gerou arquivos que o PR não commitou | Rode `pnpm build` localmente e faça commit do diff |
 | `Resource not accessible by integration` ao adicionar labels | O token do workflow pode escrever em issues mas não em pull requests | Adicione `pull-requests: write` ao workflow |
+
+## Testes pós-merge
+
+| Sintoma | O que está acontecendo | O que fazer |
+| --- | --- | --- |
+| Um PR saiu no deploy, nenhuma issue de teste | Ele não mudou nada que entra no deploy (só docs, specs, testes, tooling ou CI), ele tem `skip-deploy-test`, ou a execução do Deploy não entregou nada porque o commit dela não era mais o último da `main` | Leia os avisos da execução do Post-merge Verify. Para testá-lo mesmo assim, rode o workflow manualmente com o número do PR |
+| Issue de teste aberta, o Testador nunca a pega | A issue não tem o label `openhands-test` porque algo para que ela aponta não pôde ser trancado, ou ela foi aberta por uma conta em que a automação não confia | A execução do Post-merge Verify falha e nomeia o que trancar. Tranque, depois adicione o label manualmente |
+| O Testador relatou, e você quer outra execução | Cada aplicação do label é testada uma vez | Remova e aplique de novo `openhands-test` |
+| O relatório diz "blocked" | Falta no stage algo de que a mudança precisa, como uma conta de pagamento conectada | Corrija o stage, depois aplique de novo o label |
+| O comentário **E2E screenshots** não aparece em um PR do agent | O PR está trancado, e o GitHub recusa ao token do Actions um comentário em uma conversa trancada | Leia a lista no resumo do job `E2E screenshots` |
 
 ## Deploy
 

@@ -19,7 +19,7 @@ retours de l'agent.
 | `Invariant coverage` | `invariant-coverage`, seulement quand du code qui pourrait écrire dans la table principale a changé | Un nouvel écrivain d'un enregistrement partagé sans changement des invariants. Voir [Stack locale](../local-stack/#des-invariants-après-chaque-test) |
 | `E2E tests (1/6)` … `(6/6)` | `pnpm nx affected --target e2e`, en shards | Flux utilisateur cassés, invariants enfreints, conditions de course |
 | `E2E tests` | Rassemble les six shards en un seul résultat | Donne à la protection de branche un nom stable, quel que soit le nombre de shards |
-| `E2E screenshots` | `screenshots-comment` | Publie les images sur la PR |
+| `E2E screenshots` | `screenshots-comment` | Liste les images sur la PR, et dans le résumé du job |
 
 `fail-fast: false` compte pour les agents. Quand le lint *et* un test échouent, l'agent est informé
 des deux en un seul tour, et non d'un par tentative.
@@ -70,8 +70,15 @@ Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifa
 - `search/03-search-minimum-rating-4.png`
 ```
 
-L'agent relecteur lit la même liste. Les artefacts n'ont pas d'URL publique, donc le commentaire
+L'agent Relecteur lit la même liste. Les artefacts n'ont pas d'URL publique, donc le commentaire
 nomme les images et renvoie vers l'exécution depuis laquelle on peut les télécharger.
+
+La même liste est écrite dans le résumé du job. Pour la pull request d'un agent, c'est le seul
+endroit où elle apparaît : [Agent Lock](../post-merge-verify/#agent-lock) verrouille chaque PR
+d'agent, et GitHub refuse au token d'Actions un commentaire sur une conversation verrouillée,
+quelles que soient ses permissions. Le job saute le commentaire avec une notice au lieu d'échouer.
+Déverrouiller la PR pour commenter laisserait n'importe qui commenter entre-temps, et c'est ce que
+le verrou est là pour empêcher.
 
 ## Garder les checks rapides
 

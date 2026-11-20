@@ -26,13 +26,16 @@ sidebar:
 | 标记 | 位置 | 写入者 | 用途 |
 | --- | --- | --- | --- |
 | `<!-- agent-issue spec:<folder> group:<n> -->` | 实现 issue 的第一行 | Agent Issues | 从已合并的智能体 PR（通过其 `Closes #n`）找到 spec 文件夹，并且绝不为同一组开第二个 issue |
+| `<!-- post-merge-test pr:<n> -->` | 测试 issue 的第一行 | Post-merge Verify | 绝不为同一个 pull request 开第二个测试 issue |
 | `<!-- openhands-review-run: <id> -->` | 评审智能体的每条评审 | 代码评审 automation | Agent Review Status 只处理带有它的评审 |
 | `<!-- openhands-review-gate:waiting:<sha> -->` | “Review waiting on checks” 评论 | 代码评审 automation | 评审者自己记录它正在等待该 head |
 | `<!-- e2e-screenshots -->` | E2E 截图评论 | PR Checks | 每次运行都更新同一条评论，而不是新增一条 |
 
+issue 中的标记只有在该 issue 由 workflow 自己的账号或有写权限的人开出时才算数。任何人都可以开一个带有标记的 issue。
+
 ## 结论行
 
-评审者在每条评审的末尾，单独一行写下以下之一：
+评审智能体在每条评审的末尾，单独一行写下以下之一：
 
 ```text
 ✅ APPROVED
@@ -47,5 +50,6 @@ Agent Review Status 匹配单独成行的 `^🔄 CHANGES REQUESTED\s*$`。只是
 | --- | --- | --- |
 | `openhands/issue-<n>` | Issue-to-PR automation | worker 唯一会修订的分支，也是修复 workflow 唯一会响应的分支 |
 | `openhands/issue-<n>-2`, … | Issue-to-PR automation，用于重新加标签的 issue | 从不自动修订 |
-| 任何以 `openhands/` 开头的分支 | 智能体分支 | 合并它会推进链条 |
+| `openhands/test-fix-<n>` | Issue tester automation，用于测试 issue `<n>` | 测试智能体在测试中发现的修复。从不自动修订 |
+| 任何以 `openhands/` 开头的分支 | 智能体分支 | 合并它会推进链条。在 Discava 中，来自这种分支的 pull request 在开启时就会被锁定 |
 | `spec/<name>`（任何其他名称） | 人 | 只有带 `spec-ready` 时才会推进链条 |

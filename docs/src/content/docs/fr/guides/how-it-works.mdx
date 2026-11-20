@@ -1,6 +1,6 @@
 ---
 title: Comment ça marche
-description: Le parcours d'une fonctionnalité, de l'idée au code mergé, en onze étapes.
+description: Le parcours d'une fonctionnalité, de l'idée au code mergé et testé, en douze étapes.
 sidebar:
   order: 2
 ---
@@ -9,20 +9,25 @@ Cette page suit une fonctionnalité à travers toute la boucle. Chaque étape in
 qu'il en reste.
 
 ```d2
-grid-rows: 2
+grid-rows: 3
 grid-columns: 4
 horizontal-gap: 140
 vertical-gap: 90
 
-# Top row runs left to right, bottom row right to left, so the loop wraps.
+# Top row runs left to right, middle row right to left, so the loop wraps.
+# The bottom row is what happens after the merge.
 spec: "PR de spec\n(vous)" {shape: document}
 issues: "Agent Issues\n(GitHub Actions)"
 issue: issue {shape: page}
-implement: "implémentation\n(OpenHands)"
+implement: "implémentation\n(agent Développeur)"
 merge: "merge\n(vous)"
-review: "revue\n(OpenHands)"
+review: "revue\n(agent Relecteur)"
 checks: "PR Checks\n(GitHub Actions)"
 pr: pull request {shape: page}
+deploy: "déploiement\n(GitHub Actions)"
+testissue: issue de test {shape: page}
+test: "test sur le stage\n(agent Testeur)"
+report: rapport {shape: document}
 
 spec -> issues: spec-ready
 issues -> issue
@@ -32,7 +37,14 @@ pr -> checks
 checks -> review: vert
 review -> merge: approuvée
 merge -> issues: phase suivante
+merge -> deploy: main est vert
+deploy -> testissue
+testissue -> test
+test -> report
 ```
+
+Les trois agents sont des automatisations OpenHands : le **Développeur** écrit le code, le
+**Relecteur** le relit, et le **Testeur** le teste une fois déployé.
 
 ## Les étapes
 
@@ -43,19 +55,24 @@ merge -> issues: phase suivante
 | 3 | 🧑🤖&nbsp;Vous + agent | `/speckit-tasks` écrit une liste de tâches ordonnée, groupée en phases. `/speckit-analyze` vérifie la cohérence des trois fichiers | `tasks.md` |
 | 4 | 🧑&nbsp;**Vous** | Ouvrez la PR de spec, relisez-la comme du code, ajoutez le label `spec-ready`, mergez | Une PR de spec mergée. **Contrôle humain 1** |
 | 5 | ⚙️&nbsp;Automatisation | Le workflow **Agent Issues** lit `tasks.md` et ouvre une issue pour le premier groupe de phases, avec le label `openhands` | Une issue d'implémentation |
-| 6 | 🤖&nbsp;OpenHands | À son prochain passage, l'agent prend l'issue, écrit d'abord les tests, implémente, coche ses tâches et ouvre une PR sur `openhands/issue-<n>` | Une pull request |
+| 6 | 🤖&nbsp;Agent Développeur | À son prochain passage, l'agent prend l'issue, écrit d'abord les tests, implémente, coche ses tâches et ouvre une PR sur `openhands/issue-<n>` | Une pull request |
 | 7 | ⚙️&nbsp;CI | Les checks de PR exécutent le lint, les tests unitaires, le build, la vérification du format de `tasks.md`, les tests e2e et la vérification des captures d'écran | Résultats des checks |
-| 8 | ⚙️🤖&nbsp;Automatisation + OpenHands | Sur une exécution rouge, **Agent CI Status** marque la PR comme en échec. L'agent le voit au passage suivant et révise la même PR | Labels `ci-fix-1` à `ci-fix-5` |
-| 9 | 🤖&nbsp;OpenHands | Une fois tous les checks terminés, l'agent relecteur revoit le commit de tête et conclut par `✅ APPROVED` ou `🔄 CHANGES REQUESTED`. **Agent Review Status** renvoie l'agent au travail dans le second cas | Une revue, et éventuellement des labels `review-fix-N` |
+| 8 | ⚙️🤖&nbsp;Automatisation + agent Développeur | Sur une exécution rouge, **Agent CI Status** marque la PR comme en échec. L'agent Développeur le voit au passage suivant et révise la même PR | Labels `ci-fix-1` à `ci-fix-5` |
+| 9 | 🤖&nbsp;Agent Relecteur | Une fois tous les checks terminés, l'agent Relecteur revoit le commit de tête et conclut par `✅ APPROVED` ou `🔄 CHANGES REQUESTED`. **Agent Review Status** renvoie l'agent Développeur au travail dans le second cas | Une revue, et éventuellement des labels `review-fix-N` |
 | 10 | 🧑&nbsp;**Vous** | Vous lisez la description de la PR et le commentaire **E2E screenshots**, faites les éventuelles tâches **(human)**, et mergez | Une PR mergée. **Contrôle humain 2** |
 | 11 | ⚙️&nbsp;Automatisation | Le merge relance **Agent Issues**. Il ouvre l'issue de la phase suivante qui a des tâches d'agent non cochées, et les étapes 6 à 10 se répètent jusqu'à ce qu'il n'en reste plus | L'issue suivante, ou terminé |
+| 12 | ⚙️🤖&nbsp;Automatisation + agent Testeur | Là où `main` se déploie de lui-même : une fois le merge arrivé sur le stage de développement, **Post-merge Verify** ouvre une issue de test pour lui. L'agent Testeur parcourt le changement, appelle les API, vérifie les données qu'il a écrites dans la base de données, le stockage de fichiers et l'index de recherche, et rend compte | Un rapport de test. L'issue se ferme en cas de succès |
+
+L'étape 12 a besoin d'un stage déployé. Discava en a un. L'application d'exemple de ce dépôt n'en a
+pas, donc un fork s'arrête à l'étape 11.
 
 ## Ce que vous faites vraiment
 
 Par fonctionnalité, vous écrivez et approuvez la spec une fois. Par pull request, vous faites une
 revue et cliquez sur merge. On ne vous sollicite plus tôt que lorsqu'une boucle épuise ses tentatives
-(`ci-fix-exhausted` ou `review-fix-exhausted`), ou quand l'agent indique en commentaire qu'il est
-bloqué. Pendant que les agents travaillent, vous pouvez écrire la spec suivante.
+(`ci-fix-exhausted` ou `review-fix-exhausted`), quand l'agent indique en commentaire qu'il est
+bloqué, ou quand le Testeur laisse une issue de test ouverte parce que le changement a échoué sur le
+stage. Pendant que les agents travaillent, vous pouvez écrire la spec suivante.
 
 ## Où se trouve chaque pièce
 
@@ -69,8 +86,9 @@ bloqué. Pendant que les agents travaillent, vous pouvez écrire la spec suivant
 | De la CI à l'agent | `.github/workflows/agent-ci.yml` |
 | Du relecteur à l'agent | `.github/workflows/agent-review.yml` |
 | Checks | `.github/workflows/pr-checks.yml`, `ui-screenshots.yml`, `ci.yml` |
+| Du déploiement à l'issue de test (Discava uniquement) | `.github/workflows/deploy.yml`, `post-merge-verify.yml`, `agent-lock.yml` |
 | Les règles derrière la glue, testées unitairement | `packages/common/scripts/src/agent-*`, `ui-screenshots/` |
-| Le runtime de l'agent | OpenHands Agent Canvas, en dehors du dépôt |
+| Le runtime de l'agent et le prompt de chaque rôle | OpenHands Agent Canvas, en dehors du dépôt |
 
 Les détails sont dans Concepts : [comment les phases deviennent des issues](../../concepts/one-phase-at-a-time/),
 et [comment un échec renvoie l'agent au travail](../../concepts/feedback-loops/).

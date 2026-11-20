@@ -1,6 +1,6 @@
 ---
 title: Cómo funciona
-description: El recorrido de una feature desde la idea hasta el código fusionado, en once pasos.
+description: El recorrido de una feature desde la idea hasta el código fusionado y probado, en doce pasos.
 sidebar:
   order: 2
 ---
@@ -9,20 +9,25 @@ Esta página sigue una feature a lo largo de todo el bucle. Cada paso indica qui
 deja tras de sí.
 
 ```d2
-grid-rows: 2
+grid-rows: 3
 grid-columns: 4
 horizontal-gap: 140
 vertical-gap: 90
 
-# Top row runs left to right, bottom row right to left, so the loop wraps.
+# Top row runs left to right, middle row right to left, so the loop wraps.
+# The bottom row is what happens after the merge.
 spec: "PR de spec\n(tú)" {shape: document}
 issues: "Agent Issues\n(GitHub Actions)"
 issue: issue {shape: page}
-implement: "implementar\n(OpenHands)"
+implement: "implementar\n(agente Desarrollador)"
 merge: "merge\n(tú)"
-review: "revisión\n(OpenHands)"
+review: "revisión\n(agente Revisor)"
 checks: "PR Checks\n(GitHub Actions)"
 pr: pull request {shape: page}
+deploy: "despliegue\n(GitHub Actions)"
+testissue: issue de test {shape: page}
+test: "probar en el stage\n(agente Tester)"
+report: informe {shape: document}
 
 spec -> issues: spec-ready
 issues -> issue
@@ -32,7 +37,14 @@ pr -> checks
 checks -> review: verde
 review -> merge: aprobado
 merge -> issues: siguiente fase
+merge -> deploy: main en verde
+deploy -> testissue
+testissue -> test
+test -> report
 ```
+
+Los tres agentes son automatizaciones de OpenHands: el **Desarrollador** escribe el código, el
+**Revisor** lo revisa y el **Tester** lo prueba una vez desplegado.
 
 ## Los pasos
 
@@ -43,19 +55,24 @@ merge -> issues: siguiente fase
 | 3 | 🧑🤖&nbsp;Tú + agente | `/speckit-tasks` escribe una lista ordenada de tareas, agrupadas en fases. `/speckit-analyze` revisa los tres archivos entre sí | `tasks.md` |
 | 4 | 🧑&nbsp;**Tú** | Abres el PR de la spec, lo revisas como si fuera código, añades la label `spec-ready` y haces merge | Un PR de spec fusionado. **Control humano 1** |
 | 5 | ⚙️&nbsp;Automatización | El workflow **Agent Issues** lee `tasks.md` y abre una issue para el primer grupo de fases, con la label `openhands` | Una issue de implementación |
-| 6 | 🤖&nbsp;OpenHands | En su siguiente sondeo, el agente toma la issue, escribe primero los tests, implementa, marca sus tareas y abre un PR en `openhands/issue-<n>` | Un pull request |
+| 6 | 🤖&nbsp;Agente Desarrollador | En su siguiente sondeo, el agente toma la issue, escribe primero los tests, implementa, marca sus tareas y abre un PR en `openhands/issue-<n>` | Un pull request |
 | 7 | ⚙️&nbsp;CI | Los PR checks ejecutan lint, tests unitarios, build, el check de formato de `tasks.md`, los tests e2e y el check de capturas | Resultados de los checks |
-| 8 | ⚙️🤖&nbsp;Automatización + OpenHands | Si una ejecución sale en rojo, **Agent CI Status** marca el PR como fallido. El agente lo ve en el siguiente sondeo y revisa el mismo PR | Labels de `ci-fix-1` a `ci-fix-5` |
-| 9 | 🤖&nbsp;OpenHands | Cuando han terminado todos los checks, el agente revisor revisa el commit de cabeza y termina con `✅ APPROVED` o `🔄 CHANGES REQUESTED`. En el segundo caso, **Agent Review Status** devuelve el trabajo al agente | Una revisión y, quizá, labels `review-fix-N` |
+| 8 | ⚙️🤖&nbsp;Automatización + agente Desarrollador | Si una ejecución sale en rojo, **Agent CI Status** marca el PR como fallido. El agente Desarrollador lo ve en el siguiente sondeo y revisa el mismo PR | Labels de `ci-fix-1` a `ci-fix-5` |
+| 9 | 🤖&nbsp;Agente Revisor | Cuando han terminado todos los checks, el agente Revisor revisa el commit de cabeza y termina con `✅ APPROVED` o `🔄 CHANGES REQUESTED`. En el segundo caso, **Agent Review Status** devuelve el trabajo al agente Desarrollador | Una revisión y, quizá, labels `review-fix-N` |
 | 10 | 🧑&nbsp;**Tú** | Lees la descripción del PR y el comentario **E2E screenshots**, haces las tareas **(human)** que haya y haces merge | Un PR fusionado. **Control humano 2** |
 | 11 | ⚙️&nbsp;Automatización | El merge vuelve a ejecutar **Agent Issues**. Abre la issue de la siguiente fase que tenga tareas de agente sin marcar, y los pasos 6 a 10 se repiten hasta que no quede ninguna | La siguiente issue, o terminado |
+| 12 | ⚙️🤖&nbsp;Automatización + agente Tester | Donde `main` se despliega solo: cuando el merge está en el stage de desarrollo, **Post-merge Verify** abre una issue de test para él. El agente Tester recorre el cambio, llama a las API, verifica los datos que escribió en la base de datos, el almacenamiento de archivos y el índice de búsqueda, e informa | Un informe de test. La issue se cierra si pasa |
+
+El paso 12 necesita un stage desplegado. Discava tiene uno. La app de ejemplo de este repositorio no,
+así que un fork se detiene en el paso 11.
 
 ## Lo que haces tú realmente
 
 Por cada feature, escribes y apruebas la spec una vez. Por cada pull request, haces una
 revisión y pulsas merge. Solo se te requiere antes si un bucle agota sus intentos (`ci-fix-exhausted`
-o `review-fix-exhausted`), o si el agente comenta que está bloqueado. Mientras los agentes trabajan,
-puedes escribir la siguiente spec.
+o `review-fix-exhausted`), si el agente comenta que está bloqueado, o si el Tester deja abierta una
+issue de test porque el cambio falló en el stage. Mientras los agentes trabajan, puedes escribir la
+siguiente spec.
 
 ## Dónde vive cada pieza
 
@@ -69,8 +86,9 @@ puedes escribir la siguiente spec.
 | Del CI al agente | `.github/workflows/agent-ci.yml` |
 | Del revisor al agente | `.github/workflows/agent-review.yml` |
 | Checks | `.github/workflows/pr-checks.yml`, `ui-screenshots.yml`, `ci.yml` |
+| Del despliegue a la issue de test (solo Discava) | `.github/workflows/deploy.yml`, `post-merge-verify.yml`, `agent-lock.yml` |
 | Las reglas detrás del pegamento, con tests unitarios | `packages/common/scripts/src/agent-*`, `ui-screenshots/` |
-| El runtime del agente | OpenHands Agent Canvas, fuera del repositorio |
+| El runtime del agente y el prompt de cada rol | OpenHands Agent Canvas, fuera del repositorio |
 
 Los detalles están en Conceptos: [cómo las fases se convierten en issues](../../concepts/one-phase-at-a-time/) y
 [cómo un fallo devuelve el trabajo al agente](../../concepts/feedback-loops/).

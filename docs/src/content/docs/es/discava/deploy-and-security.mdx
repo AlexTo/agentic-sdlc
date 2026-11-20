@@ -1,6 +1,6 @@
 ---
 title: Despliegue y seguridad
-description: Cómo un main en verde se despliega solo, y los escaneos que detienen un secreto filtrado o una dependencia vulnerable.
+description: Cómo un main en verde se despliega solo y entrega cada cambio al agente Tester, y los escaneos que detienen un secreto filtrado o una dependencia vulnerable.
 sidebar:
   order: 9
 ---
@@ -57,6 +57,10 @@ Los pasos, en orden:
 cada `main` en verde llega al stage de desarrollo. Déjala sin definir y nada se desplegará sin una
 persona.
 
+Un despliegue al stage de desarrollo no es el final. Cuando termina la ejecución, **Post-merge
+Verify** abre una issue de test por cada pull request que llevaba, y el agente Tester prueba ese
+cambio en el stage. Consulta [Verificación post-merge](../post-merge-verify/).
+
 ### Preparar un stage
 
 `scripts/setup-stage.sh` se ejecuta una vez por stage, desde un clon del repositorio que ejecuta el
@@ -107,4 +111,4 @@ herramientas cambió el árbol de trabajo, así que el agente vuelve a añadir l
 de nuevo. `commit-msg` ejecuta commitlint con la configuración de Conventional Commits.
 </Aside>
 
-Siguiente: [Una feature real](../a-real-feature/).
+Siguiente: [Verificación post-merge](../post-merge-verify/).

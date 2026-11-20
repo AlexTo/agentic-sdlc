@@ -8,7 +8,8 @@ sidebar:
 Esta guía te muestra cómo llevar un ciclo de vida de software en el que **los agentes escriben el
 código y las personas toman dos decisiones**: aprobar la spec y aprobar el resultado. Todo lo que
 ocurre entre medias (abrir issues, escribir código y tests, reaccionar al CI, responder a una
-revisión) funciona solo, mediante el proceso normal de GitHub.
+revisión) funciona solo, mediante el proceso normal de GitHub. Tres roles de agente hacen ese
+trabajo: un **Desarrollador**, un **Revisor** y un **Tester**.
 
 El workflow se usa a diario en [Discava](https://github.com/AlexTo/discava), un sistema de gestión
 del aprendizaje serverless en AWS. En los seis días posteriores a su puesta en marcha, el 14 de
@@ -24,12 +25,13 @@ Tres herramientas estándar hacen la mayor parte del trabajo:
 | Herramienta | Qué hace aquí |
 | --- | --- |
 | [Speckit](https://github.com/github/spec-kit) | Convierte una idea en `spec.md`, `plan.md` y `tasks.md`, comprobados contra una constitución del proyecto |
-| [OpenHands](https://github.com/OpenHands/OpenHands) | Convierte una issue etiquetada en un pull request y revisa el pull request cuando se le indica que algo está mal. Una segunda automatización de OpenHands lo revisa |
+| [OpenHands](https://github.com/OpenHands/OpenHands) | Ejecuta los tres roles de agente, con una automatización cada uno. El Desarrollador convierte una issue etiquetada en un pull request y lo revisa cuando se le indica que algo está mal. El Revisor lo revisa. El Tester prueba el cambio fusionado en un stage desplegado |
 | GitHub Actions | Ejecuta los checks y contiene el pegamento entre las otras dos |
 
-Ninguna de ellas sabe de las demás. **Esta guía trata sobre todo del pegamento**: diez pequeñas
-piezas de automatización, con tests, que conectan una spec terminada con el agente, el CI con el
-agente y el revisor con el agente, con límites para que nada entre en un bucle infinito.
+Ninguna de ellas sabe de las demás. **Esta guía trata sobre todo del pegamento**: once pequeñas
+piezas de automatización, con tests, que conectan una spec terminada con el Desarrollador, el CI y el
+Revisor de vuelta con el Desarrollador, y un despliegue con el Tester, con límites para que nada
+entre en un bucle infinito.
 
 ## A quién va dirigida
 

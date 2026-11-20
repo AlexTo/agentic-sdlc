@@ -27,9 +27,15 @@ al front end**, como lo haría una persona:
 - **Ojos:** leer lo que vuelve: respuestas, logs, los datos que quedan en la base de datos y
   capturas de cada estado que un revisor querría ver.
 
-El agente no hace esto en su propia máquina. Escribe los escenarios e2e, y el CI los ejecuta en cada
-PR contra un stack local recién creado. Los resultados, los fallos de invariantes y las capturas
-vuelven al PR, así que el agente detecta sus propios errores y cada PR llega con pruebas.
+El agente Desarrollador no hace esto en su propia máquina. Escribe los escenarios e2e, y el CI los
+ejecuta en cada PR contra un stack local recién creado. Los resultados, los fallos de invariantes y
+las capturas vuelven al PR, así que el agente detecta sus propios errores y cada PR llega con pruebas.
+
+Después del merge, un segundo agente lo hace de verdad. El agente Tester toma cada cambio en el stage
+de desarrollo desplegado, con un navegador real, un inicio de sesión real y datos reales. Usa tanto
+las manos como los ojos: después de cada acción lee lo que se escribió en la base de datos, el
+almacenamiento de archivos y el índice de búsqueda, y comprueba que es correcto. Una pantalla puede
+verse bien sobre un registro incorrecto.
 
 Prepáralo desde el primer día: cada servicio en la nube necesita un sustituto local, cada flujo de
 usuario un escenario e2e y cada estado de la UI una captura. Todo lo que el agente no pueda ejecutar
@@ -43,8 +49,8 @@ tareas. No parchees el código a mano dejando que la spec quede desactualizada.
 
 ## 3. Los controles automáticos dan el feedback, no tú<Icon name="approve-check-circle" class="heading-icon" />
 
-Lint, typecheck, tests unitarios, invariantes, tests e2e, tests de concurrencia, capturas y un agente
-revisor se ejecutan en cada PR. Un resultado en rojo vuelve directamente al agente que escribió el
+Lint, typecheck, tests unitarios, invariantes, tests e2e, tests de concurrencia, capturas y el agente
+Revisor se ejecutan en cada PR. Un resultado en rojo vuelve directamente al agente que escribió el
 cambio. Nadie pega un mensaje de error.
 
 ## 4. Las personas se quedan con las dos decisiones que importan<Icon name="star" class="heading-icon" />
@@ -82,9 +88,9 @@ ignorar. Un workflow, no.
 
 ## 7. Autonomía acotada<Icon name="padlock" class="heading-icon" />
 
-El agente no puede hacer merge, no puede editar workflows, no puede tocar credenciales de la nube y
-no puede debilitar un test para ponerlo en verde. Cada bucle de corrección está limitado a cinco
-intentos. Después se detiene y pregunta a una persona.
+Ningún agente puede hacer merge, editar workflows, desplegar ni debilitar un test para ponerlo en
+verde. Solo el Tester puede llegar a un stage desplegado, y solo al de desarrollo. Cada bucle de
+corrección está limitado a cinco intentos. Después se detiene y pregunta a una persona.
 
 ## 8. Unidades de trabajo pequeñas y acotadas<Icon name="list-format" class="heading-icon" />
 
@@ -105,7 +111,7 @@ dejó el anterior.
 | --- | --- |
 | 1. Verificación | [Capas de confianza](../layers-of-trust/#la-verificación-es-lo-que-más-importa), [El stack local en Discava](../../discava/local-stack/) |
 | 2. La spec como fuente de verdad | [Desarrollo guiado por specs](../spec-driven-development/) |
-| 3. Controles automáticos | [Capas de confianza](../layers-of-trust/), [Bucles de feedback](../feedback-loops/) |
+| 3. Controles automáticos | [Capas de confianza](../layers-of-trust/), [Bucles de feedback](../feedback-loops/), [El runtime del agente](../the-agent-runtime/#los-tres-roles) |
 | 4. Decisiones humanas | [Controles humanos](../human-gates/) |
 | 5. Reglas y skills deterministas | [PR checks en Discava](../../discava/pr-checks/), [Constitución y guía](../../discava/constitution-and-guidance/) |
 | 6. El pegamento es código | [El pegamento que falta](../the-missing-glue/) |

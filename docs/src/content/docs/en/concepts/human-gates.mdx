@@ -38,7 +38,7 @@ protection, they need write access.
 
 ## Gate 2: approve the result
 
-Each agent PR reaches you after CI is green and the reviewer agent has approved. Your job is to
+Each agent PR reaches you after CI is green and the Reviewer agent has approved. Your job is to
 judge the outcome, not to hunt for problems:
 
 - Read the PR description: what changed, which tasks, which **(human)** tasks are left for you.
@@ -47,8 +47,13 @@ judge the outcome, not to hunt for problems:
   example.
 - Do the **(human)** tasks: manual checks on a local stack or a deployed stage.
 - Merge, or request changes. To have the agent make them, add the `openhands-review` label after
-  your review: the reviewer agent re-reviews the PR, and its "changes requested" verdict sends the
-  implementing agent back through the review-fix loop, counted with the same `review-fix-*` labels.
+  your review: the Reviewer agent re-reviews the PR, and its "changes requested" verdict sends the
+  Developer agent back through the review-fix loop, counted with the same `review-fix-*` labels.
+
+With automatic deploys, the Tester agent then tests what you merged on the development stage and
+reports on a test issue. That report comes after the gate, not before it: it tells you whether the
+change works where it runs, on screen and in the data it stored, and a failed one is yours to act
+on.
 
 ## What agents may never do
 
@@ -56,8 +61,9 @@ judge the outcome, not to hunt for problems:
 | --- | --- |
 | Merge, or push to `main` | Branch protection requiring an approving review. The agent's token is used only for its own branch |
 | Edit `.github/workflows/` | Constitution and issue instructions. Reviewer and human review catch it. The glue workflows run the default branch's code, so an edited workflow in a PR can't change them |
-| Weaken a test to make it pass | Constitution ("tests are a specification"), issue instructions, reviewer agent |
-| Touch cloud credentials | The conversation is never given them. Deployment uses short-lived OIDC roles from a GitHub environment |
+| Weaken a test to make it pass | Constitution ("tests are a specification"), issue instructions, Reviewer agent |
+| Deploy, or change infrastructure | No agent is given a deploy role. Deployment uses short-lived OIDC roles from a GitHub environment. The Developer and the Reviewer need no cloud access at all. The Tester reaches the development stage only, and its prompt limits it to reading and to the test data it creates through the app |
+| Take instructions from a stranger | Every issue and pull request an agent is handed is locked, so only people with write access can comment. The Tester tests only issues the workflow opened, and its instructions are its own prompt, not the issue |
 | Work outside its task range | The issue names the range. The next issue doesn't open until every agent task is ticked |
 | Retry forever | Five attempts per loop, counted in labels |
 
@@ -69,6 +75,7 @@ judge the outcome, not to hunt for problems:
 | `review-fix-exhausted` | The reviewer still asks for changes after five rounds | Decide whether the reviewer is right. Often the spec is ambiguous |
 | A comment on the issue from the agent | It was blocked and stopped, as instructed | Answer it, then remove and re-apply the `openhands` label |
 | A comment on a merged PR: "the next implementation issue … was not opened" | The phase's tasks aren't all ticked | Tick or finish them, then run Agent Issues by hand for the spec folder |
+| A test issue left open, with a failing or blocked report | The Tester found the merged change doesn't work on the development stage, or couldn't test it | Read the report. Merge its fix PR if it opened one, fix the stage, or write a task. Re-apply `openhands-test` to test again |
 
 ## Production is a third, optional gate
 

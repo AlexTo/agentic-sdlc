@@ -1,6 +1,6 @@
 ---
-title: 9. デプロイとセキュリティスキャン（任意）
-description: グリーンになった main をすべて開発ステージにデプロイし、本番は承認の後ろに置き、デプロイのたびにスキャンします。
+title: 9. デプロイ、セキュリティスキャン、マージ後テスト（任意）
+description: グリーンになった main をすべて開発ステージにデプロイし、本番は承認の後ろに置き、デプロイのたびにスキャンし、デプロイされたものをテスト担当エージェントにテストさせます。
 sidebar:
   order: 9
 ---
@@ -8,7 +8,8 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **このステップで得られるもの:** `main` への push ごとの Trivy スキャン、グリーンになった `main` を毎回
-開発ステージに出荷する Deploy workflow、そして人を待つ本番デプロイ。
+開発ステージに出荷する Deploy workflow、人を待つ本番デプロイ、そして必要であれば、マージされた変更を毎回
+開発ステージでテストするテスト担当エージェント。
 
 このステップの詳細は Discava 固有（AWS、CDK）ですが、全体の形はどのクラウドでも使えます。このリポジトリの
 ノートアプリの例にはデプロイがないので、[Discava の `deploy.yml`](https://github.com/AlexTo/discava/blob/main/.github/workflows/deploy.yml)
@@ -71,6 +72,32 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    **Required reviewers** を追加します。本番にデプロイするには、**Actions → Deploy → Run
    workflow** を開いて本番ステージを入力します。するとジョブは承認を待ちます。
 
+6. デプロイされた変更を毎回テストしたい場合は、**テスト担当エージェントを追加します**（ギャップ 11）。これは最も新しい
+   部品で、このリポジトリではなく Discava にあります。そこから次をコピーします:
+
+   - `packages/tooling/agent/src/post-merge-test/`、`src/agent-lock/`、`src/helpers/` と、それらの
+     Nx ターゲット `post-merge-test` と `agent-lock`
+   - `.github/workflows/post-merge-verify.yml` と `agent-lock.yml`
+   - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`（テスト issue を手動で開くためのもの）
+
+   次に、ステージ名（`TEST_STAGE`）と、デプロイされたスタックに決して届かないパス
+   （`plan.ts` の `NOT_DEPLOYED`）を、あなたのリポジトリに合わせて設定します。
+
+   OpenHands 側では、`tester` エージェントプロファイルと、`openhands-test` ラベルの付いた issue を
+   ポーリングする automation を追加します。これにはカタログのテンプレートがありません。Discava のワーカーとそのプロンプトは
+   [OpenHands のセットアップ](../../discava/openhands-setup/#テスト担当-github-issue-tester) と
+   [エージェントのプロンプト](../../discava/agent-prompts/#テスト担当) で説明しています。テスト担当には次を与えます:
+
+   - 開発アカウントにサインインしたクラウドの CLI。アクセス権はテストに必要な最小限にします
+   - アプリのロールごとに 1 人のテストユーザー。OpenHands のシークレットとして保存します
+   - 操作できるブラウザ。たとえば Chromium 付きの Playwright
+
+   <Aside type="caution">
+   テスト担当は、これらの認証情報を持ったまま issue と pull request を読みます。ロック
+   （`agent-lock.yml` と `helpers/conversation-lock.ts`）を維持し、「どうテストするか」は issue ではなく
+   automation 自身のプロンプトに置き、データが重要なステージには決して向けないでください。
+   </Aside>
+
 </Steps>
 
 ## 動作を確認する
@@ -79,9 +106,14 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 CI を手動でもう一度実行すると、Deploy は `Skipping deploy: no longer main's latest commit` とログに出し、
 何も出荷しません。
 
+テスト担当を設定している場合: そのデプロイの後、**Post-merge Verify** が `test(post-merge): verify #<pr> …` という
+タイトルで、`openhands-test` ラベルの付いた、ロックされた issue を開きます。1 回のポーリング以内にテスト担当が始まり、
+そのレポートが issue へのコメントとして現れます。
+
 <Aside type="note">
-エージェントがデプロイすることはなく、これらのロールを目にすることもありません。エージェントの会話が持っているのは GitHub のトークンだけです。
-デプロイロールを引き受けるのは、`main` から、そのステージの environment で実行される workflow だけです。
+どのエージェントもデプロイすることはなく、これらのロールを目にすることもありません。開発担当とレビュー担当に必要なのは GitHub の
+トークンだけです。テスト担当の開発アカウントへのアクセスは、デプロイロールとは別のものです。デプロイロールを引き受けるのは、
+`main` から、そのステージの environment で実行される workflow だけです。
 </Aside>
 
 次へ: これで、あなたのリポジトリには、このリポジトリのフォークが持っているものがすべて揃いました。フォークの代わりに自分のリポジトリを使って、

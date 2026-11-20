@@ -1,6 +1,6 @@
 ---
 title: 3. Install OpenHands
-description: Install Agent Canvas with npm, run it, add the GitHub token and create the two agent profiles.
+description: Install Agent Canvas with npm, run it, add the GitHub token and create the Developer and Reviewer agent profiles.
 sidebar:
   order: 3
 ---
@@ -8,7 +8,8 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **You'll end with:** OpenHands Agent Canvas running on your machine, a GitHub token stored as a
-secret, and two agent profiles: `default` for implementing and `reviewer` for reviewing.
+secret, and two agent profiles: `developer` for the Developer agent and `reviewer` for the Reviewer
+agent.
 
 <Steps>
 
@@ -44,21 +45,24 @@ secret, and two agent profiles: `default` for implementing and `reviewer` for re
 
    The coding agent must be installed and signed in on this machine, as the same user.
 
-5. **Create two agent profiles:**
+5. **Create two agent profiles**, one per agent role:
 
-   | Profile | Agent | Model |
-   | --- | --- | --- |
-   | `default` | ACP, `claude-code` | `sonnet` |
-   | `reviewer` | ACP, `claude-code` | `opus` |
+   | Profile | Role | Agent | Model |
+   | --- | --- | --- | --- |
+   | `developer` | Developer | ACP, `claude-code` | `sonnet` |
+   | `reviewer` | Reviewer | ACP, `claude-code` | `opus` |
 
-   Any agent and model works. Keep the reviewer at least as strong as the implementer: it is the
+   Any agent and model works. Keep the Reviewer at least as strong as the Developer: it is the
    last check before you.
+
+   Discava has a third profile, `tester`, for the Tester agent. It tests merged changes on a
+   deployed stage, which the notes app doesn't have, so you don't need it here.
 
 </Steps>
 
 ## Check it worked
 
-In Agent Canvas, start a conversation with the `default` profile and give it the
+In Agent Canvas, start a conversation with the `developer` profile and give it the
 `GITHUB_PERSONAL_ACCESS_TOKEN` secret. Ask it:
 
 ```text

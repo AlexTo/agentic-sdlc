@@ -1,6 +1,6 @@
 ---
-title: 9. Deploy e scans de segurança (opcional)
-description: Faça deploy de toda main verde para um stage de desenvolvimento, mantenha produção atrás de uma aprovação e faça scan antes de cada deploy.
+title: 9. Deploy, scans de segurança e testes pós-merge (opcional)
+description: Faça deploy de toda main verde para um stage de desenvolvimento, mantenha produção atrás de uma aprovação, faça scan antes de cada deploy e deixe o agent Testador testar o que saiu no deploy.
 sidebar:
   order: 9
 ---
@@ -8,7 +8,8 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **No final você terá:** um scan do Trivy em todo push na `main`, um workflow Deploy que entrega cada
-`main` verde para um stage de desenvolvimento, e deploys de produção que esperam por uma pessoa.
+`main` verde para um stage de desenvolvimento, deploys de produção que esperam por uma pessoa e, se
+você quiser, um agent Testador que testa cada mudança mergeada no stage de desenvolvimento.
 
 Os detalhes deste passo são específicos do Discava (AWS, CDK), mas o formato funciona para qualquer
 cloud. O app de notas de exemplo deste repositório não tem deploy, então copie do
@@ -73,6 +74,35 @@ cloud. O app de notas de exemplo deste repositório não tem deploy, então copi
    produção e adicione **Required reviewers**. Para fazer deploy, abra **Actions → Deploy → Run
    workflow** e informe o stage de produção. O job então espera a aprovação.
 
+6. **Adicione o agent Testador**, se você quiser que cada mudança que sai no deploy seja testada
+   (lacuna 11). Esta é a peça mais nova, e ela fica no Discava, não neste repositório. Copie de lá:
+
+   - `packages/tooling/agent/src/post-merge-test/`, `src/agent-lock/` e `src/helpers/`, com os
+     targets Nx `post-merge-test` e `agent-lock`
+   - `.github/workflows/post-merge-verify.yml` e `agent-lock.yml`
+   - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`, para abrir uma issue de teste à mão
+
+   Depois ajuste o nome do stage (`TEST_STAGE`) e os caminhos que nunca chegam a uma stack com
+   deploy (`NOT_DEPLOYED` em `plan.ts`) para o seu repositório.
+
+   Do lado do OpenHands, adicione um agent profile `tester` e uma automation que faz polling de
+   issues com o label `openhands-test`. Não há template de catálogo para ela. O worker do Discava e
+   o prompt dele estão descritos em
+   [Configuração do OpenHands](../../discava/openhands-setup/#testador-github-issue-tester) e em
+   [Os prompts dos agents](../../discava/agent-prompts/#testador). Dê ao Testador:
+
+   - uma CLI de cloud autenticada na conta de desenvolvimento, com o mínimo de acesso que os testes
+     exigem
+   - um usuário de teste por papel no seu app, guardados como secrets do OpenHands
+   - um navegador que ele consiga controlar, como o Playwright com Chromium
+
+   <Aside type="caution">
+   O Testador lê issues e pull requests enquanto tem essas credenciais em mãos. Mantenha o
+   trancamento (`agent-lock.yml` e `helpers/conversation-lock.ts`), mantenha o "como testar" no
+   próprio prompt da automation em vez de na issue, e nunca o aponte para um stage cujos dados
+   importam.
+   </Aside>
+
 </Steps>
 
 ## Confira se funcionou
@@ -81,9 +111,14 @@ Faça o merge de qualquer PR. O CI roda, depois o **Deploy** começa sozinho com
 desenvolvimento. Rode o CI de novo manualmente em um commit mais antigo: o Deploy registra
 `Skipping deploy: no longer main's latest commit` e não entrega nada.
 
+Com o Testador configurado: depois desse deploy, o **Post-merge Verify** abre uma issue trancada
+com o título `test(post-merge): verify #<pr> …` e o label `openhands-test`. Em até um poll, o
+Testador começa, e o relatório dele aparece como um comentário na issue.
+
 <Aside type="note">
-O agent nunca faz deploy e nunca vê essas roles. A conversa dele só tem o token do GitHub. A role
-de deploy só é assumida por um workflow rodando a partir da `main`, no environment do stage.
+Nenhum agent faz deploy, e nenhum vê essas roles. O Desenvolvedor e o Revisor só precisam do token
+do GitHub. O acesso do Testador à conta de desenvolvimento é separado da role de deploy, que só é
+assumida por um workflow rodando a partir da `main`, no environment do stage.
 </Aside>
 
 Próximo: seu repositório agora tem tudo o que um fork deste tem. Continue a partir de

@@ -1,6 +1,6 @@
 ---
 title: Thiết lập OpenHands
-description: Agent Canvas, các agent profile và hai automation, đúng như Discava chạy chúng.
+description: Agent Canvas, các agent profile và ba automation (Developer, Reviewer và Tester), đúng như Discava chạy chúng.
 sidebar:
   order: 4
 ---
@@ -32,10 +32,15 @@ Các cài đặt định hình cách agent làm việc:
 
 ## Agent profile
 
-| Profile | Agent | Model | Dùng bởi |
-| --- | --- | --- | --- |
-| `default` | Claude Code (ACP) | Sonnet | GitHub issue to PR |
-| `reviewer` | Claude Code (ACP) | Opus | GitHub code review |
+Mỗi vai trò agent một profile:
+
+| Profile | Vai trò | Agent | Model | Dùng bởi |
+| --- | --- | --- | --- | --- |
+| `developer` | Developer | Claude Code (ACP) | Sonnet | GitHub issue to PR |
+| `reviewer` | Reviewer | Claude Code (ACP) | Opus | GitHub code review |
+| `tester` | Tester | Claude Code (ACP) | Opus | GitHub issue tester |
+
+Mỗi profile có prompt timeout 30 phút.
 
 ## Secret
 
@@ -43,18 +48,43 @@ Lưu trong Agent Canvas (**Settings → Secrets**), theo tên:
 
 | Tên | Dùng cho |
 | --- | --- |
-| `GITHUB_PERSONAL_ACCESS_TOKEN` | Các automation đọc GitHub bằng nó. Các cuộc hội thoại nhận nó để clone, push và mở PR |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | Các automation đọc GitHub bằng nó. Các cuộc hội thoại nhận nó để clone, push, mở PR, review và comment |
 | `OPENHANDS_AUTOMATION_API_KEY` | Key riêng của backend automation |
+| `DISCAVA_STUDENT_USERNAME`, `DISCAVA_STUDENT_PASSWORD` | Student của Tester trên `discava-development` |
+| `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | Instructor của Tester |
+| `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | Admin của Tester |
 
 GitHub token là một personal access token trên tài khoản của maintainer, với quyền ghi vào nội dung
 repository, issue, pull request và workflow.
 
-## Hai automation
+Sáu secret `DISCAVA_*` là các người dùng test Cognito trên stage development, mỗi vai trò trong ứng
+dụng một người. Tester đăng nhập vào các cổng bằng chúng và lấy API token bằng chúng.
 
-Cả hai được cài từ catalog automation của Agent Canvas, không phải viết tay. Mỗi automation làm gì
-trong một lần poll được mô tả ở [Runtime của agent](../../concepts/the-agent-runtime/#hai-automation).
+## Tester có gì trên máy
 
-### GitHub issue to PR
+Developer và Reviewer chỉ cần Node, pnpm, git và `gh`. Tester còn dùng:
+
+| Công cụ | Để làm gì |
+| --- | --- |
+| AWS CLI, đã đăng nhập vào tài khoản chứa các stack `discava-development-*` | Tìm stage (output của stack), lấy Cognito token, đọc DynamoDB, S3 và CloudWatch log. Prompt của nó bảo nó chỉ dùng để đọc |
+| Playwright với Chromium | Điều khiển các cổng đã deploy |
+| `tmp/screenshots/` của bản checkout Discava | Nơi lưu ảnh chụp màn hình của nó, mỗi pull request một thư mục |
+
+<Aside type="caution">
+Đây là nơi duy nhất một agent ở Discava làm việc với quyền truy cập cloud. Đó là lý do stage là
+`discava-development`, với dữ liệu bỏ đi được, và là lý do mọi thứ các agent đọc đều bị
+[khóa](../post-merge-verify/#agent-lock). Với một team, hãy cho Tester một role chỉ đọc riêng và một
+máy hoặc VM riêng.
+</Aside>
+
+## Ba automation
+
+Hai cái đầu được cài từ catalog automation của Agent Canvas, không phải viết tay. Cái thứ ba là của
+riêng Discava. Mỗi automation làm gì trong một lần poll được mô tả ở
+[Runtime của agent](../../concepts/the-agent-runtime/#ba-automation), và prompt mà mỗi cái giao cho
+agent của nó nằm ở [Prompt của các agent](../agent-prompts/).
+
+### Developer: GitHub issue to PR
 
 | Trường | Giá trị |
 | --- | --- |
@@ -62,15 +92,15 @@ trong một lần poll được mô tả ở [Runtime của agent](../../concept
 | Repository | `AlexTo/discava` |
 | Label kích hoạt | `openhands` |
 | Tiền tố nhánh | `openhands/issue` → nhánh `openhands/issue-<n>` |
-| Chế độ pull request | Draft |
+| Chế độ pull request | Ready for review |
 | Secret GitHub token | `GITHUB_PERSONAL_ACCESS_TOKEN` |
 | Lịch | `*/5 * * * *`, Australia/Sydney |
-| Agent profile | `default` |
+| Agent profile | `developer` |
 
 Một lượt revise bảo agent gắn lại label
 `openhands-review` sau đó, để head mới được review.
 
-### GitHub code review
+### Reviewer: GitHub code review
 
 | Trường | Giá trị |
 | --- | --- |
@@ -84,15 +114,48 @@ Một lượt revise bảo agent gắn lại label
 | Lịch | `*/5 * * * *`, Australia/Sydney |
 | Agent profile | `reviewer` |
 
-Trong khi các check vẫn đang chạy, reviewer đăng một comment "⏳ Review waiting on checks" và thử lại
+Trong khi các check vẫn đang chạy, Reviewer đăng một comment "⏳ Review waiting on checks" và thử lại
 ở một lần quét sau. Các review của nó bắt đầu bằng "_This review was posted by an AI agent
 (OpenHands)._" và mang một marker ẩn `<!-- openhands-review-run: <id> -->`.
 
+### Tester: GitHub issue tester
+
+Không có template catalog nào cho cái này. Nó là một worker khoảng một trăm dòng, xây trên cùng các
+helper GitHub và hội thoại mà các template catalog dùng, với prompt của nó trong một file nằm bên
+cạnh.
+
+| Trường | Giá trị |
+| --- | --- |
+| Template | không có: `worker.py`, `prompt.md` và `config.json`, viết tay |
+| Repository | `AlexTo/discava` |
+| Label kích hoạt | `openhands-test` |
+| Tác giả issue | `github-actions[bot]` |
+| Tiền tố nhánh | `openhands/test-fix` → nhánh sửa `openhands/test-fix-<n>` |
+| Test mới mỗi lần quét | 2 |
+| File prompt | `prompt.md` |
+| Secret GitHub token | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+| Lịch | `*/5 * * * *`, Australia/Sydney |
+| Agent profile | `tester` |
+
+Ở mỗi lần poll, worker:
+
+1. Liệt kê các issue đang mở mang `openhands-test`, số nhỏ nhất trước.
+2. Bỏ qua mọi issue không do một trong các **tác giả issue** mở. Nội dung của một issue trở thành
+   một phần những gì agent đọc, nên chỉ các issue của chính workflow mới được test.
+3. Tìm sự kiện mới nhất đã gắn label. Số issue và ID của sự kiện đó tạo thành một lần giao, nên một
+   lần poll sau của cùng lần gắn label bị bỏ qua, và comment của chính Tester không bao giờ khởi
+   động lần test thứ hai. Gỡ và gắn lại label là một sự kiện mới, và do đó là một lần test mới.
+4. Bắt đầu hoặc tiếp tục cuộc hội thoại của issue với prompt, tối đa hai lần test mới mỗi lần poll.
+
+Các issue nó poll được mở bởi [Post-merge Verify](../post-merge-verify/). Các comment của Tester kết
+thúc bằng "_This comment was posted by an AI agent (OpenHands)._".
+
 <Aside type="caution" title="Một tài khoản cho mọi thứ">
-Ở Discava, agent triển khai, reviewer và maintainer đều dùng cùng một tài khoản GitHub. GitHub không
-cho một tài khoản duyệt PR của chính nó, nên verdict của reviewer được đăng dưới dạng review
-`COMMENTED`, và glue đọc dòng verdict thay vì trạng thái review. Với một team, hãy cho các automation
-một tài khoản máy riêng.
+Ở Discava, Developer, Reviewer, Tester và maintainer đều dùng cùng một tài khoản GitHub. GitHub
+không cho một tài khoản duyệt PR của chính nó, nên verdict của Reviewer được đăng dưới dạng review
+`COMMENTED`, và glue đọc dòng verdict thay vì trạng thái review. Các báo cáo của Tester hiện là
+comment của maintainer cũng vì lý do đó. Với một team, hãy cho các automation một tài khoản máy
+riêng.
 </Aside>
 
-Tiếp theo: [Spec sang issue](../spec-to-issue/).
+Tiếp theo: [Prompt của các agent](../agent-prompts/).

@@ -1,6 +1,6 @@
 ---
 title: 피드백 루프
-description: 빨간 CI 실행이나 "changes requested" 리뷰가 에이전트를 어떻게 돌려보내는지, 그리고 각 루프가 왜 다섯 번 시도 후에 멈추는지.
+description: 빨간 CI 실행이나 "changes requested" 리뷰가 개발자 에이전트를 어떻게 돌려보내는지, 각 루프가 왜 다섯 번 시도 후에 멈추는지, 그리고 merge 후에 테스터 에이전트가 무엇을 더하는지.
 sidebar:
   order: 6
 ---
@@ -8,15 +8,16 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 
 **짧게 말하면:** 무언가 실패하면 workflow가 PR의 head 커밋에 실패 상태를 표시합니다. OpenHands worker가 다음
-폴링 때 이를 보고, 같은 에이전트 대화에게 같은 PR을 고치라고 요청합니다. 각 루프에는 label로 된 카운터가 있고,
-다섯 번에서 멈춥니다.
+폴링 때 이를 보고, 같은 개발자 에이전트 대화에게 같은 PR을 고치라고 요청합니다. 각 루프에는 label로 된 카운터가
+있고, 다섯 번에서 멈춥니다. merge 후에는 세 번째 루프가 시작됩니다. 테스터 에이전트가 배포된 stage에서 변경을
+테스트합니다.
 
 ## 두 개의 루프
 
 ```d2
 direction: right
 
-pr: 에이전트가 push {shape: page}
+pr: 개발자 에이전트가 push {shape: page}
 checks: PR Checks
 review: 리뷰어 에이전트
 you: 사람의 리뷰
@@ -83,5 +84,44 @@ Discava에서 처음 merge된 에이전트 PR 67개 중 42개는 fix label이 �
 </Aside>
 
 그 뒤 에이전트에게 한 라운드를 더 주려면 [루프 초기화](../../reference/labels/#루프-초기화)를 참고하세요.
+
+## merge 후: 테스트 루프
+
+위의 두 루프는 merge에서 끝납니다. 두 루프가 확인한 것은 모두 로컬 스택에서 실행되었으므로, 질문 하나가 아직
+남아 있습니다. 변경이 배포된 곳에서 동작하는가? 저장소가 `main`을 개발 stage에 배포한다면, 세 번째 루프가 이에
+답합니다.
+
+```d2
+direction: down
+
+deploy: "Deploy\n(merge된 PR이 개발 stage에 도달)"
+verify: "Post-merge Verify\n(GitHub Actions)"
+issue: "테스트 issue\nopenhands-test" {shape: page}
+tester: 테스터 에이전트
+stage: 개발 stage {shape: cylinder}
+report: issue에 남긴 보고서 {shape: document}
+you: 사람
+
+deploy -> verify: 배포됨
+verify -> issue: PR당 하나
+issue -> tester: 다음 폴링
+tester -> stage: "UI, API, 저장된 데이터"
+tester -> report
+report -> you: 실패하면 열어 둠
+```
+
+| | 테스트 루프 |
+| --- | --- |
+| 트리거 | `main`의 개발 stage 배포가 끝남 |
+| Workflow | Post-merge Verify가, 배포되는 것을 바꾼 merge된 PR마다 테스트 issue를 하나씩 엽니다 |
+| 에이전트 | 테스터: 실제 브라우저에서 변경을 클릭해 보고, API를 호출한 다음, 저장소에 쓰인 것(데이터베이스 레코드, 저장된 파일, 검색 문서)과 로그를 검증합니다 |
+| 통과하면 | 모든 확인 항목과 그 증거를 담은 보고서, 그리고 issue가 닫힙니다 |
+| 실패하면 | 재현 단계를 담은 같은 보고서, 그리고 issue는 열린 채로 남습니다. 원인이 분명하고 수정이 작으면 테스터는 수정 PR도 엽니다. 이 PR은 다른 PR과 똑같이 검사, 리뷰어 에이전트, 사람의 리뷰를 거칩니다 |
+
+이 루프에는 카운터가 없습니다. 저절로 돌려보내지는 것이 없기 때문입니다. 실패한 테스트는 사람에게서 끝납니다.
+사람이 보고서를 읽고 수정 PR을 merge할지, 새 작업을 작성할지, spec을 바꿀지 결정합니다. 다시 테스트하려면
+`openhands-test` label을 제거했다가 다시 붙이세요.
+
+[merge 후 검증](../../discava/post-merge-verify/)에서 Discava의 workflow와 실제 보고서를 볼 수 있습니다.
 
 다음: [신뢰의 계층](../layers-of-trust/).

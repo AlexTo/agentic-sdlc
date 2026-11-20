@@ -7,7 +7,8 @@ sidebar:
 
 Hướng dẫn này cho bạn thấy cách vận hành một vòng đời phần mềm trong đó **agent viết code và con
 người đưa ra hai quyết định**: duyệt spec, và duyệt kết quả. Mọi thứ ở giữa (mở issue, viết code và
-test, phản ứng với CI, trả lời review) tự chạy, thông qua quy trình GitHub bình thường.
+test, phản ứng với CI, trả lời review) tự chạy, thông qua quy trình GitHub bình thường. Ba vai trò
+agent làm việc đó: một **Developer**, một **Reviewer** và một **Tester**.
 
 Quy trình chạy hằng ngày trên [Discava](https://github.com/AlexTo/discava), một hệ thống quản lý
 học tập serverless trên AWS. Trong sáu ngày sau khi đi vào hoạt động vào ngày 14 tháng 11 năm 2026,
@@ -23,12 +24,12 @@ Ba công cụ có sẵn làm phần lớn công việc:
 | Công cụ | Vai trò ở đây |
 | --- | --- |
 | [Speckit](https://github.com/github/spec-kit) | Biến một ý tưởng thành `spec.md`, `plan.md` và `tasks.md`, được đối chiếu với constitution của dự án |
-| [OpenHands](https://github.com/OpenHands/OpenHands) | Biến một issue có label thành pull request, và sửa lại pull request khi được báo có gì sai. Một automation OpenHands thứ hai review nó |
+| [OpenHands](https://github.com/OpenHands/OpenHands) | Chạy ba vai trò agent, mỗi vai trò một automation. Developer biến một issue có label thành pull request, và sửa lại nó khi được báo có gì sai. Reviewer review nó. Tester test thay đổi đã merge trên một stage đã deploy |
 | GitHub Actions | Chạy các check, và chứa phần glue giữa hai công cụ kia |
 
 Không công cụ nào biết về các công cụ khác. **Phần glue là chủ đề chính của hướng dẫn này**: mười
-mảnh automation nhỏ, có test, nối một spec đã xong với agent, CI với agent, và reviewer với agent,
-có giới hạn để không có gì lặp mãi.
+một mảnh automation nhỏ, có test, nối một spec đã xong với Developer, CI và Reviewer ngược về
+Developer, và một lần deploy với Tester, có giới hạn để không có gì lặp mãi.
 
 ## Dành cho ai
 

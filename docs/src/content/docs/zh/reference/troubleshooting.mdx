@@ -33,7 +33,7 @@ sidebar:
 | --- | --- | --- |
 | “⏳ Review waiting on checks”，但没有评审 | head 上有检查尚未完成，或一直卡在排队中 | 找到挂起的检查。一个永远不会运行的必需检查会永远阻塞评审 |
 | 评审写着 `🔄 CHANGES REQUESTED`，却没有 `review-fix-*` 标签 | 评审缺少运行标记、不是来自有写权限的账号，或者 PR 已经有了新进展 | 阅读 Agent Review Status 的 notice |
-| 评审显示为 “Commented” 而不是 “Approved” | 评审者用的是开启该 PR 的同一个账号，而 GitHub 不允许自己批准自己 | 只用一个账号时这是预期行为。给智能体使用一个机器账号 |
+| 评审显示为 “Commented” 而不是 “Approved” | 评审智能体用的是开启该 PR 的同一个账号，而 GitHub 不允许自己批准自己 | 只用一个账号时这是预期行为。给智能体使用一个机器账号 |
 
 ## 检查
 
@@ -43,6 +43,16 @@ sidebar:
 | 每个 PR 的 e2e job 都要下载 Chromium | 缓存只在 `main` 上保存 | 保留 CI 的 `playwright-cache` job，并使用与 PR Checks 相同的 key |
 | `Check for mutations` 在 `main` 上失败 | 有东西生成了 PR 没有提交的文件 | 在本地运行 `pnpm build` 并提交差异 |
 | 加标签时出现 `Resource not accessible by integration` | workflow token 能写 issue，但不能写 pull request | 给该 workflow 加上 `pull-requests: write` |
+
+## 合并后测试
+
+| 症状 | 发生了什么 | 怎么做 |
+| --- | --- | --- |
+| 一个 PR 已部署，却没有测试 issue | 它没有改动任何会被部署的内容（只有文档、spec、测试、工具或 CI），它带有 `skip-deploy-test`，或者 Deploy 运行因为其 commit 已不是 `main` 的最新 commit 而什么都没发布 | 阅读 Post-merge Verify 运行的 notice。如果仍想测试它，用该 PR 编号手动运行这个 workflow |
+| 测试 issue 已开出，测试智能体却始终不领取 | 该 issue 没有 `openhands-test` 标签，因为它指向的某个对象无法锁定；或者它是由 automation 不信任的账号开出的 | Post-merge Verify 运行会失败，并指出需要锁定什么。锁定它，然后手动加上标签 |
+| 测试智能体已报告，而你想再跑一次 | 每次加标签只测试一次 | 移除并重新加上 `openhands-test` |
+| 报告写着 “blocked” | stage 缺少该变更所需的某样东西，例如一个已连接的支付账号 | 修复 stage，然后重新加上标签 |
+| 智能体 PR 上没有 **E2E screenshots** 评论 | 该 PR 已锁定，而 GitHub 拒绝 Actions token 在已锁定的对话上评论 | 阅读 `E2E screenshots` job 摘要中的列表 |
 
 ## 部署
 

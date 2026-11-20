@@ -1,6 +1,6 @@
 ---
 title: Boucles de retour
-description: Agent CI Status et Agent Review Status, les deux workflows qui renvoient l'agent au travail.
+description: Agent CI Status et Agent Review Status, les deux workflows qui renvoient l'agent Développeur au travail.
 sidebar:
   order: 6
 ---
@@ -16,7 +16,9 @@ commit nommé `software-factory/review` à l'état `failure` sur la tête de la 
 
 `.github/workflows/agent-ci.yml` s'exécute sur `workflow_run`, quand **PR Checks** se termine en
 `failure` ou `timed_out` pour une pull request sur une branche `openhands/issue-`. Il récupère la
-branche par défaut et exécute `agent-ci-status`.
+branche par défaut et exécute `agent-ci-status`. Les étapes que les deux workflows partagent se
+trouvent dans un seul workflow réutilisable, `agent-status.yml`. Chaque appelant garde son propre
+déclencheur, sa propre condition, son propre groupe de concurrence et ses propres permissions.
 
 `workflow_run` a son importance. Il s'exécute dans le contexte de la branche par défaut, avec un token
 qui peut écrire, alors même que PR Checks s'est exécuté sur le code de la PR avec un token en lecture
@@ -52,15 +54,15 @@ Il récupère explicitement la branche par défaut, et exécute `agent-review-st
 | Vérification | Pourquoi |
 | --- | --- |
 | L'association de l'auteur est `OWNER`, `MEMBER` ou `COLLABORATOR` | Seule une personne avec un accès en écriture peut la déclencher |
-| Le corps contient `<!-- openhands-review-run: … -->` | C'est la revue de l'agent relecteur, pas une personne qui la cite |
+| Le corps contient `<!-- openhands-review-run: … -->` | C'est la revue de l'agent Relecteur, pas une personne qui la cite |
 | Le corps contient une ligne qui est exactement `🔄 CHANGES REQUESTED` | Le verdict, pas une simple mention de celui-ci |
 
 Ensuite, les mêmes étapes que pour la CI : `review-fix-<n>`, le statut en échec lié à la revue, et
 `review-fix-exhausted` après cinq.
 
-Le relecteur relit de lui-même après que l'agent a poussé, parce que le prompt de révision dit à
-l'agent de remettre `openhands-review`, et qu'un nouveau commit de tête compte comme une nouvelle
-revue.
+Le Relecteur relit de lui-même après que le Développeur a poussé, parce que le
+[prompt de révision](../agent-prompts/#développeur) dit au Développeur de remettre
+`openhands-review`, et qu'un nouveau commit de tête compte comme une nouvelle revue.
 
 ## À quoi cela ressemble sur une PR
 
@@ -72,15 +74,18 @@ Tiré de [#470](https://github.com/AlexTo/discava/pull/470), « ratings in searc
    failing `E2E tests (4/4)` shard: my new scenario […] hit a strict-mode violation, because
    `getByText('4.5')` matched both the rating and the `4.5 and up` option […]. I fixed both
    locators."*
-4. Le relecteur voit que des checks tournent encore sur la nouvelle tête et commente « ⏳ Review
+4. Le Relecteur voit que des checks tournent encore sur la nouvelle tête et commente « ⏳ Review
    waiting on checks ». Lors d'un passage ultérieur, tout est vert. Il relit `94b9ee3` et conclut par
    `✅ APPROVED`.
-5. `main` est mergé dans la branche. Le relecteur relit à nouveau la nouvelle tête et l'approuve.
+5. `main` est mergé dans la branche. Le Relecteur relit à nouveau la nouvelle tête et l'approuve.
 6. Une personne merge.
 
 <Aside type="tip">
 Les deux scripts acceptent `DRY_RUN=true`, qui affiche le plan en JSON et ne modifie rien. Faites
 pointer `GITHUB_EVENT_PATH` vers une charge utile d'événement enregistrée pour rejouer un cas réel.
 </Aside>
+
+Ce qui se passe après le merge, quand l'agent Testeur prend le relais, se trouve sur
+[Vérification après merge](../post-merge-verify/).
 
 Suite : [Checks de PR](../pr-checks/).

@@ -24,9 +24,14 @@ agent precisa **rodar o que construiu, do back end ao front end**, como uma pess
 - **Olhos:** ler o que volta: respostas, logs, os dados deixados no banco de dados e screenshots
   de cada estado que um revisor gostaria de ver.
 
-O agent não faz isso na própria máquina. Ele escreve os cenários e2e, e o CI os roda em
+O agent Desenvolvedor não faz isso na própria máquina. Ele escreve os cenários e2e, e o CI os roda em
 todo PR contra uma stack local nova. Os resultados, as falhas de invariantes e os screenshots voltam para
 o PR, então o agent pega os próprios erros e todo PR chega com evidências.
+
+Depois do merge, um segundo agent faz isso de verdade. O agent Testador pega cada mudança no
+stage de desenvolvimento com deploy, com um navegador de verdade, login de verdade e dados de verdade. Ele usa as mãos e
+os olhos: depois de cada ação, ele lê de volta o que foi gravado no banco de dados, no armazenamento de arquivos e no
+índice de busca, e verifica se está certo. Uma tela pode parecer correta sobre um registro errado.
 
 Construa para isso desde o primeiro dia: todo serviço de nuvem precisa de um substituto local, todo fluxo de usuário de um
 cenário e2e e todo estado de UI de um screenshot. Qualquer coisa que o agent não consiga rodar é uma tarefa que uma pessoa precisa
@@ -40,8 +45,8 @@ deles. Para mudar o comportamento, mude a spec e gere de novo o plano e as taref
 
 ## 3. Os gates automáticos dão o feedback, não você<Icon name="approve-check-circle" class="heading-icon" />
 
-Lint, typecheck, testes unitários, invariantes, testes e2e, testes de concorrência, screenshots e um agent
-revisor rodam em todo PR. Um resultado vermelho volta direto para o agent que escreveu a mudança.
+Lint, typecheck, testes unitários, invariantes, testes e2e, testes de concorrência, screenshots e o agent
+Revisor rodam em todo PR. Um resultado vermelho volta direto para o agent que escreveu a mudança.
 Ninguém cola mensagem de erro.
 
 ## 4. Pessoas ficam com as duas decisões que importam<Icon name="star" class="heading-icon" />
@@ -77,8 +82,8 @@ workflow, não.
 
 ## 7. Autonomia limitada<Icon name="padlock" class="heading-icon" />
 
-O agent não pode fazer merge, não pode editar workflows, não pode mexer em credenciais de nuvem e não pode enfraquecer um teste
-para ficar verde. Cada loop de correção é limitado a cinco tentativas. Depois disso, ele para e pede ajuda a uma pessoa.
+Nenhum agent pode fazer merge, editar workflows, fazer deploy ou enfraquecer um teste para ficar verde. Só o Testador alcança
+um stage com deploy, e só o de desenvolvimento. Cada loop de correção é limitado a cinco tentativas. Depois disso, ele para e pede ajuda a uma pessoa.
 
 ## 8. Unidades de trabalho pequenas e delimitadas<Icon name="list-format" class="heading-icon" />
 
@@ -97,7 +102,7 @@ colega ou um novo agent pode continuar de onde o último parou.
 | --- | --- |
 | 1. Verificação | [Camadas de confiança](../layers-of-trust/#a-verificação-é-o-que-mais-importa), [A stack local no Discava](../../discava/local-stack/) |
 | 2. A spec como fonte da verdade | [Desenvolvimento orientado a spec](../spec-driven-development/) |
-| 3. Gates automáticos | [Camadas de confiança](../layers-of-trust/), [Feedback loops](../feedback-loops/) |
+| 3. Gates automáticos | [Camadas de confiança](../layers-of-trust/), [Feedback loops](../feedback-loops/), [O runtime do agent](../the-agent-runtime/#os-três-papéis) |
 | 4. Decisões humanas | [Gates humanos](../human-gates/) |
 | 5. Regras e skills determinísticas | [PR checks no Discava](../../discava/pr-checks/), [Constitution e orientação](../../discava/constitution-and-guidance/) |
 | 6. A cola é código | [A cola que falta](../the-missing-glue/) |

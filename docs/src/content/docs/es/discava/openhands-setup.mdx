@@ -1,6 +1,6 @@
 ---
 title: Configuración de OpenHands
-description: Agent Canvas, los perfiles de agente y las dos automatizaciones exactamente como los usa Discava.
+description: Agent Canvas, los perfiles de agente y las tres automatizaciones (Desarrollador, Revisor y Tester) exactamente como los usa Discava.
 sidebar:
   order: 4
 ---
@@ -32,10 +32,15 @@ Los ajustes que determinan cómo trabajan los agentes:
 
 ## Perfiles de agente
 
-| Perfil | Agente | Modelo | Lo usa |
-| --- | --- | --- | --- |
-| `default` | Claude Code (ACP) | Sonnet | GitHub issue to PR |
-| `reviewer` | Claude Code (ACP) | Opus | GitHub code review |
+Un perfil por cada rol de agente:
+
+| Perfil | Rol | Agente | Modelo | Lo usa |
+| --- | --- | --- | --- | --- |
+| `developer` | Desarrollador | Claude Code (ACP) | Sonnet | GitHub issue to PR |
+| `reviewer` | Revisor | Claude Code (ACP) | Opus | GitHub code review |
+| `tester` | Tester | Claude Code (ACP) | Opus | GitHub issue tester |
+
+Cada uno tiene un prompt timeout de 30 minutos.
 
 ## Secretos
 
@@ -43,18 +48,44 @@ Guardados en Agent Canvas (**Settings → Secrets**), por nombre:
 
 | Nombre | Se usa para |
 | --- | --- |
-| `GITHUB_PERSONAL_ACCESS_TOKEN` | Las automatizaciones leen GitHub con él. Las conversaciones lo reciben para clonar, hacer push y abrir PR |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | Las automatizaciones leen GitHub con él. Las conversaciones lo reciben para clonar, hacer push, abrir PR, revisar y comentar |
 | `OPENHANDS_AUTOMATION_API_KEY` | La clave propia del backend de automatizaciones |
+| `DISCAVA_STUDENT_USERNAME`, `DISCAVA_STUDENT_PASSWORD` | El estudiante del Tester en `discava-development` |
+| `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | El instructor del Tester |
+| `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | El administrador del Tester |
 
 El token de GitHub es un personal access token de la cuenta del mantenedor, con acceso de escritura
 a contenidos del repositorio, issues, pull requests y workflows.
 
-## Las dos automatizaciones
+Los seis secretos `DISCAVA_*` son usuarios de prueba de Cognito en el stage de desarrollo, uno por
+cada rol de la app. El Tester inicia sesión en los portales con ellos y obtiene tokens de API con
+ellos.
 
-Ambas se instalaron desde el catálogo de automatizaciones de Agent Canvas, no se escribieron a mano.
-Lo que hace cada una en un sondeo está en [El runtime del agente](../../concepts/the-agent-runtime/#las-dos-automatizaciones).
+## Lo que tiene el Tester en la máquina
 
-### GitHub issue to PR
+El Desarrollador y el Revisor solo necesitan Node, pnpm, git y `gh`. El Tester usa además:
+
+| Herramienta | Para |
+| --- | --- |
+| AWS CLI, con sesión iniciada en la cuenta que contiene los stacks `discava-development-*` | Encontrar el stage (outputs de los stacks), obtener tokens de Cognito, leer DynamoDB, S3 y los logs de CloudWatch. Su prompt le dice que la use en solo lectura |
+| Playwright con Chromium | Manejar los portales desplegados |
+| `tmp/screenshots/` del checkout de Discava | Donde se guardan sus capturas, una carpeta por pull request |
+
+<Aside type="caution">
+Este es el único lugar donde un agente de Discava trabaja con acceso a la nube. Por eso el stage es
+`discava-development`, con datos desechables, y por eso todo lo que leen los agentes está
+[bloqueado](../post-merge-verify/#agent-lock). Para un equipo, dale al Tester su propio rol de solo
+lectura y su propia máquina o VM.
+</Aside>
+
+## Las tres automatizaciones
+
+Las dos primeras se instalaron desde el catálogo de automatizaciones de Agent Canvas, no se
+escribieron a mano. La tercera es propia de Discava. Lo que hace cada una en un sondeo está en
+[El runtime del agente](../../concepts/the-agent-runtime/#las-tres-automatizaciones), y el prompt que
+cada una le da a su agente está en [Los prompts de los agentes](../agent-prompts/).
+
+### Desarrollador: GitHub issue to PR
 
 | Campo | Valor |
 | --- | --- |
@@ -62,15 +93,15 @@ Lo que hace cada una en un sondeo está en [El runtime del agente](../../concept
 | Repositorio | `AlexTo/discava` |
 | Label de disparo | `openhands` |
 | Prefijo de rama | `openhands/issue` → ramas `openhands/issue-<n>` |
-| Modo de pull request | Draft |
+| Modo de pull request | Ready for review |
 | Secreto del token de GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` |
 | Programación | `*/5 * * * *`, Australia/Sydney |
-| Perfil de agente | `default` |
+| Perfil de agente | `developer` |
 
 Un turno de revisión le dice al agente que vuelva a poner después la label `openhands-review`,
 para que se revise la nueva cabeza.
 
-### GitHub code review
+### Revisor: GitHub code review
 
 | Campo | Valor |
 | --- | --- |
@@ -84,15 +115,50 @@ para que se revise la nueva cabeza.
 | Programación | `*/5 * * * *`, Australia/Sydney |
 | Perfil de agente | `reviewer` |
 
-Mientras los checks siguen ejecutándose, el revisor publica un comentario "⏳ Review waiting on
+Mientras los checks siguen ejecutándose, el Revisor publica un comentario "⏳ Review waiting on
 checks" y vuelve a intentarlo en un barrido posterior. Sus revisiones empiezan con "_This review was
 posted by an AI agent (OpenHands)._" y llevan un marcador oculto `<!-- openhands-review-run: <id> -->`.
 
+### Tester: GitHub issue tester
+
+No hay plantilla de catálogo para esta. Es un worker de unas cien líneas, construido sobre los mismos
+helpers de GitHub y de conversaciones que usan las plantillas del catálogo, con su prompt en un
+archivo junto a él.
+
+| Campo | Valor |
+| --- | --- |
+| Plantilla | ninguna: `worker.py`, `prompt.md` y `config.json`, escritos a mano |
+| Repositorio | `AlexTo/discava` |
+| Label de disparo | `openhands-test` |
+| Autores de las issues | `github-actions[bot]` |
+| Prefijo de rama | `openhands/test-fix` → ramas de corrección `openhands/test-fix-<n>` |
+| Tests nuevos por barrido | 2 |
+| Archivo de prompt | `prompt.md` |
+| Secreto del token de GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` |
+| Programación | `*/5 * * * *`, Australia/Sydney |
+| Perfil de agente | `tester` |
+
+En cada sondeo, el worker:
+
+1. Lista las issues abiertas que llevan `openhands-test`, de menor a mayor número.
+2. Omite cualquier issue que no haya abierto uno de los **autores de las issues**. El cuerpo de una
+   issue pasa a formar parte de lo que lee el agente, así que solo se prueban las issues del propio
+   workflow.
+3. Encuentra el último evento que puso la label. El número de la issue y el ID de ese evento forman
+   una entrega, así que un sondeo posterior del mismo etiquetado se ignora, y los comentarios del
+   propio Tester nunca arrancan un segundo test. Quitar y volver a poner la label es un evento nuevo
+   y, por tanto, un test nuevo.
+4. Arranca o reanuda la conversación de la issue con el prompt, hasta dos tests nuevos por sondeo.
+
+Las issues que sondea las abre [Post-merge Verify](../post-merge-verify/). Los comentarios del Tester
+terminan con "_This comment was posted by an AI agent (OpenHands)._".
+
 <Aside type="caution" title="Una sola cuenta para todo">
-En Discava, el agente implementador, el revisor y el mantenedor usan la misma cuenta de GitHub.
-GitHub no permite que una cuenta apruebe su propio PR, así que el veredicto del revisor se publica
+En Discava, el Desarrollador, el Revisor, el Tester y el mantenedor usan la misma cuenta de GitHub.
+GitHub no permite que una cuenta apruebe su propio PR, así que el veredicto del Revisor se publica
 como una revisión `COMMENTED`, y el pegamento lee la línea del veredicto en lugar del estado de la
-revisión. Para un equipo, dale a las automatizaciones una cuenta de máquina aparte.
+revisión. Los informes del Tester aparecen como comentarios del mantenedor por la misma razón. Para
+un equipo, dale a las automatizaciones una cuenta de máquina aparte.
 </Aside>
 
-Siguiente: [De la spec a la issue](../spec-to-issue/).
+Siguiente: [Los prompts de los agentes](../agent-prompts/).

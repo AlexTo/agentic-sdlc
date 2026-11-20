@@ -8,8 +8,10 @@ sidebar:
 | ラベル | 対象 | 付ける人 | 読む人 | 意味 |
 | --- | --- | --- | --- | --- |
 | `spec-ready` | spec の PR | 人 | Agent Issues | この PR をマージすると実装が始まる。すでにマージ済みの PR に付けた場合も同じ |
-| `openhands` | issue | Agent Issues または人 | Issue-to-PR automation | この issue を実装する。外して付け直すと、新しいブランチで改めて試行する |
-| `openhands-review` | PR | 実装するエージェント（PR を開いた後や修正した後） | Code review automation | この PR の現在の head をレビューする |
+| `openhands` | issue | Agent Issues または人 | Issue-to-PR automation（開発担当） | この issue を実装する。外して付け直すと、新しいブランチで改めて試行する |
+| `openhands-review` | PR | 開発担当エージェント（PR を開いた後や修正した後） | Code review automation（レビュー担当） | この PR の現在の head をレビューする |
+| `openhands-test` | issue | Post-merge Verify または人 | Issue tester automation（テスト担当） | この issue が指すマージ済みの pull request を、デプロイされた開発ステージでテストする。外して付け直すと、もう一度テストする |
+| `skip-deploy-test` | PR | 人 | Post-merge Verify | この pull request がデプロイされても、テスト issue を開かない |
 | `ci-fix-1` … `ci-fix-5` | エージェントの PR | Agent CI Status | Agent CI Status | 赤い CI に対する自動修正をその回数使った |
 | `ci-fix-exhausted` | エージェントの PR | Agent CI Status | Agent CI Status、人 | CI の修正を使い切った。人が引き継ぐ |
 | `review-fix-1` … `review-fix-5` | エージェントの PR | Agent Review Status | Agent Review Status | 「changes requested」に対する修正をその回数使った |

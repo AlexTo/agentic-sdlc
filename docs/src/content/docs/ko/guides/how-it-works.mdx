@@ -1,6 +1,6 @@
 ---
 title: 동작 방식
-description: 기능 하나가 아이디어에서 merge된 코드가 되기까지의 여정, 열한 단계.
+description: 기능 하나가 아이디어에서 merge되고 테스트된 코드가 되기까지의 여정, 열두 단계.
 sidebar:
   order: 2
 ---
@@ -9,20 +9,25 @@ sidebar:
 적었습니다.
 
 ```d2
-grid-rows: 2
+grid-rows: 3
 grid-columns: 4
 horizontal-gap: 140
 vertical-gap: 90
 
-# Top row runs left to right, bottom row right to left, so the loop wraps.
+# Top row runs left to right, middle row right to left, so the loop wraps.
+# The bottom row is what happens after the merge.
 spec: "spec PR\n(여러분)" {shape: document}
 issues: "Agent Issues\n(GitHub Actions)"
 issue: issue {shape: page}
-implement: "구현\n(OpenHands)"
+implement: "구현\n(개발자 에이전트)"
 merge: "merge\n(여러분)"
-review: "리뷰\n(OpenHands)"
+review: "리뷰\n(리뷰어 에이전트)"
 checks: "PR Checks\n(GitHub Actions)"
 pr: pull request {shape: page}
+deploy: "배포\n(GitHub Actions)"
+testissue: 테스트 issue {shape: page}
+test: "stage에서 테스트\n(테스터 에이전트)"
+report: 보고서 {shape: document}
 
 spec -> issues: spec-ready
 issues -> issue
@@ -32,7 +37,14 @@ pr -> checks
 checks -> review: 통과
 review -> merge: 승인됨
 merge -> issues: 다음 phase
+merge -> deploy: main이 초록색
+deploy -> testissue
+testissue -> test
+test -> report
 ```
+
+세 에이전트는 OpenHands automation입니다. **개발자**가 코드를 작성하고, **리뷰어**가 이를 리뷰하고, **테스터**가
+배포된 뒤에 이를 테스트합니다.
 
 ## 단계
 
@@ -43,18 +55,23 @@ merge -> issues: 다음 phase
 | 3 | 🧑🤖&nbsp;여러분 + 에이전트 | `/speckit-tasks`가 phase별로 묶인 순서 있는 작업 목록을 작성합니다. `/speckit-analyze`가 세 파일을 교차 검사합니다 | `tasks.md` |
 | 4 | 🧑&nbsp;**여러분** | spec PR을 열고, 코드처럼 리뷰하고, `spec-ready` label을 붙인 뒤 merge합니다 | merge된 spec PR. **사람 게이트 1** |
 | 5 | ⚙️&nbsp;자동화 | **Agent Issues** workflow가 `tasks.md`를 읽고 첫 번째 phase 그룹에 대한 issue를 `openhands` label과 함께 엽니다 | 구현 issue |
-| 6 | 🤖&nbsp;OpenHands | 다음 폴링 때 에이전트가 issue를 가져가서, 테스트를 먼저 작성하고, 구현하고, 작업에 체크 표시를 한 뒤 `openhands/issue-<n>`에서 PR을 엽니다 | pull request |
+| 6 | 🤖&nbsp;개발자 에이전트 | 다음 폴링 때 에이전트가 issue를 가져가서, 테스트를 먼저 작성하고, 구현하고, 작업에 체크 표시를 한 뒤 `openhands/issue-<n>`에서 PR을 엽니다 | pull request |
 | 7 | ⚙️&nbsp;CI | PR 검사가 lint, 단위 테스트, build, `tasks.md` 형식 검사, e2e 테스트, 스크린샷 검사를 실행합니다 | 검사 결과 |
-| 8 | ⚙️🤖&nbsp;자동화 + OpenHands | 실행이 빨간색이면 **Agent CI Status**가 PR을 실패로 표시합니다. 에이전트는 다음 폴링 때 이를 보고 같은 PR을 수정합니다 | `ci-fix-1`부터 `ci-fix-5`까지의 label |
-| 9 | 🤖&nbsp;OpenHands | 모든 검사가 끝나면 리뷰어 에이전트가 head 커밋을 리뷰하고 `✅ APPROVED` 또는 `🔄 CHANGES REQUESTED`로 마무리합니다. 후자라면 **Agent Review Status**가 에이전트를 다시 돌려보냅니다 | 리뷰, 경우에 따라 `review-fix-N` label |
+| 8 | ⚙️🤖&nbsp;자동화 + 개발자 에이전트 | 실행이 빨간색이면 **Agent CI Status**가 PR을 실패로 표시합니다. 개발자 에이전트는 다음 폴링 때 이를 보고 같은 PR을 수정합니다 | `ci-fix-1`부터 `ci-fix-5`까지의 label |
+| 9 | 🤖&nbsp;리뷰어 에이전트 | 모든 검사가 끝나면 리뷰어 에이전트가 head 커밋을 리뷰하고 `✅ APPROVED` 또는 `🔄 CHANGES REQUESTED`로 마무리합니다. 후자라면 **Agent Review Status**가 개발자 에이전트를 다시 돌려보냅니다 | 리뷰, 경우에 따라 `review-fix-N` label |
 | 10 | 🧑&nbsp;**여러분** | PR 설명과 **E2E screenshots** 댓글을 읽고, **(human)** 작업을 처리한 뒤 merge합니다 | merge된 PR. **사람 게이트 2** |
 | 11 | ⚙️&nbsp;자동화 | merge가 **Agent Issues**를 다시 실행합니다. 체크되지 않은 에이전트 작업이 남은 다음 phase의 issue를 열고, 남은 작업이 없을 때까지 6~10단계가 반복됩니다 | 다음 issue, 또는 완료 |
+| 12 | ⚙️🤖&nbsp;자동화 + 테스터 에이전트 | `main`이 스스로 배포되는 곳에서: merge가 개발 stage에 올라가면 **Post-merge Verify**가 이에 대한 테스트 issue를 엽니다. 테스터 에이전트가 변경을 클릭해 보고, API를 호출하고, 변경이 데이터베이스, 파일 저장소, 검색 인덱스에 쓴 데이터를 검증하고, 보고합니다 | 테스트 보고서. 통과하면 issue가 닫힙니다 |
+
+12단계에는 배포된 stage가 필요합니다. Discava에는 있습니다. 이 저장소의 예제 앱에는 없으므로, fork는 11단계에서
+멈춥니다.
 
 ## 여러분이 실제로 하는 일
 
 기능마다 spec을 한 번 작성하고 승인합니다. pull request마다 리뷰를 한 번 하고 merge를 클릭합니다. 루프가
-시도 횟수를 다 쓰거나(`ci-fix-exhausted` 또는 `review-fix-exhausted`), 에이전트가 막혔다고 댓글을 남길
-때만 일찍 불려 갑니다. 에이전트가 일하는 동안 여러분은 다음 spec을 작성할 수 있습니다.
+시도 횟수를 다 쓰거나(`ci-fix-exhausted` 또는 `review-fix-exhausted`), 에이전트가 막혔다고 댓글을 남기거나,
+변경이 stage에서 실패해서 테스터가 테스트 issue를 열어 둘 때만 일찍 불려 갑니다. 에이전트가 일하는 동안
+여러분은 다음 spec을 작성할 수 있습니다.
 
 ## 각 구성 요소의 위치
 
@@ -68,8 +85,9 @@ merge -> issues: 다음 phase
 | CI에서 에이전트로 | `.github/workflows/agent-ci.yml` |
 | 리뷰어에서 에이전트로 | `.github/workflows/agent-review.yml` |
 | 검사 | `.github/workflows/pr-checks.yml`, `ui-screenshots.yml`, `ci.yml` |
+| 배포에서 테스트 issue로 (Discava만) | `.github/workflows/deploy.yml`, `post-merge-verify.yml`, `agent-lock.yml` |
 | 단위 테스트를 갖춘 glue의 규칙 | `packages/common/scripts/src/agent-*`, `ui-screenshots/` |
-| 에이전트 런타임 | 저장소 밖의 OpenHands Agent Canvas |
+| 에이전트 런타임과 각 역할의 프롬프트 | 저장소 밖의 OpenHands Agent Canvas |
 
 자세한 내용은 개념 섹션에 있습니다. [phase가 issue가 되는 방식](../../concepts/one-phase-at-a-time/), 그리고
 [실패가 에이전트를 되돌려 보내는 방식](../../concepts/feedback-loops/)을 참고하세요.

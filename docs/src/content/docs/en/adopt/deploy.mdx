@@ -1,6 +1,6 @@
 ---
-title: 9. Deploy and security scans (optional)
-description: Deploy every green main to a development stage, keep production behind an approval, and scan before each deploy.
+title: 9. Deploy, security scans and post-merge tests (optional)
+description: Deploy every green main to a development stage, keep production behind an approval, scan before each deploy, and have the Tester agent test what was deployed.
 sidebar:
   order: 9
 ---
@@ -8,7 +8,8 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **You'll end with:** a Trivy scan on every push to `main`, a Deploy workflow that ships each green
-`main` to a development stage, and production deploys that wait for a person.
+`main` to a development stage, production deploys that wait for a person, and, if you want it, a
+Tester agent that tests each merged change on the development stage.
 
 This step is Discava-specific in its details (AWS, CDK), but the shape works for any cloud. The
 example notes app in this repository has no deploy, so copy from
@@ -73,6 +74,32 @@ example notes app in this repository has no deploy, so copy from
    environment and add **Required reviewers**. To deploy it, open **Actions → Deploy → Run
    workflow** and enter the production stage. The job then waits for approval.
 
+6. **Add the Tester agent**, if you want each deployed change tested (gap 11). This is the newest
+   piece, and it lives in Discava, not in this repository. Copy from there:
+
+   - `packages/tooling/agent/src/post-merge-test/`, `src/agent-lock/` and `src/helpers/`, with their
+     Nx targets `post-merge-test` and `agent-lock`
+   - `.github/workflows/post-merge-verify.yml` and `agent-lock.yml`
+   - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`, for opening a test issue by hand
+
+   Then set the stage name (`TEST_STAGE`), and the paths that never reach a deployed stack
+   (`NOT_DEPLOYED` in `plan.ts`), to match your repository.
+
+   On the OpenHands side, add a `tester` agent profile and an automation that polls for issues
+   labelled `openhands-test`. There is no catalog template for it. Discava's worker and its prompt
+   are described on [OpenHands setup](../../discava/openhands-setup/#tester-github-issue-tester)
+   and [The agents' prompts](../../discava/agent-prompts/#tester). Give the Tester:
+
+   - a cloud CLI signed in to the development account, with as little access as testing needs
+   - one test user per role in your app, stored as OpenHands secrets
+   - a browser it can drive, such as Playwright with Chromium
+
+   <Aside type="caution">
+   The Tester reads issues and pull requests while holding those credentials. Keep the locking
+   (`agent-lock.yml` and `helpers/conversation-lock.ts`), keep the "how to test" in the
+   automation's own prompt instead of the issue, and never point it at a stage whose data matters.
+   </Aside>
+
 </Steps>
 
 ## Check it worked
@@ -81,9 +108,14 @@ Merge any PR. CI runs, then **Deploy** starts by itself with the development sta
 by hand on an older commit: Deploy logs `Skipping deploy: no longer main's latest commit` and
 ships nothing.
 
+With the Tester set up: after that deploy, **Post-merge Verify** opens a locked issue titled
+`test(post-merge): verify #<pr> …`, labelled `openhands-test`. Within one poll, the Tester starts,
+and its report appears as a comment on the issue.
+
 <Aside type="note">
-The agent never deploys and never sees these roles. Its conversation has only the GitHub token.
-The deploy role is assumed only by a workflow running from `main`, in the stage's environment.
+No agent deploys, and none sees these roles. The Developer and the Reviewer need only the GitHub
+token. The Tester's access to the development account is separate from the deploy role, which is
+assumed only by a workflow running from `main`, in the stage's environment.
 </Aside>
 
 Next: your repository now has everything a fork of this one has. Continue from

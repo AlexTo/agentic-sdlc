@@ -8,34 +8,44 @@ flowchart TB
 _Human + Speckit_`") --> M1("Merge the spec PR")
         M1 --> I("`Issue opens
 _Automation_`")
-        I --> IMPL("`Agent implements
+        I --> IMPL("`Developer agent implements
 _OpenHands_`")
     end
 
     subgraph VERIFY["Agent loop: no human in between"]
         direction TB
-        CI{{"CI"}} -- "passes" --> AR{{"`Agent review
+        CI{{"CI"}} -- "passes" --> AR{{"`Reviewer agent reviews
 _OpenHands_`"}}
-        CI -- "fails" --> FIX("`Agent fixes
+        CI -- "fails" --> FIX("`Developer agent fixes
 _OpenHands, max 5× per loop_`")
         AR -- "changes requested" --> FIX
         FIX -. "CI runs again" .-> CI
     end
 
-    PLAN -- "tests pass locally" --> PR("Agent raises a PR")
+    PLAN -- "tests pass locally" --> PR("Developer agent raises a PR")
     PR --> VERIFY
-    VERIFY -- "CI green and agent approves" --> HR{{"`Human review
-_Developer, does any (human) tasks_`"}}
+    VERIFY -- "CI green and Reviewer approves" --> HR{{"`Human review
+_A person, does any (human) tasks_`"}}
     HR -- "approves" --> MERGED("Merge the PR")
     MERGED --> TICK{{"`Phase's agent tasks
 ticked in tasks.md?
 _Agent Issues_`"}}
     TICK -- "yes, a phase is left" --> NEXT("`Next phase's issue opens
-_↻ back to Agent implements_`")
+_↻ back to Developer agent implements_`")
     TICK -- "yes, none left" --> Done(["Spec done"])
     TICK -- "no" --> STALL("`Comment on the PR
 _a person ticks or finishes them_`")
     HR -. "changes requested<br/>+ openhands-review label" .-> VERIFY
+
+    MERGED -- "main is green" --> DEPLOY("`Deploy to the development stage
+_Automation, optional_`")
+    DEPLOY --> TISSUE("`Test issue opens
+_Automation_`")
+    TISSUE --> TEST{{"`Tester agent tests the deployed change
+_UI, APIs and stored data, on OpenHands_`"}}
+    TEST -- "passes" --> TDONE(["Report, test issue closed"])
+    TEST -- "fails" --> TFAIL("`Report, and a fix PR if the fix is small
+_a person decides_`")
 
     end
     style ALL fill:#ffffff,stroke:#ffffff,color:#ffffff
@@ -45,7 +55,7 @@ _a person ticks or finishes them_`")
     classDef gate fill:#e0e7ff,stroke:#6366f1,stroke-width:2px,color:#312e81
     classDef done fill:#dcfce7,stroke:#22c55e,stroke-width:2px,color:#14532d
     class S,M1 human
-    class I,IMPL,PR,FIX,NEXT agent
-    class CI,AR,TICK gate
-    class HR,MERGED,STALL human
-    class Done done
+    class I,IMPL,PR,FIX,NEXT,DEPLOY,TISSUE agent
+    class CI,AR,TICK,TEST gate
+    class HR,MERGED,STALL,TFAIL human
+    class Done,TDONE done

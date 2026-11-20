@@ -16,6 +16,8 @@ sidebar:
 | Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`、`statuses: write`、`issues: write`、`pull-requests: write` | デフォルトブランチ |
 | Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | なし（PR 番号を `gh` に渡す） |
 | Deploy (Discava) | `deploy.yml` | `main` での CI の `workflow_run`、`workflow_dispatch(stage)` | `contents: read`、`id-token: write` | CI が検証したコミット |
+| Post-merge Verify (Discava) | `post-merge-verify.yml` | Deploy の `workflow_run`、`completed`、`workflow_dispatch(pr_number)` | `contents: read`、`actions: read`、`issues: write`、`pull-requests: write` | デフォルトブランチ |
+| Agent Lock (Discava) | `agent-lock.yml` | `issues: labeled`、`pull_request: [opened, reopened]` | `contents: read`、`issues: write`、`pull-requests: write` | デフォルトブランチ |
 
 ## ブランチ保護で必須にするジョブ名
 
@@ -36,6 +38,7 @@ sidebar:
 | Agent CI Status | `agent-ci-<head branch>` | いいえ |
 | Agent Review Status | `agent-review-<PR number>` | いいえ |
 | Deploy | `deploy-<stage>` | いいえ |
+| Post-merge Verify | `post-merge-verify` | いいえ。一度に 1 つだけ実行するので、近接した 2 つのデプロイが 1 つの PR に 2 つの issue を開くことはない |
 
 エージェントの workflow はキャンセルしません。各実行は、試行を数える処理や issue を開く処理をちょうど 1 回だけ
 行う必要があります。また PR ごとのグループなので、無関係な PR が互いを待つことはありません。
@@ -52,3 +55,10 @@ sidebar:
 | `agent-review-status` | `src/agent-review/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH`、`DRY_RUN` |
 | `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH` |
 | `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`、`GITHUB_ACTIONS`（注釈用） |
+
+Discava は同じターゲットを `@discava/tooling-agent` に置いていて、テスト担当のためにさらに 2 つあります。
+
+| ターゲット | エントリポイント | 読む環境変数 |
+| --- | --- | --- |
+| `post-merge-test` | `src/post-merge-test/main.ts` | `GH_TOKEN`、`GH_REPO`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_NAME`、`GITHUB_EVENT_PATH`、`PR_NUMBER`、`TEST_STAGE`、`DRY_RUN` |
+| `agent-lock` | `src/agent-lock/main.ts` | `GH_TOKEN`、`GH_REPO`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_NAME`、`GITHUB_EVENT_PATH` |

@@ -8,8 +8,10 @@ sidebar:
 | Label | Trên | Đặt bởi | Đọc bởi | Ý nghĩa |
 | --- | --- | --- | --- | --- |
 | `spec-ready` | Spec PR | Một người | Agent Issues | Merge PR này sẽ khởi động việc triển khai. Thêm nó vào một PR đã merge cũng vậy |
-| `openhands` | Issue | Agent Issues, hoặc một người | Automation issue-to-PR | Triển khai issue này. Gỡ và gắn lại để thử lại từ đầu trên một nhánh mới |
-| `openhands-review` | PR | Agent triển khai, sau khi mở hoặc sửa lại | Automation code review | Review head hiện tại của PR này |
+| `openhands` | Issue | Agent Issues, hoặc một người | Automation issue-to-PR (Developer) | Triển khai issue này. Gỡ và gắn lại để thử lại từ đầu trên một nhánh mới |
+| `openhands-review` | PR | Agent Developer, sau khi mở hoặc sửa lại | Automation code review (Reviewer) | Review head hiện tại của PR này |
+| `openhands-test` | Issue | Post-merge Verify, hoặc một người | Automation issue tester (Tester) | Test pull request đã merge mà issue này nêu tên trên stage development đã deploy. Gỡ và gắn lại để test lại |
+| `skip-deploy-test` | PR | Một người | Post-merge Verify | Không mở issue test nào cho pull request này khi nó được deploy |
 | `ci-fix-1` … `ci-fix-5` | Agent PR | Agent CI Status | Agent CI Status | Đã dùng bấy nhiêu lượt fix-up tự động cho CI đỏ |
 | `ci-fix-exhausted` | Agent PR | Agent CI Status | Agent CI Status, con người | Đã hết lượt fix-up CI. Một người tiếp quản |
 | `review-fix-1` … `review-fix-5` | Agent PR | Agent Review Status | Agent Review Status | Đã dùng bấy nhiêu lượt fix-up cho "changes requested" |

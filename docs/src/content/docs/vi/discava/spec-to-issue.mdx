@@ -58,7 +58,7 @@ exists -> stalled: có
 exists -> open: không
 ```
 
-`pnpm nx run @discava/common-scripts:agent-issue`, trong `src/agent-issues/`:
+`pnpm nx run @discava/tooling-agent:agent-issue`, trong `src/agent-issues/`:
 
 1. **Gate** (`gate.ts`). `decide()` phân loại PR thành `spec`, `implementation` hoặc `ignore`.
 2. **Tìm thư mục spec** (`discover.ts`). Với một agent PR, nó đọc issue mà PR đóng và lấy thư mục từ
@@ -70,12 +70,18 @@ exists -> open: không
 5. **Chọn nhóm tiếp theo**: nhóm đầu tiên có một task chưa đánh dấu không phải **(human)**.
 6. **Kiểm tra issue đã tồn tại.** Nội dung mọi issue bắt đầu bằng một marker như
    `<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->`. Nếu một issue cho nhóm này đã
-   tồn tại (mở hoặc đóng), script không mở thêm. Thay vào đó nó comment trên PR, ví dụ:
+   tồn tại (mở hoặc đóng), script không mở thêm. Một marker chỉ được tính trong một issue do
+   workflow hoặc một người có quyền ghi mở, nên issue của một người lạ không thể làm chuỗi của một
+   spec đứng lại. Thay vào đó nó comment trên PR, ví dụ:
 
    > The next implementation issue for `specs/…/` was not opened: an issue for "Ratings in search"
    > already exists, and these tasks in its `tasks.md` are not ticked: T017, T018.
 
-7. **Render và tạo issue** (`issue.ts`), với label `openhands`.
+7. **Render và tạo issue** (`issue.ts`), không có label.
+8. **Khóa nó, rồi gắn label** (`helpers/conversation-lock.ts`). Issue được khóa, nên chỉ người có
+   quyền ghi mới comment được trên những gì agent Developer sẽ đọc, và chỉ khi đó mới nhận label
+   `openhands`. Nếu việc khóa thất bại, label không bao giờ được thêm và lần chạy thất bại, nêu tên
+   issue cần khóa và gắn label thủ công.
 
 ## Issue mà nó mở
 
@@ -116,7 +122,7 @@ Các hướng dẫn cố định được đọc từ issue template lúc chạy
 ```bash
 DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=workflow_dispatch \
   SPEC_FOLDER=20261116-013307-course-reviews \
-  pnpm nx run @discava/common-scripts:agent-issue
+  pnpm nx run @discava/tooling-agent:agent-issue
 ```
 
 Lệnh này in tiêu đề và nội dung của issue mà nó sẽ mở. Nó vẫn đọc các issue có sẵn qua `gh`, nên bạn
@@ -129,7 +135,7 @@ chạy khi một push lên `main` thay đổi một `specs/*/tasks.md` đang ho�
 cần trigger riêng vì dấu tick cuối cùng thường là một task **(human)**, trong một PR mà Agent Issues
 bỏ qua.
 
-`pnpm nx run @discava/common-scripts:archive-specs`, trong `src/agent-issues/archive-specs.ts`:
+`pnpm nx run @discava/tooling-agent:archive-specs`, trong `src/agent-issues/archive-specs.ts`:
 
 1. Tìm mỗi spec đang hoạt động mà mọi task đã được đánh dấu, kể cả task **(human)**.
 2. Bỏ qua spec còn agent issue đang mở, và spec đã từng có PR lưu trữ. Đóng PR đó mà không merge sẽ

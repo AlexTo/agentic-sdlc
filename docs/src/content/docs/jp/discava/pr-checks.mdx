@@ -18,7 +18,7 @@ CI Status が修正の試行に変えるので、これはエージェントに�
 | `Invariant coverage` | `invariant-coverage`。コアテーブルに書き込みうるコードが変わったときだけ | invariant の変更を伴わない、共有レコードの新しい書き込み元。[ローカルスタック](../local-stack/#各テストの後の-invariant) を参照 |
 | `E2E tests (1/6)` … `(6/6)` | `pnpm nx affected --target e2e`、シャード分割 | 壊れたユーザーフロー、壊れた invariant、競合 |
 | `E2E tests` | 6 つのシャードを 1 つの結果にまとめる | シャード数にかかわらず、ブランチ保護に 1 つの安定した名前を与える |
-| `E2E screenshots` | `screenshots-comment` | 画像を PR に投稿する |
+| `E2E screenshots` | `screenshots-comment` | 画像を PR 上とジョブのサマリーに列挙する |
 
 `fail-fast: false` はエージェントにとって重要です。lint *と* テストの両方が失敗したとき、エージェントは
 試行ごとに 1 つずつではなく、1 ラウンドで両方を知らされます。
@@ -65,8 +65,14 @@ Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifa
 - `search/03-search-minimum-rating-4.png`
 ```
 
-レビュアーエージェントも同じリストを読みます。artifact には公開 URL がないので、コメントは画像の名前を挙げ、
+レビュー担当エージェントも同じリストを読みます。artifact には公開 URL がないので、コメントは画像の名前を挙げ、
 それをダウンロードできる実行へのリンクを付けます。
+
+同じリストはジョブのサマリーにも書き込まれます。エージェントの pull request では、リストが現れるのはそこだけです。
+[Agent Lock](../post-merge-verify/#agent-lock) がすべてのエージェントの PR をロックし、GitHub は、権限にかかわらず、
+ロックされた会話への Actions トークンによるコメントを拒否するからです。ジョブは失敗する代わりに、通知を出して
+コメントをスキップします。コメントするために PR のロックを解除すると、その間に誰でもコメントできてしまいます。
+ロックはまさにそれを防ぐためのものです。
 
 ## 速さを保つ
 

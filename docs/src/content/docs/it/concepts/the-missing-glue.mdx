@@ -1,6 +1,6 @@
 ---
 title: Il collante mancante
-description: Le dieci lacune tra Speckit, OpenHands e la CI, e le regole per colmarle.
+description: Le undici lacune tra Speckit, OpenHands e la CI, e le regole per colmarle.
 sidebar:
   order: 5
 ---
@@ -18,7 +18,7 @@ Queste sono le lacune, e cosa colma ciascuna:
 | --- | --- | --- |
 | 1 | Niente trasforma una spec finita in lavoro per l'agente | Un workflow legge `tasks.md` e apre la successiva issue di implementazione, un gruppo di fasi alla volta |
 | 2 | L'agente non sa che la CI è fallita | Un workflow riporta all'agente un'esecuzione fallita come il commit status che già osserva |
-| 3 | Il "changes requested" di un reviewer resta inascoltato | Un workflow fa lo stesso per il verdetto dell'agente reviewer |
+| 3 | Il "changes requested" di un reviewer resta inascoltato | Un workflow fa lo stesso per il verdetto dell'agente Reviewer |
 | 4 | Niente impedisce a un agente bloccato di andare in loop all'infinito | Entrambi i loop di correzione sono limitati a cinque tentativi, contati con le label, poi subentra una persona |
 | 5 | `tasks.md` è solo una convenzione, quindi uno malformato blocca la catena in silenzio | Un check della PR ne valida il formato |
 | 6 | Le modifiche alla UI arrivano in review senza che nessuno le abbia guardate | Un check richiede screenshot e2e, e la CI li pubblica sulla PR |
@@ -26,6 +26,7 @@ Queste sono le lacune, e cosa colma ciascuna:
 | 8 | L'agente non può eseguire lo stack reale senza accesso al cloud | Sostituti locali per ogni servizio, così l'intera app e i suoi test e2e girano senza credenziali |
 | 9 | Il merge non rilascia nulla | Una build verde su `main` fa il deploy da sola, salta un commit che non è più l'ultimo, e la produzione aspetta una persona |
 | 10 | Un agente può committare un secret trapelato o una dipendenza vulnerabile | Una scansione di secret e dipendenze a ogni build, e di nuovo prima di ogni deploy |
+| 11 | Nessuno controlla la modifica mergiata là dove gira davvero | Ogni deploy apre una issue di test per ogni PR mergiata che ha portato con sé, e l'agente Tester testa la modifica sullo stage deployato |
 
 [Come fa Discava](../../discava/overview/) associa ogni riga ai suoi file.
 
@@ -59,6 +60,16 @@ I workflow del collante hanno un token che può scrivere label, status e comment
 del **branch di default**, mai della pull request, così niente di ciò che ha scritto un agente o un
 contributor gira con quel token. Tutto ciò che viene letto dalla PR (nomi dei branch, corpi) viene
 verificato rispetto a un pattern rigoroso prima di essere usato.
+
+### Metti il lock a ciò che l'agente legge
+
+Chiunque può commentare le issue e le pull request di un repository pubblico, e un agente legge quei
+commenti mentre ha in mano un token che può fare push. Il Tester ha in mano anche l'accesso allo
+stage deployato. Per questo a ogni issue e pull request consegnata a un agente viene prima messo il
+**lock**, che lascia i commenti alle persone con accesso in scrittura. Una issue viene aperta senza
+la sua label, riceve il lock, e solo allora la label, così l'agente non la prende mai in carico
+mentre un estraneo può ancora commentare. E il marcatore nascosto di una issue conta solo quando la
+issue è stata aperta dal workflow o da qualcuno con accesso in scrittura.
 
 ### Sii idempotente
 

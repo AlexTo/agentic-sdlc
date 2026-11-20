@@ -12,9 +12,11 @@ sidebar:
 | **Agent profile** | Một cài đặt OpenHands nêu tên agent và model mà một cuộc hội thoại dùng |
 | **`AGENTS.md`** | File hướng dẫn agent ở thư mục gốc repository: lệnh, kiến trúc, quy ước |
 | **Automation** | Một worker OpenHands chạy theo lịch, đọc GitHub và khởi động các cuộc hội thoại agent |
+| **Vai trò agent** | Một trong ba công việc mà một agent làm: Developer, Reviewer hoặc Tester. Mỗi vai trò là một automation OpenHands với prompt và agent profile riêng |
 | **Constitution** | `.specify/memory/constitution.md`. Các quy tắc dự án mà mọi kế hoạch được đối chiếu |
 | **Constitution Check** | Phần của `plan.md` nơi kế hoạch được đối chiếu với constitution |
-| **Lượt fix-up** | Một vòng tự động gửi agent quay lại. Đếm bằng `ci-fix-<n>` hoặc `review-fix-<n>` |
+| **Agent Developer** | Vai trò triển khai một issue thành pull request và sửa lại nó khi bị gửi quay lại |
+| **Lượt fix-up** | Một vòng tự động gửi agent Developer quay lại. Đếm bằng `ci-fix-<n>` hoặc `review-fix-<n>` |
 | **Glue** | Các workflow và script chuyển việc giữa Speckit, OpenHands và CI |
 | **Nhóm (group)** | Các giai đoạn mà một issue triển khai bao gồm. Nhóm 0 kéo đến user story đầu tiên |
 | **Cổng người duyệt** | Một quyết định chỉ con người đưa ra: duyệt spec, duyệt PR, deploy lên production |
@@ -22,9 +24,13 @@ sidebar:
 | **Invariant** | Một quy tắc trên toàn bộ dữ liệu, được kiểm tra sau mỗi e2e test |
 | **Marker** | Một comment HTML ẩn mà glue dùng để tìm issue và comment của chính nó |
 | **Parent issue** | Tracking issue của một tính năng, được nêu trong `spec.md`, được mọi PR tham chiếu |
+| **Test sau merge** | Lần test của agent Tester trên một pull request đã merge, trên stage development đã deploy |
 | **Giai đoạn (phase)** | Một phần `## Phase <n>: <title>` của `tasks.md` |
+| **Agent Reviewer** | Vai trò review một pull request khi các check của nó đã xong |
 | **Lượt revise** | Một tin nhắn gửi đến một cuộc hội thoại agent có sẵn, yêu cầu nó sửa PR của mình |
 | **Thư mục spec** | `specs/<timestamp>-<name>/`, chứa spec, kế hoạch và task của một tính năng |
 | **`software-factory/review`** | Commit status mà, ở trạng thái `failure`, khiến OpenHands sửa lại một PR |
 | **Speckit** | Bộ công cụ phát triển hướng spec của GitHub (`specify-cli`) |
 | **Bị đứng (stalled)** | Một nhóm đã có issue nhưng chưa đánh dấu hết task, nên không có issue mới nào mở |
+| **Issue test** | Issue mà Post-merge Verify mở cho một pull request đã deploy, với label `openhands-test`. Nó nói test cái gì, không bao giờ nói test như thế nào |
+| **Agent Tester** | Vai trò test một thay đổi đã merge từ đầu đến cuối trên stage đã deploy (UI, các API và dữ liệu đã ghi vào nơi lưu trữ) và báo cáo trên issue test |

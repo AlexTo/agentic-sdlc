@@ -16,6 +16,8 @@ sidebar:
 | Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`、`statuses: write`、`issues: write`、`pull-requests: write` | 默认分支 |
 | Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | 无（把 PR 编号传给 `gh`） |
 | Deploy (Discava) | `deploy.yml` | `main` 上 CI 的 `workflow_run`、`workflow_dispatch(stage)` | `contents: read`、`id-token: write` | CI 验证过的 commit |
+| Post-merge Verify (Discava) | `post-merge-verify.yml` | Deploy 的 `workflow_run`，`completed`、`workflow_dispatch(pr_number)` | `contents: read`、`actions: read`、`issues: write`、`pull-requests: write` | 默认分支 |
+| Agent Lock (Discava) | `agent-lock.yml` | `issues: labeled`、`pull_request: [opened, reopened]` | `contents: read`、`issues: write`、`pull-requests: write` | 默认分支 |
 
 ## 在分支保护中设为必需的 job 名称
 
@@ -36,6 +38,7 @@ sidebar:
 | Agent CI Status | `agent-ci-<head branch>` | 否 |
 | Agent Review Status | `agent-review-<PR number>` | 否 |
 | Deploy | `deploy-<stage>` | 否 |
+| Post-merge Verify | `post-merge-verify` | 否：一次只跑一个，因此两次相隔很近的部署绝不会为同一个 PR 开出两个 issue |
 
 智能体相关的 workflow 从不取消。每次运行都必须恰好一次地记下自己的尝试次数或开出自己的 issue，而按 PR 划分的组意味着互不相关的 PR 永远不会相互等待。
 
@@ -51,3 +54,10 @@ sidebar:
 | `agent-review-status` | `src/agent-review/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH`、`DRY_RUN` |
 | `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH` |
 | `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`、`GITHUB_ACTIONS`（用于 annotations） |
+
+Discava 把同样的 target 放在 `@discava/tooling-agent` 中，并为测试智能体多加了两个：
+
+| Target | 入口 | 读取的环境变量 |
+| --- | --- | --- |
+| `post-merge-test` | `src/post-merge-test/main.ts` | `GH_TOKEN`、`GH_REPO`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_NAME`、`GITHUB_EVENT_PATH`、`PR_NUMBER`、`TEST_STAGE`、`DRY_RUN` |
+| `agent-lock` | `src/agent-lock/main.ts` | `GH_TOKEN`、`GH_REPO`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_NAME`、`GITHUB_EVENT_PATH` |

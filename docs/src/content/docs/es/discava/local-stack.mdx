@@ -24,7 +24,7 @@ un sustituto local, y `pnpm dev` los arranca todos con Docker.
 
 El código de backend cambia de comportamiento con `LOCAL_DEV=true`. La configuración compartida
 está en un único paquete (`common-server-utils/local-dev`), así que cada Lambda resuelve los
-endpoints de la misma forma. Cada sustituto es un target de Nx en `packages/common/scripts`, que
+endpoints de la misma forma. Cada sustituto es un target de Nx en `packages/tooling/local-dev`, que
 descarga y arranca su contenedor.
 
 La página de inicio de sesión local ofrece usuarios fijos (un instructor, dos estudiantes, un

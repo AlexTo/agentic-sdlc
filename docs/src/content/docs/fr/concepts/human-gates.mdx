@@ -39,7 +39,7 @@ protection de branche, elle a besoin d'un accès en écriture.
 
 ## Contrôle 2 : approuver le résultat
 
-Chaque PR d'agent vous parvient une fois la CI verte et l'agent relecteur d'accord. Votre rôle est de
+Chaque PR d'agent vous parvient une fois la CI verte et l'agent Relecteur d'accord. Votre rôle est de
 juger le résultat, pas de traquer les problèmes :
 
 - Lisez la description de la PR : ce qui a changé, quelles tâches, quelles tâches **(human)** vous
@@ -50,9 +50,14 @@ juger le résultat, pas de traquer les problèmes :
 - Faites les tâches **(human)** : des vérifications manuelles sur une stack locale ou un stage
   déployé.
 - Mergez, ou demandez des changements. Pour que l'agent les fasse, ajoutez le label
-  `openhands-review` après votre revue : l'agent relecteur relit la PR, et son verdict « changes
-  requested » renvoie l'agent d'implémentation dans la boucle de correction de revue, comptée avec les
+  `openhands-review` après votre revue : l'agent Relecteur relit la PR, et son verdict « changes
+  requested » renvoie l'agent Développeur dans la boucle de correction de revue, comptée avec les
   mêmes labels `review-fix-*`.
+
+Avec les déploiements automatiques, l'agent Testeur teste ensuite ce que vous avez mergé sur le stage
+de développement et rend compte sur une issue de test. Ce rapport arrive après le contrôle, pas
+avant : il vous dit si le changement fonctionne là où il s'exécute, à l'écran et dans les données
+qu'il a stockées, et s'il est en échec, c'est à vous d'agir.
 
 ## Ce que les agents ne doivent jamais faire
 
@@ -60,8 +65,9 @@ juger le résultat, pas de traquer les problèmes :
 | --- | --- |
 | Merger, ou pousser sur `main` | Une protection de branche qui exige une revue approbatrice. Le token de l'agent ne sert qu'à sa propre branche |
 | Modifier `.github/workflows/` | La constitution et les instructions de l'issue. Le relecteur et la revue humaine le repèrent. Les workflows de glue exécutent le code de la branche par défaut, donc un workflow modifié dans une PR ne peut pas les changer |
-| Affaiblir un test pour le faire passer | La constitution (« les tests sont une spécification »), les instructions de l'issue, l'agent relecteur |
-| Toucher aux identifiants cloud | La conversation ne les reçoit jamais. Le déploiement utilise des rôles OIDC de courte durée issus d'un environnement GitHub |
+| Affaiblir un test pour le faire passer | La constitution (« les tests sont une spécification »), les instructions de l'issue, l'agent Relecteur |
+| Déployer, ou modifier l'infrastructure | Aucun agent ne reçoit de rôle de déploiement. Le déploiement utilise des rôles OIDC de courte durée issus d'un environnement GitHub. Le Développeur et le Relecteur n'ont besoin d'aucun accès au cloud. Le Testeur n'atteint que le stage de développement, et son prompt le limite à la lecture et aux données de test qu'il crée via l'application |
+| Recevoir des instructions d'un inconnu | Chaque issue et chaque pull request confiée à un agent est verrouillée, donc seules les personnes avec un accès en écriture peuvent commenter. Le Testeur ne teste que les issues ouvertes par le workflow, et ses instructions sont son propre prompt, pas l'issue |
 | Travailler hors de sa plage de tâches | L'issue nomme la plage. L'issue suivante ne s'ouvre pas tant que toutes les tâches d'agent ne sont pas cochées |
 | Réessayer indéfiniment | Cinq tentatives par boucle, comptées dans des labels |
 
@@ -73,6 +79,7 @@ juger le résultat, pas de traquer les problèmes :
 | `review-fix-exhausted` | Le relecteur demande encore des changements après cinq tours | Décidez si le relecteur a raison. Souvent, la spec est ambiguë |
 | Un commentaire de l'agent sur l'issue | Il était bloqué et s'est arrêté, comme demandé | Répondez-y, puis retirez et remettez le label `openhands` |
 | Un commentaire sur une PR mergée : « the next implementation issue … was not opened » | Les tâches de la phase ne sont pas toutes cochées | Cochez-les ou terminez-les, puis lancez Agent Issues à la main pour le dossier de spec |
+| Une issue de test laissée ouverte, avec un rapport en échec ou bloqué | Le Testeur a constaté que le changement mergé ne fonctionne pas sur le stage de développement, ou n'a pas pu le tester | Lisez le rapport. Mergez sa PR de correction s'il en a ouvert une, corrigez le stage, ou écrivez une tâche. Remettez `openhands-test` pour tester à nouveau |
 
 ## La production est un troisième contrôle, facultatif
 

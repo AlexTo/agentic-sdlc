@@ -18,7 +18,7 @@ sidebar:
 | `Invariant coverage` | `invariant-coverage`，仅当可能写入核心表的代码发生变化时 | 共享记录有了新的写入者，但不变式没有任何变化。参见[本地栈](../local-stack/#每个测试之后的不变式) |
 | `E2E tests (1/6)` … `(6/6)` | `pnpm nx affected --target e2e`，分片运行 | 被破坏的用户流程、被破坏的不变式、竞态 |
 | `E2E tests` | 把六个分片汇总为一个结果 | 无论分片数量多少，都给分支保护一个稳定的名称 |
-| `E2E screenshots` | `screenshots-comment` | 把图片发布到 PR 上 |
+| `E2E screenshots` | `screenshots-comment` | 在 PR 上以及 job 摘要中列出图片 |
 
 `fail-fast: false` 对智能体很重要。当 lint *和*某个测试同时失败时，智能体会在一轮中得知两者，而不是每次
 尝试只知道一个。
@@ -66,6 +66,11 @@ Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifa
 
 评审智能体读取的是同一份列表。artifact 没有公开 URL，所以评论会写明图片名称，并链接到可以下载它们的
 那次运行。
+
+同一份列表也会写入该 job 的摘要。对于智能体的 pull request，那是它唯一出现的地方：
+[Agent Lock](../post-merge-verify/#agent-lock) 会锁定每个智能体 PR，而无论权限如何，GitHub 都会拒绝
+Actions token 在已锁定的对话上发表评论。该 job 会附带一条 notice 跳过评论，而不是失败。为了评论而解锁
+PR，会让任何人都能在这段间隙里评论，而这正是加锁要阻止的事。
 
 ## 保持快速
 

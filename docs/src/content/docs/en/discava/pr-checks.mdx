@@ -18,7 +18,7 @@ CI Status turns into a fix-up attempt, so it is also the agent's main source of 
 | `Invariant coverage` | `invariant-coverage`, only when code that could write the core table changed | A new writer of a shared record with no change to the invariants. See [Local stack](../local-stack/#invariants-after-every-test) |
 | `E2E tests (1/6)` … `(6/6)` | `pnpm nx affected --target e2e`, sharded | Broken user flows, broken invariants, races |
 | `E2E tests` | Gathers the six shards into one result | Gives branch protection one stable name, whatever the shard count |
-| `E2E screenshots` | `screenshots-comment` | Posts the pictures on the PR |
+| `E2E screenshots` | `screenshots-comment` | Lists the pictures on the PR, and in the job summary |
 
 `fail-fast: false` matters for agents. When lint *and* a test fail, the agent hears about both in
 one round, not one per attempt.
@@ -65,8 +65,14 @@ Taken by the e2e scenarios on `d28118d`. Download the `e2e-screenshots-*` artifa
 - `search/03-search-minimum-rating-4.png`
 ```
 
-The reviewer agent reads the same list. Artifacts have no public URL, so the comment names the
+The Reviewer agent reads the same list. Artifacts have no public URL, so the comment names the
 images and links the run they can be downloaded from.
+
+The same list is written to the job's summary. For an agent's pull request, that is the only place
+it appears: [Agent Lock](../post-merge-verify/#agent-lock) locks every agent PR, and GitHub refuses
+the Actions token a comment on a locked conversation, whatever its permissions. The job skips the
+comment with a notice instead of failing. Unlocking the PR to comment would let anyone comment in
+between, which is what the lock is there to stop.
 
 ## Keeping it fast
 

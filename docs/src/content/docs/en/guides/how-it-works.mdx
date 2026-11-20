@@ -1,6 +1,6 @@
 ---
 title: How it works
-description: One feature's journey from idea to merged code, in eleven steps.
+description: One feature's journey from idea to merged and tested code, in twelve steps.
 sidebar:
   order: 2
 ---
@@ -9,20 +9,25 @@ This page follows one feature through the whole loop. Each step names who acts a
 behind.
 
 ```d2
-grid-rows: 2
+grid-rows: 3
 grid-columns: 4
 horizontal-gap: 140
 vertical-gap: 90
 
-# Top row runs left to right, bottom row right to left, so the loop wraps.
+# Top row runs left to right, middle row right to left, so the loop wraps.
+# The bottom row is what happens after the merge.
 spec: "spec PR\n(you)" {shape: document}
 issues: "Agent Issues\n(GitHub Actions)"
 issue: issue {shape: page}
-implement: "implement\n(OpenHands)"
+implement: "implement\n(Developer agent)"
 merge: "merge\n(you)"
-review: "review\n(OpenHands)"
+review: "review\n(Reviewer agent)"
 checks: "PR Checks\n(GitHub Actions)"
 pr: pull request {shape: page}
+deploy: "deploy\n(GitHub Actions)"
+testissue: test issue {shape: page}
+test: "test on the stage\n(Tester agent)"
+report: report {shape: document}
 
 spec -> issues: spec-ready
 issues -> issue
@@ -32,7 +37,14 @@ pr -> checks
 checks -> review: green
 review -> merge: approved
 merge -> issues: next phase
+merge -> deploy: main is green
+deploy -> testissue
+testissue -> test
+test -> report
 ```
+
+The three agents are OpenHands automations: the **Developer** writes the code, the **Reviewer**
+reviews it, and the **Tester** tests it once it is deployed.
 
 ## The steps
 
@@ -43,19 +55,24 @@ merge -> issues: next phase
 | 3 | 🧑🤖&nbsp;You + agent | `/speckit-tasks` writes an ordered task list, grouped into phases. `/speckit-analyze` cross-checks all three files | `tasks.md` |
 | 4 | 🧑&nbsp;**You** | Open the spec PR, review it like code, add the `spec-ready` label, merge | A merged spec PR. **Human gate 1** |
 | 5 | ⚙️&nbsp;Automation | The **Agent Issues** workflow reads `tasks.md` and opens an issue for the first group of phases, with the `openhands` label | An implementation issue |
-| 6 | 🤖&nbsp;OpenHands | On its next poll, the agent picks the issue up, writes tests first, implements, ticks its tasks and opens a PR on `openhands/issue-<n>` | A pull request |
+| 6 | 🤖&nbsp;Developer agent | On its next poll, the agent picks the issue up, writes tests first, implements, ticks its tasks and opens a PR on `openhands/issue-<n>` | A pull request |
 | 7 | ⚙️&nbsp;CI | PR checks run lint, unit tests, build, the `tasks.md` format check, e2e tests and the screenshots check | Check results |
-| 8 | ⚙️🤖&nbsp;Automation + OpenHands | On a red run, **Agent CI Status** marks the PR as failing. The agent sees it on the next poll and revises the same PR | `ci-fix-1` to `ci-fix-5` labels |
-| 9 | 🤖&nbsp;OpenHands | Once every check has finished, the reviewer agent reviews the head commit and ends with `✅ APPROVED` or `🔄 CHANGES REQUESTED`. **Agent Review Status** sends the agent back on the second | A review, and maybe `review-fix-N` labels |
+| 8 | ⚙️🤖&nbsp;Automation + Developer agent | On a red run, **Agent CI Status** marks the PR as failing. The Developer agent sees it on the next poll and revises the same PR | `ci-fix-1` to `ci-fix-5` labels |
+| 9 | 🤖&nbsp;Reviewer agent | Once every check has finished, the Reviewer agent reviews the head commit and ends with `✅ APPROVED` or `🔄 CHANGES REQUESTED`. **Agent Review Status** sends the Developer agent back on the second | A review, and maybe `review-fix-N` labels |
 | 10 | 🧑&nbsp;**You** | You read the PR description and the **E2E screenshots** comment, do any **(human)** tasks, and merge | A merged PR. **Human gate 2** |
 | 11 | ⚙️&nbsp;Automation | The merge runs **Agent Issues** again. It opens the issue for the next phase that has unticked agent tasks, and steps 6 to 10 repeat until none are left | The next issue, or done |
+| 12 | ⚙️🤖&nbsp;Automation + Tester agent | Where `main` deploys by itself: once the merge is on the development stage, **Post-merge Verify** opens a test issue for it. The Tester agent clicks through the change, calls the APIs, verifies the data it wrote to the database, file storage and search index, and reports | A test report. The issue closes on a pass |
+
+Step 12 needs a deployed stage. Discava has one. The example app in this repository doesn't, so a
+fork stops at step 11.
 
 ## What you actually do
 
 Per feature, you write and approve the spec once. Per pull request, you do one review and click
 merge. You are pulled in early only when a loop runs out of attempts (`ci-fix-exhausted` or
-`review-fix-exhausted`), or when the agent comments that it is blocked. While the agents work, you
-can write the next spec.
+`review-fix-exhausted`), when the agent comments that it is blocked, or when the Tester leaves a
+test issue open because the change failed on the stage. While the agents work, you can write the
+next spec.
 
 ## Where each piece lives
 
@@ -69,8 +86,9 @@ can write the next spec.
 | CI to agent | `.github/workflows/agent-ci.yml` |
 | Reviewer to agent | `.github/workflows/agent-review.yml` |
 | Checks | `.github/workflows/pr-checks.yml`, `ui-screenshots.yml`, `ci.yml` |
+| Deploy to test issue (Discava only) | `.github/workflows/deploy.yml`, `post-merge-verify.yml`, `agent-lock.yml` |
 | The rules behind the glue, unit-tested | `packages/common/scripts/src/agent-*`, `ui-screenshots/` |
-| The agent runtime | OpenHands Agent Canvas, outside the repository |
+| The agent runtime and each role's prompt | OpenHands Agent Canvas, outside the repository |
 
 The details are in Concepts: [how phases become issues](../../concepts/one-phase-at-a-time/), and
 [how a failure sends the agent back](../../concepts/feedback-loops/).

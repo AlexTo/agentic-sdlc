@@ -1,6 +1,6 @@
 ---
 title: Bucles de feedback
-description: Agent CI Status y Agent Review Status, los dos workflows que devuelven el trabajo al agente.
+description: Agent CI Status y Agent Review Status, los dos workflows que devuelven el trabajo al agente Desarrollador.
 sidebar:
   order: 6
 ---
@@ -16,7 +16,9 @@ status llamado `software-factory/review` en estado `failure` en la cabeza del PR
 
 `.github/workflows/agent-ci.yml` se ejecuta con `workflow_run`, cuando **PR Checks** termina con
 `failure` o `timed_out` para un pull request en una rama `openhands/issue-`. Hace checkout de la
-rama por defecto y ejecuta `agent-ci-status`.
+rama por defecto y ejecuta `agent-ci-status`. Los pasos que comparten ambos workflows están en un
+único workflow reutilizable, `agent-status.yml`. Cada llamador conserva su propio disparador, su
+condición, su grupo de concurrencia y sus permisos.
 
 `workflow_run` es importante. Se ejecuta en el contexto de la rama por defecto, con un token que
 puede escribir, aunque PR Checks se haya ejecutado sobre el código del PR con un token de solo
@@ -53,15 +55,15 @@ es una rama de agente en el mismo repositorio y el cuerpo de la revisión contie
 | Comprobación | Por qué |
 | --- | --- |
 | La asociación del autor es `OWNER`, `MEMBER` o `COLLABORATOR` | Solo alguien con acceso de escritura puede dispararlo |
-| El cuerpo tiene `<!-- openhands-review-run: … -->` | Es la revisión del agente revisor, no una persona que la cita |
+| El cuerpo tiene `<!-- openhands-review-run: … -->` | Es la revisión del agente Revisor, no una persona que la cita |
 | El cuerpo tiene una línea que es exactamente `🔄 CHANGES REQUESTED` | El veredicto, no una mención de él |
 
 Después, los mismos pasos que en el CI: `review-fix-<n>`, el status fallido enlazado a la revisión
 y `review-fix-exhausted` tras cinco.
 
-El revisor vuelve a revisar por sí solo después de que el agente haga push, porque el prompt de
-revisión le dice al agente que vuelva a poner `openhands-review`, y un nuevo commit de cabeza cuenta
-como una nueva revisión.
+El Revisor vuelve a revisar por sí solo después de que el Desarrollador haga push, porque el
+[prompt de revisión](../agent-prompts/#desarrollador) le dice al Desarrollador que vuelva a poner
+`openhands-review`, y un nuevo commit de cabeza cuenta como una nueva revisión.
 
 ## Cómo se ve en un PR
 
@@ -73,15 +75,18 @@ De [#470](https://github.com/AlexTo/discava/pull/470), "valoraciones en la búsq
    was the failing `E2E tests (4/4)` shard: my new scenario […] hit a strict-mode violation,
    because `getByText('4.5')` matched both the rating and the `4.5 and up` option […]. I fixed both
    locators."*
-4. El revisor ve que los checks siguen ejecutándose en la nueva cabeza y comenta "⏳ Review waiting
+4. El Revisor ve que los checks siguen ejecutándose en la nueva cabeza y comenta "⏳ Review waiting
    on checks". En un barrido posterior todo está en verde. Revisa `94b9ee3` y termina con
    `✅ APPROVED`.
-5. Se hace merge de `main` en la rama. El revisor vuelve a revisar la nueva cabeza y la aprueba.
+5. Se hace merge de `main` en la rama. El Revisor vuelve a revisar la nueva cabeza y la aprueba.
 6. Una persona hace merge.
 
 <Aside type="tip">
 Ambos scripts aceptan `DRY_RUN=true`, que imprime el plan como JSON y no cambia nada. Apunta
 `GITHUB_EVENT_PATH` a un payload de evento guardado para reproducir un caso real.
 </Aside>
+
+Lo que pasa después del merge, cuando toma el relevo el agente Tester, está en
+[Verificación post-merge](../post-merge-verify/).
 
 Siguiente: [PR checks](../pr-checks/).

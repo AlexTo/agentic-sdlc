@@ -8,8 +8,10 @@ sidebar:
 | Label | Em | Definido por | Lido por | Significa |
 | --- | --- | --- | --- | --- |
 | `spec-ready` | PR de spec | Uma pessoa | Agent Issues | O merge deste PR inicia a implementação. Adicioná-lo a um PR já mergeado também |
-| `openhands` | Issue | Agent Issues, ou uma pessoa | Automação issue-to-PR | Implemente esta issue. Remova e aplique de novo para uma nova tentativa em uma nova branch |
-| `openhands-review` | PR | O agent implementador, depois de abrir ou revisar | Automação de code review | Revise o head atual deste PR |
+| `openhands` | Issue | Agent Issues, ou uma pessoa | Automação issue-to-PR (Desenvolvedor) | Implemente esta issue. Remova e aplique de novo para uma nova tentativa em uma nova branch |
+| `openhands-review` | PR | O agent Desenvolvedor, depois de abrir ou revisar | Automação de code review (Revisor) | Revise o head atual deste PR |
+| `openhands-test` | Issue | Post-merge Verify, ou uma pessoa | Automação issue tester (Testador) | Teste o pull request mergeado que esta issue nomeia no stage de desenvolvimento com deploy. Remova e aplique de novo para testar outra vez |
+| `skip-deploy-test` | PR | Uma pessoa | Post-merge Verify | Não abra issue de teste para este pull request quando ele sair no deploy |
 | `ci-fix-1` … `ci-fix-5` | PR do agent | Agent CI Status | Agent CI Status | Esse número de correções automáticas para CI vermelho já foi usado |
 | `ci-fix-exhausted` | PR do agent | Agent CI Status | Agent CI Status, pessoas | As correções de CI acabaram. Uma pessoa assume |
 | `review-fix-1` … `review-fix-5` | PR do agent | Agent Review Status | Agent Review Status | Esse número de correções para "changes requested" já foi usado |

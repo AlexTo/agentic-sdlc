@@ -1,6 +1,6 @@
 ---
 title: Déploiement et sécurité
-description: Comment un main vert se déploie de lui-même, et les analyses qui arrêtent un secret divulgué ou une dépendance vulnérable.
+description: Comment un main vert se déploie de lui-même et confie chaque changement à l'agent Testeur, et les analyses qui arrêtent un secret divulgué ou une dépendance vulnérable.
 sidebar:
   order: 9
 ---
@@ -57,6 +57,11 @@ Les étapes, dans l'ordre :
 `main` vert atteint le stage de développement. Laissez-la non définie et rien ne se déploie sans une
 personne.
 
+Un déploiement sur le stage de développement n'est pas la fin. Quand l'exécution se termine,
+**Post-merge Verify** ouvre une issue de test pour chaque pull request qu'elle a embarquée, et
+l'agent Testeur teste ce changement sur le stage. Voir
+[Vérification après merge](../post-merge-verify/).
+
 ### Configurer un stage
 
 `scripts/setup-stage.sh` s'exécute une fois par stage, depuis un clone du dépôt qui exécute le
@@ -106,4 +111,4 @@ outils a modifié l'arbre de travail, donc l'agent remet les fichiers en staging
 `commit-msg` exécute commitlint avec la configuration Conventional Commits.
 </Aside>
 
-Suite : [Une vraie fonctionnalité](../a-real-feature/).
+Suite : [Vérification après merge](../post-merge-verify/).

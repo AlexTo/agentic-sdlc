@@ -1,16 +1,29 @@
 ---
 title: Runtime của agent
-description: OpenHands biến một issue có label thành pull request như thế nào, và làm sao nó biết khi nào cần sửa lại.
+description: Ba vai trò agent, Developer, Reviewer và Tester, và cách OpenHands khởi động từng vai trò từ một label trên GitHub.
 sidebar:
   order: 4
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-**Phiên bản ngắn gọn:** OpenHands chạy hai automation theo lịch trên repository của bạn. Một cái
-triển khai các issue có label và sửa lại các pull request đã bị đánh dấu thất bại. Cái kia review pull
-request khi các check của chúng đã xong. Cả hai khởi động một coding agent bình thường với một prompt
-cố định. Không cái nào cần bạn mở chat.
+**Phiên bản ngắn gọn:** OpenHands chạy ba automation theo lịch trên repository của bạn, mỗi vai trò
+agent một cái. **Developer** triển khai các issue có label và sửa lại các pull request đã bị đánh dấu
+thất bại. **Reviewer** review pull request khi các check của chúng đã xong. **Tester** test mỗi thay
+đổi đã merge trên stage development đã deploy. Mỗi cái khởi động một coding agent bình thường với một
+prompt cố định. Không cái nào cần bạn mở chat.
+
+## Ba vai trò
+
+| Vai trò | Automation | Bắt đầu từ | Để lại |
+| --- | --- | --- | --- |
+| **Developer** | GitHub issue to PR | Một issue có label `openhands`, hoặc một status `software-factory/review` thất bại trên PR của chính nó | Một pull request trên `openhands/issue-<n>`, và các lần sửa lại của nó |
+| **Reviewer** | GitHub code review | Một PR có label `openhands-review`, khi mọi check đã xong | Một review kết thúc bằng `✅ APPROVED` hoặc `🔄 CHANGES REQUESTED` |
+| **Tester** | GitHub issue tester | Một issue có label `openhands-test`, được mở sau một lần deploy | Một báo cáo test trên issue, với bằng chứng từ UI, các API và dữ liệu đã lưu, và đôi khi một fix PR nhỏ |
+
+Developer và Reviewer là tất cả những gì một repository cần để chạy vòng lặp cho đến lần merge.
+Tester cần một nơi đã deploy để test, nên nó đi cùng [deploy tự động](../../adopt/deploy/). Ứng dụng
+ví dụ trong repository này không có deploy, nên một bản fork chạy hai vai trò đầu.
 
 ```d2
 direction: right
@@ -20,10 +33,14 @@ machine: Máy của bạn {
   canvas: Agent Canvas {
     i2p: issue sang PR
     review: code review
+    test: issue tester
   }
-  agent: coding agent
-  canvas.i2p -> agent: triển khai hoặc sửa lại
-  canvas.review -> agent: review
+  dev: agent Developer
+  rev: agent Reviewer
+  tester: agent Tester
+  canvas.i2p -> dev: triển khai hoặc sửa lại
+  canvas.review -> rev: review
+  canvas.test -> tester: test
 }
 
 github: GitHub {
@@ -33,8 +50,13 @@ github: GitHub {
   statuses: commit status {shape: document}
 }
 
+stage: stage development {shape: cylinder}
+
 machine.canvas -> github: poll mỗi 5 phút
-machine.agent -> github.prs: push, mở, review
+machine.dev -> github.prs: "push, mở"
+machine.rev -> github.prs: review
+machine.tester -> stage: "bấm, gọi, đọc"
+machine.tester -> github.issues: báo cáo
 ```
 
 ## Các phần
@@ -46,9 +68,9 @@ machine.agent -> github.prs: push, mở, review
 | **Automation** | Một worker Python nhỏ chạy theo lịch cron. Nó đọc GitHub, quyết định cần làm gì, và bắt đầu hoặc tiếp tục các cuộc hội thoại agent. Được cài từ catalog của Agent Canvas |
 | **Secret** | Một thông tin đăng nhập có tên, như GitHub token. Một cuộc hội thoại chỉ được cấp các secret trong danh sách cho phép của nó |
 
-## Hai automation
+## Ba automation
 
-### GitHub issue to PR
+### Developer: GitHub issue to PR
 
 Ở mỗi lần poll, với mỗi repository nó theo dõi, worker:
 
@@ -63,7 +85,7 @@ machine.agent -> github.prs: push, mở, review
 Mỗi issue là một *subject* với một cuộc hội thoại ổn định. Lượt revise đi vào cùng cuộc hội thoại với
 lần triển khai ban đầu, nên agent giữ được context của nó.
 
-### GitHub code review
+### Reviewer: GitHub code review
 
 Ở mỗi lần poll, nó tìm các PR mang label `openhands-review`, có một yêu cầu review đang chờ cho tài
 khoản của nó, hoặc đang mở, không phải draft, chưa được yêu cầu và chưa được review. Với mỗi PR, nó
@@ -72,9 +94,41 @@ bằng một verdict trên dòng riêng: `✅ APPROVED` hoặc `🔄 CHANGES REQ
 
 <Aside type="caution">
 Worker issue-to-PR chỉ sửa lại một PR khi nó thấy status `software-factory/review` thất bại. Cả một
-lần chạy CI đỏ lẫn "changes requested" của reviewer đều không tự đặt status đó. Lấp khoảng trống đó
+lần chạy CI đỏ lẫn "changes requested" của Reviewer đều không tự đặt status đó. Lấp khoảng trống đó
 là hai mảnh của [phần glue còn thiếu](../the-missing-glue/).
 </Aside>
+
+### Tester: GitHub issue tester
+
+Hai automation đầu đến từ catalog của Agent Canvas. Cái này được viết tay, và nó nhỏ: một worker
+khoảng một trăm dòng, dựa trên các helper GitHub của catalog, và một file prompt.
+
+Ở mỗi lần poll, nó tìm các issue đang mở có label kích hoạt (`openhands-test`) do chính tài khoản
+của workflow, `github-actions[bot]`, mở. Với mỗi issue, nó bắt đầu một lượt **test**: clone
+repository ở commit mà stage đang chạy, xác định pull request đã merge thay đổi gì, test nó trên
+stack đã deploy, và comment kết quả lên issue.
+
+Lần test có ba phần, và phần thứ ba là thứ làm nó khác với việc chỉ bấm qua một trang:
+
+1. **UI**, trong một trình duyệt thật, đăng nhập bằng một người dùng test.
+2. **Các API** đứng sau những màn hình đó, được gọi với token của người dùng test, kể cả các trường
+   hợp phải bị từ chối.
+3. **Dữ liệu đã lưu.** Sau mỗi hành động, Tester đọc những gì thay đổi lẽ ra phải ghi và kiểm tra
+   chúng: các bản ghi trong database, các file trong nơi lưu trữ, search index, và log. Ở Discava
+   đó là DynamoDB, S3, OpenSearch và CloudWatch.
+
+Ba chi tiết giữ cho nó an toàn và yên lặng:
+
+- **Issue chỉ nói test cái gì.** Test như thế nào (công cụ, người dùng test, các kiểm tra, báo cáo)
+  là prompt riêng của automation, trên máy. Không ai sửa được issue mà thay đổi được nó.
+- **Một issue do bất kỳ ai khác mở đều bị bỏ qua**, vì nội dung của nó sẽ trở thành chỉ dẫn của
+  agent.
+- **Mỗi lần gắn label một lần test.** Mỗi lần label được gắn được tính một lần, nên comment của
+  chính Tester không bao giờ khởi động lần test thứ hai. Gỡ và gắn lại label để test lại.
+
+Theo mặc định không có gì mở các issue này. Một workflow mở một issue cho mỗi pull request đã deploy
+là mảnh cuối của [phần glue còn thiếu](../the-missing-glue/). Workflow của Discava nằm ở
+[Kiểm chứng sau merge](../../discava/post-merge-verify/).
 
 ## Vì sao poll, không phải webhook
 
@@ -84,16 +138,29 @@ trễ tối đa một chu kỳ poll, con số nhỏ so với thời gian agent c
 
 ## Agent có thể và không thể chạm tới gì
 
-Cuộc hội thoại triển khai nhận một secret, GitHub token, để nó có thể đọc issue và push nhánh của nó.
-Nó không nhận thông tin đăng nhập cloud. Những gì khác nó không bao giờ được làm, và thứ thực thi
-từng giới hạn, nằm ở
+Prompt của Developer và của Reviewer nêu tên một secret, GitHub token, để Developer có thể đọc issue
+và push nhánh của nó, còn Reviewer có thể đăng review của nó. Không bên nào cần quyền truy cập cloud:
+mọi thứ chúng chạy đều chạy trên local stack.
+
+Tester là ngoại lệ. Nó phải chạm tới stage đã deploy, nên nó làm việc với một cloud CLI đã đăng nhập
+vào tài khoản development, mà prompt của nó bảo nó chỉ dùng để đọc, và một người dùng test cho mỗi
+vai trò trong ứng dụng. Nó không bao giờ nhận các deploy role, và prompt của nó cấm thay đổi hạ tầng,
+deploy, hay chạm vào một stage khác. Vì nó đọc issue và pull request trong khi đang giữ các thông tin
+đăng nhập đó, mọi thứ nó được giao đều bị khóa trước, nên chỉ người có quyền ghi mới comment được
+trên đó.
+
+Những gì khác agent không bao giờ được làm, và thứ thực thi từng giới hạn, nằm ở
 [Cổng người duyệt](../human-gates/#những-gì-agent-không-bao-giờ-được-làm).
 
 ## Chọn agent
 
-Discava chạy cả hai automation trên **Claude Code qua ACP**: Sonnet để triển khai và Opus để review.
-Dùng một model mạnh hơn để review là có chủ ý: reviewer là bước kiểm tra cuối trước một người, và nó
-đọc ít code hơn nhiều so với lượng code người triển khai viết. Bất kỳ ACP agent nào, hoặc agent riêng
-của OpenHands với bất kỳ LLM nào, đều cắm được vào cùng các profile.
+Discava chạy cả ba trên **Claude Code qua ACP**, mỗi cái với agent profile riêng: Sonnet cho
+Developer, Opus cho Reviewer và Tester. Dùng một model mạnh hơn để review là có chủ ý: Reviewer là
+bước kiểm tra cuối trước một người, và nó đọc ít code hơn nhiều so với lượng code Developer viết.
+Tester nhận cùng model vì việc của nó cũng là phán đoán: quyết định một thay đổi nên làm gì, và những
+gì nó thấy trên stage, và tìm thấy trong nơi lưu trữ của stage, có đúng không. Bất kỳ ACP agent nào, hoặc agent riêng của OpenHands với bất kỳ
+LLM nào, đều cắm được vào cùng các profile.
+
+Prompt mà mỗi vai trò chạy cùng nằm ở [Prompt của các agent](../../discava/agent-prompts/).
 
 Tiếp theo: [Phần glue còn thiếu](../the-missing-glue/).

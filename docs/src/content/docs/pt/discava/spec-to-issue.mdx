@@ -58,7 +58,7 @@ exists -> stalled: sim
 exists -> open: não
 ```
 
-`pnpm nx run @discava/common-scripts:agent-issue`, em `src/agent-issues/`:
+`pnpm nx run @discava/tooling-agent:agent-issue`, em `src/agent-issues/`:
 
 1. **Gate** (`gate.ts`). O `decide()` classifica o PR como `spec`, `implementation` ou `ignore`.
 2. **Encontrar a pasta da spec** (`discover.ts`). Para um PR de agent, ele lê a issue que o PR fecha
@@ -71,13 +71,19 @@ exists -> open: não
 5. **Escolher o próximo grupo**: o primeiro com uma tarefa não marcada que não seja **(human)**.
 6. **Verificar se já existe uma issue.** Todo corpo de issue começa com um marcador como
    `<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->`. Se uma issue para esse grupo
-   já existe (aberta ou fechada), o script não abre outra. Em vez disso, ele comenta no PR,
+   já existe (aberta ou fechada), o script não abre outra. Um marcador só conta em uma
+   issue aberta pelo workflow ou por alguém com acesso de escrita, então a issue de um estranho não consegue travar
+   a cadeia de uma spec. Em vez disso, ele comenta no PR,
    por exemplo:
 
    > The next implementation issue for `specs/…/` was not opened: an issue for "Ratings in search"
    > already exists, and these tasks in its `tasks.md` are not ticked: T017, T018.
 
-7. **Renderizar e criar a issue** (`issue.ts`), com o label `openhands`.
+7. **Renderizar e criar a issue** (`issue.ts`), sem label.
+8. **Trancar a issue e depois aplicar o label** (`helpers/conversation-lock.ts`). A issue é trancada, para que só pessoas
+   com acesso de escrita possam comentar no que o agent Desenvolvedor vai ler, e só então recebe o
+   label `openhands`. Se o trancamento falhar, o label nunca é adicionado e a execução falha, nomeando a
+   issue a trancar e a receber o label à mão.
 
 ## A issue que ele abre
 
@@ -118,7 +124,7 @@ mudá-las. Editar o `.github/ISSUE_TEMPLATE/implement-phase.md` muda todas as is
 ```bash
 DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=workflow_dispatch \
   SPEC_FOLDER=20261116-013307-course-reviews \
-  pnpm nx run @discava/common-scripts:agent-issue
+  pnpm nx run @discava/tooling-agent:agent-issue
 ```
 
 Isso imprime o título e o corpo da issue que ele abriria. Ele ainda lê as issues existentes pelo
@@ -130,7 +136,7 @@ Um segundo workflow, o **Archive Specs** (`.github/workflows/archive-specs.yml`)
 roda em um push na `main` que muda um `specs/*/tasks.md` ativo, e à mão. Ele precisa de um gatilho
 próprio porque a última marcação geralmente é de uma tarefa **(human)**, em um PR que o Agent Issues ignora.
 
-`pnpm nx run @discava/common-scripts:archive-specs`, em `src/agent-issues/archive-specs.ts`:
+`pnpm nx run @discava/tooling-agent:archive-specs`, em `src/agent-issues/archive-specs.ts`:
 
 1. Encontra cada spec ativa com todas as tarefas marcadas, incluindo as **(human)**.
 2. Pula uma spec com uma issue de agent aberta, e uma que já teve um PR de arquivamento. Fechar esse PR

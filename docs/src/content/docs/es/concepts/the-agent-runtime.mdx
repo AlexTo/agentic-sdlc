@@ -1,16 +1,30 @@
 ---
 title: El runtime del agente
-description: Cómo OpenHands convierte una issue etiquetada en un pull request, y cómo sabe cuándo revisarlo.
+description: Los tres roles de agente, Desarrollador, Revisor y Tester, y cómo OpenHands arranca cada uno a partir de una label en GitHub.
 sidebar:
   order: 4
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-**La versión corta:** OpenHands ejecuta dos automatizaciones programadas contra tu repositorio. Una
-implementa issues etiquetadas y revisa los pull requests marcados como fallidos. La otra revisa los
-pull requests cuando terminan sus checks. Ambas arrancan un agente de programación normal con un
-prompt fijo. Ninguna necesita que abras un chat.
+**La versión corta:** OpenHands ejecuta tres automatizaciones programadas contra tu repositorio, una
+por cada rol de agente. El **Desarrollador** implementa issues etiquetadas y revisa los pull requests
+marcados como fallidos. El **Revisor** revisa los pull requests cuando terminan sus checks. El
+**Tester** prueba cada cambio fusionado en el stage de desarrollo desplegado. Cada una arranca un
+agente de programación normal con un prompt fijo. Ninguna necesita que abras un chat.
+
+## Los tres roles
+
+| Rol | Automatización | Arranca a partir de | Deja tras de sí |
+| --- | --- | --- | --- |
+| **Desarrollador** | GitHub issue to PR | Una issue con la label `openhands`, o un status fallido `software-factory/review` en su propio PR | Un pull request en `openhands/issue-<n>`, y sus revisiones |
+| **Revisor** | GitHub code review | Un PR con la label `openhands-review`, cuando han terminado todos los checks | Una revisión que termina en `✅ APPROVED` o `🔄 CHANGES REQUESTED` |
+| **Tester** | GitHub issue tester | Una issue con la label `openhands-test`, abierta después de un despliegue | Un informe de test en la issue, con evidencia de la UI, las API y los datos guardados y, a veces, un pequeño PR de corrección |
+
+El Desarrollador y el Revisor son todo lo que necesita un repositorio para ejecutar el bucle hasta el
+merge. El Tester necesita algo desplegado que probar, así que llega con los
+[despliegues automáticos](../../adopt/deploy/). La app de ejemplo de este repositorio no tiene
+despliegue, así que un fork ejecuta los dos primeros.
 
 ```d2
 direction: right
@@ -20,10 +34,14 @@ machine: Tu máquina {
   canvas: Agent Canvas {
     i2p: issue a PR
     review: revisión de código
+    test: tester de issues
   }
-  agent: agente de programación
-  canvas.i2p -> agent: implementar o revisar
-  canvas.review -> agent: revisión
+  dev: agente Desarrollador
+  rev: agente Revisor
+  tester: agente Tester
+  canvas.i2p -> dev: implementar o revisar
+  canvas.review -> rev: revisión
+  canvas.test -> tester: probar
 }
 
 github: GitHub {
@@ -33,8 +51,13 @@ github: GitHub {
   statuses: commit statuses {shape: document}
 }
 
+stage: stage de desarrollo {shape: cylinder}
+
 machine.canvas -> github: sondea cada 5 minutos
-machine.agent -> github.prs: push, abrir, revisar
+machine.dev -> github.prs: "push, abrir"
+machine.rev -> github.prs: revisar
+machine.tester -> stage: "clic, llamar, leer"
+machine.tester -> github.issues: informe
 ```
 
 ## Las partes
@@ -46,9 +69,9 @@ machine.agent -> github.prs: push, abrir, revisar
 | **Automation** | Un pequeño worker de Python que se ejecuta según una programación cron. Lee GitHub, decide qué hacer y arranca o reanuda conversaciones con el agente. Se instala desde el catálogo de Agent Canvas |
 | **Secret** | Una credencial con nombre, como el token de GitHub. A una conversación solo se le entregan los secretos de su lista de permitidos |
 
-## Las dos automatizaciones
+## Las tres automatizaciones
 
-### GitHub issue to PR
+### Desarrollador: GitHub issue to PR
 
 En cada sondeo, para cada repositorio que vigila, el worker:
 
@@ -63,7 +86,7 @@ En cada sondeo, para cada repositorio que vigila, el worker:
 Cada issue es un *sujeto* con una conversación estable. Una revisión va a la misma conversación que
 la implementación original, así que el agente conserva su contexto.
 
-### GitHub code review
+### Revisor: GitHub code review
 
 En cada sondeo, busca PR que lleven la label `openhands-review`, que tengan una solicitud de
 revisión pendiente para su cuenta, o que estén abiertos, no sean borradores, no tengan solicitud ni
@@ -73,9 +96,44 @@ línea: `✅ APPROVED` o `🔄 CHANGES REQUESTED`.
 
 <Aside type="caution">
 El worker de issue a PR solo revisa un PR cuando ve el status fallido `software-factory/review`. Ni
-una ejecución de CI en rojo ni el "changes requested" del revisor ponen ese status por sí solos.
+una ejecución de CI en rojo ni el "changes requested" del Revisor ponen ese status por sí solos.
 Cerrar ese hueco son dos piezas del [pegamento que falta](../the-missing-glue/).
 </Aside>
+
+### Tester: GitHub issue tester
+
+Las dos primeras automatizaciones vienen del catálogo de Agent Canvas. Esta está escrita a mano, y es
+pequeña: un worker de unas cien líneas, construido sobre los helpers de GitHub del catálogo, y un
+archivo de prompt.
+
+En cada sondeo, busca issues abiertas con la label de disparo (`openhands-test`) que haya abierto la
+propia cuenta del workflow, `github-actions[bot]`. Para cada una arranca un turno de **test**: clonar
+el repositorio en el commit que ejecuta el stage, averiguar qué cambió el pull request fusionado,
+probarlo en el stack desplegado y comentar el resultado en la issue.
+
+El test tiene tres partes, y la tercera es lo que lo distingue de recorrer una página haciendo clic:
+
+1. **La UI**, en un navegador real, con la sesión iniciada como un usuario de prueba.
+2. **Las API** que hay detrás de esas pantallas, llamadas con el token del usuario de prueba,
+   incluidos los casos que deberían rechazarse.
+3. **Los datos guardados.** Después de cada acción, el Tester lee lo que el cambio debería haber
+   escrito y lo comprueba: los registros de la base de datos, los archivos del almacenamiento, el
+   índice de búsqueda y los logs. En Discava eso es DynamoDB, S3, OpenSearch y CloudWatch.
+
+Tres detalles lo mantienen seguro y silencioso:
+
+- **La issue solo dice qué probar.** Cómo probarlo (las herramientas, los usuarios de prueba, las
+  comprobaciones, el informe) es el prompt de la propia automatización, en la máquina. Nadie que
+  pueda editar una issue puede cambiarlo.
+- **Una issue abierta por cualquier otro se omite**, porque su cuerpo se convertiría en las
+  instrucciones del agente.
+- **Un test por cada etiquetado.** Cada vez que se pone la label cuenta una vez, así que los
+  comentarios del propio Tester nunca arrancan un segundo test. Quita y vuelve a poner la label para
+  probar de nuevo.
+
+Nada abre estas issues por defecto. Un workflow que abre una por cada pull request desplegado es la
+última pieza del [pegamento que falta](../the-missing-glue/). El de Discava está en
+[Verificación post-merge](../../discava/post-merge-verify/).
 
 ## Por qué sondeo y no webhooks
 
@@ -86,16 +144,31 @@ tarda el agente en trabajar.
 
 ## A qué puede acceder el agente y a qué no
 
-La conversación de implementación recibe un secreto, el token de GitHub, para poder leer la issue y
-hacer push de su rama. No recibe credenciales de la nube. Qué más no puede hacer nunca, y qué impone
-cada límite, está en [Controles humanos](../human-gates/#lo-que-los-agentes-nunca-pueden-hacer).
+Los prompts del Desarrollador y del Revisor nombran un secreto, el token de GitHub, para que el
+Desarrollador pueda leer la issue y hacer push de su rama y el Revisor pueda publicar su revisión.
+Ninguno necesita acceso a la nube: todo lo que ejecutan se ejecuta en el stack local.
+
+El Tester es la excepción. Tiene que llegar al stage desplegado, así que trabaja con una CLI de la
+nube con sesión iniciada en la cuenta de desarrollo, que su prompt le dice que use en solo lectura, y
+un usuario de prueba por cada rol de la app. Nunca recibe los roles de despliegue, y su prompt le
+prohíbe cambiar la infraestructura, desplegar o tocar otro stage. Como lee issues y pull requests
+mientras tiene esas credenciales, todo lo que se le entrega se bloquea (lock) antes, así que solo
+pueden comentar en ello las personas con acceso de escritura.
+
+Qué más no pueden hacer nunca los agentes, y qué impone cada límite, está en
+[Controles humanos](../human-gates/#lo-que-los-agentes-nunca-pueden-hacer).
 
 ## Elegir agentes
 
-Discava ejecuta ambas automatizaciones con **Claude Code mediante ACP**: Sonnet para implementar y
-Opus para revisar. Usar un modelo más potente para la revisión es deliberado: el revisor es la última
-comprobación antes de una persona, y lee mucho menos código del que escribe el implementador.
+Discava ejecuta las tres con **Claude Code mediante ACP**, cada una con su propio perfil de agente:
+Sonnet para el Desarrollador, Opus para el Revisor y el Tester. Usar un modelo más potente para la
+revisión es deliberado: el Revisor es la última comprobación antes de una persona, y lee mucho menos
+código del que escribe el Desarrollador. El Tester recibe el mismo modelo porque su trabajo también
+es de criterio: decidir qué debería hacer un cambio, y si lo que ve en el stage, y lo que encuentra en su almacenamiento, es correcto.
 Cualquier agente ACP, o el propio agente de OpenHands con cualquier LLM, encaja en los mismos
 perfiles.
+
+El prompt con el que se ejecuta cada rol está en
+[Los prompts de los agentes](../../discava/agent-prompts/).
 
 Siguiente: [El pegamento que falta](../the-missing-glue/).

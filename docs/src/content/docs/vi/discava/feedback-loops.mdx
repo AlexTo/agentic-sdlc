@@ -1,6 +1,6 @@
 ---
 title: Vòng phản hồi
-description: Agent CI Status và Agent Review Status, hai workflow gửi agent quay lại.
+description: Agent CI Status và Agent Review Status, hai workflow gửi agent Developer quay lại.
 sidebar:
   order: 6
 ---
@@ -16,7 +16,9 @@ hiệu duy nhất mà worker OpenHands vốn đã hành động theo: một comm
 
 `.github/workflows/agent-ci.yml` chạy khi có `workflow_run`, khi **PR Checks** hoàn tất với
 `failure` hoặc `timed_out` cho một pull request trên nhánh `openhands/issue-`. Nó checkout nhánh mặc
-định và chạy `agent-ci-status`.
+định và chạy `agent-ci-status`. Các bước mà cả hai workflow dùng chung nằm trong một reusable
+workflow, `agent-status.yml`. Mỗi workflow gọi nó giữ trigger, điều kiện, nhóm concurrency và
+permission riêng.
 
 `workflow_run` là điểm mấu chốt. Nó chạy trong context của nhánh mặc định, với một token có quyền
 ghi, dù PR Checks đã chạy trên code của PR với một token chỉ đọc.
@@ -50,14 +52,14 @@ nhánh agent trong cùng repository và nội dung review chứa `CHANGES REQUES
 | Kiểm tra | Vì sao |
 | --- | --- |
 | Author association là `OWNER`, `MEMBER` hoặc `COLLABORATOR` | Chỉ người có quyền ghi mới kích hoạt được |
-| Nội dung có `<!-- openhands-review-run: … -->` | Đó là review của agent reviewer, không phải một người trích dẫn nó |
+| Nội dung có `<!-- openhands-review-run: … -->` | Đó là review của agent Reviewer, không phải một người trích dẫn nó |
 | Nội dung có một dòng đúng bằng `🔄 CHANGES REQUESTED` | Là verdict, không phải một lần nhắc đến nó |
 
 Sau đó là cùng các bước như CI: `review-fix-<n>`, status thất bại liên kết đến review, và
 `review-fix-exhausted` sau năm lần.
 
-Reviewer tự review lại sau khi agent push, vì prompt revise bảo agent gắn lại `openhands-review`, và
-một commit head mới được tính là một lần review mới.
+Reviewer tự review lại sau khi Developer push, vì [prompt revise](../agent-prompts/#developer) bảo
+Developer gắn lại `openhands-review`, và một commit head mới được tính là một lần review mới.
 
 ## Trông như thế nào trên một PR
 
@@ -78,5 +80,8 @@ Từ [#470](https://github.com/AlexTo/discava/pull/470), "ratings in search":
 Cả hai script nhận `DRY_RUN=true`, in kế hoạch dưới dạng JSON và không thay đổi gì. Trỏ
 `GITHUB_EVENT_PATH` vào một event payload đã lưu để phát lại một trường hợp thật.
 </Aside>
+
+Chuyện gì xảy ra sau khi merge, khi agent Tester tiếp quản, nằm ở
+[Kiểm chứng sau merge](../post-merge-verify/).
 
 Tiếp theo: [PR check](../pr-checks/).

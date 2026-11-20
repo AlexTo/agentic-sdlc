@@ -26,13 +26,17 @@ Um novo push começa sem o status, então o worker para de revisar quando o agen
 | Marcador | Onde | Escrito por | Usado para |
 | --- | --- | --- | --- |
 | `<!-- agent-issue spec:<folder> group:<n> -->` | Primeira linha de uma issue de implementação | Agent Issues | Encontrar a pasta da spec a partir de um PR do agent mergeado (pelo `Closes #n` dele), e nunca abrir uma segunda issue para o mesmo grupo |
-| `<!-- openhands-review-run: <id> -->` | Cada review do agent revisor | Automação de code review | O Agent Review Status só age em reviews que o têm |
+| `<!-- post-merge-test pr:<n> -->` | Primeira linha de uma issue de teste | Post-merge Verify | Nunca abrir uma segunda issue de teste para o mesmo pull request |
+| `<!-- openhands-review-run: <id> -->` | Cada review do agent Revisor | Automação de code review | O Agent Review Status só age em reviews que o têm |
 | `<!-- openhands-review-gate:waiting:<sha> -->` | Comentário "Review waiting on checks" | Automação de code review | O registro do próprio revisor de que está esperando aquele head |
 | `<!-- e2e-screenshots -->` | O comentário E2E screenshots | PR Checks | Atualizar o mesmo comentário em vez de adicionar um novo a cada execução |
 
+Um marcador em uma issue só conta quando a issue foi aberta pela conta do próprio workflow ou por
+alguém com acesso de escrita. Qualquer pessoa pode abrir uma issue com um marcador dentro.
+
 ## Linhas de veredito
 
-O revisor termina cada review com uma destas em uma linha própria:
+O Revisor termina cada review com uma destas em uma linha própria:
 
 ```text
 ✅ APPROVED
@@ -48,5 +52,6 @@ menciona a frase de passagem não conta.
 | --- | --- | --- |
 | `openhands/issue-<n>` | Automação issue-to-PR | A única branch que o worker revisa, e a única a que os workflows de correção respondem |
 | `openhands/issue-<n>-2`, … | Automação issue-to-PR, em uma issue que recebeu o label de novo | Nunca é revisada automaticamente |
-| qualquer uma começando com `openhands/` | Branches de agent | O merge de uma delas avança a cadeia |
+| `openhands/test-fix-<n>` | Automação issue tester, para a issue de teste `<n>` | Uma correção que o Testador encontrou ao testar. Nunca é revisada automaticamente |
+| qualquer uma começando com `openhands/` | Branches de agent | O merge de uma delas avança a cadeia. No Discava, um pull request vindo de uma delas é trancado quando é aberto |
 | `spec/<name>` (qualquer outro nome) | Pessoas | Só avança a cadeia com `spec-ready` |

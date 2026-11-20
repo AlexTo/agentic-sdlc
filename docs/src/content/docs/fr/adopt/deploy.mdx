@@ -1,6 +1,6 @@
 ---
-title: 9. Déploiement et scans de sécurité (facultatif)
-description: Déployez chaque main au vert sur un stage de développement, gardez la production derrière une approbation, et scannez avant chaque déploiement.
+title: 9. Déploiement, scans de sécurité et tests après merge (facultatif)
+description: Déployez chaque main au vert sur un stage de développement, gardez la production derrière une approbation, scannez avant chaque déploiement, et faites tester par l'agent Testeur ce qui a été déployé.
 sidebar:
   order: 9
 ---
@@ -8,7 +8,8 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **Résultat :** un scan Trivy à chaque push sur `main`, un workflow Deploy qui livre chaque `main`
-au vert sur un stage de développement, et des déploiements en production qui attendent une personne.
+au vert sur un stage de développement, des déploiements en production qui attendent une personne, et,
+si vous le souhaitez, un agent Testeur qui teste chaque changement mergé sur le stage de développement.
 
 Les détails de cette étape sont propres à Discava (AWS, CDK), mais la structure convient à n'importe quel cloud. L'application
 de notes d'exemple de ce dépôt n'a pas de déploiement, donc copiez depuis
@@ -73,6 +74,32 @@ de notes d'exemple de ce dépôt n'a pas de déploiement, donc copiez depuis
    production et ajoutez des **Required reviewers**. Pour le déployer, ouvrez **Actions → Deploy → Run
    workflow** et saisissez le stage de production. Le job attend alors une approbation.
 
+6. **Ajoutez l'agent Testeur**, si vous voulez que chaque changement déployé soit testé (manque 11). C'est la
+   pièce la plus récente, et elle vit dans Discava, pas dans ce dépôt. Copiez depuis là-bas :
+
+   - `packages/tooling/agent/src/post-merge-test/`, `src/agent-lock/` et `src/helpers/`, avec leurs
+     cibles Nx `post-merge-test` et `agent-lock`
+   - `.github/workflows/post-merge-verify.yml` et `agent-lock.yml`
+   - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`, pour ouvrir une issue de test à la main
+
+   Adaptez ensuite à votre dépôt le nom du stage (`TEST_STAGE`), et les chemins qui n'atteignent jamais une
+   stack déployée (`NOT_DEPLOYED` dans `plan.ts`).
+
+   Côté OpenHands, ajoutez un profil d'agent `tester` et une automatisation qui recherche les issues
+   portant le label `openhands-test`. Il n'existe pas de template de catalogue pour cela. Le worker de Discava
+   et son prompt sont décrits dans [Configuration d'OpenHands](../../discava/openhands-setup/#testeur--github-issue-tester)
+   et [Les prompts des agents](../../discava/agent-prompts/#testeur). Donnez au Testeur :
+
+   - un CLI cloud connecté au compte de développement, avec aussi peu d'accès que les tests l'exigent
+   - un utilisateur de test par rôle de votre application, stocké comme secrets OpenHands
+   - un navigateur qu'il peut piloter, comme Playwright avec Chromium
+
+   <Aside type="caution">
+   Le Testeur lit des issues et des pull requests tout en détenant ces identifiants. Gardez le verrouillage
+   (`agent-lock.yml` et `helpers/conversation-lock.ts`), gardez le « comment tester » dans le prompt propre de
+   l'automatisation plutôt que dans l'issue, et ne le pointez jamais vers un stage dont les données comptent.
+   </Aside>
+
 </Steps>
 
 ## Vérifier que ça marche
@@ -81,9 +108,14 @@ Mergez une PR quelconque. La CI tourne, puis **Deploy** démarre de lui-même av
 à la main sur un commit plus ancien : Deploy journalise `Skipping deploy: no longer main's latest commit` et
 ne livre rien.
 
+Avec le Testeur en place : après ce déploiement, **Post-merge Verify** ouvre une issue verrouillée intitulée
+`test(post-merge): verify #<pr> …`, avec le label `openhands-test`. En un passage, le Testeur démarre,
+et son rapport apparaît en commentaire sur l'issue.
+
 <Aside type="note">
-L'agent ne déploie jamais et ne voit jamais ces rôles. Sa conversation n'a que le token GitHub.
-Le rôle de déploiement n'est endossé que par un workflow qui s'exécute depuis `main`, dans l'environnement du stage.
+Aucun agent ne déploie, et aucun ne voit ces rôles. Le Développeur et le Relecteur n'ont besoin que du token
+GitHub. L'accès du Testeur au compte de développement est distinct du rôle de déploiement, qui
+n'est endossé que par un workflow qui s'exécute depuis `main`, dans l'environnement du stage.
 </Aside>
 
 Suite : votre dépôt contient maintenant tout ce que contient un fork de celui-ci. Continuez à partir de

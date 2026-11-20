@@ -1,6 +1,6 @@
 ---
 title: デプロイとセキュリティ
-description: グリーンの main がひとりでにデプロイされる仕組みと、漏れたシークレットや脆弱な依存関係を止めるスキャン。
+description: グリーンの main がひとりでにデプロイされ、各変更がテスト担当エージェントに渡される仕組みと、漏れたシークレットや脆弱な依存関係を止めるスキャン。
 sidebar:
   order: 9
 ---
@@ -52,6 +52,10 @@ deploy -> prod
 `AUTO_DEPLOY_STAGE` はリポジトリ変数です。Discava はこれを `discava-development` に設定しているので、グリーンの
 `main` はすべて開発ステージに届きます。設定しなければ、人の操作なしには何もデプロイされません。
 
+開発ステージへのデプロイで終わりではありません。実行が終わると、**Post-merge Verify** が、そのデプロイに含まれていた
+pull request ごとにテスト issue を開き、テスト担当エージェントがその変更をステージでテストします。
+[マージ後の検証](../post-merge-verify/) を参照してください。
+
 ### ステージのセットアップ
 
 `scripts/setup-stage.sh` は、ワークフローを実行するリポジトリのクローンから、ステージごとに 1 回実行します。
@@ -94,4 +98,4 @@ pre-commit フックは `lint-staged` (Biome) も実行し、どちらかのツ�
 commitlint を実行します。
 </Aside>
 
-次へ: [実際の機能](../a-real-feature/)。
+次へ: [マージ後の検証](../post-merge-verify/)。

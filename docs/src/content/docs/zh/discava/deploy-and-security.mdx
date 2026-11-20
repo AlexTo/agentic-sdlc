@@ -1,6 +1,6 @@
 ---
 title: 部署与安全
-description: 绿色的 main 如何自动部署，以及阻止泄露密钥或有漏洞依赖的扫描。
+description: 绿色的 main 如何自动部署并把每个变更交给测试智能体，以及阻止泄露密钥或有漏洞依赖的扫描。
 sidebar:
   order: 9
 ---
@@ -51,6 +51,9 @@ deploy -> prod
 `AUTO_DEPLOY_STAGE` 是一个仓库变量。Discava 把它设为 `discava-development`，因此每个绿色的 `main`
 都会到达开发 stage。不设置它，没有人参与就不会部署任何东西。
 
+部署到开发 stage 并不是终点。运行结束后，**Post-merge Verify** 会为它带上的每个 pull request 打开一个
+测试 issue，由测试智能体在该 stage 上测试这个变更。参见[合并后验证](../post-merge-verify/)。
+
 ### 配置一个 stage
 
 `scripts/setup-stage.sh` 每个 stage 运行一次，从运行该 workflow 的仓库的一个克隆中运行。它会就所有内容
@@ -90,4 +93,4 @@ pre-commit hook 还会运行 `lint-staged`（Biome），如果任一工具修改
 智能体会重新暂存并再次 commit。`commit-msg` 使用 Conventional Commits 配置运行 commitlint。
 </Aside>
 
-下一步：[一个真实的功能](../a-real-feature/)。
+下一步：[合并后验证](../post-merge-verify/)。

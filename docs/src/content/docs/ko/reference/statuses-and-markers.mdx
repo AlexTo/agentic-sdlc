@@ -26,9 +26,13 @@ sidebar:
 | 마커 | 위치 | 작성 주체 | 용도 |
 | --- | --- | --- | --- |
 | `<!-- agent-issue spec:<folder> group:<n> -->` | 구현 issue의 첫 줄 | Agent Issues | merge된 에이전트 PR에서 (그 PR의 `Closes #n`을 통해) spec 폴더를 찾고, 같은 그룹에 두 번째 issue를 열지 않기 위해 |
+| `<!-- post-merge-test pr:<n> -->` | 테스트 issue의 첫 줄 | Post-merge Verify | 같은 pull request에 두 번째 테스트 issue를 열지 않기 위해 |
 | `<!-- openhands-review-run: <id> -->` | 리뷰어 에이전트의 각 리뷰 | Code review automation | Agent Review Status는 이것이 있는 리뷰에만 반응합니다 |
 | `<!-- openhands-review-gate:waiting:<sha> -->` | "Review waiting on checks" 댓글 | Code review automation | 그 head를 기다리고 있다는 리뷰어 자신의 기록 |
 | `<!-- e2e-screenshots -->` | E2E screenshots 댓글 | PR Checks | 실행할 때마다 새 댓글을 추가하는 대신 하나의 댓글을 업데이트하기 위해 |
+
+issue의 마커는 workflow 자체의 계정이나 쓰기 권한이 있는 사람이 연 issue일 때만 인정됩니다. 마커가 들어 있는
+issue는 누구나 열 수 있기 때문입니다.
 
 ## 판정 줄
 
@@ -48,5 +52,6 @@ Agent Review Status는 한 줄에 단독으로 있는 `^🔄 CHANGES REQUESTED\s
 | --- | --- | --- |
 | `openhands/issue-<n>` | Issue-to-PR automation | worker가 수정하는 유일한 브랜치이자, 수정 workflow가 응답하는 유일한 브랜치 |
 | `openhands/issue-<n>-2`, … | label을 다시 붙인 issue에 대한 Issue-to-PR automation | 자동으로 수정되지 않습니다 |
-| `openhands/`로 시작하는 모든 것 | 에이전트 브랜치 | 하나를 merge하면 체인이 진행됩니다 |
+| `openhands/test-fix-<n>` | 테스트 issue `<n>`에 대한 Issue tester automation | 테스터가 테스트하다가 찾은 수정. 자동으로 수정되지 않습니다 |
+| `openhands/`로 시작하는 모든 것 | 에이전트 브랜치 | 하나를 merge하면 체인이 진행됩니다. Discava에서는 여기서 나온 pull request가 열릴 때 잠깁니다 |
 | `spec/<name>` (그 밖의 모든 이름) | 사람 | `spec-ready`가 있을 때만 체인을 진행시킵니다 |

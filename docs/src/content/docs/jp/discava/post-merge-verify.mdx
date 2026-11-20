@@ -1,0 +1,288 @@
+---
+title: マージ後の検証
+description: discava-development にデプロイされた各 pull request がテスト担当エージェント向けのテスト issue になる仕組みと、エージェントが読むものすべてがロックされる仕組み。
+sidebar:
+  order: 9.5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+ギャップ 11: マージ前のチェックはすべてローカルの代替に対して実行されたもので、変更が実際に動く場所では誰も見ていません。
+Discava はこれを 3 つ目のエージェントの役割で埋めます。`discava-development` へのデプロイのたびに、ワークフローが
+そのデプロイに含まれていた pull request ごとにテスト issue を開き、**テスト担当エージェント**がその変更をステージでテストします。
+実際のブラウザでのポータル、テストユーザーとしての API、そして変更が書き込んだデータです。
+
+```d2
+direction: down
+
+deploy: "Deploy\n(discava-development)"
+verify: "Post-merge Verify\npost-merge-test"
+issue: "テスト issue\nロックしてから openhands-test" {shape: page}
+tester: "テスト担当エージェント\n(OpenHands、次のポーリング)"
+stage: discava-development {shape: cylinder}
+report: "issue 上のレポート" {shape: document}
+fix: "修正 PR\nopenhands/test-fix-<n>" {shape: page}
+
+deploy -> verify: 完了
+verify -> issue: デプロイされた PR ごとに 1 つ
+issue -> tester
+tester -> stage: "Playwright、API、AWS CLI"
+tester -> report
+tester -> fix: "小さく明らかな修正のみ" {style.stroke-dash: 3}
+```
+
+## Post-merge Verify
+
+`.github/workflows/post-merge-verify.yml` は `workflow_run` で、**Deploy** が完了したときに実行されます。pull request
+番号を指定して手動でも実行できます。デフォルトブランチをチェックアウトし、`post-merge-test` を実行します。
+実行は 1 つの concurrency グループを共有するので、近接した 2 つのデプロイが同じ pull request に 2 つの issue を
+開くことはありません。
+
+スクリプト (`src/post-merge-test/`):
+
+1. **その実行がテスト対象のステージをデプロイしたことを確認します。** Deploy の実行のジョブを読みます。`Deploy` ステップが
+   スキップされた実行 (コミットがもう `main` の最新ではなかった) は何もデプロイしておらず、別のステージに対する実行は
+   テストしません。
+2. **デプロイに何が含まれていたかを調べます。** 1 回のデプロイに複数のマージが入ることがあります。スキップされたデプロイは、
+   そのコミットを次のデプロイに委ねるからです。そこで、そのステージで前回成功したデプロイから今回までのコミットと、
+   それぞれがマージされた元の pull request を取ります。
+3. **pull request ごとに判断します** (`plan.ts` の `decide()`)。次の場合、issue は開きません。
+   - その pull request の issue がすでにある (隠しマーカーで見つける)
+   - `skip-deploy-test` ラベルが付いている
+   - デプロイされるものを何も変更していない。docs、spec、テスト、ツール、CI など、スタックに届かないファイルだけの場合
+4. **issue を描画します** (`renderIssue()`)。書かれるのは、何をテストするかだけです。
+5. **ラベルなしで開き、ロックしてから、ラベルを付けます。** その issue、それがテストする pull request、その pull request が
+   閉じる issue がすべてロックされます。その後にはじめて `openhands-test` が付きます。ロックできないものがあれば、
+   ラベルは付かず、実行は失敗して、手動でロックすべきものを示します。
+
+pull request 番号を指定して手動で実行すると、issue がすでにあっても新しく開きます。変更を最初からもう一度テストするには
+こうします。
+
+## 開かれる issue
+
+実際の例、[#654](https://github.com/AlexTo/discava/issues/654):
+
+```markdown
+<!-- post-merge-test pr:647 -->
+
+## What to test
+
+- Pull request: #647 (feat(stripe-checkout): a refund takes access away)
+- Issue it closes: #646
+- Merged as `b4dc4f7…`, deployed to `discava-development` at `b4dc4f7…` ([Deploy run](…))
+- Kind: **UI change**. It changes a portal: sign in as the user the change is for and click
+  through the flow with Playwright, then call the APIs behind it and check the stored data.
+
+<details><summary>Deployed files it changes (4)</summary>
+
+- `packages/events/src/local/stripe-stand-in.ts`
+- `packages/events/src/payments/events/charge-refunded.ts`
+- `packages/events/src/payments/stripe-webhook.ts`
+- `packages/websites/student-portal/src/routes/learn/$courseId/-components/enrolment-actions.tsx`
+
+</details>
+```
+
+タイトルは `test(post-merge): verify #647 a refund takes access away` です。最大 100 文字の Conventional Commit の
+ヘッダーなので、テスト担当はそれを再利用できます。Kind は、pull request がポータルか共有コンポーネントに触れていれば
+`UI change`、そうでなければ `backend change or fix` です。
+
+<Aside type="note" title="何をテストするかだけで、どうテストするかは決して書かない">
+issue に指示はありません。どうテストするか (ツール、テストユーザー、チェック、レポート) は、OpenHands 内にある
+テスト担当自身の[プロンプト](../agent-prompts/#テスト担当)です。そのため、issue を編集できる人の誰もそれを変えられません。
+`.github/ISSUE_TEMPLATE/test-deployed-pr.md` は、issue を手動で開くための同じ書式です。
+</Aside>
+
+## テスト担当がすること
+
+次のポーリングで、`github-issue-tester` automation が issue を拾い、テスト担当を起動します。
+そのプロンプトには 8 つのステップがあります。
+
+1. pull request、その diff、それが閉じる issue、その spec から何が変わったかを把握し、今なにが成り立つべきかを
+   書き出します。
+2. UI があればテストします。Playwright で Cognito のホストされたページからサインインし、フローをクリックして進み、
+   各ステップでスクリーンショットを撮り、そのすべてを見ます。
+3. テストユーザーのアクセストークンで API を呼びます。エラーケースも含めます。
+4. 保存されたデータを確認します。DynamoDB のアイテム、OpenSearch のドキュメント、S3 のオブジェクト、Lambda のログです。
+5. `pmt-<pr>-<what>` という名前を付けた、自分のデータを使います。
+6. issue に報告します。何をテストしたか、合格か失敗かと証拠を添えたすべてのチェックの表、そして判定です。
+7. 合格なら issue を閉じます。失敗なら、再現手順を付けて開いたままにします。修正の pull request を開くのは、
+   原因が明らかで修正が小さいときだけです。
+8. インフラ、IAM、ユーザー、ステージの設定の変更、デプロイ、他のステージに触れること、ワークフローの編集、マージは
+   決して行いません。
+
+## 実際の実行: 確定しなかった支払い
+
+ワークフローが最初に開いたテスト issue は、マージ前のすべてのチェックが見逃した欠陥を見つけました。
+時刻はすべて UTC で、2026 年 11 月 20 日のものです。
+
+| 時刻 | 誰が | 何が起きたか |
+| --- | --- | --- |
+| 07:02 | 人 | issue [#646](https://github.com/AlexTo/discava/issues/646) を閉じる [#647](https://github.com/AlexTo/discava/pull/647)、"a refund takes access away" をマージする。開発担当エージェントがそれを書き、赤い CI の実行 2 回を自分で直し、レビュー担当エージェントが[承認](https://github.com/AlexTo/discava/pull/647#pullrequestreview-5988208805)していた |
+| 07:08 | Deploy | `main` を `discava-development` に 9 分で[出荷する](https://github.com/AlexTo/discava/actions/runs/44692771527) |
+| 07:18 | Post-merge Verify | [#654](https://github.com/AlexTo/discava/issues/654) を開き、ロックし、それから `openhands-test` を付ける |
+| 07:26 | テスト担当エージェント | [1 回目のレポート](https://github.com/AlexTo/discava/issues/654#issuecomment-7033260676): **ブロック**。ステージに決済アカウントが接続されていない |
+| 10:27 | テスト担当エージェント | [2 回目のレポート](https://github.com/AlexTo/discava/issues/654#issuecomment-7037199284): **まだブロック**。何も変わっていない |
+| 10:43 | テスト担当エージェント | Stripe がテストモードで接続されたので、受講者としてコースを購入する |
+| 10:45 | ステージ | webhook の配信が 2 回ともタイムアウトする。注文は `pending` のまま |
+| 10:48 | テスト担当エージェント | 修正の [#657](https://github.com/AlexTo/discava/pull/657) を開く |
+| 10:49 | テスト担当エージェント | [3 回目のレポート](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120): **失敗**。原因と修正付き |
+
+### 実行 1: ブロックされ、そう報告する
+
+この変更は、Stripe が返金を報告したときに受講者の受講登録を終了させます。それをテストするには、返金する対象の支払い済みの注文が
+必要ですが、ステージには決済アカウントがありませんでした。テスト担当はテストを合格にせず、推測もしませんでした。
+その[判定](https://github.com/AlexTo/discava/issues/654#issuecomment-7033260676)は "blocked, not verified" で、証拠が添えられていました。管理者 API の
+`payment.status` は `not-connected` と答え、コアテーブルには注文が 1 件もありませんでした。
+
+続いて、支払いなしで確認できることを確認しました。デプロイされた webhook の関数には新しい
+`charge.refunded` ハンドラーが含まれている、配信されているポータルのバンドルには新しい "You're no longer enrolled" 画面がある、
+偽造された返金通知は 400 で拒否されて何も書き込まない、無料コースではコースのページが引き続き動く。
+9 つのチェックが合格しました。検証*していない* 6 つのことと、何があればそのブロックが解消するかも列挙しました。
+
+何をしないかも述べました。決済アカウントを接続するには Stripe のキーを保存する必要があり、それはステージの設定を
+変更することになります。[プロンプト](../agent-prompts/#テスト担当)はそれを禁じています。そこで、
+人のために issue を開いたままにしました。
+
+### 実行 3: 実際の購入
+
+Stripe のテストモードのアカウントがステージに接続されると、テスト担当はフローの最初から始めました。返金には購入が
+必要だからです。以下の各ステップは、
+[3 回目のレポート](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120)の表の 1 行です。
+
+1. 講師として、API を通じて `pmt-647-course` という名前のコースを作成し、価格を
+   USD 19.99 に設定して公開しました。
+2. 受講者として、実際のブラウザで、Cognito のホストされたページからサインインし、コースを開き、
+   **Buy now** を選び、Stripe のホストされたチェックアウトでテストカードを使って支払いました。
+3. コースのページに戻ると "Confirming your payment" と表示されていて、そこで 3 つのものを
+   見守りました。ページ、DynamoDB にある注文のレコード、webhook の関数のログです。
+
+以下のスクリーンショットはテスト担当自身のもので、プロンプトが求めるとおり各ステップで保存されました。
+レポートに名前が挙げられていて、人が見たはずのものと同じです。
+
+テスト担当が作成したコース。購入前に受講者に見える状態です
+(`01-paid-course-before-purchase.png`):
+
+<p>
+  <img alt="開発ステージの受講者ポータル。コース pmt-647-course が $19.99 で、Buy now ボタンとともに表示されている" src="/agentic-sdlc/screenshots/post-merge-test-647/01-paid-course-before-purchase.png" width="620" />
+</p>
+
+サンドボックスモードの Stripe のホストされたチェックアウト。テストカードが入力されています
+(`03-stripe-checkout-filled.png`):
+
+<p>
+  <img alt="Sandbox と表示された Stripe のホストされたチェックアウト。pmt-647-course、US$19.99 に対して、テストカード 4242 4242 4242 4242 とテスト用の受講者のメールアドレスが入力されている" src="/agentic-sdlc/screenshots/post-merge-test-647/03-stripe-checkout-filled.png" width="620" />
+</p>
+
+支払い後、コースのページに戻ったところ (`04-returned-from-checkout.png`):
+
+<p>
+  <img alt="同じコースのページ。Buy now ボタンがあった場所に、Confirming your payment とプログレスバーが表示されている" src="/agentic-sdlc/screenshots/post-merge-test-647/04-returned-from-checkout.png" width="620" />
+</p>
+
+そして、待った後 (`05-failure-still-not-enrolled-webhook-timeout.png`):
+
+<p>
+  <img alt="同じコースのページ。再び $19.99 と Buy now ボタンが表示され、Start learning ボタンはない" src="/agentic-sdlc/screenshots/post-merge-test-647/05-failure-still-not-enrolled-webhook-timeout.png" width="620" />
+</p>
+
+最後の画像は最初の画像と同じで、それこそが失敗です。支払いは通ったのに、
+注文は `pending` から動かず、受講登録は現れず、ページは **Buy now** の表示に戻りました。
+画面上には、何かがおかしいことを示すものが何もありません。エラーも、コンソールの失敗したリクエストもありません。
+テスト担当がこれを見つけられたのは、注文のレコードと関数のログも読んだからです。
+ログが理由を示していました。
+
+```text
+REPORT … Duration: 10000.00 ms … Memory Size: 128 MB  Max Memory Used: 117 MB  Status: timeout
+REPORT … Duration: 10000.00 ms … Memory Size: 128 MB  Max Memory Used: 117 MB  Status: timeout
+```
+
+チェックアウトが支払われたという Stripe の通知は、一度も届きませんでした。それを受け取る関数は
+Lambda のデフォルトの 128 MB で動いていて、コールドスタート (コアテーブルのエンティティ、AppConfig、Stripe
+SDK) が 10 秒のタイムアウト内に終わりませんでした。タイムアウトしたランタイムは破棄されるので、
+Stripe の再試行は毎回コールドスタートになり、同じように失敗しました。テスト担当はこれを、256 MB を持ち、
+起動に 8.1 秒かかったチェックアウトの関数と比較しました。
+
+テスト対象の返金には、たどり着きませんでした。テスト担当が見つけたものはその 1 つ手前にあり、
+もっと深刻です。デプロイされたステージでは、受講者がコースの代金を払っても、コースを受け取れない可能性がありました。
+
+### なぜもっと早く見つからなかったのか
+
+この欠陥はテスト対象の pull request より古く、すべての層を通り抜けていました。
+
+- **ユニットテスト**はハンドラーのロジックを実行しますが、ロジックは正しいものでした。
+- **E2E テスト**はローカルスタックに対して動きます。そこでは代替が Stripe の役を務め、メモリ制限も
+  10 秒のタイムアウトもありません。
+- **レビュー担当エージェント**と**人**は、メモリの設定がどこにも現れない diff を読みました。
+  欠けている行こそが欠陥だからです。
+
+この欠陥は、関数がデプロイされた場所にしか存在しません。それが、テスト担当が埋めるためにいるギャップです。
+
+### 修正 PR
+
+原因が明らかで修正が小さかったので、テスト担当のプロンプトは pull request を許していました。
+[#657](https://github.com/AlexTo/discava/pull/657) は 1 つの[コミット](https://github.com/AlexTo/discava/commit/854760c3c30a5ceb1ee7c7e52ebd596bef3374f1)で、
+2 つのファイルを変更します。`StripeWebhookApi` construct で関数のメモリを 512 MB に設定する 4 行と、
+それがなければ失敗する 12 行のテスト (`Missing key 'MemorySize'`) です。`main` から
+`openhands/test-fix-654` として分岐し、その説明は [#647](https://github.com/AlexTo/discava/pull/647) と
+[#654](https://github.com/AlexTo/discava/issues/654) の両方を参照しています。
+
+説明は、その限界についても率直です。"Not verified on a deployed stage. The fix only
+takes effect once deployed." (デプロイされたステージでは未検証。修正はデプロイされてはじめて効果を持つ。)
+
+そして、テスト担当は止まりました。マージもデプロイもしませんでした。Agent Lock が新しい pull
+request をロックし、[PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986) が green で通り、`openhands-review` ラベルがそれをレビュー担当エージェントに渡しました。
+他の PR と同じように、マージするのは人です。テスト issue [#654](https://github.com/AlexTo/discava/issues/654) は、支払いが確定するステージで返金そのものが
+テストされるまで開いたままです。テスト担当の最後のレポートには、残したテストデータが列挙されています。
+コースと `pending` の注文です。
+
+スクリーンショットはワークステーション上の、Discava のチェックアウトの `tmp/screenshots/pr-<pr>/` に残ります。
+レポートは各ファイルの名前を挙げ、何が写っているかを述べます。上の 4 枚は、このページのためにそこからコピーしたものです。
+
+## Agent Lock
+
+Discava は公開リポジトリなので、誰でもその issue と pull request にコメントできます。エージェントは、push できる
+トークンを持ったままそれらのコメントを読み、テスト担当は AWS へのアクセスとテストユーザーのパスワードも持っています。
+つまり、コメントはエージェントに指示を与える手段になります。
+
+その答えは、エージェントに渡されるすべての会話をロックすることです。ロックされた issue や pull request が
+コメントを受け付けるのは、書き込み権限のあるコラボレーターからだけです。エージェント自身のトークンもその 1 つです。
+
+| 対象 | ロックするもの |
+| --- | --- |
+| Agent Issues が開く実装 issue | そのスクリプト自身。`openhands` を付ける前に |
+| テスト issue、それがテストする pull request、その pull request が閉じる issue | Post-merge Verify のスクリプト。`openhands-test` を付ける前に |
+| 誰かが手動で `openhands` または `openhands-test` ラベルを付けた issue | **Agent Lock** (`.github/workflows/agent-lock.yml`)。`issues: labeled` で |
+| エージェントが開く、fork からではない `openhands/` ブランチの pull request | **Agent Lock**。`pull_request: opened` と `reopened` で |
+
+スクリプトが自分の issue をロックするのは、ワークフローのトークンが付けたラベルに対して GitHub がワークフローを
+起動しないからです。順序も重要です。ラベルなしで開き、ロックし、それからラベルを付けるので、見知らぬ人がまだコメントできる
+あいだにエージェントが issue を拾うことはありません。共有のコードは `src/helpers/conversation-lock.ts` に、
+ワークフローのルールは `src/agent-lock/` にあります。
+
+これに伴うルールがあと 2 つあります。
+
+- **マーカーは作成者によって信頼されます。** ワークフローは、以前に開いた issue を隠しマーカーで見つけます。
+  マーカーが有効なのは、`github-actions[bot]` か書き込み権限のある人が開いた issue の中にある場合だけです
+  (`src/helpers/issue-author.ts`)。そのため、見知らぬ人がマーカー入りの issue を開いてチェーンを止めたり、
+  テストを止めたりすることはできません。
+- **ロックされた PR には bot のコメントが付きません。** GitHub はロックされた会話への Actions トークンによるコメントを
+  拒否するので、[E2E screenshots](../pr-checks/#ui-screenshots-と-e2e-screenshots-のコメント) のリストは
+  代わりにジョブのサマリーに書かれます。
+
+<Aside type="caution">
+issue にラベルが付く前に書かれたコメントは残ります。既存の issue に手動でラベルを付けるときは、先にそのコメントを
+読んでください。
+</Aside>
+
+## ドライラン
+
+```bash
+DRY_RUN=true GITHUB_REPOSITORY=AlexTo/discava GITHUB_EVENT_NAME=workflow_dispatch PR_NUMBER=647 \
+  pnpm nx run @discava/tooling-agent:post-merge-test
+```
+
+これは開くことになる issue のタイトルと本文を出力し、何も作成しません。pull request は引き続き `gh` で読むので、
+サインインしておく必要があります。
+
+次へ: [実際の機能](../a-real-feature/)。

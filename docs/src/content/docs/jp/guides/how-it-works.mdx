@@ -1,6 +1,6 @@
 ---
 title: 仕組み
-description: 1 つの機能がアイデアからマージされたコードになるまでの道のりを、11 のステップで。
+description: 1 つの機能がアイデアからマージされテストされたコードになるまでの道のりを、12 のステップで。
 sidebar:
   order: 2
 ---
@@ -8,20 +8,25 @@ sidebar:
 このページでは、1 つの機能がループ全体を通る様子を追います。各ステップで、誰が動き、何が残るかを示します。
 
 ```d2
-grid-rows: 2
+grid-rows: 3
 grid-columns: 4
 horizontal-gap: 140
 vertical-gap: 90
 
-# Top row runs left to right, bottom row right to left, so the loop wraps.
+# Top row runs left to right, middle row right to left, so the loop wraps.
+# The bottom row is what happens after the merge.
 spec: "spec PR\n(あなた)" {shape: document}
 issues: "Agent Issues\n(GitHub Actions)"
 issue: issue {shape: page}
-implement: "実装\n(OpenHands)"
+implement: "実装\n(開発担当エージェント)"
 merge: "マージ\n(あなた)"
-review: "レビュー\n(OpenHands)"
+review: "レビュー\n(レビュー担当エージェント)"
 checks: "PR Checks\n(GitHub Actions)"
 pr: pull request {shape: page}
+deploy: "デプロイ\n(GitHub Actions)"
+testissue: テスト issue {shape: page}
+test: "ステージでテスト\n(テスト担当エージェント)"
+report: レポート {shape: document}
 
 spec -> issues: spec-ready
 issues -> issue
@@ -31,7 +36,14 @@ pr -> checks
 checks -> review: 成功
 review -> merge: 承認
 merge -> issues: 次のフェーズ
+merge -> deploy: main が green
+deploy -> testissue
+testissue -> test
+test -> report
 ```
+
+3 つのエージェントは OpenHands の automation です。**開発担当**がコードを書き、**レビュー担当**がそれをレビューし、
+**テスト担当**がデプロイされた後にそれをテストします。
 
 ## ステップ
 
@@ -42,19 +54,23 @@ merge -> issues: 次のフェーズ
 | 3 | 🧑🤖&nbsp;あなた + エージェント | `/speckit-tasks` がフェーズごとにまとめた順序付きのタスクリストを書きます。`/speckit-analyze` が 3 つのファイルすべてを相互チェックします | `tasks.md` |
 | 4 | 🧑&nbsp;**あなた** | spec PR を開き、コードと同じようにレビューし、`spec-ready` ラベルを付けてマージします | マージされた spec PR。**人間のゲート 1** |
 | 5 | ⚙️&nbsp;自動化 | **Agent Issues** ワークフローが `tasks.md` を読み、最初のフェーズのグループについて `openhands` ラベル付きの issue を開きます | 実装 issue |
-| 6 | 🤖&nbsp;OpenHands | 次のポーリングでエージェントが issue を拾い、まずテストを書き、実装し、タスクにチェックを入れ、`openhands/issue-<n>` で PR を開きます | pull request |
+| 6 | 🤖&nbsp;開発担当エージェント | 次のポーリングでエージェントが issue を拾い、まずテストを書き、実装し、タスクにチェックを入れ、`openhands/issue-<n>` で PR を開きます | pull request |
 | 7 | ⚙️&nbsp;CI | PR チェックが lint、ユニットテスト、ビルド、`tasks.md` の形式チェック、e2e テスト、スクリーンショットのチェックを実行します | チェック結果 |
-| 8 | ⚙️🤖&nbsp;自動化 + OpenHands | 実行が赤になると、**Agent CI Status** が PR を失敗としてマークします。エージェントは次のポーリングでそれを見て、同じ PR を修正します | `ci-fix-1` から `ci-fix-5` のラベル |
-| 9 | 🤖&nbsp;OpenHands | すべてのチェックが終わると、レビュー担当のエージェントが head コミットをレビューし、`✅ APPROVED` か `🔄 CHANGES REQUESTED` で締めくくります。後者の場合、**Agent Review Status** がエージェントを差し戻します | レビュー、場合によっては `review-fix-N` ラベル |
+| 8 | ⚙️🤖&nbsp;自動化 + 開発担当エージェント | 実行が赤になると、**Agent CI Status** が PR を失敗としてマークします。開発担当エージェントは次のポーリングでそれを見て、同じ PR を修正します | `ci-fix-1` から `ci-fix-5` のラベル |
+| 9 | 🤖&nbsp;レビュー担当エージェント | すべてのチェックが終わると、レビュー担当エージェントが head コミットをレビューし、`✅ APPROVED` か `🔄 CHANGES REQUESTED` で締めくくります。後者の場合、**Agent Review Status** が開発担当エージェントを差し戻します | レビュー、場合によっては `review-fix-N` ラベル |
 | 10 | 🧑&nbsp;**あなた** | PR の説明と **E2E screenshots** コメントを読み、**(human)** タスクがあれば行い、マージします | マージされた PR。**人間のゲート 2** |
 | 11 | ⚙️&nbsp;自動化 | マージによって **Agent Issues** が再び実行されます。未チェックのエージェントタスクが残っている次のフェーズの issue を開き、残りがなくなるまでステップ 6 から 10 を繰り返します | 次の issue、または完了 |
+| 12 | ⚙️🤖&nbsp;自動化 + テスト担当エージェント | `main` が自動でデプロイされる場合: マージが開発ステージに届くと、**Post-merge Verify** がそのテスト issue を開きます。テスト担当エージェントが変更をクリックして進み、API を呼び、変更がデータベース、ファイルストレージ、検索インデックスに書き込んだデータを検証し、報告します | テストレポート。合格なら issue は閉じられる |
+
+ステップ 12 にはデプロイされたステージが必要です。Discava にはあります。このリポジトリのサンプルアプリにはないので、
+fork ではステップ 11 で止まります。
 
 ## あなたが実際にやること
 
 機能ごとに、spec を一度書いて承認します。pull request ごとに、レビューを一度行い、マージをクリックします。
 早い段階で呼ばれるのは、ループが試行回数を使い切ったとき (`ci-fix-exhausted` または
-`review-fix-exhausted`) か、エージェントがブロックされているとコメントしたときだけです。エージェントが作業している間に、
-次の spec を書けます。
+`review-fix-exhausted`)、エージェントがブロックされているとコメントしたとき、または変更がステージで失敗したために
+テスト担当がテスト issue を開いたままにしたときだけです。エージェントが作業している間に、次の spec を書けます。
 
 ## 各要素の置き場所
 
@@ -68,8 +84,9 @@ merge -> issues: 次のフェーズ
 | CI からエージェントへ | `.github/workflows/agent-ci.yml` |
 | レビュアーからエージェントへ | `.github/workflows/agent-review.yml` |
 | チェック | `.github/workflows/pr-checks.yml`、`ui-screenshots.yml`、`ci.yml` |
+| デプロイからテスト issue へ (Discava のみ) | `.github/workflows/deploy.yml`、`post-merge-verify.yml`、`agent-lock.yml` |
 | グルーの背後にあるユニットテスト済みのルール | `packages/common/scripts/src/agent-*`、`ui-screenshots/` |
-| エージェントのランタイム | OpenHands Agent Canvas (リポジトリの外) |
+| エージェントのランタイムと各役割のプロンプト | OpenHands Agent Canvas (リポジトリの外) |
 
 詳細はコンセプトにあります。[フェーズがどのように issue になるか](../../concepts/one-phase-at-a-time/)、
 [失敗がどのようにエージェントを差し戻すか](../../concepts/feedback-loops/)。

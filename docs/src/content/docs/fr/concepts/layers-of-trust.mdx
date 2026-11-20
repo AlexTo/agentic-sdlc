@@ -26,8 +26,9 @@ personne.
 | | Vérification des fichiers générés | La sortie du lint ou du build que l'agent a oublié de commiter |
 | **Vérification** | Tests de bout en bout | Des flux utilisateur cassés, dans un vrai navigateur contre la stack locale |
 | | Captures d'écran | Des changements d'UI que personne n'a regardés |
+| | Test après merge | Un changement qui a passé tous les checks et échoue quand même sur la stack déployée, à l'écran ou dans ce qu'il a stocké. L'agent Testeur le trouve après le merge |
 | **Texte** | Constitution, `AGENTS.md`, skills | Des consignes que l'agent lit *avant* d'écrire, pour que les conventions soient suivies plutôt que rattrapées |
-| | Agent relecteur | Des problèmes qu'aucun test ne couvre, lus comme dans une revue de code |
+| | Agent Relecteur | Des problèmes qu'aucun test ne couvre, lus comme dans une revue de code |
 | **Revue humaine** | Revue finale | Tout ce que les couches ci-dessus ne peuvent pas juger. Une personne merge toujours |
 
 ## C'est la vérification qui compte le plus
@@ -54,10 +55,22 @@ paramètres de notification :
   <img alt="Un commentaire de github-actions intitulé E2E screenshots, qui liste les neuf captures d'écran ajoutées par la pull request, comme notification-settings/02-emails-stopped.png, et renvoie vers les artefacts de l'exécution" src="/agentic-sdlc/screenshots/e2e-screenshots-comment.png" width="620" />
 </p>
 
-Le relecteur ouvre les neuf nouvelles captures et vérifie chaque état : les paramètres avec chaque
-type listé, un interrupteur enregistré, les e-mails arrêtés puis réactivés, un lien de désinscription
-valide et un invalide, une erreur et « réessayer ». Chacun de ces états est une exigence de la spec,
-vue en fonctionnement.
+La personne qui relit ouvre les neuf nouvelles captures et vérifie chaque état : les paramètres avec
+chaque type listé, un interrupteur enregistré, les e-mails arrêtés puis réactivés, un lien de
+désinscription valide et un invalide, une erreur et « réessayer ». Chacun de ces états est une
+exigence de la spec, vue en fonctionnement.
+
+### Après le merge, sur la vraie stack
+
+Les tests E2E s'exécutent contre des équivalents locaux. Ils ne peuvent pas voir une fonction à
+court de mémoire, une permission manquante, ou un réglage qui diffère sur le stage déployé. La
+dernière vérification a donc lieu après le merge : une fois le changement déployé sur le stage de
+développement, l'**agent Testeur** se connecte comme utilisateur de test, parcourt le flux, et
+appelle les API qui se trouvent derrière. Puis il vérifie ce qui a été écrit, pas seulement ce qui a
+été affiché : les enregistrements dans la base de données, les objets dans le stockage de fichiers
+et les documents dans l'index de recherche (DynamoDB, S3 et OpenSearch dans Discava), ainsi que les
+logs. Son rapport liste chaque vérification avec sa preuve. Voir
+[la boucle de test](../feedback-loops/#après-le-merge--la-boucle-de-test).
 
 ## Le texte guide, le code fait respecter
 
@@ -78,7 +91,7 @@ La règle la plus importante de la constitution de Discava :
 > justifies it, and the PR description says so.
 
 Un agent sous pression pour faire passer la CI au vert finira, tôt ou tard, par « corriger » le test.
-Cette règle, répétée dans le template d'issue et vérifiée par l'agent relecteur, est ce qui garde un
+Cette règle, répétée dans le template d'issue et vérifiée par l'agent Relecteur, est ce qui garde un
 sens à la suite de tests.
 
 ## Les invariants : des tests pour les données

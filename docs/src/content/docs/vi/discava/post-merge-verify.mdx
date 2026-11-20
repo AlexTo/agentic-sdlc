@@ -1,0 +1,296 @@
+---
+title: Kiểm chứng sau merge
+description: Mỗi pull request được deploy lên discava-development trở thành một issue test cho agent Tester như thế nào, và mọi thứ các agent đọc được khóa ra sao.
+sidebar:
+  order: 9.5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Khoảng trống 11: mọi check trước khi merge đều chạy trên các bản thay thế local, và không ai nhìn
+thay đổi ở nơi nó thực sự chạy. Discava lấp nó bằng một vai trò agent thứ ba. Sau mỗi lần deploy lên
+`discava-development`, một workflow mở một issue test cho mọi pull request mà lần deploy mang theo,
+và **agent Tester** test thay đổi đó trên stage: các cổng trong một trình duyệt thật, các API dưới
+danh nghĩa các người dùng test, và dữ liệu mà thay đổi đã ghi.
+
+```d2
+direction: down
+
+deploy: "Deploy\n(discava-development)"
+verify: "Post-merge Verify\npost-merge-test"
+issue: "issue test\nkhóa, rồi openhands-test" {shape: page}
+tester: "agent Tester\n(OpenHands, lần poll kế)"
+stage: discava-development {shape: cylinder}
+report: "báo cáo trên issue" {shape: document}
+fix: "fix PR\nopenhands/test-fix-<n>" {shape: page}
+
+deploy -> verify: hoàn tất
+verify -> issue: mỗi PR đã deploy một issue
+issue -> tester
+tester -> stage: "Playwright, API, AWS CLI"
+tester -> report
+tester -> fix: "chỉ bản sửa nhỏ, rõ ràng" {style.stroke-dash: 3}
+```
+
+## Post-merge Verify
+
+`.github/workflows/post-merge-verify.yml` chạy khi có `workflow_run`, khi **Deploy** hoàn tất, và
+chạy thủ công với một số pull request. Nó checkout nhánh mặc định và chạy `post-merge-test`. Các lần
+chạy dùng chung một nhóm concurrency, nên hai lần deploy sát nhau không thể mở hai issue cho cùng
+một pull request.
+
+Script (`src/post-merge-test/`):
+
+1. **Kiểm tra rằng lần chạy đã deploy stage test.** Nó đọc các job của lần chạy Deploy. Một lần chạy
+   có bước `Deploy` bị bỏ qua (commit của nó không còn là mới nhất của `main`) không deploy gì, và
+   một lần chạy cho stage khác thì không được test.
+2. **Tìm những gì lần deploy mang theo.** Một lần deploy có thể chứa nhiều lần merge, vì một lần
+   deploy bị bỏ qua để commit của nó lại cho lần kế tiếp. Nên nó lấy các commit nằm giữa lần deploy
+   thành công trước đó của stage và lần này, và pull request mà mỗi commit được merge thành.
+3. **Quyết định, cho từng pull request** (`decide()` trong `plan.ts`). Không có issue khi:
+   - đã có một issue cho nó (tìm bằng marker ẩn của nó)
+   - nó mang label `skip-deploy-test`
+   - nó không thay đổi thứ gì được deploy: chỉ docs, spec, test, tooling, CI hoặc các file khác
+     không bao giờ đến một stack
+4. **Render issue** (`renderIssue()`). Nó chỉ nói test cái gì.
+5. **Mở nó không có label, khóa, rồi gắn label.** Issue, pull request mà nó test và các issue mà
+   pull request đó đóng đều được khóa. Chỉ khi đó `openhands-test` mới được gắn. Nếu có thứ gì không
+   khóa được, label không bao giờ được thêm và lần chạy thất bại, nêu tên thứ cần khóa thủ công.
+
+Khi chạy thủ công với một số pull request, nó mở một issue kể cả khi đã có một cái. Đó là cách một
+thay đổi được test lại từ đầu.
+
+## Issue mà nó mở
+
+Một issue thật, [#654](https://github.com/AlexTo/discava/issues/654):
+
+```markdown
+<!-- post-merge-test pr:647 -->
+
+## What to test
+
+- Pull request: #647 (feat(stripe-checkout): a refund takes access away)
+- Issue it closes: #646
+- Merged as `b4dc4f7…`, deployed to `discava-development` at `b4dc4f7…` ([Deploy run](…))
+- Kind: **UI change**. It changes a portal: sign in as the user the change is for and click
+  through the flow with Playwright, then call the APIs behind it and check the stored data.
+
+<details><summary>Deployed files it changes (4)</summary>
+
+- `packages/events/src/local/stripe-stand-in.ts`
+- `packages/events/src/payments/events/charge-refunded.ts`
+- `packages/events/src/payments/stripe-webhook.ts`
+- `packages/websites/student-portal/src/routes/learn/$courseId/-components/enrolment-actions.tsx`
+
+</details>
+```
+
+Tiêu đề là `test(post-merge): verify #647 a refund takes access away`: một header Conventional
+Commit tối đa 100 ký tự, để Tester có thể dùng lại. Loại là `UI change` khi pull request chạm vào
+một cổng hoặc các component dùng chung, và `backend change or fix` trong trường hợp còn lại.
+
+<Aside type="note" title="Test cái gì, không bao giờ là test như thế nào">
+Issue không có chỉ dẫn nào. Test như thế nào (công cụ, người dùng test, các kiểm tra, báo cáo) là
+[prompt](../agent-prompts/#tester) riêng của Tester trong OpenHands, nên không ai sửa được issue mà
+thay đổi được nó. `.github/ISSUE_TEMPLATE/test-deployed-pr.md` là cùng dạng đó để mở một issue thủ
+công.
+</Aside>
+
+## Tester làm gì
+
+Ở lần poll kế tiếp, automation `github-issue-tester` nhận issue và khởi động Tester. Prompt của nó
+có tám bước:
+
+1. Xác định điều gì đã thay đổi, từ pull request, diff của nó, issue mà nó đóng và spec của nó, và
+   ghi ra những gì giờ phải đúng.
+2. Test UI, nếu có: đăng nhập trên trang Cognito hosted bằng Playwright, bấm qua luồng, chụp ảnh màn
+   hình ở mỗi bước, và xem từng ảnh.
+3. Gọi các API với access token của một người dùng test, kể cả các trường hợp lỗi.
+4. Kiểm tra dữ liệu đã lưu: item DynamoDB, document OpenSearch, object S3, và log của các Lambda.
+5. Dùng dữ liệu của riêng nó, đặt tên `pmt-<pr>-<what>`.
+6. Báo cáo trên issue: nó đã test gì, một bảng mọi kiểm tra với pass hoặc fail và bằng chứng, và một
+   verdict.
+7. Đóng issue khi pass. Khi fail, để nó mở kèm các bước tái hiện. Chỉ mở một fix pull request khi
+   nguyên nhân rõ ràng và bản sửa nhỏ.
+8. Không bao giờ thay đổi hạ tầng, IAM, người dùng hay cấu hình stage, deploy, chạm vào một stage
+   khác, sửa workflow, hay merge.
+
+## Một lần chạy thật: khoản thanh toán không bao giờ được chốt
+
+Issue test đầu tiên mà workflow mở đã tìm ra một lỗi mà mọi check trước khi merge đều bỏ sót. Mọi
+mốc giờ là UTC, vào ngày 20 tháng 11 năm 2026.
+
+| Giờ | Ai | Chuyện gì đã xảy ra |
+| --- | --- | --- |
+| 07:02 | Một người | Merge [#647](https://github.com/AlexTo/discava/pull/647), "a refund takes access away", đóng issue [#646](https://github.com/AlexTo/discava/issues/646). Agent Developer đã viết nó và tự sửa hai lần CI đỏ, và agent Reviewer đã [duyệt](https://github.com/AlexTo/discava/pull/647#pullrequestreview-5988208805) |
+| 07:08 | Deploy | [Ship](https://github.com/AlexTo/discava/actions/runs/44692771527) `main` lên `discava-development`, trong chín phút |
+| 07:18 | Post-merge Verify | Mở [#654](https://github.com/AlexTo/discava/issues/654), khóa nó, rồi thêm `openhands-test` |
+| 07:26 | Agent Tester | [Báo cáo thứ nhất](https://github.com/AlexTo/discava/issues/654#issuecomment-7033260676): **bị chặn**. Stage chưa kết nối tài khoản thanh toán nào |
+| 10:27 | Agent Tester | [Báo cáo thứ hai](https://github.com/AlexTo/discava/issues/654#issuecomment-7037199284): **vẫn bị chặn**. Chưa có gì thay đổi |
+| 10:43 | Agent Tester | Khi Stripe đã được kết nối ở test mode, mua một khóa học với tư cách student |
+| 10:45 | Stage | Cả hai lần giao webhook đều timeout. Đơn hàng vẫn ở `pending` |
+| 10:48 | Agent Tester | Mở bản sửa, [#657](https://github.com/AlexTo/discava/pull/657) |
+| 10:49 | Agent Tester | [Báo cáo thứ ba](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120): **thất bại**, kèm nguyên nhân và bản sửa |
+
+### Lần chạy 1: bị chặn, và nó nói rõ điều đó
+
+Thay đổi này kết thúc việc ghi danh của một student khi Stripe báo có hoàn tiền. Để test điều đó,
+phải có một đơn hàng đã thanh toán để hoàn tiền, mà stage thì chưa có tài khoản thanh toán. Tester
+không cho test qua và cũng không đoán. [Verdict](https://github.com/AlexTo/discava/issues/654#issuecomment-7033260676) của nó là "blocked, not verified", kèm bằng chứng:
+`payment.status` của admin API trả lời `not-connected`, và core table không chứa đơn hàng nào.
+
+Sau đó nó kiểm tra những gì có thể mà không cần một khoản thanh toán: function webhook đã deploy
+chứa handler `charge.refunded` mới, bundle của cổng đang được phục vụ có màn hình "You're no longer
+enrolled" mới, một thông báo hoàn tiền giả mạo bị từ chối với 400 và không ghi gì, và các trang khóa
+học vẫn hoạt động với một khóa học miễn phí. Chín kiểm tra đã pass. Nó liệt kê sáu thứ nó *chưa*
+kiểm chứng, và điều gì sẽ gỡ chặn cho chúng.
+
+Nó cũng nói điều nó sẽ không làm. Kết nối một tài khoản thanh toán nghĩa là lưu một Stripe key, tức
+là thay đổi cấu hình của stage, và [prompt](../agent-prompts/#tester) của nó cấm điều đó. Nên nó để
+issue mở cho một người.
+
+### Lần chạy 3: một lần mua thật
+
+Khi một tài khoản Stripe test mode đã được kết nối với stage, Tester bắt đầu từ đầu luồng, vì một
+lần hoàn tiền cần một lần mua. Mỗi bước dưới đây là một dòng trong
+[báo cáo thứ ba](https://github.com/AlexTo/discava/issues/654#issuecomment-7037624120) của nó:
+
+1. Với tư cách instructor, qua API, nó tạo một khóa học tên `pmt-647-course`, đặt giá USD 19.99 và
+   xuất bản nó.
+2. Với tư cách student, trong một trình duyệt thật, nó đăng nhập trên trang Cognito hosted, mở khóa
+   học, chọn **Buy now**, và thanh toán trên trang checkout hosted của Stripe bằng một thẻ test.
+3. Nó quay lại trang khóa học, lúc đó hiện "Confirming your payment", và theo dõi ba thứ: trang,
+   bản ghi của đơn hàng trong DynamoDB, và log của function webhook.
+
+Các ảnh chụp màn hình dưới đây là của chính Tester, được lưu ở mỗi bước như prompt của nó yêu cầu.
+Chúng được nêu tên trong báo cáo của nó, và là những gì một người hẳn đã thấy.
+
+Khóa học nó đã tạo, như student thấy trước khi mua
+(`01-paid-course-before-purchase.png`):
+
+<p>
+  <img alt="Cổng student trên stage development, hiển thị khóa học pmt-647-course giá $19.99 với nút Buy now" src="/agentic-sdlc/screenshots/post-merge-test-647/01-paid-course-before-purchase.png" width="620" />
+</p>
+
+Trang checkout hosted của Stripe ở chế độ sandbox, đã điền một thẻ test
+(`03-stripe-checkout-filled.png`):
+
+<p>
+  <img alt="Trang checkout hosted của Stripe có nhãn Sandbox, cho pmt-647-course giá US$19.99, đã điền thẻ test 4242 4242 4242 4242 và một email student test" src="/agentic-sdlc/screenshots/post-merge-test-647/03-stripe-checkout-filled.png" width="620" />
+</p>
+
+Trở lại trang khóa học sau khi thanh toán (`04-returned-from-checkout.png`):
+
+<p>
+  <img alt="Cùng trang khóa học đó, giờ hiện Confirming your payment với một thanh tiến trình ở chỗ từng là nút Buy now" src="/agentic-sdlc/screenshots/post-merge-test-647/04-returned-from-checkout.png" width="620" />
+</p>
+
+Và sau khi chờ (`05-failure-still-not-enrolled-webhook-timeout.png`):
+
+<p>
+  <img alt="Cùng trang khóa học đó, lại hiện $19.99 và nút Buy now, không có nút Start learning" src="/agentic-sdlc/screenshots/post-merge-test-647/05-failure-still-not-enrolled-webhook-timeout.png" width="620" />
+</p>
+
+Ảnh cuối giống hệt ảnh đầu, và đó chính là lỗi. Khoản thanh toán đã đi qua, vậy mà đơn hàng không
+bao giờ rời `pending`, không có ghi danh nào xuất hiện, và trang quay lại hiện
+**Buy now**. Không có gì trên màn hình cho thấy có điều gì sai: không lỗi, không request thất bại
+nào trong console. Tester bắt được nó vì nó còn đọc bản ghi của đơn hàng và log của function, những
+thứ cho thấy vì sao:
+
+```text
+REPORT … Duration: 10000.00 ms … Memory Size: 128 MB  Max Memory Used: 117 MB  Status: timeout
+REPORT … Duration: 10000.00 ms … Memory Size: 128 MB  Max Memory Used: 117 MB  Status: timeout
+```
+
+Thông báo của Stripe rằng checkout đã được thanh toán không bao giờ vào được. Function nhận nó đang
+chạy với 128 MB mặc định của Lambda, và cold start của nó (các entity của core table, AppConfig,
+Stripe SDK) không xong trong timeout 10 giây. Một runtime bị timeout sẽ bị bỏ đi, nên mỗi lần Stripe
+thử lại đều bắt đầu cold và thất bại theo cùng cách. Tester so sánh nó với function checkout, vốn có
+256 MB và mất 8,1 giây để khởi động.
+
+Lần hoàn tiền cần test không bao giờ được chạm tới. Thứ Tester tìm ra nằm trước nó một bước, và tệ
+hơn: trên stage đã deploy, một student có thể trả tiền cho một khóa học mà không bao giờ nhận được nó.
+
+### Vì sao không có gì bắt được nó sớm hơn
+
+Lỗi này có từ trước pull request đang được test, và nó đã lọt qua mọi lớp:
+
+- **Unit test** kiểm tra logic của handler, mà logic thì đúng.
+- **E2E test** chạy trên local stack, nơi một bản thay thế đóng vai Stripe và không có gì bị giới
+  hạn bộ nhớ hay timeout 10 giây.
+- **Agent Reviewer** và **người review** đọc một diff không có cài đặt bộ nhớ nào xuất hiện, vì
+  dòng bị thiếu chính là lỗi.
+
+Nó chỉ tồn tại ở nơi function được deploy. Đó là khoảng trống mà Tester có mặt để lấp.
+
+### Fix PR
+
+Nguyên nhân rõ ràng và bản sửa nhỏ, nên prompt của Tester cho phép một pull request.
+[#657](https://github.com/AlexTo/discava/pull/657) là một [commit](https://github.com/AlexTo/discava/commit/854760c3c30a5ceb1ee7c7e52ebd596bef3374f1) thay đổi
+hai file: bốn dòng trong construct `StripeWebhookApi` đặt bộ nhớ của function là 512 MB, và một test
+mười hai dòng thất bại nếu thiếu chúng (`Missing key 'MemorySize'`). Nó tách nhánh từ `main` thành
+`openhands/test-fix-654`, và mô tả của nó tham chiếu cả [#647](https://github.com/AlexTo/discava/pull/647) lẫn
+[#654](https://github.com/AlexTo/discava/issues/654).
+
+Mô tả cũng nói thẳng về giới hạn của nó: "Not verified on a deployed stage. The fix only takes
+effect once deployed." (Chưa được kiểm chứng trên một stage đã deploy. Bản sửa chỉ có hiệu lực khi
+đã được deploy.)
+
+Rồi Tester dừng lại. Nó không merge, và nó không deploy. Agent Lock khóa pull request mới,
+[PR Checks](https://github.com/AlexTo/discava/actions/runs/44722377986) chạy xanh, và label `openhands-review` giao nó cho agent Reviewer. Một
+người merge nó, như mọi PR khác. Issue test [#654](https://github.com/AlexTo/discava/issues/654) vẫn mở cho đến khi chính lần hoàn tiền được test trên một
+stage nơi các khoản thanh toán được chốt. Báo cáo cuối của Tester liệt kê dữ liệu test nó để lại:
+khóa học và đơn hàng `pending`.
+
+Ảnh chụp màn hình nằm lại trên máy trạm, dưới `tmp/screenshots/pr-<pr>/` trong bản checkout Discava.
+Các báo cáo nêu tên từng file và nói nó cho thấy gì. Bốn ảnh ở trên được chép từ đó cho trang này.
+
+## Agent Lock
+
+Discava là một repository công khai, nên ai cũng có thể comment trên issue và pull request của nó.
+Các agent đọc những comment đó trong khi đang giữ một token có thể push, và Tester còn giữ quyền
+truy cập AWS cùng mật khẩu của các người dùng test. Vì vậy một comment là một cách để đưa chỉ dẫn
+cho agent.
+
+Câu trả lời là khóa mọi cuộc hội thoại mà một agent được giao. Một issue hoặc pull request đã khóa
+chỉ nhận comment từ các collaborator có quyền ghi, trong đó có token của chính các agent.
+
+| Cái gì | Được khóa bởi |
+| --- | --- |
+| Một issue triển khai mà Agent Issues mở | Script của chính nó, trước khi nó thêm `openhands` |
+| Một issue test, pull request mà nó test và các issue mà pull request đó đóng | Script của Post-merge Verify, trước khi nó thêm `openhands-test` |
+| Một issue được ai đó gắn label `openhands` hoặc `openhands-test` thủ công | **Agent Lock** (`.github/workflows/agent-lock.yml`), khi có `issues: labeled` |
+| Một pull request do agent mở, trên một nhánh `openhands/` không đến từ một bản fork | **Agent Lock**, khi có `pull_request: opened` và `reopened` |
+
+Các script tự khóa issue của chúng vì GitHub không khởi động workflow nào cho một label do token của
+một workflow gắn. Thứ tự cũng quan trọng: mở không có label, khóa, rồi gắn label, để agent không bao
+giờ nhận một issue trong khi một người lạ vẫn còn comment được. Code dùng chung là
+`src/helpers/conversation-lock.ts`, và các quy tắc của workflow nằm trong `src/agent-lock/`.
+
+Có thêm hai quy tắc đi kèm:
+
+- **Marker được tin theo tác giả.** Các workflow tìm issue trước đó của chúng bằng một marker ẩn.
+  Một marker chỉ được tính trong một issue do `github-actions[bot]` hoặc một người có quyền ghi mở
+  (`src/helpers/issue-author.ts`), nên một người lạ không thể làm một chuỗi đứng lại hay chặn một
+  lần test bằng cách mở một issue có marker trong đó.
+- **Một PR đã khóa không nhận comment của bot.** GitHub từ chối cho token của Actions comment trên
+  một cuộc hội thoại đã khóa, nên danh sách
+  [E2E screenshots](../pr-checks/#ui-screenshots-và-comment-e2e-screenshots) đi vào job summary thay
+  vào đó.
+
+<Aside type="caution">
+Các comment được viết trước khi một issue được gắn label vẫn ở lại. Khi bạn gắn label thủ công cho
+một issue có sẵn, hãy đọc các comment của nó trước.
+</Aside>
+
+## Chạy thử
+
+```bash
+DRY_RUN=true GITHUB_REPOSITORY=AlexTo/discava GITHUB_EVENT_NAME=workflow_dispatch PR_NUMBER=647 \
+  pnpm nx run @discava/tooling-agent:post-merge-test
+```
+
+Lệnh này in tiêu đề và nội dung của issue mà nó sẽ mở, và không tạo gì. Nó vẫn đọc pull request qua
+`gh`, nên bạn cần đăng nhập.
+
+Tiếp theo: [Một tính năng thật](../a-real-feature/).

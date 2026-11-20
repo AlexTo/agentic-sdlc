@@ -23,7 +23,7 @@ sidebar:
 | 로컬 OIDC 서버 | 9400 | Cognito |
 
 백엔드 코드는 `LOCAL_DEV=true`로 전환됩니다. 공유 설정은 한 패키지(`common-server-utils/local-dev`)에 있으므로,
-모든 Lambda가 같은 방식으로 엔드포인트를 결정합니다. 각 대체물은 `packages/common/scripts`의 Nx target이며, 해당
+모든 Lambda가 같은 방식으로 엔드포인트를 결정합니다. 각 대체물은 `packages/tooling/local-dev`의 Nx target이며, 해당
 컨테이너를 pull하고 시작합니다.
 
 로컬 로그인 페이지는 고정된 사용자(강사 한 명, 학생 두 명, 관리자 한 명)와 임의의 claim을 위한 "Someone else"

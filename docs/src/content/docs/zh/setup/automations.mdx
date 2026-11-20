@@ -7,7 +7,7 @@ sidebar:
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**完成后你将拥有：** OpenHands 每五分钟轮询一次你的 fork。它会实现带 `openhands` 标签的 issue，修订被标记为失败的 PR，并评审带 `openhands-review` 标签的 PR。
+**完成后你将拥有：** OpenHands 每五分钟轮询一次你的 fork。它会实现带 `openhands` 标签的 issue，修订被标记为失败的 PR，并评审带 `openhands-review` 标签的 PR。这就是开发智能体和评审智能体。
 
 两个 automation 都来自 Agent Canvas 的 **automation catalog**。你只需填写一个表单，目录就会把一个经过测试的 worker 和你的设置打包好。你不需要编写或上传任何代码。
 
@@ -20,13 +20,13 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    | Repositories | `<you>/agentic-sdlc` |
    | Trigger label | `openhands` |
    | Branch prefix | `openhands/issue` |
-   | Pull request mode | Draft |
+   | Pull request mode | Ready for review |
    | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-   | Agent profile | `default` |
+   | Agent profile | `developer` |
    | Check frequency | `*/5 * * * *` |
    | Timezone | 你所在的时区 |
 
-   Discava 使用的模板版本是 1.2.4。worker 的提示词会让智能体在开启 PR 之后加上 `openhands-review` 标签，这样新 PR 即使是草稿也能到达评审者。
+   Discava 使用的模板版本是 1.2.4。worker 的提示词会让智能体在开启 PR 之后加上 `openhands-review` 标签，这样每个新 PR 都能到达评审智能体。
 
 2. 从目录中**添加 “GitHub code review”**：
 
@@ -56,13 +56,17 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 1. 创建一个测试 issue：“Add a line to README.md saying hello”，并加上 `openhands` 标签。
 2. 在一次轮询之内，Agent Canvas 中会出现该 issue 的对话。
-3. 智能体完成后，`openhands/issue-<n>` 上会出现一个草稿 PR，标题为 `[#<n>] <issue
+3. 智能体完成后，`openhands/issue-<n>` 上会出现一个 PR，标题为 `[#<n>] <issue
    title>`，并已加上 `openhands-review`。
-4. 等它的检查完成后，评审者会发布一条评审，开头是 “_This review was posted by an AI agent (OpenHands)._”，结尾是 `✅ APPROVED` 或 `🔄 CHANGES REQUESTED`。
+4. 等它的检查完成后，评审智能体会发布一条评审，开头是 “_This review was posted by an AI agent (OpenHands)._”，结尾是 `✅ APPROVED` 或 `🔄 CHANGES REQUESTED`。
 
 之后关闭该 PR 并删除分支。
 
 每个 automation 在一次轮询中做了什么，见[智能体运行时](../../concepts/the-agent-runtime/)。
+
+<Aside type="tip" title="第三个角色：测试智能体">
+Discava 运行着第三个 automation，即测试智能体，它在已部署的开发 stage 上测试每个已合并的变更。它需要一次部署才有东西可测，所以不属于这里的设置。当你的仓库能自动部署时，参见[合并后验证](../../discava/post-merge-verify/)和[智能体的 prompt](../../discava/agent-prompts/)。
+</Aside>
 
 <Aside type="note">
 若要让智能体从头再试一次某个 issue，移除并重新加上 `openhands` 标签。若要带着你自己的评论把它打回到一个已开启的 PR，发布粘合 workflow 所发布的那个 status：

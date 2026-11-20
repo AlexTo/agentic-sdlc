@@ -27,10 +27,16 @@ au front end**, comme le ferait une personne :
 - **Les yeux :** lire ce qui revient : les réponses, les logs, les données laissées dans la base, et
   des captures d'écran de chaque état qu'un relecteur voudrait voir.
 
-L'agent ne fait pas cela sur sa propre machine. Il écrit les scénarios e2e, et la CI les exécute sur
-chaque PR contre une stack locale neuve. Les résultats, les échecs d'invariants et les captures
-d'écran reviennent sur la PR, donc l'agent détecte ses propres erreurs et chaque PR arrive avec des
-preuves.
+L'agent Développeur ne fait pas cela sur sa propre machine. Il écrit les scénarios e2e, et la CI les
+exécute sur chaque PR contre une stack locale neuve. Les résultats, les échecs d'invariants et les
+captures d'écran reviennent sur la PR, donc l'agent détecte ses propres erreurs et chaque PR arrive
+avec des preuves.
+
+Après le merge, un second agent le fait pour de vrai. L'agent Testeur prend chaque changement sur le
+stage de développement déployé, avec un vrai navigateur, une vraie connexion et de vraies données.
+Il se sert à la fois des mains et des yeux : après chaque action, il relit ce qui a été écrit dans
+la base de données, le stockage de fichiers et l'index de recherche, et vérifie que c'est correct.
+Un écran peut avoir l'air correct sur un enregistrement faux.
 
 Prévoyez cela dès le premier jour : chaque service cloud a besoin d'un équivalent local, chaque flux
 utilisateur d'un scénario e2e, et chaque état de l'UI d'une capture d'écran. Tout ce que l'agent ne
@@ -44,8 +50,8 @@ tâches. Ne corrigez pas le code à la main en laissant la spec devenir obsolèt
 
 ## 3. Ce sont les contrôles automatisés qui font les retours, pas vous<Icon name="approve-check-circle" class="heading-icon" />
 
-Lint, typecheck, tests unitaires, invariants, tests e2e, tests de concurrence, captures d'écran et un
-agent relecteur s'exécutent sur chaque PR. Un résultat rouge retourne directement à l'agent qui a
+Lint, typecheck, tests unitaires, invariants, tests e2e, tests de concurrence, captures d'écran et
+l'agent Relecteur s'exécutent sur chaque PR. Un résultat rouge retourne directement à l'agent qui a
 écrit le changement. Personne ne copie-colle de message d'erreur.
 
 ## 4. Les humains gardent les deux décisions qui comptent<Icon name="star" class="heading-icon" />
@@ -82,9 +88,9 @@ relire. Un prompt peut être ignoré. Un workflow, non.
 
 ## 7. Une autonomie bornée<Icon name="padlock" class="heading-icon" />
 
-L'agent ne peut pas merger, ne peut pas modifier les workflows, ne peut pas toucher aux identifiants
-cloud, et ne peut pas affaiblir un test pour passer au vert. Chaque boucle de correction est limitée à
-cinq tentatives. Ensuite, elle s'arrête et demande à une personne.
+Aucun agent ne peut merger, modifier les workflows, déployer, ni affaiblir un test pour passer au
+vert. Seul le Testeur peut atteindre un stage déployé, et seulement celui de développement. Chaque
+boucle de correction est limitée à cinq tentatives. Ensuite, elle s'arrête et demande à une personne.
 
 ## 8. De petites unités de travail bien délimitées<Icon name="list-format" class="heading-icon" />
 
@@ -105,7 +111,7 @@ reprendre là où le précédent s'est arrêté.
 | --- | --- |
 | 1. Vérification | [Couches de confiance](../layers-of-trust/#cest-la-vérification-qui-compte-le-plus), [La stack locale dans Discava](../../discava/local-stack/) |
 | 2. La spec comme source de vérité | [Développement piloté par les specs](../spec-driven-development/) |
-| 3. Contrôles automatisés | [Couches de confiance](../layers-of-trust/), [Boucles de retour](../feedback-loops/) |
+| 3. Contrôles automatisés | [Couches de confiance](../layers-of-trust/), [Boucles de retour](../feedback-loops/), [Le runtime de l'agent](../the-agent-runtime/#les-trois-rôles) |
 | 4. Décisions humaines | [Contrôles humains](../human-gates/) |
 | 5. Règles et skills déterministes | [Checks de PR dans Discava](../../discava/pr-checks/), [Constitution et consignes](../../discava/constitution-and-guidance/) |
 | 6. La glue est du code | [La glue manquante](../the-missing-glue/) |

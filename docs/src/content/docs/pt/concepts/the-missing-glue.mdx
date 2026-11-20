@@ -1,6 +1,6 @@
 ---
 title: A cola que falta
-description: As dez lacunas entre Speckit, OpenHands e CI, e as regras para preenchê-las.
+description: As onze lacunas entre Speckit, OpenHands e CI, e as regras para preenchê-las.
 sidebar:
   order: 5
 ---
@@ -18,7 +18,7 @@ Estas são as lacunas, e o que preenche cada uma:
 | --- | --- | --- |
 | 1 | Nada transforma uma spec concluída em trabalho para o agent | Um workflow lê o `tasks.md` e abre a próxima issue de implementação, um grupo de fases por vez |
 | 2 | O agent não sabe que o CI falhou | Um workflow informa uma execução com falha ao agent como o commit status que ele já observa |
-| 3 | O "changes requested" de um revisor não é ouvido | Um workflow faz o mesmo com o veredito do agent revisor |
+| 3 | O "changes requested" de um revisor não é ouvido | Um workflow faz o mesmo com o veredito do agent Revisor |
 | 4 | Nada impede que um agent travado fique em loop para sempre | Os dois loops de correção são limitados a cinco tentativas, contadas com labels, e então uma pessoa assume |
 | 5 | O `tasks.md` é só uma convenção, então um malformado para a cadeia sem aviso | Um PR check valida o formato dele |
 | 6 | Mudanças de UI chegam ao review sem que ninguém tenha olhado para elas | Um check exige screenshots e2e, e o CI os publica no PR |
@@ -26,6 +26,7 @@ Estas são as lacunas, e o que preenche cada uma:
 | 8 | O agent não consegue rodar a stack real sem acesso à nuvem | Substitutos locais para cada serviço, para que o app inteiro e seus testes e2e rodem sem credenciais |
 | 9 | Fazer merge não entrega nada | Um build verde na `main` faz deploy sozinho, pula um commit que não é mais o mais recente, e a produção espera por uma pessoa |
 | 10 | Um agent pode commitar um segredo vazado ou uma dependência vulnerável | Uma varredura de segredos e dependências em todo build, e de novo antes de cada deploy |
+| 11 | Ninguém verifica a mudança mergeada onde ela realmente roda | Cada deploy abre uma issue de teste para cada PR mergeado que ele levou, e o agent Testador testa a mudança no stage com deploy |
 
 [Como o Discava faz](../../discava/overview/) mapeia cada linha para os seus arquivos.
 
@@ -58,6 +59,15 @@ Os workflows de cola têm um token que pode escrever labels, status e comentári
 **branch padrão**, nunca do pull request, para que nada que um agent ou um contribuidor escreveu rode com
 esse token. Tudo o que é lido do PR (nomes de branch, corpos) é verificado contra um padrão estrito
 antes de ser usado.
+
+### Tranque o que o agent lê
+
+Qualquer pessoa pode comentar nas issues e nos pull requests de um repositório público, e um agent lê esses
+comentários enquanto tem em mãos um token que pode fazer push. O Testador também tem acesso ao stage com deploy.
+Por isso, toda issue e todo pull request entregue a um agent é **trancado** (locked) antes, o que deixa os comentários para
+pessoas com acesso de escrita. Uma issue é aberta sem o label, trancada, e só então recebe o label, então
+o agent nunca a pega enquanto um estranho ainda pode comentar. E o marcador oculto de uma issue
+só conta quando a issue foi aberta pelo workflow ou por alguém com acesso de escrita.
 
 ### Seja idempotente
 

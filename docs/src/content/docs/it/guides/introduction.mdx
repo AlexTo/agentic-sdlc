@@ -8,7 +8,8 @@ sidebar:
 Questa guida ti mostra come gestire un ciclo di vita del software in cui **gli agenti scrivono il
 codice e le persone prendono due decisioni**: approvare la spec e approvare il risultato. Tutto ciò
 che sta in mezzo (aprire issue, scrivere codice e test, reagire alla CI, rispondere a una review) va
-avanti da solo, attraverso il normale processo di GitHub.
+avanti da solo, attraverso il normale processo di GitHub. A fare quel lavoro sono tre ruoli degli
+agenti: un **Developer**, un **Reviewer** e un **Tester**.
 
 Il workflow gira ogni giorno su [Discava](https://github.com/AlexTo/discava), un learning management
 system serverless su AWS. Nei sei giorni successivi alla messa in produzione, il 14 novembre 2026,
@@ -24,12 +25,12 @@ Tre strumenti già pronti fanno la maggior parte del lavoro:
 | Strumento | Cosa fa qui |
 | --- | --- |
 | [Speckit](https://github.com/github/spec-kit) | Trasforma un'idea in `spec.md`, `plan.md` e `tasks.md`, verificati rispetto a una constitution del progetto |
-| [OpenHands](https://github.com/OpenHands/OpenHands) | Trasforma una issue con label in una pull request, e rivede la pull request quando gli viene detto che qualcosa non va. Una seconda automazione OpenHands la revisiona |
+| [OpenHands](https://github.com/OpenHands/OpenHands) | Esegue i tre ruoli degli agenti, un'automazione ciascuno. Il Developer trasforma una issue con label in una pull request, e la rivede quando gli viene detto che qualcosa non va. Il Reviewer la revisiona. Il Tester testa la modifica mergiata su uno stage deployato |
 | GitHub Actions | Esegue i check, e contiene il collante tra gli altri due |
 
-Nessuno di loro sa degli altri. **Questa guida parla soprattutto del collante**: dieci piccoli pezzi
-di automazione, testati, che collegano una spec finita all'agente, la CI all'agente e il reviewer
-all'agente, con dei limiti perché niente vada in loop all'infinito.
+Nessuno di loro sa degli altri. **Questa guida parla soprattutto del collante**: undici piccoli pezzi
+di automazione, testati, che collegano una spec finita al Developer, la CI e il Reviewer di nuovo al
+Developer, e un deploy al Tester, con dei limiti perché niente vada in loop all'infinito.
 
 ## A chi si rivolge
 

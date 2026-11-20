@@ -56,7 +56,7 @@ exists -> stalled: 是
 exists -> open: 否
 ```
 
-`pnpm nx run @discava/common-scripts:agent-issue`，位于 `src/agent-issues/`：
+`pnpm nx run @discava/tooling-agent:agent-issue`，位于 `src/agent-issues/`：
 
 1. **关卡**（`gate.ts`）。`decide()` 把 PR 分类为 `spec`、`implementation` 或 `ignore`。
 2. **找到 spec 文件夹**（`discover.ts`）。对于智能体 PR，它读取该 PR 关闭的 issue，并从该 issue 的隐藏
@@ -67,12 +67,16 @@ exists -> open: 否
 5. **选出下一组**：第一个含有未勾选且不是 **(human)** 的任务的组。
 6. **检查是否已有 issue。** 每个 issue 正文都以一个标记开头，例如
    `<!-- agent-issue spec:20261116-013307-course-reviews group:3 -->`。如果该组的 issue 已经存在（无论
-   打开还是关闭），脚本就不会再打开一个，而是在 PR 上评论，例如：
+   打开还是关闭），脚本就不会再打开一个。标记只有在由 workflow 或具有写权限的人打开的 issue 中才算数，
+   所以陌生人的 issue 无法让一个 spec 的链条停滞。脚本会改为在 PR 上评论，例如：
 
    > The next implementation issue for `specs/…/` was not opened: an issue for "Ratings in search"
    > already exists, and these tasks in its `tasks.md` are not ticked: T017, T018.
 
-7. **渲染并创建 issue**（`issue.ts`），带有 `openhands` 标签。
+7. **渲染并创建 issue**（`issue.ts`），不带标签。
+8. **先锁定，再加标签**（`helpers/conversation-lock.ts`）。issue 被锁定，所以只有具有写权限的人才能在
+   开发智能体将要阅读的内容上评论，之后它才会得到 `openhands` 标签。如果锁定失败，标签永远不会被加上，
+   运行会失败，并指出需要手动锁定和加标签的 issue。
 
 ## 它打开的 issue
 
@@ -113,7 +117,7 @@ start tasks outside these phases.
 ```bash
 DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=workflow_dispatch \
   SPEC_FOLDER=20261116-013307-course-reviews \
-  pnpm nx run @discava/common-scripts:agent-issue
+  pnpm nx run @discava/tooling-agent:agent-issue
 ```
 
 这会打印它将要打开的 issue 的标题和正文。它仍然会通过 `gh` 读取已有的 issue，所以你需要先登录。
@@ -124,7 +128,7 @@ DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=workflow_dispatch \
 并修改了某个活动中的 `specs/*/tasks.md` 时运行，也可以手动运行。它需要自己的触发条件，因为最后一个勾选
 通常是一个 **(human)** 任务，出现在一个被 Agent Issues 忽略的 PR 中。
 
-`pnpm nx run @discava/common-scripts:archive-specs`，位于 `src/agent-issues/archive-specs.ts`：
+`pnpm nx run @discava/tooling-agent:archive-specs`，位于 `src/agent-issues/archive-specs.ts`：
 
 1. 找出每个所有任务（包括 **(human)** 任务）都已勾选的活动 spec。
 2. 跳过有打开中的智能体 issue 的 spec，以及已经有过归档 PR 的 spec。不合并就关闭那个 PR，spec 就会

@@ -16,6 +16,8 @@ sidebar:
 | Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` | A branch padrão |
 | Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | Nada (passa o número do PR para o `gh`) |
 | Deploy (Discava) | `deploy.yml` | `workflow_run` do CI na `main`, `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | O commit que o CI verificou |
+| Post-merge Verify (Discava) | `post-merge-verify.yml` | `workflow_run` do Deploy, `completed`, `workflow_dispatch(pr_number)` | `contents: read`, `actions: read`, `issues: write`, `pull-requests: write` | A branch padrão |
+| Agent Lock (Discava) | `agent-lock.yml` | `issues: labeled`, `pull_request: [opened, reopened]` | `contents: read`, `issues: write`, `pull-requests: write` | A branch padrão |
 
 ## Nomes de jobs a exigir na branch protection
 
@@ -36,6 +38,7 @@ sidebar:
 | Agent CI Status | `agent-ci-<head branch>` | não |
 | Agent Review Status | `agent-review-<PR number>` | não |
 | Deploy | `deploy-<stage>` | não |
+| Post-merge Verify | `post-merge-verify` | não: uma execução por vez, para que dois deploys próximos nunca abram duas issues para um mesmo PR |
 
 Os workflows dos agents nunca cancelam. Cada execução precisa contar sua tentativa ou abrir sua
 issue exatamente uma vez, e grupos por PR fazem com que PRs não relacionados nunca esperem uns pelos
@@ -53,3 +56,10 @@ Todos em `@your-scope/common-scripts`:
 | `agent-review-status` | `src/agent-review/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
 | `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH` |
 | `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`, `GITHUB_ACTIONS` (para anotações) |
+
+O Discava mantém os mesmos targets em `@discava/tooling-agent`, com mais dois para o Testador:
+
+| Target | Ponto de entrada | Env que ele lê |
+| --- | --- | --- |
+| `post-merge-test` | `src/post-merge-test/main.ts` | `GH_TOKEN`, `GH_REPO`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH`, `PR_NUMBER`, `TEST_STAGE`, `DRY_RUN` |
+| `agent-lock` | `src/agent-lock/main.ts` | `GH_TOKEN`, `GH_REPO`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH` |

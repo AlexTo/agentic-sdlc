@@ -1,15 +1,27 @@
 ---
 title: 智能体运行时
-description: OpenHands 如何把一个带标签的 issue 变成 pull request，以及它如何知道何时该修改 PR。
+description: 三个智能体角色（开发智能体、评审智能体和测试智能体），以及 OpenHands 如何根据 GitHub 上的一个标签启动每一个。
 sidebar:
   order: 4
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-**简短版本：**OpenHands 针对你的仓库运行两个定时自动化。一个负责实现带标签的 issue，并修改被标记为
-失败的 pull request。另一个在 pull request 的检查结束后评审它们。两者都会用一个固定的 prompt 启动
-一个普通的编码智能体。两者都不需要你打开聊天窗口。
+**简短版本：**OpenHands 针对你的仓库运行三个定时自动化，每个智能体角色一个。**开发智能体**负责实现带
+标签的 issue，并修改被标记为失败的 pull request。**评审智能体**在 pull request 的检查结束后评审它们。
+**测试智能体**在已部署的开发 stage 上测试每个已合并的变更。每一个都会用一个固定的 prompt 启动一个普通的
+编码智能体。没有一个需要你打开聊天窗口。
+
+## 三个角色
+
+| 角色 | 自动化 | 从什么开始 | 留下什么 |
+| --- | --- | --- | --- |
+| **开发智能体** | GitHub issue to PR | 一个带 `openhands` 标签的 issue，或它自己的 PR 上一个失败的 `software-factory/review` 状态 | `openhands/issue-<n>` 上的一个 pull request，以及对它的修改 |
+| **评审智能体** | GitHub code review | 一个带 `openhands-review` 标签的 PR，在每个检查都结束之后 | 一条以 `✅ APPROVED` 或 `🔄 CHANGES REQUESTED` 结尾的评审 |
+| **测试智能体** | GitHub issue tester | 一个带 `openhands-test` 标签、在部署之后打开的 issue | issue 上的一份测试报告，带有来自 UI、API 和存储数据的证据，有时还有一个小的修复 PR |
+
+要把循环一直跑到合并，一个仓库只需要开发智能体和评审智能体。测试智能体需要一个已部署的地方来测试，
+所以它与[自动部署](../../adopt/deploy/)一起出现。这个仓库中的示例应用没有部署，所以 fork 只运行前两个。
 
 ```d2
 direction: right
@@ -19,10 +31,14 @@ machine: 你的机器 {
   canvas: Agent Canvas {
     i2p: issue 到 PR
     review: 代码评审
+    test: issue 测试
   }
-  agent: 编码智能体
-  canvas.i2p -> agent: 实现或修改
-  canvas.review -> agent: 评审
+  dev: 开发智能体
+  rev: 评审智能体
+  tester: 测试智能体
+  canvas.i2p -> dev: 实现或修改
+  canvas.review -> rev: 评审
+  canvas.test -> tester: 测试
 }
 
 github: GitHub {
@@ -32,8 +48,13 @@ github: GitHub {
   statuses: commit 状态 {shape: document}
 }
 
+stage: 开发 stage {shape: cylinder}
+
 machine.canvas -> github: 每 5 分钟轮询一次
-machine.agent -> github.prs: 推送、打开、评审
+machine.dev -> github.prs: "推送、打开"
+machine.rev -> github.prs: 评审
+machine.tester -> stage: "点击、调用、读取"
+machine.tester -> github.issues: 报告
 ```
 
 ## 组成部分
@@ -45,9 +66,9 @@ machine.agent -> github.prs: 推送、打开、评审
 | **Automation** | 一个按 cron 计划运行的小型 Python worker。它读取 GitHub，决定要做什么，并启动或恢复智能体会话。从 Agent Canvas 目录中安装 |
 | **Secret** | 一个具名凭证，例如 GitHub token。会话只会拿到其允许列表中的 secret |
 
-## 两个自动化
+## 三个自动化
 
-### GitHub issue to PR
+### 开发智能体：GitHub issue to PR
 
 每次轮询时，对于它监视的每个仓库，worker 会：
 
@@ -60,7 +81,7 @@ machine.agent -> github.prs: 推送、打开、评审
 每个 issue 是一个具有稳定会话的*主题*。修改会发到与最初实现相同的会话中，所以智能体保留了它的
 上下文。
 
-### GitHub code review
+### 评审智能体：GitHub code review
 
 每次轮询时，它会查找带有 `openhands-review` 标签、对其账号有待处理评审请求，或者处于打开、非草稿、
 未请求评审且未被评审状态的 PR。对每一个，它都会等到 **head commit 上的每个检查都结束**，然后对那个
@@ -68,9 +89,37 @@ machine.agent -> github.prs: 推送、打开、评审
 
 <Aside type="caution">
 issue-to-PR worker 只有在看到失败的 `software-factory/review` 状态时才会修改 PR。无论是红色的 CI
-运行还是评审者的 "changes requested"，都不会自行设置这个状态。弥合这个缺口的是
+运行还是评审智能体的 "changes requested"，都不会自行设置这个状态。弥合这个缺口的是
 [缺失的粘合层](../the-missing-glue/)中的两个部件。
 </Aside>
+
+### 测试智能体：GitHub issue tester
+
+前两个自动化来自 Agent Canvas 目录。这一个是手写的，而且很小：一个建立在目录的 GitHub 辅助函数之上、
+大约一百行的 worker，外加一个 prompt 文件。
+
+每次轮询时，它会查找带有触发标签（`openhands-test`）、并且由 workflow 自己的账号 `github-actions[bot]`
+打开的打开 issue。对每一个，它都启动一个**测试**轮次：在 stage 所运行的 commit 处克隆仓库，弄清已合并的
+pull request 改了什么，在已部署的栈上测试它，并把结果评论到 issue 上。
+
+测试分为三个部分，第三部分正是它与单纯点完一个页面的区别所在：
+
+1. **UI**，在真实浏览器中，以测试用户的身份登录。
+2. 这些界面背后的 **API**，使用测试用户的 token 调用，包括应当被拒绝的情况。
+3. **存储的数据。** 每次操作之后，测试智能体都会读取变更本应写入的内容并检查它：数据库记录、存储中的
+   文件、搜索索引以及日志。在 Discava 中，这就是 DynamoDB、S3、OpenSearch 和 CloudWatch。
+
+三个细节让它保持安全和安静：
+
+- **issue 只说明要测试什么。** 如何测试（工具、测试用户、检查、报告）是自动化自己的 prompt，放在机器上。
+  能编辑 issue 的人没有一个能改动它。
+- **其他任何人打开的 issue 都会被跳过**，因为它的正文会成为智能体的指令。
+- **每次加标签只测试一次。** 每次加上标签只算一次，所以测试智能体自己的评论永远不会启动第二次测试。要
+  再测试一次，移除并重新加上标签。
+
+默认情况下没有任何东西会打开这些 issue。为每个已部署的 pull request 打开一个 issue 的 workflow，是
+[缺失的粘合层](../the-missing-glue/)的最后一个部件。Discava 的做法见
+[合并后验证](../../discava/post-merge-verify/)。
 
 ## 为什么用轮询而不是 webhook
 
@@ -80,13 +129,25 @@ issue-to-PR worker 只有在看到失败的 `software-factory/review` 状态时�
 
 ## 智能体能接触和不能接触的东西
 
-实现会话只拿到一个 secret，即 GitHub token，以便读取 issue 并推送它的分支。它拿不到云凭证。它还
-永远不能做哪些事，以及每项限制由什么强制执行，见[人工关卡](../human-gates/#智能体绝不能做的事)。
+开发智能体和评审智能体的 prompt 只指名一个 secret，即 GitHub token，以便开发智能体读取 issue 并推送它的
+分支，评审智能体发布它的评审。两者都不需要云访问权限：它们运行的一切都运行在本地栈上。
+
+测试智能体是例外。它必须接触已部署的 stage，所以它使用一个已登录开发账号的云 CLI（它的 prompt 要求它
+以只读方式使用），以及应用中每个角色一个测试用户。它永远拿不到部署角色，它的 prompt 也禁止更改基础
+设施、部署或触碰其他 stage。由于它在持有这些凭证的同时阅读 issue 和 pull request，交给它的一切都会先被
+锁定，所以只有具有写权限的人才能在上面评论。
+
+智能体还永远不能做哪些事，以及每项限制由什么强制执行，见
+[人工关卡](../human-gates/#智能体绝不能做的事)。
 
 ## 选择智能体
 
-Discava 在**通过 ACP 接入的 Claude Code** 上运行这两个自动化：用 Sonnet 实现，用 Opus 评审。用更强
-的模型做评审是有意为之：评审者是交给人之前的最后一道检查，而它读的代码远少于实现者写的代码。任何
-ACP 智能体，或者搭配任意 LLM 的 OpenHands 自有智能体，都可以接入相同的 profile。
+Discava 在**通过 ACP 接入的 Claude Code** 上运行全部三个自动化，每个都有自己的 agent profile：开发智能体
+用 Sonnet，评审智能体和测试智能体用 Opus。用更强的模型做评审是有意为之：评审智能体是交给人之前的最后
+一道检查，而它读的代码远少于开发智能体写的代码。测试智能体用同样的模型，因为它的工作同样是判断：判定
+一个变更应该做什么，以及它在 stage 上看到的、在其存储中找到的是否正确。任何 ACP 智能体，或者搭配任意 LLM 的 OpenHands
+自有智能体，都可以接入相同的 profile。
+
+每个角色运行时使用的 prompt 见[智能体的 prompt](../../discava/agent-prompts/)。
 
 下一步：[缺失的粘合层](../the-missing-glue/)。

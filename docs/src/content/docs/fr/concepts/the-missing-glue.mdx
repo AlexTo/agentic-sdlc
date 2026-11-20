@@ -1,6 +1,6 @@
 ---
 title: La glue manquante
-description: Les dix manques entre Speckit, OpenHands et la CI, et les règles pour les combler.
+description: Les onze manques entre Speckit, OpenHands et la CI, et les règles pour les combler.
 sidebar:
   order: 5
 ---
@@ -19,7 +19,7 @@ Voici les manques, et ce qui comble chacun d'eux :
 | --- | --- | --- |
 | 1 | Rien ne transforme une spec terminée en travail pour l'agent | Un workflow lit `tasks.md` et ouvre l'issue d'implémentation suivante, un groupe de phases à la fois |
 | 2 | L'agent ne sait pas que la CI a échoué | Un workflow signale une exécution en échec à l'agent sous la forme du statut de commit qu'il surveille déjà |
-| 3 | Le « changes requested » d'un relecteur reste sans suite | Un workflow fait de même pour le verdict de l'agent relecteur |
+| 3 | Le « changes requested » d'un relecteur reste sans suite | Un workflow fait de même pour le verdict de l'agent Relecteur |
 | 4 | Rien n'empêche un agent bloqué de boucler indéfiniment | Les deux boucles de correction sont limitées à cinq tentatives, comptées par des labels, puis une personne prend le relais |
 | 5 | `tasks.md` n'est qu'une convention, donc un fichier mal formé bloque la chaîne sans bruit | Un check de PR valide son format |
 | 6 | Les changements d'UI arrivent en revue sans que personne ne les ait regardés | Un check exige des captures d'écran e2e, et la CI les publie sur la PR |
@@ -27,6 +27,7 @@ Voici les manques, et ce qui comble chacun d'eux :
 | 8 | L'agent ne peut pas faire tourner la vraie stack sans accès au cloud | Des équivalents locaux pour chaque service, pour que toute l'application et ses tests e2e tournent sans identifiants |
 | 9 | Merger ne livre rien | Un build vert sur `main` se déploie de lui-même, saute un commit qui n'est plus le dernier, et la production attend une personne |
 | 10 | Un agent peut commiter un secret divulgué ou une dépendance vulnérable | Une analyse des secrets et des dépendances à chaque build, et de nouveau avant chaque déploiement |
+| 11 | Personne ne vérifie le changement mergé là où il s'exécute réellement | Chaque déploiement ouvre une issue de test pour chaque PR mergée qu'il a embarquée, et l'agent Testeur teste le changement sur le stage déployé |
 
 [Comment Discava procède](../../discava/overview/) associe chaque ligne à ses fichiers.
 
@@ -61,6 +62,16 @@ Les workflows de glue détiennent un token qui peut écrire des labels, des stat
 commentaires. Ils récupèrent la **branche par défaut**, jamais la pull request, donc rien de ce qu'un
 agent ou un contributeur a écrit ne s'exécute avec ce token. Tout ce qui est lu depuis la PR (noms de
 branche, corps) est vérifié selon un motif strict avant d'être utilisé.
+
+### Verrouiller ce que lit l'agent
+
+N'importe qui peut commenter les issues et les pull requests d'un dépôt public, et un agent lit ces
+commentaires tout en détenant un token qui peut pousser. Le Testeur détient aussi un accès au stage
+déployé. Chaque issue et chaque pull request confiée à un agent est donc d'abord **verrouillée**, ce
+qui réserve les commentaires aux personnes avec un accès en écriture. Une issue est ouverte sans son
+label, verrouillée, et seulement ensuite labellisée, donc l'agent ne la prend jamais en charge tant
+qu'un inconnu peut encore commenter. Et le marqueur caché d'une issue ne compte que si l'issue a été
+ouverte par le workflow ou par quelqu'un avec un accès en écriture.
 
 ### Être idempotent
 

@@ -22,7 +22,7 @@ constitution 原则 III：每个 AWS 服务都有一个本地替身，`pnpm dev`
 | 本地 OIDC 服务器 | 9400 | Cognito |
 
 后端代码根据 `LOCAL_DEV=true` 进行切换。共享设置位于一个包中（`common-server-utils/local-dev`），因此
-每个 Lambda 都以相同的方式解析端点。每个替身都是 `packages/common/scripts` 中的一个 Nx target，负责
+每个 Lambda 都以相同的方式解析端点。每个替身都是 `packages/tooling/local-dev` 中的一个 Nx target，负责
 拉取并启动其容器。
 
 本地登录页提供固定的用户（一名讲师、两名学生、一名管理员），以及一个可填写任意 claim 的

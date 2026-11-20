@@ -18,29 +18,35 @@ This section describes what Discava runs, as of November 2026, with the files be
 | Tool | Version | Role |
 | --- | --- | --- |
 | Speckit (`specify-cli`) | 1.3.2 | Spec, plan and task generation, with its `git` extension |
-| OpenHands Agent Canvas | 1.41.0 | Agent runtime and the two automations, as a user service on one Linux machine |
-| `github-issue-to-pr` automation | 1.2.4 | Implements labelled issues, revises failing PRs |
-| `github-pr-reviewer` automation | 1.11.2 | Reviews PRs once checks finish |
-| Agent for implementing | Claude Code over ACP, Sonnet | `default` agent profile |
-| Agent for reviewing | Claude Code over ACP, Opus | `reviewer` agent profile |
+| OpenHands Agent Canvas | 1.41.0 | Agent runtime and the three automations, as a user service on one Linux machine |
+| `github-issue-to-pr` automation | 1.2.4 | Developer: implements labelled issues, revises failing PRs |
+| `github-pr-reviewer` automation | 1.11.2 | Reviewer: reviews PRs once checks finish |
+| `github-issue-tester` automation | written by hand | Tester: tests merged PRs on the deployed development stage |
+| Developer agent | Claude Code over ACP, Sonnet | `developer` agent profile |
+| Reviewer agent | Claude Code over ACP, Opus | `reviewer` agent profile |
+| Tester agent | Claude Code over ACP, Opus | `tester` agent profile |
 | Nx + pnpm | Nx 23 | Monorepo, `nx affected` in CI |
-| Playwright | | E2E tests against the local stack, six shards in CI |
+| Playwright | | E2E tests against the local stack, six shards in CI. The Tester agent also drives the deployed portals with it |
 | Trivy, git-secrets, commitlint | | Security scan, pre-commit secret check, commit message format |
 
 ## Gap to file
 
 | Gap | Discava's answer | Files |
 | --- | --- | --- |
-| Spec to issue | Agent Issues workflow and its scripts | `.github/workflows/agent-issues.yml`, `packages/common/scripts/src/agent-issues/` |
+| Spec to issue | Agent Issues workflow and its scripts | `.github/workflows/agent-issues.yml`, `packages/tooling/agent/src/agent-issues/` |
 | CI failure to agent | Agent CI Status | `.github/workflows/agent-ci.yml`, `src/agent-ci/` |
 | Review to agent | Agent Review Status | `.github/workflows/agent-review.yml`, `src/agent-review/` |
 | Endless loops | Five-attempt caps with labels | `MAX_CI_FIX_ATTEMPTS` and `MAX_REVIEW_FIX_ATTEMPTS` in `plan.ts` |
 | Malformed `tasks.md` | Tasks format job | `pr-checks.yml` `tasks-format`, `src/agent-issues/validate.ts` |
 | Unseen UI changes | UI Screenshots job, E2E screenshots comment | `pr-checks.yml`, `src/ui-screenshots/`, `packages/e2e/src/helpers/screenshots.ts` |
 | Merge doesn't continue | Agent Issues on merged `openhands/` branches | `src/agent-issues/gate.ts` |
-| No cloud for the agent | Local stand-ins for every AWS service | `pnpm dev`, `packages/common/scripts/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
+| No cloud for the agent | Local stand-ins for every AWS service | `pnpm dev`, `packages/tooling/local-dev/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
 | Merge doesn't ship | CI on `main`, then Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
 | Secrets and vulnerable dependencies | Trivy in CI and before deploy, git-secrets on commit | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
+| Merged change never tested where it runs | Post-merge Verify opens a test issue per deployed PR, the Tester agent tests it, and Agent Lock locks what the agents read | `.github/workflows/post-merge-verify.yml`, `agent-lock.yml`, `src/post-merge-test/`, `src/agent-lock/`, `src/helpers/conversation-lock.ts` |
+
+The glue lives in `packages/tooling/agent/` (`@discava/tooling-agent`). The `src/…` paths in this
+section are relative to it.
 
 And the prose every agent reads:
 
@@ -50,6 +56,8 @@ And the prose every agent reads:
 | Commands, architecture, conventions | `AGENTS.md` |
 | PR process, local stack, testing | `CONTRIBUTING.md` |
 | Instructions on every implementation issue | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| The by-hand form of a test issue | `.github/ISSUE_TEMPLATE/test-deployed-pr.md` |
+| Each agent role's standing prompt | In OpenHands, outside the repository. See [The agents' prompts](../agent-prompts/) |
 | Speckit templates, customised for the automation | `.specify/templates/tasks-template.md`, `spec-template.md` |
 
 ## By the numbers

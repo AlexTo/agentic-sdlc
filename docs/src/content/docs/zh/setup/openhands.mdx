@@ -1,13 +1,13 @@
 ---
 title: 3. 安装 OpenHands
-description: 用 npm 安装 Agent Canvas，运行它，添加 GitHub token 并创建两个 agent profile。
+description: 用 npm 安装 Agent Canvas，运行它，添加 GitHub token 并创建开发智能体和评审智能体的 agent profile。
 sidebar:
   order: 3
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**完成后你将拥有：** 在你的机器上运行的 OpenHands Agent Canvas、一个作为 secret 存储的 GitHub token，以及两个 agent profile：用于实现的 `default` 和用于评审的 `reviewer`。
+**完成后你将拥有：** 在你的机器上运行的 OpenHands Agent Canvas、一个作为 secret 存储的 GitHub token，以及两个 agent profile：用于开发智能体的 `developer` 和用于评审智能体的 `reviewer`。
 
 <Steps>
 
@@ -36,20 +36,22 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
    编码智能体必须以同一个用户身份安装在这台机器上并已登录。
 
-5. **创建两个 agent profile：**
+5. **创建两个 agent profile**，每个智能体角色一个：
 
-   | Profile | Agent | Model |
-   | --- | --- | --- |
-   | `default` | ACP，`claude-code` | `sonnet` |
-   | `reviewer` | ACP，`claude-code` | `opus` |
+   | Profile | 角色 | Agent | Model |
+   | --- | --- | --- | --- |
+   | `developer` | 开发智能体 | ACP，`claude-code` | `sonnet` |
+   | `reviewer` | 评审智能体 | ACP，`claude-code` | `opus` |
 
-   任何智能体和模型都可以。让评审者至少和实现者一样强：它是到你手上之前的最后一道检查。
+   任何智能体和模型都可以。让评审智能体至少和开发智能体一样强：它是到你手上之前的最后一道检查。
+
+   Discava 还有第三个 profile `tester`，用于测试智能体。它在已部署的 stage 上测试已合并的变更，而笔记应用没有这样的 stage，所以你在这里不需要它。
 
 </Steps>
 
 ## 检查是否成功
 
-在 Agent Canvas 中，用 `default` profile 启动一个对话，并把 `GITHUB_PERSONAL_ACCESS_TOKEN` secret 提供给它。问它：
+在 Agent Canvas 中，用 `developer` profile 启动一个对话，并把 `GITHUB_PERSONAL_ACCESS_TOKEN` secret 提供给它。问它：
 
 ```text
 Run gh auth status using the GITHUB_PERSONAL_ACCESS_TOKEN secret, and list the open issues in <you>/agentic-sdlc.

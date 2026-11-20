@@ -17,29 +17,35 @@ CDK로 배포됩니다. 누구도 전부를 머릿속에 담아 둘 수 없을 �
 | 도구 | 버전 | 역할 |
 | --- | --- | --- |
 | Speckit (`specify-cli`) | 1.3.2 | spec, plan, 작업 생성, `git` extension 포함 |
-| OpenHands Agent Canvas | 1.41.0 | 에이전트 런타임과 두 automation, Linux 머신 한 대의 사용자 서비스로 실행 |
-| `github-issue-to-pr` automation | 1.2.4 | label이 붙은 issue를 구현하고, 실패한 PR을 수정 |
-| `github-pr-reviewer` automation | 1.11.2 | 검사가 끝난 PR을 리뷰 |
-| 구현용 에이전트 | ACP를 통한 Claude Code, Sonnet | `default` agent profile |
-| 리뷰용 에이전트 | ACP를 통한 Claude Code, Opus | `reviewer` agent profile |
+| OpenHands Agent Canvas | 1.41.0 | 에이전트 런타임과 세 automation, Linux 머신 한 대의 사용자 서비스로 실행 |
+| `github-issue-to-pr` automation | 1.2.4 | 개발자: label이 붙은 issue를 구현하고, 실패한 PR을 수정 |
+| `github-pr-reviewer` automation | 1.11.2 | 리뷰어: 검사가 끝난 PR을 리뷰 |
+| `github-issue-tester` automation | 직접 작성 | 테스터: merge된 PR을 배포된 development stage에서 테스트 |
+| 개발자 에이전트 | ACP를 통한 Claude Code, Sonnet | `developer` agent profile |
+| 리뷰어 에이전트 | ACP를 통한 Claude Code, Opus | `reviewer` agent profile |
+| 테스터 에이전트 | ACP를 통한 Claude Code, Opus | `tester` agent profile |
 | Nx + pnpm | Nx 23 | 모노레포, CI에서 `nx affected` |
-| Playwright | | 로컬 스택을 대상으로 한 E2E 테스트, CI에서 샤드 여섯 개 |
+| Playwright | | 로컬 스택을 대상으로 한 E2E 테스트, CI에서 샤드 여섯 개. 테스터 에이전트도 이것으로 배포된 포털을 조작합니다 |
 | Trivy, git-secrets, commitlint | | 보안 스캔, pre-commit secret 검사, 커밋 메시지 형식 |
 
 ## 빈틈과 파일
 
 | 빈틈 | Discava의 답 | 파일 |
 | --- | --- | --- |
-| spec에서 issue로 | Agent Issues workflow와 그 스크립트 | `.github/workflows/agent-issues.yml`, `packages/common/scripts/src/agent-issues/` |
+| spec에서 issue로 | Agent Issues workflow와 그 스크립트 | `.github/workflows/agent-issues.yml`, `packages/tooling/agent/src/agent-issues/` |
 | CI 실패에서 에이전트로 | Agent CI Status | `.github/workflows/agent-ci.yml`, `src/agent-ci/` |
 | 리뷰에서 에이전트로 | Agent Review Status | `.github/workflows/agent-review.yml`, `src/agent-review/` |
 | 끝없는 루프 | label을 이용한 다섯 번 시도 상한 | `plan.ts`의 `MAX_CI_FIX_ATTEMPTS`와 `MAX_REVIEW_FIX_ATTEMPTS` |
 | 형식이 잘못된 `tasks.md` | Tasks format job | `pr-checks.yml` `tasks-format`, `src/agent-issues/validate.ts` |
 | 아무도 보지 않은 UI 변경 | UI Screenshots job, E2E screenshots 댓글 | `pr-checks.yml`, `src/ui-screenshots/`, `packages/e2e/src/helpers/screenshots.ts` |
 | merge 후 이어지지 않음 | merge된 `openhands/` 브랜치에 대한 Agent Issues | `src/agent-issues/gate.ts` |
-| 에이전트에게 클라우드 없음 | 모든 AWS 서비스의 로컬 대체물 | `pnpm dev`, `packages/common/scripts/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
+| 에이전트에게 클라우드 없음 | 모든 AWS 서비스의 로컬 대체물 | `pnpm dev`, `packages/tooling/local-dev/src/{dynamodb,s3mock,elasticmq,opensearch,local-oidc}` |
 | merge해도 배포되지 않음 | `main`의 CI, 그다음 Deploy | `.github/workflows/ci.yml`, `deploy.yml`, `scripts/setup-stage.sh` |
 | secret과 취약한 의존성 | CI와 배포 전의 Trivy, 커밋 시 git-secrets | `ci.yml` `trivy`, `deploy.yml`, `.husky/pre-commit`, `.trivyignore` |
+| merge된 변경이 실행되는 곳에서 테스트되지 않음 | Post-merge Verify가 배포된 PR마다 테스트 issue를 열고, 테스터 에이전트가 이를 테스트하며, Agent Lock이 에이전트가 읽는 것을 잠급니다 | `.github/workflows/post-merge-verify.yml`, `agent-lock.yml`, `src/post-merge-test/`, `src/agent-lock/`, `src/helpers/conversation-lock.ts` |
+
+glue는 `packages/tooling/agent/`(`@discava/tooling-agent`)에 있습니다. 이 섹션의 `src/…` 경로는 이를 기준으로 한
+상대 경로입니다.
 
 그리고 모든 에이전트가 읽는 글은 다음과 같습니다.
 
@@ -49,6 +55,8 @@ CDK로 배포됩니다. 누구도 전부를 머릿속에 담아 둘 수 없을 �
 | 명령, 아키텍처, 관례 | `AGENTS.md` |
 | PR 프로세스, 로컬 스택, 테스트 | `CONTRIBUTING.md` |
 | 모든 구현 issue에 담기는 지시 사항 | `.github/ISSUE_TEMPLATE/implement-phase.md` |
+| 테스트 issue를 직접 열 때의 양식 | `.github/ISSUE_TEMPLATE/test-deployed-pr.md` |
+| 각 에이전트 역할의 상시 프롬프트 | 저장소 밖, OpenHands에 있습니다. [에이전트 프롬프트](../agent-prompts/) 참고 |
 | 자동화에 맞게 수정한 Speckit 템플릿 | `.specify/templates/tasks-template.md`, `spec-template.md` |
 
 ## 숫자로 보기

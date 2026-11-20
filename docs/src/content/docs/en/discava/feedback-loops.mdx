@@ -1,6 +1,6 @@
 ---
 title: Feedback loops
-description: Agent CI Status and Agent Review Status, the two workflows that send the agent back.
+description: Agent CI Status and Agent Review Status, the two workflows that send the Developer agent back.
 sidebar:
   order: 6
 ---
@@ -16,7 +16,9 @@ the OpenHands worker already acts on: a commit status named `software-factory/re
 
 `.github/workflows/agent-ci.yml` runs on `workflow_run`, when **PR Checks** completes with
 `failure` or `timed_out` for a pull request on an `openhands/issue-` branch. It checks out the
-default branch and runs `agent-ci-status`.
+default branch and runs `agent-ci-status`. The steps both workflows share are in one reusable
+workflow, `agent-status.yml`. Each caller keeps its own trigger, condition, concurrency group and
+permissions.
 
 `workflow_run` matters. It runs in the context of the default branch, with a token that can write,
 even though PR Checks ran on the PR's code with a read-only token.
@@ -50,14 +52,15 @@ out the default branch explicitly, and runs `agent-review-status`.
 | Check | Why |
 | --- | --- |
 | The author association is `OWNER`, `MEMBER` or `COLLABORATOR` | Only someone with write access can trigger it |
-| The body has `<!-- openhands-review-run: … -->` | It is the reviewer agent's review, not a person quoting it |
+| The body has `<!-- openhands-review-run: … -->` | It is the Reviewer agent's review, not a person quoting it |
 | The body has a line that is exactly `🔄 CHANGES REQUESTED` | The verdict, not a mention of it |
 
 Then the same steps as CI: `review-fix-<n>`, the failing status linked to the review, and
 `review-fix-exhausted` after five.
 
-The reviewer re-reviews by itself after the agent pushes, because the revise prompt tells the agent
-to re-apply `openhands-review`, and a new head commit counts as a new review.
+The Reviewer re-reviews by itself after the Developer pushes, because the
+[revise prompt](../agent-prompts/#developer) tells the Developer to re-apply `openhands-review`,
+and a new head commit counts as a new review.
 
 ## What it looks like on a PR
 
@@ -69,14 +72,17 @@ From [#470](https://github.com/AlexTo/discava/pull/470), "ratings in search":
    failing `E2E tests (4/4)` shard: my new scenario […] hit a strict-mode violation, because
    `getByText('4.5')` matched both the rating and the `4.5 and up` option […]. I fixed both
    locators."*
-4. The reviewer sees checks still running on the new head and comments "⏳ Review waiting on
+4. The Reviewer sees checks still running on the new head and comments "⏳ Review waiting on
    checks". On a later scan everything is green. It reviews `94b9ee3` and ends `✅ APPROVED`.
-5. `main` is merged into the branch. The reviewer reviews the new head again and approves it.
+5. `main` is merged into the branch. The Reviewer reviews the new head again and approves it.
 6. A person merges.
 
 <Aside type="tip">
 Both scripts take `DRY_RUN=true`, which prints the plan as JSON and changes nothing. Point
 `GITHUB_EVENT_PATH` at a saved event payload to replay a real case.
 </Aside>
+
+What happens after the merge, when the Tester agent takes over, is on
+[Post-merge verify](../post-merge-verify/).
 
 Next: [PR checks](../pr-checks/).

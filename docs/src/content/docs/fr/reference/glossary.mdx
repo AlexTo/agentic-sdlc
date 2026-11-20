@@ -12,9 +12,11 @@ sidebar:
 | **Profil d'agent** | Un réglage OpenHands qui désigne l'agent et le modèle qu'utilise une conversation |
 | **`AGENTS.md`** | Le fichier de guidage des agents à la racine du dépôt : commandes, architecture, conventions |
 | **Automatisation** | Un worker OpenHands planifié qui lit GitHub et démarre des conversations d'agent |
+| **Rôle d'agent** | L'un des trois métiers qu'exerce un agent : Développeur, Relecteur ou Testeur. Chacun est une automatisation OpenHands avec son propre prompt et son propre profil d'agent |
 | **Constitution** | `.specify/memory/constitution.md`. Les règles du projet par rapport auxquelles chaque plan est vérifié |
 | **Constitution Check** | La section de `plan.md` où le plan est vérifié par rapport à la constitution |
-| **Tentative de correction** | Un tour automatique de renvoi de l'agent au travail. Compté par `ci-fix-<n>` ou `review-fix-<n>` |
+| **Agent Développeur** | Le rôle qui implémente une issue sous forme de pull request et la révise quand il est renvoyé au travail |
+| **Tentative de correction** | Un tour automatique de renvoi de l'agent Développeur au travail. Compté par `ci-fix-<n>` ou `review-fix-<n>` |
 | **Glue** | Les workflows et scripts qui se passent le travail entre Speckit, OpenHands et la CI |
 | **Groupe** | Les phases que couvre une issue d'implémentation. Le groupe 0 va jusqu'à la première user story |
 | **Contrôle humain** | Une décision que seule une personne prend : approuver la spec, approuver la PR, déployer en production |
@@ -22,9 +24,13 @@ sidebar:
 | **Invariant** | Une règle portant sur l'ensemble des données, vérifiée après chaque test e2e |
 | **Marqueur** | Un commentaire HTML caché que la glue utilise pour retrouver ses propres issues et commentaires |
 | **Issue parente** | L'issue de suivi d'une fonctionnalité, nommée dans `spec.md`, référencée par chaque PR |
+| **Test après merge** | Le test, par l'agent Testeur, d'une pull request mergée sur le stage de développement déployé |
 | **Phase** | Une section `## Phase <n>: <title>` de `tasks.md` |
+| **Agent Relecteur** | Le rôle qui relit une pull request une fois ses checks terminés |
 | **Tour de révision** | Un message envoyé à une conversation d'agent existante, lui demandant de corriger sa PR |
 | **Dossier de spec** | `specs/<timestamp>-<name>/`, qui contient la spec, le plan et les tâches d'une fonctionnalité |
 | **`software-factory/review`** | Le statut de commit qui, à l'état `failure`, fait réviser une PR par OpenHands |
 | **Speckit** | La boîte à outils de GitHub pour le développement piloté par les specs (`specify-cli`) |
 | **Bloqué** | Un groupe dont l'issue existe mais dont toutes les tâches ne sont pas cochées, si bien qu'aucune nouvelle issue ne s'ouvre |
+| **Issue de test** | L'issue que Post-merge Verify ouvre pour une pull request déployée, avec le label `openhands-test`. Elle dit quoi tester, jamais comment |
+| **Agent Testeur** | Le rôle qui teste de bout en bout un changement mergé sur le stage déployé (l'UI, les API et les données écrites dans le stockage) et rend compte sur l'issue de test |

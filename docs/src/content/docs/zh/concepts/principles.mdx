@@ -22,8 +22,12 @@ import { Icon } from '@astrojs/starlight/components';
   并触发其背后的后台任务。
 - **眼睛：**读取返回的内容：响应、日志、留在数据库里的数据，以及评审者想看到的每个状态的截图。
 
-智能体并不在自己的机器上做这些。它编写 e2e 场景，由 CI 在每个 PR 上针对一个全新的本地栈运行。
+开发智能体并不在自己的机器上做这些。它编写 e2e 场景，由 CI 在每个 PR 上针对一个全新的本地栈运行。
 结果、不变式失败和截图都会回到 PR 上，因此智能体能发现自己的错误，每个 PR 都带着证据到来。
+
+合并之后，第二个智能体会真刀真枪地做一遍。测试智能体在已部署的开发 stage 上，用真实的浏览器、真实的
+登录和真实的数据检验每个变更。它手和眼睛并用：每次操作之后，它都会读回写入数据库、文件存储和搜索
+索引的内容，并检查其是否正确。屏幕看起来正确，底下的记录却可能是错的。
 
 从第一天起就为此而构建：每个云服务都需要一个本地替身，每个用户流程都需要一个 e2e 场景，每个 UI
 状态都需要一张截图。任何智能体无法运行的东西，都是需要人来验证的任务。
@@ -35,7 +39,7 @@ import { Icon } from '@astrojs/starlight/components';
 
 ## 3. 由自动化关卡而不是你来给出反馈<Icon name="approve-check-circle" class="heading-icon" />
 
-lint、类型检查、单元测试、不变式、e2e 测试、并发测试、截图和一个智能体评审者会在每个 PR 上运行。
+lint、类型检查、单元测试、不变式、e2e 测试、并发测试、截图和评审智能体会在每个 PR 上运行。
 红色结果直接回到编写该变更的智能体那里。没有人需要粘贴错误信息。
 
 ## 4. 人保留两个关键决定<Icon name="star" class="heading-icon" />
@@ -70,7 +74,8 @@ Discava 处处这样做：
 
 ## 7. 有边界的自主<Icon name="padlock" class="heading-icon" />
 
-智能体不能合并，不能编辑 workflow，不能接触云凭证，也不能为了变绿而削弱测试。每个修复循环最多
+没有任何智能体能合并、编辑 workflow、部署，或为了变绿而削弱测试。只有测试智能体能接触已部署的
+stage，而且只能接触开发 stage。每个修复循环最多
 尝试五次。之后它就会停下来，请人介入。
 
 ## 8. 小而有明确范围的工作单元<Icon name="list-format" class="heading-icon" />
@@ -89,7 +94,7 @@ Discava 处处这样做：
 | --- | --- |
 | 1. 验证 | [信任的层次](../layers-of-trust/#验证最重要)、[Discava 的本地栈](../../discava/local-stack/) |
 | 2. spec 是事实来源 | [spec 驱动开发](../spec-driven-development/) |
-| 3. 自动化关卡 | [信任的层次](../layers-of-trust/)、[反馈循环](../feedback-loops/) |
+| 3. 自动化关卡 | [信任的层次](../layers-of-trust/)、[反馈循环](../feedback-loops/)、[智能体运行时](../the-agent-runtime/#三个角色) |
 | 4. 人的决定 | [人工关卡](../human-gates/) |
 | 5. 确定性的规则和 skill | [Discava 的 PR 检查](../../discava/pr-checks/)、[constitution 与指导](../../discava/constitution-and-guidance/) |
 | 6. 粘合层是代码 | [缺失的粘合层](../the-missing-glue/) |

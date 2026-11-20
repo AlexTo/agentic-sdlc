@@ -26,9 +26,14 @@ làm:
 - **Mắt:** đọc những gì trả về: response, log, dữ liệu để lại trong cơ sở dữ liệu, và ảnh chụp màn
   hình của mọi trạng thái mà người review muốn xem.
 
-Agent không làm việc này trên máy của nó. Nó viết các kịch bản e2e, và CI chạy chúng trên mọi PR với
-một local stack mới. Kết quả, lỗi invariant và ảnh chụp màn hình quay về PR, nên agent tự bắt lỗi của
-mình và mỗi PR đến kèm bằng chứng.
+Agent Developer không làm việc này trên máy của nó. Nó viết các kịch bản e2e, và CI chạy chúng trên
+mọi PR với một local stack mới. Kết quả, lỗi invariant và ảnh chụp màn hình quay về PR, nên agent tự
+bắt lỗi của mình và mỗi PR đến kèm bằng chứng.
+
+Sau khi merge, một agent thứ hai làm việc đó thật sự. Agent Tester nhận từng thay đổi trên stage
+development đã deploy, với một trình duyệt thật, đăng nhập thật và dữ liệu thật. Nó dùng cả tay lẫn
+mắt: sau mỗi hành động, nó đọc lại những gì đã được ghi vào database, nơi lưu trữ file và search
+index, và kiểm tra rằng chúng đúng. Một màn hình có thể trông đúng trên một bản ghi sai.
 
 Hãy xây cho điều này ngay từ ngày đầu: mọi dịch vụ cloud cần một bản thay thế local, mọi luồng người
 dùng cần một kịch bản e2e, và mọi trạng thái UI cần một ảnh chụp màn hình. Bất cứ thứ gì agent không
@@ -42,8 +47,8 @@ rồi để spec lỗi thời.
 
 ## 3. Các cổng tự động đưa ra phản hồi, không phải bạn<Icon name="approve-check-circle" class="heading-icon" />
 
-Lint, typecheck, unit test, invariant, e2e test, test đồng thời, ảnh chụp màn hình và một agent
-reviewer chạy trên mọi PR. Một kết quả đỏ quay thẳng về agent đã viết thay đổi đó. Không ai phải dán
+Lint, typecheck, unit test, invariant, e2e test, test đồng thời, ảnh chụp màn hình và agent
+Reviewer chạy trên mọi PR. Một kết quả đỏ quay thẳng về agent đã viết thay đổi đó. Không ai phải dán
 thông báo lỗi.
 
 ## 4. Con người giữ hai quyết định quan trọng<Icon name="star" class="heading-icon" />
@@ -80,9 +85,9 @@ phớt lờ. Một workflow thì không.
 
 ## 7. Tự chủ có giới hạn<Icon name="padlock" class="heading-icon" />
 
-Agent không thể merge, không thể sửa workflow, không thể chạm vào thông tin đăng nhập cloud, và không
-thể làm yếu test để có màu xanh. Mỗi vòng fix-up bị giới hạn ở năm lượt thử. Sau đó nó dừng và hỏi
-một người.
+Không agent nào có thể merge, sửa workflow, deploy, hay làm yếu test để có màu xanh. Chỉ Tester chạm
+được tới một stage đã deploy, và chỉ stage development. Mỗi vòng fix-up bị giới hạn ở năm lượt thử.
+Sau đó nó dừng và hỏi một người.
 
 ## 8. Đơn vị công việc nhỏ, có phạm vi<Icon name="list-format" class="heading-icon" />
 
@@ -101,7 +106,7 @@ nên một đồng đội mới hay một agent mới có thể tiếp tục t�
 | --- | --- |
 | 1. Kiểm chứng | [Các lớp niềm tin](../layers-of-trust/#kiểm-chứng-là-quan-trọng-nhất), [Local stack ở Discava](../../discava/local-stack/) |
 | 2. Spec là nguồn sự thật | [Phát triển hướng spec](../spec-driven-development/) |
-| 3. Cổng tự động | [Các lớp niềm tin](../layers-of-trust/), [Vòng phản hồi](../feedback-loops/) |
+| 3. Cổng tự động | [Các lớp niềm tin](../layers-of-trust/), [Vòng phản hồi](../feedback-loops/), [Runtime của agent](../the-agent-runtime/#ba-vai-trò) |
 | 4. Quyết định của con người | [Cổng người duyệt](../human-gates/) |
 | 5. Rule và skill tất định | [PR check ở Discava](../../discava/pr-checks/), [Constitution và hướng dẫn](../../discava/constitution-and-guidance/) |
 | 6. Glue là code | [Phần glue còn thiếu](../the-missing-glue/) |
