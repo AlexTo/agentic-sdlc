@@ -12,7 +12,7 @@ deja tras de sí.
   <img alt="El bucle agéntico: una persona escribe y fusiona la spec, la automatización abre un issue, el agente Developer implementa y abre un PR, y luego CI y el agente Reviewer lo devuelven para corregir hasta cinco veces cada uno, antes de que una persona lo revise y lo fusione. Tras la fusión, el cambio se despliega en un stage de desarrollo y el agente Tester lo prueba allí" src="/agentic-sdlc/diagrams/agentic-loop.svg" width="720" />
 </p>
 
-El rojo eres tú, el gris es un agente o una automatización que trabaja por su cuenta, y el índigo es una puerta automática: CI, luego el agente Reviewer y, tras la fusión, el agente Tester.
+El rojo continuo eres tú, en los dos pasos que siempre haces. El rojo discontinuo eres tú solo cuando algo sale mal: tareas del agente sin marcar tras una fusión, o una prueba fallida en el stage. El gris es un agente o una automatización que trabaja por su cuenta, y el índigo es una puerta automática: CI, luego el agente Reviewer y, tras la fusión, el agente Tester.
 
 Los tres agentes son automatizaciones de OpenHands: el **Desarrollador** escribe el código, el
 **Revisor** lo revisa y el **Tester** lo prueba una vez desplegado.

@@ -12,7 +12,7 @@ qu'il en reste.
   <img alt="La boucle agentique : une personne écrit et merge la spec, l'automatisation ouvre une issue, l'agent Developer implémente et ouvre une PR, puis la CI et l'agent Reviewer la renvoient en correction jusqu'à cinq fois chacun, avant qu'une personne la relise et la merge. Après le merge, le changement est déployé sur un stage de développement et l'agent Tester le teste là-bas" src="/agentic-sdlc/diagrams/agentic-loop.svg" width="720" />
 </p>
 
-Le rouge, c'est vous, le gris un agent ou une automatisation qui travaille seul, et l'indigo une porte automatique : la CI, puis l'agent Reviewer et, après le merge, l'agent Tester.
+Le rouge plein, c'est vous, aux deux étapes que vous faites toujours. Le rouge en pointillés, c'est vous seulement quand quelque chose tourne mal : des tâches d'agent non cochées après un merge, ou un test qui échoue sur le stage. Le gris, c'est un agent ou une automatisation qui travaille seul, et l'indigo une porte automatique : la CI, puis l'agent Reviewer et, après le merge, l'agent Tester.
 
 Les trois agents sont des automatisations OpenHands : le **Développeur** écrit le code, le
 **Relecteur** le relit, et le **Testeur** le teste une fois déployé.

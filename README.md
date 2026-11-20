@@ -55,11 +55,13 @@ anyone can read, review and re-run.
   <img alt="The agentic loop: a person writes and merges the spec, automation opens an issue, the Developer agent implements and raises a PR, then CI and the Reviewer agent send it back to fix up to five times each, before a human reviews and merges. After the merge, the change is deployed to a development stage and the Tester agent tests it there" src="docs/public/diagrams/agentic-loop.svg" width="720">
 </p>
 
-Red is a person, grey is an agent or automation working on its own, and indigo is an automated
-gate: CI, then the Reviewer agent, and after the merge the Tester agent. People are only at the two ends,
-writing the spec and giving the final human review before merge, including any **(human)** tasks such as
-manual verification. When a merge lands, a workflow checks that the phase's agent tasks are ticked in
-`tasks.md`, then opens the next phase's issue by itself, until the spec is done.
+Solid red is a person, grey is an agent or automation working on its own, and indigo is an automated
+gate: CI, then the Reviewer agent, and after the merge the Tester agent. People are only at the two
+ends, writing the spec and giving the final human review before merge, including any **(human)**
+tasks such as manual verification. When a merge lands, a workflow checks that the phase's agent
+tasks are ticked in `tasks.md`, then opens the next phase's issue by itself, until the spec is done.
+Dashed red is a person only when something goes wrong: agent tasks left unticked after a merge, or a
+failed test on the stage.
 
 Three agent roles do the work, each an OpenHands automation with its own prompt and model:
 

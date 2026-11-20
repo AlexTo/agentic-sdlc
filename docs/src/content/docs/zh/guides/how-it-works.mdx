@@ -11,7 +11,7 @@ sidebar:
   <img alt="智能体循环：一个人编写并合并 spec，自动化打开一个 issue，Developer 智能体实现并提交 PR，然后 CI 和 Reviewer 智能体各自最多五次把它退回修复，最后由人评审并合并。合并之后，变更部署到开发 stage，由 Tester 智能体在那里测试" src="/agentic-sdlc/diagrams/agentic-loop.svg" width="720" />
 </p>
 
-红色是你，灰色是自行工作的智能体或自动化，靛蓝色是自动关卡：CI，然后是 Reviewer 智能体，合并之后是 Tester 智能体。
+实线红色是你，即你每次都要做的两步。虚线红色只在出问题时才需要你：合并后智能体任务没有勾选，或者在 stage 上测试失败。灰色是自行工作的智能体或自动化，靛蓝色是自动关卡：CI，然后是 Reviewer 智能体，合并之后是 Tester 智能体。
 
 这三个智能体都是 OpenHands 自动化：**开发智能体**编写代码，**评审智能体**评审代码，**测试智能体**在代码
 部署之后测试它。

@@ -12,7 +12,7 @@ behind.
   <img alt="The agentic loop: a person writes and merges the spec, automation opens an issue, the Developer agent implements and raises a PR, then CI and the Reviewer agent send it back to fix up to five times each, before a human reviews and merges. After the merge, the change is deployed to a development stage and the Tester agent tests it there" src="/agentic-sdlc/diagrams/agentic-loop.svg" width="720" />
 </p>
 
-Red is you, grey is an agent or automation working on its own, and indigo is an automated gate: CI, then the Reviewer agent, and after the merge the Tester agent.
+Solid red is you, at the two steps you always do. Dashed red is you only when something goes wrong: agent tasks left unticked after a merge, or a failed test on the stage. Grey is an agent or automation working on its own, and indigo is an automated gate: CI, then the Reviewer agent, and after the merge the Tester agent.
 
 The three agents are OpenHands automations: the **Developer** writes the code, the **Reviewer**
 reviews it, and the **Tester** tests it once it is deployed.

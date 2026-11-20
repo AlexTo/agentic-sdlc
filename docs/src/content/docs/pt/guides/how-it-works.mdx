@@ -12,7 +12,7 @@ como resultado.
   <img alt="O loop agêntico: uma pessoa escreve e faz o merge da spec, a automação abre uma issue, o agent Developer implementa e abre um PR, depois a CI e o agent Reviewer o devolvem para correção até cinco vezes cada, antes que uma pessoa revise e faça o merge. Depois do merge, a mudança é implantada em um stage de desenvolvimento e o agent Tester a testa lá" src="/agentic-sdlc/diagrams/agentic-loop.svg" width="720" />
 </p>
 
-Vermelho é você, cinza é um agent ou uma automação trabalhando por conta própria, e índigo é um portão automático: a CI, depois o agent Reviewer e, após o merge, o agent Tester.
+Vermelho contínuo é você, nos dois passos que você sempre faz. Vermelho tracejado é você só quando algo dá errado: tasks do agent sem marcar depois de um merge, ou um teste que falhou no stage. Cinza é um agent ou uma automação trabalhando por conta própria, e índigo é um portão automático: a CI, depois o agent Reviewer e, após o merge, o agent Tester.
 
 Os três agents são automations do OpenHands: o **Desenvolvedor** escreve o código, o **Revisor**
 faz o review dele, e o **Testador** o testa depois do deploy.

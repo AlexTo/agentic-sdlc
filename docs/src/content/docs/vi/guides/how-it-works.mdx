@@ -12,7 +12,7 @@ gì.
   <img alt="Vòng lặp agent: một người viết và merge spec, tự động hóa mở một issue, agent Developer triển khai và mở PR, sau đó CI và agent Reviewer trả lại để sửa, mỗi bên tối đa năm lần, trước khi một người review và merge. Sau khi merge, thay đổi được triển khai lên stage phát triển và agent Tester kiểm thử nó ở đó" src="/agentic-sdlc/diagrams/agentic-loop.svg" width="720" />
 </p>
 
-Màu đỏ là bạn, màu xám là agent hoặc tự động hóa tự làm việc, còn màu chàm là một cổng tự động: CI, rồi agent Reviewer, và sau khi merge là agent Tester.
+Màu đỏ nét liền là bạn, ở hai bước bạn luôn làm. Màu đỏ nét đứt là bạn chỉ khi có gì đó trục trặc: task của agent chưa được tick sau khi merge, hoặc một bài test thất bại trên stage. Màu xám là agent hoặc tự động hóa tự làm việc, còn màu chàm là một cổng tự động: CI, rồi agent Reviewer, và sau khi merge là agent Tester.
 
 Ba agent là các automation OpenHands: **Developer** viết code, **Reviewer** review nó, và **Tester**
 test nó khi nó đã được deploy.

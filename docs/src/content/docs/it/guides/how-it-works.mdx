@@ -12,7 +12,7 @@ lascia dietro di sé.
   <img alt="Il loop agentico: una persona scrive e fa il merge della spec, l'automazione apre una issue, l'agente Developer implementa e apre una PR, poi la CI e l'agente Reviewer la rimandano indietro da correggere fino a cinque volte ciascuno, prima che una persona la revisioni e faccia il merge. Dopo il merge, la modifica viene distribuita su uno stage di sviluppo e l'agente Tester la testa lì" src="/agentic-sdlc/diagrams/agentic-loop.svg" width="720" />
 </p>
 
-Il rosso sei tu, il grigio è un agente o un'automazione che lavora da sola, e l'indaco è un gate automatico: la CI, poi l'agente Reviewer e, dopo il merge, l'agente Tester.
+Il rosso pieno sei tu, nei due passaggi che fai sempre. Il rosso tratteggiato sei tu solo quando qualcosa va storto: task dell'agente non spuntati dopo un merge, o un test fallito sullo stage. Il grigio è un agente o un'automazione che lavora da sola, e l'indaco è un gate automatico: la CI, poi l'agente Reviewer e, dopo il merge, l'agente Tester.
 
 I tre agenti sono automazioni di OpenHands: il **Developer** scrive il codice, il **Reviewer** lo
 revisiona, e il **Tester** lo testa una volta deployato.
