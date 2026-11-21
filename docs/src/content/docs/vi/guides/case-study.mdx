@@ -1,0 +1,250 @@
+---
+title: "Case study: một pull request, từ đầu đến cuối"
+description: Một pull request thật của Discava được lần theo từ lúc spec được merge đến một bản deploy đã được test, kèm những gì mỗi agent tìm ra trên đường đi.
+sidebar:
+  order: 3
+  label: Case study
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+[Cách hoạt động](../how-it-works/) mô tả vòng lặp. Trang này cho thấy nó chạy một lần, trên một
+pull request thật của [Discava](https://github.com/AlexTo/discava): trang nơi một student xem điểm
+và nhận xét cho bài tập mà họ đã nộp.
+
+Mọi trích dẫn, con số và liên kết đều lấy từ GitHub. Giờ là giờ Sydney (AEDT, UTC+11), tất cả vào ngày 21 tháng 11 năm 2026.
+
+## Toàn bộ lần chạy
+
+| Giờ | Ai | Chuyện gì đã xảy ra |
+| --- | --- | --- |
+| 06:40 | 🧑&nbsp;Một người | Merge spec PR [#662](https://github.com/AlexTo/discava/pull/662), có label `spec-ready` |
+| 08:43 | ⚙️&nbsp;Automation | Mở issue [#681](https://github.com/AlexTo/discava/issues/681) cho giai đoạn 4, một phút sau khi PR của giai đoạn 3 được merge |
+| 08:50 | 🤖&nbsp;Agent Developer | Mở PR [#683](https://github.com/AlexTo/discava/pull/683), bảy phút sau đó |
+| 08:51 | ⚙️&nbsp;CI | Một check thất bại: [**UI Screenshots**](https://github.com/AlexTo/discava/actions/runs/44823849814/job/136591295471) |
+| 09:06 | 🤖&nbsp;Agent Developer | Push [bản sửa](https://github.com/AlexTo/discava/pull/683/commits/3b2e04d2eb8aaf9b230b26e001989f30167dc43c) (`ci-fix-1`) |
+| 09:22 | 🤖&nbsp;Agent Reviewer | [`🔄 CHANGES REQUESTED`](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000171162): một lỗi chặn merge |
+| 09:26 | 🤖&nbsp;Agent Developer | Push [bản sửa](https://github.com/AlexTo/discava/pull/683/commits/0bdf55d485d5a5df692d1e8a41ec601499977c03) (`review-fix-1`) |
+| 09:41 | 🤖&nbsp;Agent Reviewer | [`✅ APPROVED`](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000351532) |
+| 09:44 | 🧑&nbsp;Một người | [Duyệt](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000379398) và merge |
+| 10:09 | ⚙️&nbsp;Automation | [Lần deploy](https://github.com/AlexTo/discava/actions/runs/44833259729) lên stage development hoàn tất, và một phút sau issue test [#712](https://github.com/AlexTo/discava/issues/712) được mở |
+| 12:15 | 🤖&nbsp;Agent Tester | [Báo cáo](https://github.com/AlexTo/discava/issues/712#issuecomment-7054937096) 32 kiểm tra, tất cả đều pass, và đóng issue |
+
+Từ lúc pull request được mở đến lúc nó được merge: 54 phút, hai bản sửa, và hai hành động của một người.
+
+## 1. Một người merge spec
+
+Tính năng là chấm điểm cho các bài tập nộp file: một instructor trả bài cho student kèm điểm và
+nhận xét, hoặc yêu cầu nộp lại, và student thấy kết quả.
+
+Spec PR, [#662](https://github.com/AlexTo/discava/pull/662), chỉ chứa thư mục spec: spec, kế
+hoạch, một data model, ba contract và `tasks.md`, với **34 task trong 8 giai đoạn**. Không có code
+sản phẩm. Mô tả của nó liệt kê năm câu hỏi mà agent đã hỏi trong lúc viết, cùng câu trả lời của
+maintainer. Một trong số đó: điểm đã trả có sửa được không? Có, lịch sử được giữ lại và student
+được báo.
+
+Maintainer đọc nó, thêm `spec-ready` và merge lúc 06:40. Đó là cổng đầu tiên trong hai cổng người
+duyệt. Hai phút sau, automation mở issue cho các giai đoạn 1 đến 3.
+
+## 2. Agent Developer nhận giai đoạn 4
+
+Các giai đoạn 1 đến 3 (dữ liệu, các quy tắc và API của instructor) đi vào dưới dạng
+[#667](https://github.com/AlexTo/discava/pull/667) và được merge lúc 08:42. Lúc 08:43, workflow
+**Agent Issues** đọc lại `tasks.md` và mở
+[#681](https://github.com/AlexTo/discava/issues/681) cho giai đoạn tiếp theo còn task chưa đánh dấu:
+
+> Tasks `T016` to `T017` of `tasks.md`: every task under Phase 4: User Story 2 - Student sees the
+> grade and feedback (student portal) (P1). Do not start tasks outside these phases.
+
+Hai task: một component hiển thị một vòng nhận xét cùng một danh sách thu gọn các vòng trước đó, và
+các thay đổi trên trang bài tập cho từng trạng thái mà một bài nộp có thể có.
+
+Agent Developer nhận issue ở lần poll kế tiếp. Bảy phút sau khi issue được mở, nó mở
+[#683](https://github.com/AlexTo/discava/pull/683) trên `openhands/issue-681`: test viết trước,
+cả hai task đã được đánh dấu trong `tasks.md`, và một mô tả nói rõ nó đã chạy gì và chưa chạy gì.
+
+## 3. CI trả nó lại
+
+Mô tả còn nói điều này:
+
+> No e2e screenshots here: the e2e scenario for this flow is a later phase's task.
+
+Agent đã tự phán đoán, và đó là một cách hiểu hợp lý về danh sách task. Nhưng repository có một quy
+tắc: một thay đổi với những gì người dùng nhìn thấy phải đi kèm ảnh chụp màn hình của nó, để người
+review thấy được màn hình mà không cần chạy ứng dụng. Quy tắc đó là một check, và check thì không
+cân nhắc lý lẽ. Lint, unit test, build và cả sáu shard e2e đều pass. [**UI Screenshots** thất bại](https://github.com/AlexTo/discava/actions/runs/44823849814/job/136591295471).
+
+**Agent CI Status** thêm `ci-fix-1` và gửi agent Developer quay lại chính PR đó.
+[Câu trả lời](https://github.com/AlexTo/discava/pull/683#issuecomment-7051758312) của nó, kèm bản sửa:
+
+> The only finding was the failing `UI Screenshots` check (the PR added no `screenshot(` call). I
+> added an e2e scenario in `assignment.e2e.ts` where a student sees the resubmission request
+> beside the open form, then the returned grade and feedback. It takes a screenshot of each and
+> drives the instructor side through the API. I did not run it locally, so PR CI is its first run.
+
+Lần chạy kế tiếp xanh, và CI đăng hai ảnh chụp màn hình mới trong
+[comment **E2E screenshots**](https://github.com/AlexTo/discava/pull/683#issuecomment-7051642662).
+
+## 4. Agent Reviewer tìm ra một lỗi thật
+
+Khi mọi check đã xong, agent Reviewer đọc diff và đối chiếu với spec. Mọi thứ đều xanh, vậy mà code
+vẫn sai. Trích từ
+[review](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000171162) của nó:
+
+> **Blocking: after a resubmission, the resubmission request's feedback disappears for the
+> student.** The component always takes the newest round out of the "Earlier feedback" list. It
+> only displays that round when the status is `resubmission_requested` or `returned`. Once the
+> student uploads again, the status goes back to `submitted`, and the request round is hidden.
+> This breaks FR-009, SC-007 and User Story 2's independent test [...] The new e2e step never
+> checks the page in `submitted` after the resubmit, and no unit test covers `submitted` with a
+> non-empty `feedback`, so nothing catches it.
+>
+> 🔄 CHANGES REQUESTED
+
+Nói đơn giản: một instructor viết "please cite your sources", student nộp một bản nháp mới, và lời
+nhắn của instructor biến mất khỏi trang của student. Spec nói các nhận xét trước đó phải luôn hiển
+thị (FR-009). Không test nào thất bại, vì không test nào nhìn vào trạng thái đó. Reviewer tìm ra
+nó bằng cách so code với spec, và nó cũng chỉ ra luôn những test còn thiếu.
+
+**Agent Review Status** thêm `review-fix-1`. Ba phút sau, agent Developer push
+[một bản sửa](https://github.com/AlexTo/discava/pull/683/commits/0bdf55d485d5a5df692d1e8a41ec601499977c03) và [nói nó đã làm gì](https://github.com/AlexTo/discava/pull/683#issuecomment-7052122523):
+
+> Fixed the blocking finding. The newest round is now shown in full only when the status is
+> `returned` or `resubmission_requested`. In any other state every round goes under "Earlier
+> feedback", so the request stays reachable after a resubmit. I added a unit test for `submitted`
+> with a `resubmission_requested` round, and an e2e assertion right after the resubmit.
+
+Reviewer đọc head mới, tự chạy các test của component (42 test pass) và
+[kết thúc](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000351532) bằng
+"No material findings remain. ✅ APPROVED" (Không còn phát hiện đáng kể nào. ✅ APPROVED).
+
+## 5. Một người duyệt
+
+Lúc 09:44, maintainer [duyệt](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000379398) và merge. Đó là cổng người duyệt thứ hai. Những gì họ có trước
+mắt: một mô tả liệt kê cái gì đã chạy và cái gì chưa, hai ảnh chụp màn hình từ CI, một danh sách
+check xanh, và một chuỗi review cho thấy một lỗi đã được tìm ra và sửa. PR gồm ba commit và
+508 dòng trên sáu file, ba phần tư trong số đó là test.
+
+## 6. Lần merge được deploy, và một issue test được mở
+
+Ở Discava, `main` tự deploy lên một stage development. [Lần deploy](https://github.com/AlexTo/discava/actions/runs/44833259729) đó hoàn tất lúc 10:09. Một
+phút sau, **Post-merge Verify** mở
+[#712](https://github.com/AlexTo/discava/issues/712), `test(post-merge): verify #683 student sees
+the grade and feedback (student portal)`. Issue chỉ nói test cái gì:
+
+> Kind: **UI change**. It changes a portal: sign in as the user the change is for and click
+> through the flow with Playwright, then call the APIs behind it and check the stored data.
+
+## 7. Agent Tester test stage đã deploy
+
+Agent Tester không chạy lại bộ test. Nó dùng sản phẩm đã deploy như một người sẽ dùng, rồi kiểm tra
+những gì đã được lưu.
+[Báo cáo](https://github.com/AlexTo/discava/issues/712#issuecomment-7054937096) của nó liệt kê từng bước:
+
+1. Với tư cách một instructor test, qua API, nó tạo và xuất bản một khóa học có một bài tập nộp
+   file, `pmt-683-essay`, trị giá 10 điểm.
+2. Với tư cách một student test, trong một trình duyệt thật, nó ghi danh, đăng nhập trên trang đăng
+   nhập hosted và nộp bản nháp đầu tiên.
+3. Instructor yêu cầu nộp lại. Student tải lại trang, thấy yêu cầu, và nộp bản nháp thứ hai.
+4. Instructor trả bài với 7 điểm, rồi sửa điểm thành 8.5. Student tải lại trang sau mỗi lần.
+5. Sau mỗi bước, nó gọi API của student, đọc các bản ghi trong DynamoDB và các file trong S3, thử
+   những lời gọi lẽ ra phải bị từ chối, và cuối cùng quét log của cả 46 Lambda function trên stage
+   để tìm lỗi.
+
+Các ảnh chụp màn hình dưới đây là của chính Tester, được lưu ở mỗi bước và được cắt ở đây cho vừa
+khung bài tập.
+
+Yêu cầu nộp lại bên cạnh một form đang mở
+(`04-resubmission-requested-with-open-form.png`):
+
+<p>
+  <img alt="Bài tập pmt-683-essay trên cổng student. Dưới bản nháp đầu tiên đã nộp, một thông báo màu hổ phách ghi Your instructor asked you to resubmit, kèm nhận xét please cite your sources, phía trên nút Choose file và nút Submit" src="/agentic-sdlc/screenshots/post-merge-test-683/04-resubmission-requested-with-open-form.png" width="620" />
+</p>
+
+Sau khi bản nháp thứ hai được nộp (`07-earlier-feedback-expanded-while-waiting.png`):
+
+<p>
+  <img alt="Cùng bài tập đó, hiện Submitted, Version 2 và bản nháp thứ hai. Bên dưới, mục Earlier feedback (1) được mở rộng và liệt kê Resubmission requested, Version 1, please cite your sources" src="/agentic-sdlc/screenshots/post-merge-test-683/07-earlier-feedback-expanded-while-waiting.png" width="620" />
+</p>
+
+Đây chính là trạng thái mà phát hiện của Reviewer nói đến. Trước bản sửa, yêu cầu hẳn đã biến mất
+khỏi màn hình này. Ở đây nó có mặt trên stage đã deploy, dưới "Earlier feedback (1)".
+
+Sau khi điểm được trả rồi được sửa
+(`11-amended-returned-earlier-feedback-expanded.png`):
+
+<p>
+  <img alt="Cùng bài tập đó, hiện Returned 8.5 / 10 với giờ cập nhật và nhận xét regraded after rechecking the rubric, dòng This submission has been returned and can't be changed, và mục Earlier feedback (2) liệt kê Returned 7 / 10 cho version 2 và Resubmission requested cho version 1" src="/agentic-sdlc/screenshots/post-merge-test-683/11-amended-returned-earlier-feedback-expanded.png" width="620" />
+</p>
+
+Báo cáo có ba bảng: 13 kiểm tra trên các màn hình, 14 trên các API và 5 trên dữ liệu đã lưu. Vài
+dòng trong số đó là những thứ một người ít khi tự tay thử nhất:
+
+| Kiểm tra | Kết quả |
+| --- | --- |
+| Student nộp lại sau khi bài đã được trả | Bị từ chối: 412, "This submission has been returned and can't be changed" |
+| Một người dùng khác, không ghi danh, đọc bài nộp | Bị từ chối: 403 |
+| Student gọi API chấm điểm của instructor | Bị từ chối: 403 |
+| Instructor trả 11 điểm cho một bài tập 10 điểm | Bị từ chối: 400, "Points must be between 0 and 10" |
+| Lần trả bài của instructor được gửi hai lần | Bị từ chối: 409, và không có thông báo thứ hai nào được gửi |
+| Các bản ghi nhận xét đã lưu nêu tên instructor đã viết chúng | Có, và API của student không trả về trường đó |
+
+## 8. Tester đóng issue
+
+Cả 32 kiểm tra đều pass, nên báo cáo kết thúc bằng một verdict và Tester đóng issue:
+
+> **PASS.** The student portal shows the grade and feedback as #681 asks
+
+Nó cũng liệt kê hai thứ nó thấy mà không phải do PR này, để không ai nhầm chúng là regression.
+
+### Khi Tester không đóng
+
+Pass không phải là kết quả duy nhất. Pull request ngay trước cái này,
+[#667](https://github.com/AlexTo/discava/pull/667), thêm các API chấm điểm, và issue test của nó,
+[#694](https://github.com/AlexTo/discava/issues/694), vẫn mở sau lần chạy đầu. Hai mươi chín
+kiểm tra pass và một thất bại:
+
+> **Verdict: the new grading flow works end to end for submissions made after this deploy. It
+> does not work for submissions stored before it.** Those have no `reviewRevision` attribute, so
+> an instructor can't open or grade them.
+
+Không unit test, e2e test hay review nào có thể tìm ra điều này. Tất cả đều bắt đầu từ một database
+trống, còn lỗi chỉ tồn tại ở nơi có dữ liệu cũ. Trên stage có ba bài nộp như vậy.
+
+Tester có thể mở một fix PR khi bản sửa nhỏ và rõ ràng. Ở đây nó [giải thích](https://github.com/AlexTo/discava/issues/694#issuecomment-7052102048) vì sao nó không làm thế:
+
+> That is a choice between a migration and tolerant reads, and it changes concurrency conditions
+> in two packages, so I haven't opened a fix PR.
+
+Nên nó dừng lại và để quyết định cho một người, với cả hai lựa chọn được viết ra. Maintainer
+backfill ba bản ghi trên stage. Tester [chạy lại các kiểm tra của nó](https://github.com/AlexTo/discava/issues/694#issuecomment-7054905761), xác nhận các bài nộp
+cũ giờ đã có trường đó, và đóng issue kèm một cảnh báo rằng mọi môi trường khác còn giữ bài nộp
+cũ đều cần cùng lần backfill đó. Một ghi chú nhỏ trong cùng báo cáo (một thông báo từ chối nói
+"returned" khi chưa có gì được trả) trở thành một bản sửa 13 dòng,
+[#708](https://github.com/AlexTo/discava/pull/708).
+
+<Aside type="tip">
+[Kiểm chứng sau merge](../../discava/post-merge-verify/) theo chân một issue test khác, nơi Tester
+tìm ra một lỗi, lần ra nguyên nhân của nó và đã mở fix PR.
+</Aside>
+
+## Mỗi cổng đã bắt được gì
+
+| Cổng | Nó bắt được gì | Vì sao cổng trước nó không bắt được |
+| --- | --- | --- |
+| CI | Một thay đổi UI không có ảnh chụp màn hình | Agent Developer quyết định rằng chúng thuộc về một giai đoạn sau |
+| Agent Reviewer | Nhận xét biến mất sau khi nộp lại | Không test nào bao phủ trạng thái đó, nên CI xanh |
+| Agent Tester (trên #667) | Các bản ghi cũ mà code mới không đọc được | Test và review không bao giờ thấy dữ liệu có sẵn trên stage |
+
+Không cổng nào trong ba cổng tự nó tài giỏi gì. Mỗi cổng nhìn vào thứ mà các cổng kia không thấy
+được: CI nhìn vào các quy tắc, Reviewer nhìn vào spec, Tester nhìn vào sản phẩm đang chạy.
+
+## Người đã làm gì
+
+1. Trả lời năm câu hỏi trong lúc spec được viết, rồi review và merge spec PR.
+2. Đọc PR #683 và các ảnh chụp màn hình của nó, duyệt và merge.
+
+Không ai viết prompt, dán log lỗi, hay tự tay bấm qua stage.
+
+Tiếp theo: [Fork repository này](../fork-this-repo/) để chạy cùng vòng lặp đó trên một ứng dụng ví
+dụ nhỏ, hoặc đọc [chuỗi pull request của cả một tính năng](../../discava/a-real-feature/).

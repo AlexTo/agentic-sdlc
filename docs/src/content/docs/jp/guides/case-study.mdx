@@ -1,0 +1,248 @@
+---
+title: "ケーススタディ: 1 つの pull request を最初から最後まで"
+description: Discava の実際の pull request を、マージされた spec からテスト済みのデプロイまで、各エージェントが途中で見つけたものとともにたどる。
+sidebar:
+  order: 3
+  label: ケーススタディ
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+[仕組み](../how-it-works/)ではループを説明しました。このページでは、そのループが 1 回まわる様子を、
+[Discava](https://github.com/AlexTo/discava) の実際の pull request で示します。受講者が、アップロードした課題の
+成績とフィードバックを見るページです。
+
+引用、数字、リンクはすべて GitHub からのものです。時刻はシドニー時間 (AEDT、UTC+11) で、すべて 2026 年 11 月 21 日です。
+
+## 全体の流れ
+
+| 時刻 | 誰が | 何が起きたか |
+| --- | --- | --- |
+| 06:40 | 🧑&nbsp;人 | `spec-ready` ラベルの付いた spec PR [#662](https://github.com/AlexTo/discava/pull/662) をマージする |
+| 08:43 | ⚙️&nbsp;自動化 | フェーズ 3 の PR がマージされた 1 分後に、フェーズ 4 の issue [#681](https://github.com/AlexTo/discava/issues/681) を開く |
+| 08:50 | 🤖&nbsp;開発担当エージェント | その 7 分後に PR [#683](https://github.com/AlexTo/discava/pull/683) を開く |
+| 08:51 | ⚙️&nbsp;CI | チェックが 1 つ失敗する: [**UI Screenshots**](https://github.com/AlexTo/discava/actions/runs/44823849814/job/136591295471) |
+| 09:06 | 🤖&nbsp;開発担当エージェント | [修正](https://github.com/AlexTo/discava/pull/683/commits/3b2e04d2eb8aaf9b230b26e001989f30167dc43c)を push する (`ci-fix-1`) |
+| 09:22 | 🤖&nbsp;レビュー担当エージェント | [`🔄 CHANGES REQUESTED`](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000171162): ブロッキングのバグが 1 つ |
+| 09:26 | 🤖&nbsp;開発担当エージェント | [修正](https://github.com/AlexTo/discava/pull/683/commits/0bdf55d485d5a5df692d1e8a41ec601499977c03)を push する (`review-fix-1`) |
+| 09:41 | 🤖&nbsp;レビュー担当エージェント | [`✅ APPROVED`](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000351532) |
+| 09:44 | 🧑&nbsp;人 | [承認](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000379398)してマージする |
+| 10:09 | ⚙️&nbsp;自動化 | 開発ステージへの[デプロイ](https://github.com/AlexTo/discava/actions/runs/44833259729)が完了し、その 1 分後にテスト issue [#712](https://github.com/AlexTo/discava/issues/712) が開く |
+| 12:15 | 🤖&nbsp;テスト担当エージェント | 32 のチェックがすべて合格したと[報告](https://github.com/AlexTo/discava/issues/712#issuecomment-7054937096)し、issue を閉じる |
+
+pull request が開いてからマージされるまで: 54 分、修正 2 回、人の操作は 2 回です。
+
+## 1. 人が spec をマージする
+
+機能は、アップロード課題の採点です。講師が受講者の提出物を点数とフィードバックを付けて返却するか、再提出を求め、
+受講者がその結果を見ます。
+
+spec PR の [#662](https://github.com/AlexTo/discava/pull/662) に入っているのは spec フォルダーだけです。
+spec、plan、データモデル、3 つの contract、そして **8 フェーズ、34 タスク**の `tasks.md` です。プロダクトのコードは
+ありません。PR の説明には、エージェントが spec を書きながら尋ねた 5 つの質問と、メンテナーの回答が並んでいます。
+その 1 つ: 返却した成績は変更できるか。できる。履歴を残し、受講者に知らせたうえで。
+
+メンテナーはそれを読み、`spec-ready` を付け、06:40 にマージしました。これが 2 つある人間のゲートの 1 つ目です。
+2 分後、自動化がフェーズ 1 〜 3 の issue を開きました。
+
+## 2. 開発担当エージェントがフェーズ 4 を引き受ける
+
+フェーズ 1 〜 3 (データ、ルール、講師向けの API) は [#667](https://github.com/AlexTo/discava/pull/667) として入り、
+08:42 にマージされました。08:43 に **Agent Issues** ワークフローが `tasks.md` をもう一度読み、未チェックのタスクが残る
+次のフェーズについて [#681](https://github.com/AlexTo/discava/issues/681) を開きました。
+
+> Tasks `T016` to `T017` of `tasks.md`: every task under Phase 4: User Story 2 - Student sees the
+> grade and feedback (student portal) (P1). Do not start tasks outside these phases.
+
+タスクは 2 つです。1 ラウンド分のフィードバックと、それ以前のラウンドの折りたたまれたリストを表示するコンポーネント。
+そして、提出物が取りうる状態ごとの、課題ページの変更です。
+
+開発担当エージェントは次のポーリングで issue を拾いました。issue が開いてから 7 分後、`openhands/issue-681` で
+[#683](https://github.com/AlexTo/discava/pull/683) を出しました。テストを先に書き、`tasks.md` で両方のタスクに
+チェックを入れ、説明には何を実行して何を実行していないかを書いていました。
+
+## 3. CI が差し戻す
+
+説明にはこうも書かれていました。
+
+> No e2e screenshots here: the e2e scenario for this flow is a later phase's task.
+
+エージェントは自分で判断を下していて、タスクリストの読み方としては筋が通っていました。しかし、このリポジトリには
+ルールがあります。ユーザーに見えるものを変える変更には、そのスクリーンショットを付けること。レビューする人が、
+アプリを動かさずに画面を見られるようにするためです。このルールはチェックになっていて、チェックは言い分を
+汲み取りません。lint、ユニットテスト、ビルド、6 つの e2e シャードはすべて通りました。[**UI Screenshots** は失敗しました](https://github.com/AlexTo/discava/actions/runs/44823849814/job/136591295471)。
+
+**Agent CI Status** が `ci-fix-1` を付け、開発担当エージェントを同じ PR に差し戻しました。修正とともに書かれた
+[返信](https://github.com/AlexTo/discava/pull/683#issuecomment-7051758312)です。
+
+> The only finding was the failing `UI Screenshots` check (the PR added no `screenshot(` call). I
+> added an e2e scenario in `assignment.e2e.ts` where a student sees the resubmission request
+> beside the open form, then the returned grade and feedback. It takes a screenshot of each and
+> drives the instructor side through the API. I did not run it locally, so PR CI is its first run.
+
+次の実行は green になり、CI は新しい 2 枚のスクリーンショットを
+[**E2E screenshots** コメント](https://github.com/AlexTo/discava/pull/683#issuecomment-7051642662)に投稿しました。
+
+## 4. レビュー担当エージェントが本物のバグを見つける
+
+すべてのチェックが終わると、レビュー担当エージェントが diff を spec と照らして読みました。すべて green でしたが、
+それでもコードは間違っていました。その
+[レビュー](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000171162)から。
+
+> **Blocking: after a resubmission, the resubmission request's feedback disappears for the
+> student.** The component always takes the newest round out of the "Earlier feedback" list. It
+> only displays that round when the status is `resubmission_requested` or `returned`. Once the
+> student uploads again, the status goes back to `submitted`, and the request round is hidden.
+> This breaks FR-009, SC-007 and User Story 2's independent test [...] The new e2e step never
+> checks the page in `submitted` after the resubmit, and no unit test covers `submitted` with a
+> non-empty `feedback`, so nothing catches it.
+>
+> 🔄 CHANGES REQUESTED
+
+平たく言うと、こうです。講師が「出典を示してください」と書き、受講者が新しい下書きをアップロードすると、
+講師のコメントが受講者のページから消えてしまいます。spec は、以前のフィードバックが見えたままでなければならないと
+定めています (FR-009)。テストは 1 つも失敗しませんでした。その状態を見ているテストがなかったからです。
+レビュー担当はコードと spec を突き合わせてこれを見つけ、足りないテストも名指ししました。
+
+**Agent Review Status** が `review-fix-1` を付けました。3 分後、開発担当エージェントは
+[修正](https://github.com/AlexTo/discava/pull/683/commits/0bdf55d485d5a5df692d1e8a41ec601499977c03)を push し、[何をしたかを説明しました](https://github.com/AlexTo/discava/pull/683#issuecomment-7052122523)。
+
+> Fixed the blocking finding. The newest round is now shown in full only when the status is
+> `returned` or `resubmission_requested`. In any other state every round goes under "Earlier
+> feedback", so the request stays reachable after a resubmit. I added a unit test for `submitted`
+> with a `resubmission_requested` round, and an e2e assertion right after the resubmit.
+
+レビュー担当は新しい head を読み、コンポーネントのテストを自分で実行し (42 件が合格)、
+"No material findings remain. ✅ APPROVED" で
+[締めくくりました](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000351532)。
+
+## 5. 人が承認する
+
+09:44 にメンテナーが[承認](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000379398)してマージしました。これが 2 つ目の人間のゲートです。メンテナーの
+手元にあったのは、何を実行して何を実行していないかを並べた説明、CI からの 2 枚のスクリーンショット、
+green のチェック一覧、そしてバグが 1 つ見つかって直されたことを示すレビューの履歴です。PR は 3 コミット、
+6 ファイルで 508 行、その 4 分の 3 がテストでした。
+
+## 6. マージがデプロイされ、テスト issue が開く
+
+Discava では、`main` が自動で開発ステージにデプロイされます。その[デプロイ](https://github.com/AlexTo/discava/actions/runs/44833259729)は 10:09 に完了しました。
+1 分後、**Post-merge Verify** が
+[#712](https://github.com/AlexTo/discava/issues/712)、`test(post-merge): verify #683 student sees
+the grade and feedback (student portal)` を開きました。issue に書かれているのは、何をテストするかだけです。
+
+> Kind: **UI change**. It changes a portal: sign in as the user the change is for and click
+> through the flow with Playwright, then call the APIs behind it and check the stored data.
+
+## 7. テスト担当エージェントがデプロイされたステージをテストする
+
+テスト担当エージェントはテストスイートを再実行しません。デプロイされたプロダクトを人と同じように使い、
+そのうえで何が保存されたかを確認します。その
+[レポート](https://github.com/AlexTo/discava/issues/712#issuecomment-7054937096)には、すべてのステップが並んでいます。
+
+1. テスト用の講師として、API を通じて、10 点満点のアップロード課題 `pmt-683-essay` を 1 つ持つコースを
+   作成し、公開しました。
+2. テスト用の受講者として、実際のブラウザで、受講登録し、ホストされたサインインページからサインインし、
+   最初の下書きをアップロードしました。
+3. 講師が再提出を求めました。受講者はページを再読み込みして依頼を確認し、2 つ目の下書きを
+   アップロードしました。
+4. 講師が提出物を 7 点で返却し、その後、成績を 8.5 点に修正しました。受講者はそのたびにページを
+   再読み込みしました。
+5. 各ステップの後に、受講者の API を呼び、DynamoDB のレコードと S3 のファイルを読み、拒否されるべき
+   呼び出しを試し、最後にステージ上の 46 個の Lambda 関数すべてのログにエラーがないかを調べました。
+
+以下のスクリーンショットはテスト担当自身のもので、各ステップで保存されました。ここでは課題のパネルだけに
+切り抜いてあります。
+
+開いたままのフォームの横に表示された再提出の依頼
+(`04-resubmission-requested-with-open-form.png`):
+
+<p>
+  <img alt="受講者ポータルの課題 pmt-683-essay。提出済みの最初の下書きの下に、Your instructor asked you to resubmit という琥珀色の通知とフィードバック please cite your sources があり、その下に Choose file ボタンと Submit ボタンがある" src="/agentic-sdlc/screenshots/post-merge-test-683/04-resubmission-requested-with-open-form.png" width="620" />
+</p>
+
+2 つ目の下書きをアップロードした後 (`07-earlier-feedback-expanded-while-waiting.png`):
+
+<p>
+  <img alt="同じ課題。Submitted、Version 2 と 2 つ目の下書きが表示されている。その下で Earlier feedback (1) が展開され、Resubmission requested、Version 1、please cite your sources が並んでいる" src="/agentic-sdlc/screenshots/post-merge-test-683/07-earlier-feedback-expanded-while-waiting.png" width="620" />
+</p>
+
+これが、レビュー担当の指摘がまさに問題にしていた状態です。修正前なら、依頼はこの画面から消えていたはずです。
+デプロイされたステージでは、"Earlier feedback (1)" の下にちゃんとあります。
+
+成績が返却され、その後に修正された後
+(`11-amended-returned-earlier-feedback-expanded.png`):
+
+<p>
+  <img alt="同じ課題。Returned 8.5 / 10 が更新時刻とフィードバック regraded after rechecking the rubric とともに表示され、This submission has been returned and can't be changed という行がある。Earlier feedback (2) には、version 2 の Returned 7 / 10 と version 1 の Resubmission requested が並んでいる" src="/agentic-sdlc/screenshots/post-merge-test-683/11-amended-returned-earlier-feedback-expanded.png" width="620" />
+</p>
+
+レポートには 3 つの表があります。画面のチェックが 13、API のチェックが 14、保存されたデータのチェックが 5 です。
+その中から、人が手作業ではまず試しそうにない行をいくつか挙げます。
+
+| チェック | 結果 |
+| --- | --- |
+| 提出物が返却された後に、受講者がもう一度アップロードする | 拒否: 412、"This submission has been returned and can't be changed" |
+| 受講登録していない別のユーザーが提出物を読む | 拒否: 403 |
+| 受講者が講師の採点 API を呼ぶ | 拒否: 403 |
+| 講師が 10 点満点の課題に 11 点を付けて返却する | 拒否: 400、"Points must be between 0 and 10" |
+| 講師の返却が 2 回送信される | 拒否: 409、2 通目の通知は送られない |
+| 保存されたフィードバックのレコードに、それを書いた講師が記録されている | 記録されていて、受講者の API はそのフィールドを返さない |
+
+## 8. テスト担当が issue を閉じる
+
+32 のチェックがすべて合格したので、レポートは判定で終わり、テスト担当は issue を閉じました。
+
+> **PASS.** The student portal shows the grade and feedback as #681 asks
+
+この PR に由来しない、目にとまった点も 2 つ挙げていました。誰もそれをリグレッションと取り違えないようにするためです。
+
+### テスト担当が閉じないとき
+
+結果は合格だけとは限りません。この 1 つ前の pull request、
+[#667](https://github.com/AlexTo/discava/pull/667) は採点の API を追加したもので、そのテスト issue
+[#694](https://github.com/AlexTo/discava/issues/694) は最初の実行の後も開いたままでした。29 のチェックが合格し、
+1 つが失敗しました。
+
+> **Verdict: the new grading flow works end to end for submissions made after this deploy. It
+> does not work for submissions stored before it.** Those have no `reviewRevision` attribute, so
+> an instructor can't open or grade them.
+
+ユニットテストでも、e2e テストでも、レビューでも、これは見つけられませんでした。どれも空のデータベースから
+始まりますが、このバグは古いデータがある場所にしか存在しないからです。ステージ上の 3 件の提出物が該当しました。
+
+テスト担当は、修正が小さく明らかなときには修正 PR を開くことができます。このときは、なぜ開かなかったかを[説明しました](https://github.com/AlexTo/discava/issues/694#issuecomment-7052102048)。
+
+> That is a choice between a migration and tolerant reads, and it changes concurrency conditions
+> in two packages, so I haven't opened a fix PR.
+
+そこでテスト担当は止まり、両方の選択肢を書き出したうえで、判断を人に委ねました。メンテナーはステージ上の
+3 件のレコードをバックフィルしました。テスト担当は[チェックをもう一度実行し](https://github.com/AlexTo/discava/issues/694#issuecomment-7054905761)、古い提出物に
+そのフィールドが入ったことを確認して、issue を閉じました。古い提出物を抱えるほかの環境にも同じバックフィルが
+必要だという警告を添えています。同じレポートにあった軽微な指摘 (何も返却されていないのに "returned" と述べる
+拒否メッセージ) は、13 行の修正 [#708](https://github.com/AlexTo/discava/pull/708) になりました。
+
+<Aside type="tip">
+[マージ後の検証](../../discava/post-merge-verify/)では、別のテスト issue をたどります。そこではテスト担当が
+失敗を見つけ、原因を突き止め、実際に修正 PR を開きました。
+</Aside>
+
+## 各ゲートが捕まえたもの
+
+| ゲート | 捕まえたもの | 手前のゲートが捕まえられなかった理由 |
+| --- | --- | --- |
+| CI | スクリーンショットのない UI の変更 | 開発担当エージェントが、それは後のフェーズのものだと判断した |
+| レビュー担当エージェント | 再提出の後にフィードバックが消える | その状態を扱うテストがなく、CI は green だった |
+| テスト担当エージェント (#667 で) | 新しいコードが読めない古いレコード | テストもレビューも、ステージにある既存のデータを見ることはない |
+
+3 つのどれも、単独で賢いわけではありません。それぞれが、ほかからは見えないものを見ています。CI はルールを、
+レビュー担当は spec を、テスト担当は動いているプロダクトを見ています。
+
+## 人がしたこと
+
+1. spec が書かれる間に 5 つの質問に答え、その後 spec PR をレビューしてマージした。
+2. PR #683 とそのスクリーンショットを読み、承認してマージした。
+
+プロンプトを書いた人も、エラーログを貼り付けた人も、ステージを手作業でクリックして回った人もいません。
+
+次へ: [このリポジトリを fork する](../fork-this-repo/)と、同じループを小さなサンプルアプリで動かせます。
+または、[1 つの機能全体にわたる pull request のチェーン](../../discava/a-real-feature/)を読んでください。

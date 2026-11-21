@@ -1,0 +1,253 @@
+---
+title: "Estudo de caso: um pull request, do início ao fim"
+description: Um pull request real do Discava acompanhado da spec mergeada até um deploy testado, com o que cada agent encontrou pelo caminho.
+sidebar:
+  order: 3
+  label: Estudo de caso
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+[Como funciona](../how-it-works/) descreve o loop. Esta página o mostra rodando uma vez, em um
+pull request real do [Discava](https://github.com/AlexTo/discava): a página em que um aluno vê a
+nota e o feedback de um trabalho que ele enviou.
+
+Todas as citações, números e links vêm do GitHub. Os horários estão no fuso de Sydney (AEDT, UTC+11), todos em 21 de novembro de 2026.
+
+## A execução inteira
+
+| Horário | Quem | O que aconteceu |
+| --- | --- | --- |
+| 06:40 | 🧑&nbsp;Uma pessoa | Faz o merge do spec PR [#662](https://github.com/AlexTo/discava/pull/662), com o label `spec-ready` |
+| 08:43 | ⚙️&nbsp;Automação | Abre a issue [#681](https://github.com/AlexTo/discava/issues/681) para a fase 4, um minuto depois do merge do PR da fase 3 |
+| 08:50 | 🤖&nbsp;Agent Desenvolvedor | Abre o PR [#683](https://github.com/AlexTo/discava/pull/683), sete minutos depois |
+| 08:51 | ⚙️&nbsp;CI | Um check falha: [**UI Screenshots**](https://github.com/AlexTo/discava/actions/runs/44823849814/job/136591295471) |
+| 09:06 | 🤖&nbsp;Agent Desenvolvedor | Faz o push [da correção](https://github.com/AlexTo/discava/pull/683/commits/3b2e04d2eb8aaf9b230b26e001989f30167dc43c) (`ci-fix-1`) |
+| 09:22 | 🤖&nbsp;Agent Revisor | [`🔄 CHANGES REQUESTED`](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000171162): um bug bloqueante |
+| 09:26 | 🤖&nbsp;Agent Desenvolvedor | Faz o push [da correção](https://github.com/AlexTo/discava/pull/683/commits/0bdf55d485d5a5df692d1e8a41ec601499977c03) (`review-fix-1`) |
+| 09:41 | 🤖&nbsp;Agent Revisor | [`✅ APPROVED`](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000351532) |
+| 09:44 | 🧑&nbsp;Uma pessoa | [Aprova](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000379398) e faz o merge |
+| 10:09 | ⚙️&nbsp;Automação | [O deploy](https://github.com/AlexTo/discava/actions/runs/44833259729) no stage de desenvolvimento termina, e um minuto depois a issue de teste [#712](https://github.com/AlexTo/discava/issues/712) é aberta |
+| 12:15 | 🤖&nbsp;Agent Testador | [Relata](https://github.com/AlexTo/discava/issues/712#issuecomment-7054937096) 32 verificações, todas aprovadas, e fecha a issue |
+
+Da abertura do pull request ao merge: 54 minutos, duas correções e duas ações de uma pessoa.
+
+## 1. Uma pessoa faz o merge da spec
+
+A feature é a atribuição de notas a trabalhos enviados por upload: um instrutor devolve o trabalho de um
+aluno com pontos e feedback, ou pede um reenvio, e o aluno vê o resultado.
+
+O spec PR, [#662](https://github.com/AlexTo/discava/pull/662), contém só a pasta da spec: a
+spec, o plano, um modelo de dados, três contratos e o `tasks.md`, com **34 tarefas em 8 fases**.
+Nenhum código de produto. A descrição dele lista cinco perguntas que o agent fez enquanto a
+escrevia e as respostas do mantenedor. Uma delas: uma nota já devolvida pode ser alterada? Sim,
+mantendo o histórico e avisando o aluno.
+
+O mantenedor leu, adicionou `spec-ready` e fez o merge às 06:40. Esse é o primeiro dos dois
+gates humanos. Dois minutos depois, a automação abriu a issue das fases 1 a 3.
+
+## 2. O agent Desenvolvedor pega a fase 4
+
+As fases 1 a 3 (os dados, as regras e a API do instrutor) entraram como
+[#667](https://github.com/AlexTo/discava/pull/667), mergeado às 08:42. Às 08:43, o workflow
+**Agent Issues** leu o `tasks.md` de novo e abriu a
+[#681](https://github.com/AlexTo/discava/issues/681) para a próxima fase com tarefas não marcadas:
+
+> Tasks `T016` to `T017` of `tasks.md`: every task under Phase 4: User Story 2 - Student sees the
+> grade and feedback (student portal) (P1). Do not start tasks outside these phases.
+
+Duas tarefas: um componente que mostra uma rodada de feedback e uma lista recolhida das rodadas
+anteriores, e as mudanças na página do trabalho para cada estado em que um envio pode estar.
+
+O agent Desenvolvedor pegou a issue no poll seguinte. Sete minutos depois de a issue abrir, ele
+abriu o [#683](https://github.com/AlexTo/discava/pull/683) em `openhands/issue-681`: testes primeiro,
+as duas tarefas marcadas no `tasks.md` e uma descrição que dizia o que ele tinha rodado e o que não tinha.
+
+## 3. A CI devolve o PR
+
+A descrição também dizia isto:
+
+> No e2e screenshots here: the e2e scenario for this flow is a later phase's task.
+
+O agent tinha tomado uma decisão por conta própria, e era uma leitura razoável da lista de
+tarefas. Mas o repositório tem uma regra: uma mudança no que o usuário vê é entregue com
+screenshots dela, para que quem faz o review veja a tela sem rodar o app. A regra é um check, e o
+check não pondera argumentos. Lint, testes unitários, build e os seis shards de e2e passaram. [**UI Screenshots** falhou](https://github.com/AlexTo/discava/actions/runs/44823849814/job/136591295471).
+
+O **Agent CI Status** adicionou `ci-fix-1` e mandou o agent Desenvolvedor de volta ao mesmo PR. A
+[resposta](https://github.com/AlexTo/discava/pull/683#issuecomment-7051758312) dele, com a correção:
+
+> The only finding was the failing `UI Screenshots` check (the PR added no `screenshot(` call). I
+> added an e2e scenario in `assignment.e2e.ts` where a student sees the resubmission request
+> beside the open form, then the returned grade and feedback. It takes a screenshot of each and
+> drives the instructor side through the API. I did not run it locally, so PR CI is its first run.
+
+A execução seguinte ficou verde, e a CI publicou os dois novos screenshots no
+[comentário **E2E screenshots**](https://github.com/AlexTo/discava/pull/683#issuecomment-7051642662).
+
+## 4. O agent Revisor encontra um bug de verdade
+
+Quando todos os checks terminaram, o agent Revisor leu o diff contra a spec. Estava tudo
+verde, e o código ainda estava errado. Do
+[review](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000171162) dele:
+
+> **Blocking: after a resubmission, the resubmission request's feedback disappears for the
+> student.** The component always takes the newest round out of the "Earlier feedback" list. It
+> only displays that round when the status is `resubmission_requested` or `returned`. Once the
+> student uploads again, the status goes back to `submitted`, and the request round is hidden.
+> This breaks FR-009, SC-007 and User Story 2's independent test [...] The new e2e step never
+> checks the page in `submitted` after the resubmit, and no unit test covers `submitted` with a
+> non-empty `feedback`, so nothing catches it.
+>
+> 🔄 CHANGES REQUESTED
+
+Em termos simples: um instrutor escreve "please cite your sources", o aluno envia uma nova versão,
+e o recado do instrutor some da página do aluno. A spec diz que o feedback anterior precisa
+continuar visível (FR-009). Nenhum teste falhou, porque nenhum teste olhava esse estado. O Revisor
+encontrou o problema comparando o código com a spec, e também apontou os testes que faltavam.
+
+O **Agent Review Status** adicionou `review-fix-1`. Três minutos depois, o agent Desenvolvedor fez o push de
+[uma correção](https://github.com/AlexTo/discava/pull/683/commits/0bdf55d485d5a5df692d1e8a41ec601499977c03) e [disse o que fez](https://github.com/AlexTo/discava/pull/683#issuecomment-7052122523):
+
+> Fixed the blocking finding. The newest round is now shown in full only when the status is
+> `returned` or `resubmission_requested`. In any other state every round goes under "Earlier
+> feedback", so the request stays reachable after a resubmit. I added a unit test for `submitted`
+> with a `resubmission_requested` round, and an e2e assertion right after the resubmit.
+
+O Revisor leu o novo head, rodou ele mesmo os testes do componente (42 passando) e
+[terminou](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000351532) com
+"No material findings remain. ✅ APPROVED".
+
+## 5. Uma pessoa aprova
+
+Às 09:44, o mantenedor [aprovou](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000379398) e fez o merge. Esse é o segundo gate humano. O que ele tinha
+diante de si: uma descrição listando o que foi e o que não foi rodado, os dois screenshots da CI, uma
+lista de checks verde e um histórico de review mostrando um bug encontrado e corrigido. O PR tinha três commits e
+508 linhas em seis arquivos, três quartos delas de testes.
+
+## 6. O merge entra no deploy, e uma issue de teste é aberta
+
+No Discava, a `main` faz deploy sozinha em um stage de desenvolvimento. Esse [deploy](https://github.com/AlexTo/discava/actions/runs/44833259729) terminou às 10:09. Um
+minuto depois, o **Post-merge Verify** abriu a
+[#712](https://github.com/AlexTo/discava/issues/712), `test(post-merge): verify #683 student sees
+the grade and feedback (student portal)`. A issue diz só o que testar:
+
+> Kind: **UI change**. It changes a portal: sign in as the user the change is for and click
+> through the flow with Playwright, then call the APIs behind it and check the stored data.
+
+## 7. O agent Testador testa o stage com deploy
+
+O agent Testador não roda a suíte de testes de novo. Ele usa o produto em deploy como uma pessoa
+usaria e depois verifica o que foi armazenado. O
+[relatório](https://github.com/AlexTo/discava/issues/712#issuecomment-7054937096) dele lista cada passo:
+
+1. Como um instrutor de teste, pela API, ele criou e publicou um curso com um trabalho de
+   upload, `pmt-683-essay`, valendo 10 pontos.
+2. Como um aluno de teste, em um navegador de verdade, ele se matriculou, fez login na página
+   hospedada de login e enviou uma primeira versão.
+3. O instrutor pediu um reenvio. O aluno recarregou a página, viu o pedido e enviou uma
+   segunda versão.
+4. O instrutor devolveu o trabalho com 7 pontos e depois alterou a nota para 8,5. O aluno
+   recarregou a página depois de cada um.
+5. Depois de cada passo, ele chamou a API do aluno, leu os registros no DynamoDB e os arquivos no
+   S3, tentou as chamadas que deveriam ser recusadas e, no fim, vasculhou os logs de todas as 46 funções
+   Lambda do stage em busca de erros.
+
+Os screenshots abaixo são do próprio Testador, salvos em cada passo e recortados aqui para mostrar
+o painel do trabalho.
+
+O pedido de reenvio ao lado de um formulário aberto
+(`04-resubmission-requested-with-open-form.png`):
+
+<p>
+  <img alt="O trabalho pmt-683-essay no portal do aluno. Abaixo da primeira versão enviada, um aviso âmbar diz Your instructor asked you to resubmit, com o feedback please cite your sources, acima de um botão Choose file e de um botão Submit" src="/agentic-sdlc/screenshots/post-merge-test-683/04-resubmission-requested-with-open-form.png" width="620" />
+</p>
+
+Depois do envio da segunda versão (`07-earlier-feedback-expanded-while-waiting.png`):
+
+<p>
+  <img alt="O mesmo trabalho mostrando Submitted, Version 2 e a segunda versão. Abaixo, Earlier feedback (1) está expandido e lista Resubmission requested, Version 1, please cite your sources" src="/agentic-sdlc/screenshots/post-merge-test-683/07-earlier-feedback-expanded-while-waiting.png" width="620" />
+</p>
+
+Este é exatamente o estado de que tratava o apontamento do Revisor. Antes da correção, o pedido teria
+sumido desta tela. Aqui ele está no stage com deploy, em "Earlier feedback (1)".
+
+Depois que a nota é devolvida e em seguida alterada
+(`11-amended-returned-earlier-feedback-expanded.png`):
+
+<p>
+  <img alt="O mesmo trabalho mostrando Returned 8.5 / 10 com um horário de atualização e o feedback regraded after rechecking the rubric, a linha This submission has been returned and can't be changed, e Earlier feedback (2) listando Returned 7 / 10 para a versão 2 e Resubmission requested para a versão 1" src="/agentic-sdlc/screenshots/post-merge-test-683/11-amended-returned-earlier-feedback-expanded.png" width="620" />
+</p>
+
+O relatório tem três tabelas: 13 verificações nas telas, 14 nas APIs e 5 nos dados armazenados. Algumas
+das linhas que uma pessoa dificilmente tentaria à mão:
+
+| Verificação | Resultado |
+| --- | --- |
+| O aluno envia de novo depois que o trabalho é devolvido | Recusado: 412, "This submission has been returned and can't be changed" |
+| Outro usuário, não matriculado, lê o envio | Recusado: 403 |
+| O aluno chama a API de notas do instrutor | Recusado: 403 |
+| O instrutor devolve 11 pontos em um trabalho de 10 pontos | Recusado: 400, "Points must be between 0 and 10" |
+| A devolução do instrutor é enviada duas vezes | Recusado: 409, e nenhuma segunda notificação é enviada |
+| Os registros de feedback armazenados identificam o instrutor que os deu | Identificam, e a API do aluno não retorna esse campo |
+
+## 8. O Testador fecha a issue
+
+Todas as 32 verificações passaram, então o relatório terminou com um veredito e o Testador fechou a issue:
+
+> **PASS.** The student portal shows the grade and feedback as #681 asks
+
+Ele também listou duas coisas que viu e que não vinham deste PR, para que ninguém as confundisse com
+regressões.
+
+### Quando o Testador não fecha
+
+Passar não é o único resultado possível. O pull request anterior a este,
+[#667](https://github.com/AlexTo/discava/pull/667), adicionou as APIs de notas, e a issue de teste dele,
+[#694](https://github.com/AlexTo/discava/issues/694), continuou aberta depois da primeira execução. Vinte e nove
+verificações passaram e uma falhou:
+
+> **Verdict: the new grading flow works end to end for submissions made after this deploy. It
+> does not work for submissions stored before it.** Those have no `reviewRevision` attribute, so
+> an instructor can't open or grade them.
+
+Nenhum teste unitário, teste e2e ou review poderia ter encontrado isso. Todos partem de um banco de dados
+vazio, e o bug só existe onde há dados antigos. Três envios no stage tinham o problema.
+
+O Testador pode abrir um PR de correção quando a correção é pequena e clara. Aqui ele [explicou](https://github.com/AlexTo/discava/issues/694#issuecomment-7052102048) por que não abriu:
+
+> That is a choice between a migration and tolerant reads, and it changes concurrency conditions
+> in two packages, so I haven't opened a fix PR.
+
+Então ele parou e deixou a decisão para uma pessoa, com as duas opções descritas. O mantenedor
+preencheu o campo que faltava nos três registros do stage. O Testador [rodou as verificações de novo](https://github.com/AlexTo/discava/issues/694#issuecomment-7054905761), confirmou que os envios
+antigos agora tinham o campo e fechou a issue com um aviso: qualquer outro ambiente
+com envios antigos precisa do mesmo preenchimento. Uma observação menor do mesmo relatório (uma mensagem
+de recusa que dizia "returned" quando nada tinha sido devolvido) virou uma correção de 13 linhas,
+[#708](https://github.com/AlexTo/discava/pull/708).
+
+<Aside type="tip">
+[Verificação pós-merge](../../discava/post-merge-verify/) acompanha outra issue de teste, em que o Testador
+encontrou uma falha, rastreou a causa e, desta vez, abriu o PR de correção.
+</Aside>
+
+## O que cada gate pegou
+
+| Gate | O que ele pegou | Por que o gate anterior não pegou |
+| --- | --- | --- |
+| CI | Uma mudança de UI sem screenshots | O agent Desenvolvedor decidiu que eles pertenciam a uma fase posterior |
+| Agent Revisor | O feedback sumindo depois de um reenvio | Nenhum teste cobria esse estado, então a CI ficou verde |
+| Agent Testador (no #667) | Registros antigos que o novo código não consegue ler | Os testes e o review nunca veem os dados que já existem no stage |
+
+Nenhum dos três é esperto sozinho. Cada um olha para algo que os outros não enxergam: a CI para
+as regras, o Revisor para a spec, o Testador para o produto rodando.
+
+## O que a pessoa fez
+
+1. Respondeu a cinco perguntas enquanto a spec era escrita, depois revisou e fez o merge do spec PR.
+2. Leu o PR #683 e os screenshots dele, aprovou e fez o merge.
+
+Ninguém escreveu um prompt, colou um log de erro ou clicou pelo stage à mão.
+
+Próximo: [Faça um fork deste repositório](../fork-this-repo/) para rodar o mesmo loop em um pequeno app de exemplo, ou
+leia [a cadeia de pull requests de uma feature inteira](../../discava/a-real-feature/).
