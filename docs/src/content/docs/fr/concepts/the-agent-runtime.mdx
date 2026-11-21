@@ -143,6 +143,27 @@ Les automatisations interrogent GitHub périodiquement (toutes les 5 minutes dan
 publique ni secret de webhook. Le coût est une latence d'au plus un intervalle d'interrogation, ce
 qui est peu à côté du temps que l'agent met à travailler.
 
+## Une mémoire qui survit à l'exécution
+
+Une conversation garde son contexte pour une issue. Les agents gardent aussi une mémoire qui lui
+survit. OpenHands la stocke sur la machine qui exécute Agent Canvas, et les trois rôles la lisent et
+y écrivent. Ce qu'une exécution apprend, comme une bizarrerie du stack local, un check qui échoue
+toujours pour la même raison ou une convention que le Relecteur réclame sans cesse, reste là pour
+chaque exécution suivante, quels que soient le rôle, l'issue ou la personne qui l'a demandée.
+
+C'est la différence avec un agent dans un éditeur, où ce qu'il apprend reste sur le poste d'un seul
+développeur. Ici, la mémoire appartient au runtime, elle s'enrichit donc de chaque tâche que
+l'équipe a confiée aux agents, pas seulement de celles qu'une personne a lancées.
+
+<Aside type="caution">
+Les agents écrivent directement dans la mémoire, et personne ne la relit. Une leçon fausse est
+répétée jusqu'à ce que quelqu'un la retire, et un texte qu'un agent a lu dans une issue ou un
+commentaire peut s'y retrouver, une raison de plus pour que seuls les collaborateurs puissent
+commenter. Relisez la mémoire de temps en temps. Une leçon qui est en fait une règle a sa place dans
+`AGENTS.md` ou, mieux, dans un check qui l'applique. La mémoire vit sur une seule machine :
+sauvegardez-la avec le reste de l'état d'Agent Canvas.
+</Aside>
+
 ## Ce à quoi l'agent a accès, et ce à quoi il n'a pas accès
 
 Les prompts du Développeur et du Relecteur nomment un seul secret, le token GitHub, pour que le

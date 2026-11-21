@@ -136,6 +136,26 @@ Các automation poll (mỗi 5 phút ở Discava, mỗi 15 phút theo mặc đị
 chạy trên laptop hoặc một server ở nhà mà không cần URL công khai hay webhook secret. Cái giá là độ
 trễ tối đa một chu kỳ poll, con số nhỏ so với thời gian agent cần để làm việc.
 
+## Bộ nhớ tồn tại lâu hơn một lần chạy
+
+Một conversation giữ context của nó cho một issue. Các agent còn giữ một bộ nhớ tồn tại lâu hơn thế.
+OpenHands lưu nó trên máy chạy Agent Canvas, và cả ba vai trò đều đọc và ghi vào nó. Điều một lần
+chạy học được, như một điểm lạ của local stack, một check cứ fail vì cùng một lý do, hay một quy
+ước mà Reviewer liên tục yêu cầu, vẫn còn đó cho mọi lần chạy sau, bất kể vai trò, issue hay người
+đã yêu cầu.
+
+Đó là khác biệt so với một agent trong editor, nơi những gì nó học được chỉ nằm trên workstation
+của một developer. Ở đây bộ nhớ thuộc về runtime, nên nó tích lũy qua mọi task mà team đã giao cho
+các agent, không chỉ những task một người đã chạy.
+
+<Aside type="caution">
+Các agent ghi thẳng vào bộ nhớ, và không ai review nó. Một bài học sai sẽ bị lặp lại cho đến khi
+có người xóa nó, và nội dung agent đọc được trong một issue hay một comment có thể lọt vào đó, thêm
+một lý do để chỉ collaborator mới được comment. Thỉnh thoảng hãy đọc lại bộ nhớ. Một bài học thực
+ra là một rule thì nên nằm trong `AGENTS.md`, hoặc tốt hơn, trong một check thực thi nó. Bộ nhớ nằm
+trên một máy duy nhất, nên hãy sao lưu nó cùng phần còn lại của trạng thái Agent Canvas.
+</Aside>
+
 ## Agent có thể và không thể chạm tới gì
 
 Prompt của Developer và của Reviewer nêu tên một secret, GitHub token, để Developer có thể đọc issue

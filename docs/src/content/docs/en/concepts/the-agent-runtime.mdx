@@ -138,6 +138,26 @@ The automations poll (every 5 minutes in Discava, every 15 by default), so Agent
 a laptop or a home server with no public URL and no webhook secret. The cost is up to one poll
 interval of latency, which is small next to the time the agent takes to work.
 
+## Memory that outlives the run
+
+A conversation keeps its context for one issue. The agents also keep a memory that outlives it.
+OpenHands stores it on the machine that runs Agent Canvas, and all three roles read it and write to
+it. What one run learns, such as a quirk of the local stack, a check that keeps failing for the
+same reason, or a convention the Reviewer keeps asking for, is there for every later run, whatever
+the role, the issue or the person who asked for it.
+
+That is the difference from an agent in an editor, where what it learns stays on one developer's
+workstation. Here the memory belongs to the runtime, so it builds up across every task the team has
+given the agents, not only the tasks one person ran.
+
+<Aside type="caution">
+The agents write to the memory directly, and nobody reviews it. A wrong lesson is repeated until
+someone removes it, and text an agent read in an issue or a comment can end up in it, which is one
+more reason only collaborators may comment. Read the memory now and then. A lesson that is really a
+rule belongs in `AGENTS.md`, or better, in a check that enforces it. The memory lives on one
+machine, so back it up with the rest of Agent Canvas's state.
+</Aside>
+
 ## What the agent can and can't reach
 
 The Developer's and the Reviewer's prompts name one secret, the GitHub token, so the Developer can

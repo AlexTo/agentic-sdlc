@@ -138,6 +138,26 @@ As automations fazem polling (a cada 5 minutos no Discava, a cada 15 por padrão
 um notebook ou em um servidor doméstico sem URL pública e sem webhook secret. O custo é até um intervalo de
 poll de latência, o que é pouco perto do tempo que o agent leva para trabalhar.
 
+## Memória que sobrevive à execução
+
+Uma conversa mantém o contexto para uma issue. Os agents também guardam uma memória que sobrevive a
+ela. O OpenHands a armazena na máquina que roda o Agent Canvas, e os três papéis a leem e escrevem
+nela. O que uma execução aprende, como uma peculiaridade do stack local, um check que continua
+falhando pelo mesmo motivo ou uma convenção que o Revisor sempre pede, fica ali para cada execução
+seguinte, seja qual for o papel, a issue ou a pessoa que pediu.
+
+Essa é a diferença em relação a um agent num editor, onde o que ele aprende fica na estação de
+trabalho de um único desenvolvedor. Aqui a memória pertence ao runtime, então ela cresce com cada
+tarefa que o time deu aos agents, não só com as que uma pessoa rodou.
+
+<Aside type="caution">
+Os agents escrevem na memória diretamente, e ninguém a revisa. Uma lição errada se repete até alguém
+removê-la, e um texto que um agent leu numa issue ou num comentário pode ir parar nela, mais um
+motivo para só colaboradores poderem comentar. Leia a memória de vez em quando. Uma lição que na
+verdade é uma regra pertence ao `AGENTS.md` ou, melhor, a um check que a imponha. A memória fica em
+uma única máquina, então faça backup dela junto com o resto do estado do Agent Canvas.
+</Aside>
+
 ## O que o agent alcança e o que não alcança
 
 Os prompts do Desenvolvedor e do Revisor nomeiam um secret, o token do GitHub, para que o Desenvolvedor possa

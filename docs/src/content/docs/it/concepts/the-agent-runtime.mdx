@@ -142,6 +142,28 @@ girare su un laptop o su un server di casa senza URL pubblico e senza secret per
 è una latenza fino a un intervallo di polling, che è poca cosa rispetto al tempo che l'agente impiega
 a lavorare.
 
+## Una memoria che sopravvive all'esecuzione
+
+Una conversazione mantiene il suo contesto per una issue. Gli agenti tengono anche una memoria che
+le sopravvive. OpenHands la salva sulla macchina che esegue Agent Canvas, e tutti e tre i ruoli la
+leggono e ci scrivono. Quello che un'esecuzione impara, come una stranezza dello stack locale, un
+check che continua a fallire per lo stesso motivo o una convenzione che il Reviewer chiede ogni
+volta, resta lì per ogni esecuzione successiva, qualunque sia il ruolo, la issue o la persona che
+l'ha chiesta.
+
+È questa la differenza rispetto a un agente in un editor, dove quello che impara resta sulla
+workstation di un solo sviluppatore. Qui la memoria appartiene al runtime, quindi cresce con ogni
+task che il team ha dato agli agenti, non solo con quelli avviati da una persona.
+
+<Aside type="caution">
+Gli agenti scrivono nella memoria direttamente, e nessuno la revisiona. Una lezione sbagliata viene
+ripetuta finché qualcuno non la toglie, e un testo che un agente ha letto in una issue o in un
+commento può finirci dentro: un motivo in più perché solo i collaboratori possano commentare. Leggi
+la memoria ogni tanto. Una lezione che in realtà è una regola va in `AGENTS.md` o, meglio, in un
+check che la faccia rispettare. La memoria vive su una sola macchina, quindi fanne il backup insieme
+al resto dello stato di Agent Canvas.
+</Aside>
+
 ## Cosa l'agente può e non può raggiungere
 
 I prompt del Developer e del Reviewer nominano un solo secret, il token GitHub, così il Developer
