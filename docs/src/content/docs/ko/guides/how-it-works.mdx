@@ -56,8 +56,8 @@ sidebar:
 | CI에서 에이전트로 | `.github/workflows/agent-ci.yml` |
 | 리뷰어에서 에이전트로 | `.github/workflows/agent-review.yml` |
 | 검사 | `.github/workflows/pr-checks.yml`, `ui-screenshots.yml`, `ci.yml` |
-| 배포에서 테스트 issue로 (Discava만) | `.github/workflows/deploy.yml`, `post-merge-verify.yml` |
-| 단위 테스트를 갖춘 glue의 규칙 | `packages/common/scripts/src/agent-*`, `ui-screenshots/` |
+| 배포에서 테스트 issue로 | `.github/workflows/deploy.yml`, `post-merge-verify.yml` (배포를 추가하기 전까지는 꺼져 있음) |
+| 단위 테스트를 갖춘 glue의 규칙 | `packages/tooling/agent/src/` |
 | 에이전트 런타임과 각 역할의 프롬프트 | 저장소 밖의 OpenHands Agent Canvas |
 
 자세한 내용은 개념 섹션에 있습니다. [phase가 issue가 되는 방식](../../concepts/one-phase-at-a-time/), 그리고

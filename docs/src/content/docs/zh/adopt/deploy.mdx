@@ -9,64 +9,31 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 **完成后你将拥有：** 每次推送到 `main` 时运行的 Trivy 扫描、一个把每个全绿的 `main` 发布到开发 stage 的 Deploy workflow、需要等人批准的生产部署，以及（如果你需要的话）一个在开发 stage 上测试每个已合并变更的测试智能体。
 
-这一步的细节是 Discava 特有的（AWS、CDK），但整体形态适用于任何云。这个仓库中的示例笔记应用没有部署，所以请从 [Discava 的 `deploy.yml`](https://github.com/AlexTo/discava/blob/main/.github/workflows/deploy.yml) 复制。
+这个仓库自带这些 workflow，但处于关闭状态：`deploy.yml` 只在手动触发时运行，或在设置了 `AUTO_DEPLOY_STAGE` 之后运行；`post-merge-verify.yml` 只在一次部署之后运行。笔记应用没有云基础设施，所以要写的那部分归你。下面的步骤按 Discava 的做法使用 AWS 和 CDK，但整体形态适用于任何云。
 
 <Steps>
 
-1. 为你想扫描的项目**添加 `trivy` target**（根目录的 `pnpm trivy` 会运行 `nx run-many --target trivy --all`）。像这个仓库一样，在 `ci.yml` 中加入 `trivy` job。让它与 `build` 保持为独立的 job，这样新公布的 CVE 会标记 `main`，而不会阻塞其他任何东西。在 `.trivyignore` 中记录已接受的发现，每行一个 ID。
+1. 为你想扫描的项目**添加 `trivy` target**（根目录的 `pnpm trivy` 会运行 `nx run-many --target trivy --all`）。复制来的 `ci.yml` 中的 `trivy` job 会在每次推送到 `main` 时运行它，并且与 `build` 是独立的 job，这样新公布的 CVE 会标记 `main`，而不会阻塞其他任何东西。在 `.trivyignore` 中记录已接受的发现，每行一个 ID。
 
-2. **配置无密钥的云访问。** 在 AWS 上，Discava 的 `scripts/setup-stage.sh` 会为每个 stage 创建：GitHub OIDC provider、一个只信任 `repo:owner/repo:environment:<stage>` 的部署角色、一个带权限边界的 CloudFormation 执行角色，以及 GitHub environment 的变量（`AWS_REGION`、`AWS_DEPLOY_ROLE_ARN`、`AWS_EXECUTION_ROLE_ARN`）。在你的云上，以同样的方式使用面向 GitHub Actions 的 OIDC 联合。不要存储访问密钥。
+2. **添加你的基础设施**：在 `packages/infra` 创建一个 CDK 应用，在它的 `src/main.ts` 中为每个环境定义一个 stage：
 
-3. **添加 Deploy workflow**，由 `main` 上 CI 完成以及手动触发：
-
-   ```yaml
-   on:
-     workflow_run: { workflows: [CI], types: [completed], branches: [main] }
-     workflow_dispatch:
-       inputs: { stage: { type: string, required: true } }
-
-   jobs:
-     deploy:
-       if: ${{ github.event_name == 'workflow_dispatch' ||
-               (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
-       environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
-       concurrency: { group: 'deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}', cancel-in-progress: false }
-       steps:
-         - uses: actions/checkout@<sha>
-           with: { ref: '${{ github.event.workflow_run.head_sha || github.sha }}' }
-         # init, then: pnpm trivy, configure credentials (OIDC), synth
-         - name: Check commit is still main's latest
-           id: freshness
-           if: ${{ github.event_name == 'workflow_run' }}
-           run: |
-             main_sha="$(git ls-remote --exit-code origin refs/heads/main | cut -f1)"
-             if [[ "$main_sha" == "$(git rev-parse HEAD)" ]]; then
-               echo "current=true" >> "$GITHUB_OUTPUT"
-             else
-               echo "::notice::Skipping deploy: no longer main's latest commit"
-               echo "current=false" >> "$GITHUB_OUTPUT"
-             fi
-         - name: Deploy
-           if: ${{ github.event_name != 'workflow_run' || steps.freshness.outputs.current == 'true' }}
-           run: pnpm nx run @your-scope/infra:deploy-ci "$STAGE/*" --role-arn "$AWS_EXECUTION_ROLE_ARN"
+   ```bash
+   pnpm nx g @aws/nx-plugin:ts#infra --name=infra
    ```
 
-   新鲜度检查位于并发槽位*之内*，所以即使这次运行排在另一次之后等待过，它反映的也是部署前一刻的 `main`。
+   Deploy workflow 运行的就是它的 `deploy-ci` target。笔记网站所需的 construct 已经在 `packages/common/constructs` 中。
 
-4. 为开发 stage **开启自动部署**。在 **Settings → Secrets and
+3. 为每个 stage **配置无密钥的云访问**：GitHub OIDC provider、一个只信任 `repo:owner/repo:environment:<stage>` 的部署角色、一个带权限边界的 CloudFormation 执行角色、CDK bootstrap，以及一个以 stage 命名、带有变量 `AWS_REGION`、`AWS_DEPLOY_ROLE_ARN` 和 `AWS_EXECUTION_ROLE_ARN` 的 GitHub environment。Discava 的 [`scripts/setup-stage.sh`](https://github.com/AlexTo/discava/blob/main/scripts/setup-stage.sh) 为它的各个 stage 完成了所有这些工作；改编之前先读一读。不要存储访问密钥。
+
+4. 如果你不是在 fork 中工作，**复制 `.github/workflows/deploy.yml`**，并修改其中的 `@agentic-sdlc/` scope 和默认 stage 名称。它检出 CI 验证过的 commit；如果缺少 `packages/infra` 或 environment 的变量，它会尽早停止并给出明确的错误；然后运行 Trivy、合成，并且只有当这个 commit 仍是 `main` 的最新 commit 时才部署。这个新鲜度检查位于 job 的并发槽位*之内*，所以即使这次运行排在另一次之后等待过，它反映的也是部署前一刻的 `main`。
+
+5. 为开发 stage **开启自动部署**。在 **Settings → Secrets and
    variables → Actions → Variables** 下，添加一个仓库变量 `AUTO_DEPLOY_STAGE`，值为你的开发 stage 的名称。
 
-5. **保护生产环境。** 在 **Settings → Environments** 下，打开你的生产 stage 对应的 environment，添加 **Required reviewers**。要部署它，打开 **Actions → Deploy → Run
+6. **保护生产环境。** 在 **Settings → Environments** 下，打开你的生产 stage 对应的 environment，添加 **Required reviewers**。要部署它，打开 **Actions → Deploy → Run
    workflow** 并输入生产 stage。job 随后会等待批准。
 
-6. **添加测试智能体**，如果你希望每个已部署的变更都得到测试（缺口 11）。这是最新的一个部件，它位于 Discava 中，而不在这个仓库里。从那里复制：
-
-   - `packages/tooling/agent/src/post-merge-test/` 和 `src/helpers/`，以及 Nx target
-     `post-merge-test`
-   - `.github/workflows/post-merge-verify.yml`
-   - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`，用于手动打开测试 issue
-
-   然后设置 stage 名称（`TEST_STAGE`），以及永远不会进入已部署栈的路径（`plan.ts` 中的 `NOT_DEPLOYED`），使它们与你的仓库相符。
+7. **添加测试智能体**，如果你希望每个已部署的变更都得到测试（缺口 11）。从这个仓库中，你已经有了它的粘合代码（第 5 步中的 `post-merge-test/`）、它的 issue 模板（第 4 步），以及 `.github/workflows/post-merge-verify.yml`，后者会为 Deploy 运行放到测试 stage 上的每个 pull request 打开一个测试 issue。它在 `TEST_STAGE` 上测试，这是一个仓库变量，默认值为 `AUTO_DEPLOY_STAGE`。
 
    在 OpenHands 这一侧，添加一个 `tester` agent profile，以及一个轮询带 `openhands-test` 标签的 issue 的自动化。目录中没有它的模板。Discava 的 worker 及其提示词见 [OpenHands 配置](../../discava/openhands-setup/#测试智能体github-issue-tester)和[智能体的 prompt](../../discava/agent-prompts/#测试智能体)。给测试智能体提供：
 
@@ -75,9 +42,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    - 一个它可以驱动的浏览器，例如带 Chromium 的 Playwright
 
    <Aside type="caution" title="公开仓库？先把评论限制为协作者">
-   测试智能体在持有这些凭证的同时阅读 issue、pull request 及其评论。如果你的仓库是公开的，陌生人的评论就可能向它夹带指令。在启用它之前，打开 **Settings → Moderation options → Interaction limits** 并选择 **Limit to repository collaborators**。这个限制最长持续六个月，所以请记下何时续期。
-
-   此外，请保留 `helpers/conversation-lock.ts` 中的加锁机制，把“如何测试”放在自动化自己的提示词中而不是 issue 里，并且永远不要让它指向数据重要的 stage。
+   测试智能体在持有这些凭证的同时阅读 issue、pull request 及其评论。如果你的仓库是公开的，陌生人的评论就可能向它夹带指令。`scripts/setup-repository.sh` 会把互动限制为协作者，最长六个月，所以请在限制到期之前再运行一次它。此外，请保留 `helpers/conversation-lock.ts` 中的加锁机制，把“如何测试”放在自动化自己的提示词中而不是 issue 里，并且永远不要让它指向数据重要的 stage。
    </Aside>
 
 </Steps>

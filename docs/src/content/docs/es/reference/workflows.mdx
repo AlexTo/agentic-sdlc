@@ -7,16 +7,17 @@ sidebar:
 
 | Workflow | Archivo | Disparador | Permisos | Hace checkout de |
 | --- | --- | --- | --- | --- |
-| PR Checks | `pr-checks.yml` | `pull_request` a `main` | `contents: read`, más `pull-requests: write` para el job del comentario de capturas | El PR |
+| PR Checks | `pr-checks.yml` | `pull_request` a `main` | `contents: read`, más `pull-requests: write` para el job del comentario de capturas | El PR, excepto el job del comentario de capturas: la default branch |
 | UI Screenshots | `ui-screenshots.yml` | `pull_request` a `main`, incluidos `labeled`/`unlabeled` | `contents: read`, `pull-requests: read` | La default branch (lee el diff desde la API) |
 | CI | `ci.yml` | `push` a `main`, `workflow_dispatch` | `contents: read`, `pages: write`, `id-token: write` | `main` |
 | Agent Issues | `agent-issues.yml` | `pull_request: [closed, labeled]` a `main`, `workflow_dispatch(spec_folder)` | `contents: read`, `issues: write`, `pull-requests: write` | El merge commit |
 | Archive Specs | `archive-specs.yml` | `push` a `main` que cambia `specs/*/tasks.md`, `workflow_dispatch` | `contents: write`, `issues: read`, `pull-requests: write` | `main` |
-| Agent CI Status | `agent-ci.yml` | `workflow_run` de PR Checks, `completed` | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` | La default branch |
-| Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` | La default branch |
+| Agent CI Status | `agent-ci.yml` | `workflow_run` de PR Checks, `completed` | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` | La default branch (a través de Agent Status) |
+| Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` | La default branch (a través de Agent Status) |
+| Agent Status | `agent-status.yml` | `workflow_call` desde los dos anteriores, con el target de Nx que ejecutar | Los del llamador | La default branch |
 | Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | Nada (pasa el número del PR a `gh`) |
-| Deploy (Discava) | `deploy.yml` | `workflow_run` de CI en `main`, `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | El commit que verificó CI |
-| Post-merge Verify (Discava) | `post-merge-verify.yml` | `workflow_run` de Deploy, `completed`, `workflow_dispatch(pr_number)` | `contents: read`, `actions: read`, `issues: write`, `pull-requests: write` | La default branch |
+| Deploy | `deploy.yml` | `workflow_run` de CI en `main` (solo cuando `AUTO_DEPLOY_STAGE` está definida), `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | El commit que verificó CI |
+| Post-merge Verify | `post-merge-verify.yml` | `workflow_run` de Deploy, `completed`, `workflow_dispatch(pr_number)` | `contents: read`, `actions: read`, `issues: write`, `pull-requests: write` | La default branch |
 
 ## Nombres de job que exigir en la protección de rama
 
@@ -24,6 +25,7 @@ sidebar:
 | --- | --- |
 | `Checks (lint)`, `Checks (test)`, `Checks (build)` | PR Checks |
 | `Tasks format` | PR Checks |
+| `Invariant coverage` | PR Checks |
 | `E2E tests` | PR Checks (reúne los shards) |
 | `UI Screenshots` | UI Screenshots |
 
@@ -44,7 +46,7 @@ y los grupos por PR hacen que PR no relacionados nunca se esperen entre sí.
 
 ## Targets de Nx que ejecutan
 
-Todos en `@your-scope/common-scripts`:
+Todos en `@your-scope/tooling-agent`:
 
 | Target | Punto de entrada | Variables de entorno que lee |
 | --- | --- | --- |
@@ -52,11 +54,18 @@ Todos en `@your-scope/common-scripts`:
 | `archive-specs` | `src/agent-issues/archive-main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_WORKSPACE`, `BASE_BRANCH`, `DRY_RUN` |
 | `agent-ci-status` | `src/agent-ci/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
 | `agent-review-status` | `src/agent-review/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
-| `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH` |
 | `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`, `GITHUB_ACTIONS` (para las anotaciones) |
-
-Discava mantiene los mismos targets en `@discava/tooling-agent`, con uno más para el Tester:
-
-| Target | Punto de entrada | Variables de entorno que lee |
-| --- | --- | --- |
+| `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH` |
+| `screenshots-comment` | `src/ui-screenshots/comment-main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_STEP_SUMMARY`, `PR`, `SHA`, `RUN_URL`, `SCREENSHOTS_DIR` |
+| `invariant-coverage` | `src/invariant-coverage/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `BASE_REF` |
+| `entity-writers` | `src/invariant-coverage/write.ts` | Nada. Lo ejecuta el hook pre-push, o tú a mano |
 | `post-merge-test` | `src/post-merge-test/main.ts` | `GH_TOKEN`, `GH_REPO`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH`, `PR_NUMBER`, `TEST_STAGE`, `DRY_RUN` |
+
+## Variables del repositorio
+
+| Variable | La lee | Por defecto |
+| --- | --- | --- |
+| `AUTO_DEPLOY_STAGE` | Deploy | Sin definir: Deploy solo se ejecuta a mano |
+| `TEST_STAGE` | Post-merge Verify | `AUTO_DEPLOY_STAGE` |
+| `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `AWS_EXECUTION_ROLE_ARN` | Deploy, en el environment de GitHub de cada stage | Ninguno. Deploy se detiene e indica lo que falta |
+| `AWS_DOCKER_LOGIN_ROLE_ARN` | `init-monorepo`, para los pulls desde Amazon ECR Public | Sin definir: pulls anónimos |

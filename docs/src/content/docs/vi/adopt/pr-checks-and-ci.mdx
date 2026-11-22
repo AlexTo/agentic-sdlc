@@ -1,6 +1,6 @@
 ---
 title: 6. PR check và CI
-description: Thêm workflow PR Checks (lint, test, build, tasks format, e2e, ảnh chụp màn hình) và CI trên main.
+description: Chép workflow PR Checks (lint, test, build, tasks format, invariant coverage, e2e, ảnh chụp màn hình) và CI trên main.
 sidebar:
   order: 6
 ---
@@ -12,54 +12,43 @@ Screenshots**, và **CI** trên `main`.
 
 <Steps>
 
-1. **Chép `.github/workflows/pr-checks.yml`** từ repository này. Giữ chính xác `name: PR Checks`
-   của nó: Agent CI Status lắng nghe một workflow có tên đó. Các job của nó:
+1. **Chép bốn workflow** từ `.github/workflows/` của repository này:
 
-   | Job | Giữ nguyên? |
+   | File | Nó làm gì |
    | --- | --- |
-   | `checks`, một matrix gồm `lint`, `test`, `build` với `fail-fast: false` | Có |
-   | `tasks-format` | Có |
-   | `e2e`, chia shard, cộng `e2e-result` gom các shard thành một check `E2E tests` | Đặt số shard theo bộ test của bạn |
-   | `e2e-screenshots` | Có, khi [bước 8](../local-stack-and-e2e/) đã xong |
+   | `pr-checks.yml` | Lint, test và build những gì PR ảnh hưởng; `Tasks format`; `Invariant coverage`; e2e chia shard, gom lại thành một check `E2E tests`; comment `E2E screenshots` |
+   | `ui-screenshots.yml` | Quy tắc ảnh chụp màn hình, như một workflow riêng, để thêm hoặc gỡ label `no-ui-screenshots` chỉ chạy lại check này. Discava thì chạy nó như một job của PR Checks. Cách nào cũng được |
+   | `ci.yml` | Cùng các check trên mọi lần push lên `main`, Trivy, cache Playwright, và deploy trang docs này |
+   | `cache-cleanup.yml` | Xóa cache của một PR khi PR đó đóng |
 
-2. **Chép `.github/workflows/ui-screenshots.yml`.** Trong repository này, quy tắc ảnh chụp màn hình
-   là một workflow riêng, kích hoạt khi `opened, synchronize, reopened, labeled, unlabeled`. Khi đó
-   thêm hoặc gỡ label `no-ui-screenshots` chỉ chạy lại check này, không phải cả bộ e2e. Discava thì
-   chạy cùng quy tắc như một job của PR Checks. Cách nào cũng được.
+   Giữ chính xác `name: PR Checks` của `pr-checks.yml`: Agent CI Status lắng nghe một workflow có
+   tên đó.
 
-3. **Chép `.github/workflows/ci.yml`** cho các lần push lên `main`. Giữ bước `Check for mutations`
-   (`git diff --ignore-space-at-eol --exit-code` sau khi build). Nó bắt các file sinh ra mà agent
-   quên commit. Giữ job `playwright-cache` nếu bạn dùng Playwright: các lần chạy PR chỉ có thể khôi
-   phục cache được lưu trên `main`.
+2. **Trỏ chúng vào các project của bạn.** Tìm `@agentic-sdlc/` trong các file đã chép và đổi scope.
+   Sau đó, trong `pr-checks.yml`:
 
-   Job `build` truyền `nx-cache-scope: main` cho `init-monorepo`, để lưu task cache của Nx. Lần chạy
-   đầu tiên của một PR bắt đầu từ cache đó, nên các task có input mà `main` đã build được phát lại,
-   không chạy lại, và agent chờ ít hơn ở mỗi vòng sửa. Mỗi leg `checks` trong PR Checks giữ cache
-   riêng theo cách tương tự, trừ `lint`, vốn chỉ khôi phục, vì lint nhanh hơn việc lưu một cache.
-   `init-monorepo` giới hạn cache ở 1 GB.
+   | Job | Thay đổi |
+   | --- | --- |
+   | `invariant-coverage` | Các `paths` của code có thể ghi vào bảng của bạn, giống như `WRITER_PACKAGES` ở bước 5. Hoặc xóa job này nếu bạn chưa kiểm tra invariant |
+   | `e2e` | Số shard trong `matrix.shard`, cho hợp với bộ test của bạn. Mỗi shard tốn khoảng hai phút trước test đầu tiên, nên ngừng thêm khi test của mỗi shard chỉ mất chừng ấy thời gian |
+   | `e2e-screenshots` | Không gì cả, khi [bước 8](../local-stack-and-e2e/) đã xong |
 
-4. **Chép `.github/workflows/cache-cleanup.yml`.** Nó xóa cache của một PR khi PR đó đóng. Không gì
-   khác đọc được các cache đó, và nếu không có nó, chúng tính vào 10 GB Actions cache của repository
-   cho đến khi GitHub xóa bớt, bắt đầu từ cache của các PR vẫn đang mở. Xem
+   Trong `ci.yml`, xóa job `deploy_docs` và permission `pages: write` của nó, trừ khi bạn publish
+   một trang docs từ `docs/`.
+
+3. **Giữ những gì giúp agent nhanh.** Bước `Check for mutations` trong `ci.yml` (`git diff
+   --exit-code` sau khi build) bắt các file sinh ra mà agent quên commit. Job `playwright-cache` lưu
+   Chromium từ `main`, vì các lần chạy PR chỉ có thể khôi phục cache được lưu ở đó. Job `build` lưu
+   task cache của Nx từ `main`, để lần chạy đầu tiên của một PR phát lại những gì `main` đã build, và
+   agent chờ ít hơn ở mỗi vòng fix-up. Mỗi leg `checks` trong PR Checks giữ cache riêng theo cách
+   tương tự, trừ `lint`, vốn chỉ khôi phục. `init-monorepo` giới hạn cache ở 1 GB, và Cache Cleanup
+   giải phóng phần của một PR đã đóng trong 10 GB của repository. Xem
    [Giữ cho nhanh](../../discava/pr-checks/#giữ-cho-nhanh) để biết việc này đã giúp Discava những gì.
 
-5. **Ghim mọi action vào một commit SHA**, như các file đã chép, và thêm `.github/dependabot.yml` để
-   các pin luôn cập nhật:
-
-   ```yaml
-   version: 2
-   updates:
-     - package-ecosystem: 'npm'
-       directory: '/'
-       schedule: { interval: 'weekly' }
-       groups: { all: { patterns: ['*'] } }
-     - package-ecosystem: 'github-actions'
-       directories: ['/', '/.github/actions/*']
-       schedule: { interval: 'weekly' }
-       groups: { github-actions: { applies-to: version-updates, patterns: ['*'] } }
-   ```
-
 </Steps>
+
+Mọi action đều được ghim vào một commit SHA, và `dependabot.yml` bạn đã chép ở bước 1 giữ các pin
+luôn cập nhật.
 
 ## Kiểm tra kết quả
 

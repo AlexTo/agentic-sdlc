@@ -1,6 +1,6 @@
 ---
 title: 6. PR 检查与 CI
-description: 添加 PR Checks workflow（lint、test、build、tasks 格式、e2e、截图）以及 main 上的 CI。
+description: 复制 PR Checks workflow（lint、test、build、tasks 格式、不变式覆盖、e2e、截图）以及 main 上的 CI。
 sidebar:
   order: 6
 ---
@@ -11,39 +11,33 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 <Steps>
 
-1. 从这个仓库**复制 `.github/workflows/pr-checks.yml`**。保持它的 `name: PR Checks` 一字不差：Agent CI Status 监听的就是这个名称的 workflow。它的 job：
+1. 从这个仓库的 `.github/workflows/` **复制四个 workflow**：
 
-   | Job | 原样保留？ |
+   | 文件 | 作用 |
    | --- | --- |
-   | `checks`，由 `lint`、`test`、`build` 组成的矩阵，`fail-fast: false` | 是 |
-   | `tasks-format` | 是 |
-   | `e2e`，分片运行，外加把各分片汇总成一项 `E2E tests` 检查的 `e2e-result` | 按你的测试套件设置分片数 |
-   | `e2e-screenshots` | 是，在完成[第 8 步](../local-stack-and-e2e/)之后 |
+   | `pr-checks.yml` | 对 PR 影响到的部分运行 lint、test 和 build；`Tasks format`；`Invariant coverage`；分片运行的 e2e，汇总成一项 `E2E tests` 检查；`E2E screenshots` 评论 |
+   | `ui-screenshots.yml` | 截图规则，作为一个独立的 workflow，这样添加或移除 `no-ui-screenshots` 标签时只会重新运行这一项检查。Discava 则把它作为 PR Checks 中的一个 job 来运行。两种方式都可以 |
+   | `ci.yml` | 每次推送到 `main` 时运行同样的检查、Trivy、Playwright 缓存，以及本文档站点的部署 |
+   | `cache-cleanup.yml` | PR 关闭时删除该 PR 的缓存 |
 
-2. **复制 `.github/workflows/ui-screenshots.yml`。** 在这个仓库中，截图规则是一个独立的 workflow，在 `opened, synchronize, reopened, labeled, unlabeled` 时触发。这样添加或移除 `no-ui-screenshots` 标签时，只会重新运行这一项检查，而不是整个 e2e 测试套件。Discava 则把同一条规则作为 PR Checks 中的一个 job 来运行。两种方式都可以。
+   保持 `pr-checks.yml` 的 `name: PR Checks` 一字不差：Agent CI Status 监听的就是这个名称的 workflow。
 
-3. 为推送到 `main` **复制 `.github/workflows/ci.yml`**。保留 `Check for mutations` 步骤（构建之后执行 `git diff --ignore-space-at-eol --exit-code`）。它能发现智能体忘记提交的生成文件。如果你使用 Playwright，保留 `playwright-cache` job：PR 的运行只能恢复在 `main` 上保存的缓存。
+2. **让它们指向你的项目。** 在复制来的文件中搜索 `@agentic-sdlc/` 并修改 scope。然后，在 `pr-checks.yml` 中：
 
-   `build` job 把 `nx-cache-scope: main` 传给 `init-monorepo`，由它保存 Nx 的任务缓存。PR 的第一次运行从这份缓存开始，所以输入已经在 `main` 上构建过的任务会被回放，而不是重新运行，智能体在每一轮修复中都能少等一些。PR Checks 中的每个 `checks` 分支也以同样的方式保留自己的缓存，只有 `lint` 例外，它只恢复缓存，因为 lint 比保存缓存还快。`init-monorepo` 把缓存上限设为 1 GB。
+   | Job | 修改 |
+   | --- | --- |
+   | `invariant-coverage` | 可能写入你的表的代码所在的 `paths`，与第 5 步中的 `WRITER_PACKAGES` 相同。如果你暂时不检查不变式，就删掉这个 job |
+   | `e2e` | `matrix.shard` 中的分片数，按你的测试套件设置。一个分片在运行第一个测试之前大约要花两分钟，所以当每个分片的测试大约也只需要这么久时，就不要再加分片了 |
+   | `e2e-screenshots` | 无需修改，只要完成了[第 8 步](../local-stack-and-e2e/) |
 
-4. **复制 `.github/workflows/cache-cleanup.yml`。** 它会在 PR 关闭时删除该 PR 的缓存。其他任何东西都读不到这些缓存，没有它的话，这些缓存会一直计入仓库 10 GB 的 Actions 缓存额度，直到 GitHub 将其清除，而清除会从仍在开启的 PR 的缓存开始。这为 Discava 节省了什么，见[保持快速](../../discava/pr-checks/#保持快速)。
+   在 `ci.yml` 中，删除 `deploy_docs` job 及其 `pages: write` 权限，除非你要从 `docs/` 发布一个文档站点。
 
-5. 像复制来的文件那样，**把每个 action 固定到一个 commit SHA**，并添加 `.github/dependabot.yml`，让这些固定版本保持最新：
-
-   ```yaml
-   version: 2
-   updates:
-     - package-ecosystem: 'npm'
-       directory: '/'
-       schedule: { interval: 'weekly' }
-       groups: { all: { patterns: ['*'] } }
-     - package-ecosystem: 'github-actions'
-       directories: ['/', '/.github/actions/*']
-       schedule: { interval: 'weekly' }
-       groups: { github-actions: { applies-to: version-updates, patterns: ['*'] } }
-   ```
+3. **保留让智能体保持快速的部分。** `ci.yml` 中的 `Check for mutations` 步骤（构建之后执行 `git diff
+   --exit-code`）能发现智能体忘记提交的生成文件。`playwright-cache` job 从 `main` 保存 Chromium，因为 PR 的运行只能恢复在那里保存的缓存。`build` job 从 `main` 保存 Nx 的任务缓存，所以 PR 的第一次运行会回放 `main` 已经构建过的内容，智能体在每一轮修复中都能少等一些。PR Checks 中的每个 `checks` 分支也以同样的方式保留自己的缓存，只有 `lint` 例外，它只恢复缓存。`init-monorepo` 把缓存上限设为 1 GB，Cache Cleanup 会释放已关闭 PR 在仓库 10 GB 额度中所占的部分。这为 Discava 节省了什么，见[保持快速](../../discava/pr-checks/#保持快速)。
 
 </Steps>
+
+每个 action 都固定到一个 commit SHA，你在第 1 步中复制的 `dependabot.yml` 会让这些固定版本保持最新。
 
 ## 检查是否成功
 

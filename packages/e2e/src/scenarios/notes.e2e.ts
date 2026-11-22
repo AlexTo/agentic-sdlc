@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
 import { screenshot } from '../helpers/screenshots.js';
+import { expect, test } from '../helpers/table-invariants.js';
 
 // A visitor writes a note and deletes it again. Titles are unique per run, as
 // scenarios share one stack.

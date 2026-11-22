@@ -17,24 +17,35 @@ spec cho ứng dụng ghi chú, và spec đó đi qua vòng lặp được mô t
 ## Bạn nhận được gì
 
 <FileTree>
+- AGENTS.md thứ mọi agent đọc đầu tiên, viết cho ứng dụng ghi chú
 - .specify/ template, script của Speckit và constitution
+- .husky/ Conventional Commits, quét secret và Biome khi commit, bản đồ invariant khi push
+- scripts/setup-repository.sh các label, branch protection và những thiết lập khác mà fork không sao chép
 - .github/
-  - ISSUE_TEMPLATE/implement-phase.md hướng dẫn mà mọi issue triển khai đều mang theo
-  - actions/init-monorepo/ thiết lập CI dùng chung
+  - ISSUE_TEMPLATE/
+    - implement-phase.md hướng dẫn mà mọi issue triển khai đều mang theo
+    - test-deployed-pr.md một issue test cho agent Tester, tạo bằng tay
+  - actions/ thiết lập CI dùng chung, Chromium của Playwright, check đường dẫn thay đổi
+  - dependabot.yml giữ các action và dependency đã ghim luôn cập nhật
   - workflows/
-    - pr-checks.yml lint, test, build, định dạng tasks, e2e, comment ảnh chụp màn hình
+    - pr-checks.yml lint, test, build, định dạng tasks, invariant coverage, e2e, comment ảnh chụp màn hình
     - ui-screenshots.yml quy tắc ảnh chụp màn hình
     - ci.yml check, Trivy và deploy docs trên main
     - agent-issues.yml spec → issue, merge → issue tiếp theo
     - archive-specs.yml spec đã xong → PR lưu trữ
     - agent-ci.yml CI đỏ → agent
     - agent-review.yml "changes requested" → agent
+    - agent-status.yml các bước mà hai workflow trên dùng chung
+    - deploy.yml main xanh → một stage, tắt cho đến khi bạn thêm hạ tầng
+    - post-merge-verify.yml PR đã deploy → issue test cho Tester
+    - cache-cleanup.yml cache của một PR đã đóng
 - packages/
-  - common/scripts/src/ các quy tắc của glue, với 143 unit test
-  - notes-table/ entity ElectroDB, DynamoDB local
+  - tooling/agent/ các quy tắc của glue, với 223 unit test
+  - tooling/local-dev/ khởi động DynamoDB local cho `pnpm dev`
+  - notes-table/ entity ElectroDB, DynamoDB local, invariant
   - notes-api/ các procedure tRPC
   - notes-website/ React, Vite, TanStack Router, shadcn/ui
-  - e2e/ kịch bản Playwright và helper `screenshot()`
+  - e2e/ kịch bản Playwright, helper `screenshot()`, invariant sau mọi test
 - docs/ trang web này
 </FileTree>
 
@@ -45,15 +56,17 @@ thể chạy e2e test của nó và agent không bao giờ cần thông tin đă
 
 Chỉ những thứ không thể nằm trong repository:
 
-1. **Thiết lập GitHub**: bật Issues và Actions, các label, branch protection. Fork không sao chép
-   những thứ này.
-2. **OpenHands**: Agent Canvas trên máy bạn, một GitHub token, và hai automation trỏ vào bản fork
+1. **Thiết lập GitHub**: fork không sao chép chúng, nên `scripts/setup-repository.sh` đặt chúng
+   trong một lần chạy.
+2. **OpenHands**: Agent Canvas trên máy bạn, một GitHub token, và các automation trỏ vào bản fork
    của bạn.
 
-## Những gì bị lược bỏ
+## Những gì tắt cho đến khi bạn thêm vào
 
-Phần deploy AWS của Discava. Ứng dụng ghi chú không có hạ tầng cloud, nên merge không ship gì
-ngoài trang docs. [Deploy và bảo mật](../../discava/deploy-and-security/) mô tả pipeline của
-Discava, và [Áp dụng: deploy](../../adopt/deploy/) cho thấy cách thêm một pipeline.
+Cloud. Ứng dụng ghi chú không có hạ tầng cloud, nên merge không ship gì ngoài trang docs.
+`deploy.yml` và `post-merge-verify.yml` đã có sẵn nhưng không bao giờ tự chạy: thêm một CDK app tại
+`packages/infra` và đặt `AUTO_DEPLOY_STAGE`, rồi mọi `main` xanh đều được deploy, sau đó agent
+Tester test những gì đã được deploy. [Áp dụng: deploy](../../adopt/deploy/) có các bước, và
+[Deploy và bảo mật](../../discava/deploy-and-security/) mô tả pipeline của Discava.
 
 <LinkCard title="Thiết lập: fork, cấu hình, chạy tính năng đầu tiên" href="/agentic-sdlc/vi/setup/before-you-start/" />

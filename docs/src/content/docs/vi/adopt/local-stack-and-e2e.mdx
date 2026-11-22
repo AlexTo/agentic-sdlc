@@ -5,7 +5,7 @@ sidebar:
   order: 8
 ---
 
-import { Steps, Aside } from '@astrojs/starlight/components';
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
 **Kết quả:** `pnpm dev` khởi động toàn bộ ứng dụng với các bản thay thế local, một bộ Playwright mà CI
 chạy trên mọi PR, ảnh chụp màn hình được đăng lên PR, và invariant được kiểm tra sau mỗi test.
@@ -16,69 +16,53 @@ thật mà không cần thông tin đăng nhập cloud.
 <Steps>
 
 1. **Cho mọi dịch vụ cloud một bản thay thế local**, được khởi động bởi một target `dev`, để
-   `pnpm dev` chạy mọi thứ. [Các bản thay thế của Discava](../../discava/local-stack/#những-gì-chạy-local)
-   bao gồm DynamoDB, S3, SQS, OpenSearch và Cognito, cộng một tiến trình "event runner" gọi cùng các
-   handler mà Lambda trigger, stream và EventBridge gọi trên cloud.
+   `pnpm dev` chạy mọi thứ. `packages/tooling/local-dev/` của repository này khởi động DynamoDB local
+   trong Docker cho bảng ghi chú.
+   [Các bản thay thế của Discava](../../discava/local-stack/#những-gì-chạy-local) còn bao gồm S3, SQS,
+   OpenSearch và Cognito, cộng một tiến trình "event runner" gọi cùng các handler mà Lambda trigger,
+   stream và EventBridge gọi trên cloud.
 
    Chuyển chế độ code backend bằng một cờ (`LOCAL_DEV=true`), với các endpoint trong một module dùng
-   chung. Liệt kê những gì vẫn chỉ chạy trên cloud trong `CONTRIBUTING.md`, và đánh dấu các task cần
-   chúng là **(human)**.
+   chung. Liệt kê những gì vẫn chỉ chạy trên cloud trong hướng dẫn đóng góp của bạn, và đánh dấu các
+   task cần chúng là **(human)**.
 
-2. **Thêm một project Playwright** với mỗi luồng người dùng một file kịch bản. `packages/e2e` của
-   repository này là một ví dụ tối giản. Trong `playwright.config.ts`, đọc shard từ biến môi trường để
-   matrix CI có thể chia bộ test:
+2. **Chép project e2e** từ repository này, `packages/e2e/`, và thay kịch bản của nó bằng kịch bản của
+   bạn, mỗi luồng người dùng một file. Những gì cần giữ:
 
-   ```ts
-   const [shardCurrent, shardTotal] = (process.env.E2E_SHARD ?? '').split('/').map(Number);
-
-   export default defineConfig({
-     testDir: './src',
-     testMatch: ['scenarios/**/*.e2e.ts'],
-     workers: 1,
-     forbidOnly: !!process.env.CI,
-     retries: process.env.CI ? 1 : 0,
-     shard: shardCurrent && shardTotal ? { current: shardCurrent, total: shardTotal } : null,
-     webServer: { command: 'pnpm dev', reuseExistingServer: !process.env.CI /* … */ },
-   });
-   ```
+   <FileTree>
+   - packages/e2e/
+     - playwright.config.ts đọc `E2E_SHARD` để matrix CI có thể chia bộ test, khởi động `pnpm dev`, một worker, chỉ retry trong CI
+     - src/helpers/
+       - screenshots.ts `screenshot(page, 'name')`, lưu các ảnh mà job `e2e` của PR Checks upload
+       - table-invariants.ts một `test` Playwright kiểm tra invariant sau mỗi kịch bản
+   </FileTree>
 
    Mỗi kịch bản tự tạo người dùng và dữ liệu có tên duy nhất, và không kịch bản nào reset dữ liệu
-   local, nên chúng chạy theo thứ tự nào cũng được.
-
-3. **Chép helper ảnh chụp màn hình** từ repository này: `packages/e2e/src/helpers/screenshots.ts`. Nó
-   lưu `dist/packages/e2e/screenshots/<scenario>/<nn>-<name>.png`, thư mục mà job `e2e` của PR Checks
-   upload. Gọi nó ở chỗ một người sẽ nhìn, sau một `expect` trên những gì hiển thị:
+   local, nên chúng chạy theo thứ tự nào cũng được. Gọi `screenshot` ở chỗ một người sẽ nhìn, sau một
+   `expect` trên những gì hiển thị:
 
    ```ts
    await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible();
    await screenshot(page, 'reviews section with three reviews');
    ```
 
-4. **Kiểm tra invariant sau mỗi test.** Với mỗi quy tắc trải trên các bản ghi được ghi bởi code khác
-   nhau (bộ đếm, tổng hợp, thứ tự), viết một hàm quét dữ liệu và trả về các vi phạm. Sau đó cho các
-   kịch bản một `test` tự động kiểm tra chúng. Đây là pattern của Discava, đã rút gọn:
+3. **Chép các invariant** từ `packages/notes-table/src/helpers/invariants/` vào package sở hữu bảng
+   của bạn. Với mỗi quy tắc trải trên các bản ghi được ghi bởi code khác nhau (bộ đếm, tổng hợp, thứ
+   tự), viết một check quét một snapshot của dữ liệu và trả về các vi phạm, kèm một unit test làm hỏng
+   nó. Mục "Rules that span records" trong `packages/notes-table/README.md` hướng dẫn từng bước thêm
+   một invariant.
 
-   ```ts
-   export const test = base.extend<{ tableInvariants: void }>({
-     tableInvariants: [
-       async ({}, use, testInfo) => {
-         const before = new Set((await findViolations()).map(violationId));
-         await use();
-         if (testInfo.status !== testInfo.expectedStatus) return;
-         await expect
-           .poll(async () => (await findViolations()).filter((v) => !before.has(violationId(v))), {
-             message: 'The scenario left the table breaking invariants',
-             timeout: 30_000,
-           })
-           .toEqual([]);
-       },
-       { auto: true },
-     ],
-   });
-   ```
+   Các kịch bản lấy `test` từ `table-invariants.ts` thay vì `@playwright/test`. Sau mỗi kịch bản, nó
+   làm thất bại kịch bản nếu bảng có một vi phạm mà trước đó chưa có. Chỉ vi phạm *mới* được tính,
+   nên dữ liệu local cũ không bao giờ làm thất bại một lần chạy, và `expect.poll` cho công việc nền
+   (stream handler, tính toán lại) thời gian để bắt kịp.
 
-   Chỉ vi phạm *mới* làm thất bại test, nên dữ liệu local cũ không bao giờ gây thất bại. `expect.poll`
-   cho công việc nền (stream handler, tính toán lại) thời gian để bắt kịp.
+4. **Sinh bản đồ writer, và chép hook pre-push.** Chạy
+   `pnpm nx run @your-scope/tooling-agent:entity-writers` và commit file `entity-writers.json` mà nó
+   ghi ra. Chép `.husky/pre-push` từ repository này, với `MAP` và `PATHS` trỏ vào của bạn: khi một
+   nhánh thay đổi code có thể ghi vào bảng, nó sinh lại bản đồ và chặn lần push nếu bản đồ thay đổi.
+   Sau đó PR check `Invariant coverage` so sánh bản đồ với bản đồ của nhánh base, và giữ lại một PR
+   thêm writer cho đến khi các invariant nêu tên entity đó.
 
 5. **Thêm test đồng thời** cho các thao tác ghi mà hai người dùng có thể tranh nhau: bắn cùng các
    request API cùng một lúc bằng `Promise.all`, rồi assert trên kết quả và các invariant.

@@ -57,8 +57,8 @@ próxima spec.
 | CI para o agent | `.github/workflows/agent-ci.yml` |
 | Revisor para o agent | `.github/workflows/agent-review.yml` |
 | Checks | `.github/workflows/pr-checks.yml`, `ui-screenshots.yml`, `ci.yml` |
-| Deploy para issue de teste (só no Discava) | `.github/workflows/deploy.yml`, `post-merge-verify.yml` |
-| As regras por trás da cola, com testes unitários | `packages/common/scripts/src/agent-*`, `ui-screenshots/` |
+| Deploy para issue de teste | `.github/workflows/deploy.yml`, `post-merge-verify.yml` (desligado até você adicionar um deploy) |
+| As regras por trás da cola, com testes unitários | `packages/tooling/agent/src/` |
 | O runtime do agent e o prompt de cada papel | OpenHands Agent Canvas, fora do repositório |
 
 Os detalhes estão em Conceitos: [como as fases viram issues](../../concepts/one-phase-at-a-time/), e

@@ -16,24 +16,35 @@ the notes app, and it goes through the loop described in [How it works](../how-i
 ## What you get
 
 <FileTree>
+- AGENTS.md what every agent reads first, written for the notes app
 - .specify/ Speckit templates, scripts and the constitution
+- .husky/ Conventional Commits, secret scan and Biome on commit, invariant map on push
+- scripts/setup-repository.sh labels, branch protection and the other settings a fork doesn't copy
 - .github/
-  - ISSUE_TEMPLATE/implement-phase.md the instructions every implementation issue carries
-  - actions/init-monorepo/ shared CI setup
+  - ISSUE_TEMPLATE/
+    - implement-phase.md the instructions every implementation issue carries
+    - test-deployed-pr.md a test issue for the Tester agent, by hand
+  - actions/ shared CI setup, Playwright's Chromium, changed-path checks
+  - dependabot.yml keeps the pinned actions and dependencies current
   - workflows/
-    - pr-checks.yml lint, test, build, tasks format, e2e, screenshots comment
+    - pr-checks.yml lint, test, build, tasks format, invariant coverage, e2e, screenshots comment
     - ui-screenshots.yml the screenshots rule
     - ci.yml checks, Trivy and the docs deploy on main
     - agent-issues.yml spec → issue, merge → next issue
     - archive-specs.yml finished spec → archive PR
     - agent-ci.yml red CI → agent
     - agent-review.yml "changes requested" → agent
+    - agent-status.yml the steps those two share
+    - deploy.yml green main → a stage, off until you add infrastructure
+    - post-merge-verify.yml deployed PR → test issue for the Tester
+    - cache-cleanup.yml a closed PR's caches
 - packages/
-  - common/scripts/src/ the glue's rules, with 143 unit tests
-  - notes-table/ ElectroDB entity, DynamoDB local
+  - tooling/agent/ the glue's rules, with 223 unit tests
+  - tooling/local-dev/ starts DynamoDB local for `pnpm dev`
+  - notes-table/ ElectroDB entity, DynamoDB local, invariants
   - notes-api/ tRPC procedures
   - notes-website/ React, Vite, TanStack Router, shadcn/ui
-  - e2e/ Playwright scenarios and the `screenshot()` helper
+  - e2e/ Playwright scenarios, the `screenshot()` helper, invariants after every test
 - docs/ this site
 </FileTree>
 
@@ -44,15 +55,17 @@ its e2e tests and the agent never needs cloud credentials.
 
 Only what can't live in a repository:
 
-1. **GitHub settings**: Issues and Actions on, the labels, branch protection. A fork doesn't copy
-   them.
-2. **OpenHands**: Agent Canvas on your machine, a GitHub token, and the two automations pointed at
+1. **GitHub settings**: a fork doesn't copy them, so `scripts/setup-repository.sh` sets them in
+   one run.
+2. **OpenHands**: Agent Canvas on your machine, a GitHub token, and the automations pointed at
    your fork.
 
-## What's left out
+## What's off until you add it
 
-Discava's AWS deployment. The notes app has no cloud infrastructure, so merging ships nothing
-beyond the docs site. [Deploy and security](../../discava/deploy-and-security/) describes Discava's
-pipeline, and [Adopt: deploy](../../adopt/deploy/) shows how to add one.
+The cloud. The notes app has no cloud infrastructure, so merging ships nothing beyond the docs
+site. `deploy.yml` and `post-merge-verify.yml` are in place but never run by themselves: add a CDK
+app at `packages/infra` and set `AUTO_DEPLOY_STAGE`, and every green `main` deploys, then the
+Tester agent tests what was deployed. [Adopt: deploy](../../adopt/deploy/) has the steps, and
+[Deploy and security](../../discava/deploy-and-security/) describes Discava's pipeline.
 
 <LinkCard title="Set it up: fork, configure, run your first feature" href="/agentic-sdlc/en/setup/before-you-start/" />

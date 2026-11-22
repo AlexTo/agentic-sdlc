@@ -11,79 +11,55 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 `main` to a development stage, production deploys that wait for a person, and, if you want it, a
 Tester agent that tests each merged change on the development stage.
 
-This step is Discava-specific in its details (AWS, CDK), but the shape works for any cloud. The
-example notes app in this repository has no deploy, so copy from
-[Discava's `deploy.yml`](https://github.com/AlexTo/discava/blob/main/.github/workflows/deploy.yml).
+This repository ships the workflows, off: `deploy.yml` runs only by hand or once
+`AUTO_DEPLOY_STAGE` is set, and `post-merge-verify.yml` runs only after a deploy. The notes app has
+no cloud infrastructure, so the part to write is yours. The steps say AWS and CDK, as Discava uses,
+but the shape works for any cloud.
 
 <Steps>
 
 1. **Add a `trivy` target** to the projects you want scanned (the root `pnpm trivy` runs
-   `nx run-many --target trivy --all`). Add the `trivy` job to `ci.yml`, as in this repository. Keep
-   it a separate job from `build`, so a newly published CVE flags `main` without blocking anything
-   else. Record accepted findings, one ID per line, in `.trivyignore`.
+   `nx run-many --target trivy --all`). The `trivy` job in the copied `ci.yml` runs it on every
+   push to `main`, as a separate job from `build`, so a newly published CVE flags `main` without
+   blocking anything else. Record accepted findings, one ID per line, in `.trivyignore`.
 
-2. **Set up keyless cloud access.** On AWS, Discava's `scripts/setup-stage.sh` creates, per stage:
-   the GitHub OIDC provider, a deploy role trusted only for
-   `repo:owner/repo:environment:<stage>`, a CloudFormation execution role with a permissions
-   boundary, and the GitHub environment's variables (`AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`,
-   `AWS_EXECUTION_ROLE_ARN`). Use your cloud's OIDC federation for GitHub Actions the same way.
-   Don't store access keys.
+2. **Add your infrastructure** as a CDK app at `packages/infra`, with a stage per environment in
+   its `src/main.ts`:
 
-3. **Add the Deploy workflow**, triggered by CI completing on `main` and by hand:
-
-   ```yaml
-   on:
-     workflow_run: { workflows: [CI], types: [completed], branches: [main] }
-     workflow_dispatch:
-       inputs: { stage: { type: string, required: true } }
-
-   jobs:
-     deploy:
-       if: ${{ github.event_name == 'workflow_dispatch' ||
-               (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
-       environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
-       concurrency: { group: 'deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}', cancel-in-progress: false }
-       steps:
-         - uses: actions/checkout@<sha>
-           with: { ref: '${{ github.event.workflow_run.head_sha || github.sha }}' }
-         # init, then: pnpm trivy, configure credentials (OIDC), synth
-         - name: Check commit is still main's latest
-           id: freshness
-           if: ${{ github.event_name == 'workflow_run' }}
-           run: |
-             main_sha="$(git ls-remote --exit-code origin refs/heads/main | cut -f1)"
-             if [[ "$main_sha" == "$(git rev-parse HEAD)" ]]; then
-               echo "current=true" >> "$GITHUB_OUTPUT"
-             else
-               echo "::notice::Skipping deploy: no longer main's latest commit"
-               echo "current=false" >> "$GITHUB_OUTPUT"
-             fi
-         - name: Deploy
-           if: ${{ github.event_name != 'workflow_run' || steps.freshness.outputs.current == 'true' }}
-           run: pnpm nx run @your-scope/infra:deploy-ci "$STAGE/*" --role-arn "$AWS_EXECUTION_ROLE_ARN"
+   ```bash
+   pnpm nx g @aws/nx-plugin:ts#infra --name=infra
    ```
 
-   The freshness check sits *inside* the concurrency slot, so it reflects `main` right before the
-   deploy, even if the run waited behind another one.
+   Its `deploy-ci` target is what the Deploy workflow runs. The constructs for the notes website
+   are already in `packages/common/constructs`.
 
-4. **Turn on automatic deploys** for the development stage. Under **Settings → Secrets and
+3. **Set up keyless cloud access** for each stage: the GitHub OIDC provider, a deploy role
+   trusted only for `repo:owner/repo:environment:<stage>`, a CloudFormation execution role with a
+   permissions boundary, the CDK bootstrap, and a GitHub environment named after the stage with
+   the variables `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN` and `AWS_EXECUTION_ROLE_ARN`. Discava's
+   [`scripts/setup-stage.sh`](https://github.com/AlexTo/discava/blob/main/scripts/setup-stage.sh)
+   does all of it for its stages; read it before adapting it. Don't store access keys.
+
+4. **Copy `.github/workflows/deploy.yml`**, if you aren't working in a fork, and change its
+   `@agentic-sdlc/` scope and the default stage name. It checks out the commit CI verified, stops
+   early with a clear error if `packages/infra` or the environment's variables are missing, runs
+   Trivy, synthesizes, and deploys only if the commit is still `main`'s latest. That freshness
+   check sits *inside* the job's concurrency slot, so it reflects `main` right before the deploy,
+   even if the run waited behind another one.
+
+5. **Turn on automatic deploys** for the development stage. Under **Settings → Secrets and
    variables → Actions → Variables**, add a repository variable `AUTO_DEPLOY_STAGE` with your
    development stage's name.
 
-5. **Protect production.** Under **Settings → Environments**, open your production stage's
+6. **Protect production.** Under **Settings → Environments**, open your production stage's
    environment and add **Required reviewers**. To deploy it, open **Actions → Deploy → Run
    workflow** and enter the production stage. The job then waits for approval.
 
-6. **Add the Tester agent**, if you want each deployed change tested (gap 11). This is the newest
-   piece, and it lives in Discava, not in this repository. Copy from there:
-
-   - `packages/tooling/agent/src/post-merge-test/` and `src/helpers/`, with the Nx target
-     `post-merge-test`
-   - `.github/workflows/post-merge-verify.yml`
-   - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`, for opening a test issue by hand
-
-   Then set the stage name (`TEST_STAGE`), and the paths that never reach a deployed stack
-   (`NOT_DEPLOYED` in `plan.ts`), to match your repository.
+7. **Add the Tester agent**, if you want each deployed change tested (gap 11). From this
+   repository you already have its glue (`post-merge-test/` in step 5), its issue template (step
+   4), and `.github/workflows/post-merge-verify.yml`, which opens a test issue for each pull
+   request a Deploy run put on the test stage. It tests on `TEST_STAGE`, a repository variable
+   that defaults to `AUTO_DEPLOY_STAGE`.
 
    On the OpenHands side, add a `tester` agent profile and an automation that polls for issues
    labelled `openhands-test`. There is no catalog template for it. Discava's worker and its prompt
@@ -96,12 +72,11 @@ example notes app in this repository has no deploy, so copy from
 
    <Aside type="caution" title="Public repository? Limit comments to collaborators first">
    The Tester reads issues, pull requests and their comments while holding those credentials. If
-   your repository is public, a stranger's comment can carry instructions to it. Before you turn
-   it on, open **Settings → Moderation options → Interaction limits** and choose **Limit to
-   repository collaborators**. The limit lasts at most six months, so note when to renew it.
-
-   Also keep the locking in `helpers/conversation-lock.ts`, keep the "how to test" in the
-   automation's own prompt instead of the issue, and never point it at a stage whose data matters.
+   your repository is public, a stranger's comment can carry instructions to it.
+   `scripts/setup-repository.sh` limits interactions to collaborators, for at most six months, so
+   run it again before the limit ends. Also keep the locking in `helpers/conversation-lock.ts`,
+   keep the "how to test" in the automation's own prompt instead of the issue, and never point it
+   at a stage whose data matters.
    </Aside>
 
 </Steps>

@@ -5,6 +5,9 @@ sidebar:
   order: 1
 ---
 
+`scripts/setup-repository.sh` がこれらをすべて作成します。
+[2. リポジトリを設定する](../../setup/github-repository/)を参照してください。
+
 | ラベル | 対象 | 付ける人 | 読む人 | 意味 |
 | --- | --- | --- | --- | --- |
 | `spec-ready` | spec の PR | 人 | Agent Issues | この PR をマージすると実装が始まる。すでにマージ済みの PR に付けた場合も同じ |
@@ -17,6 +20,7 @@ sidebar:
 | `review-fix-1` … `review-fix-5` | エージェントの PR | Agent Review Status | Agent Review Status | 「changes requested」に対する修正をその回数使った |
 | `review-fix-exhausted` | エージェントの PR | Agent Review Status | Agent Review Status、人 | レビューの修正を使い切った。人が引き継ぐ |
 | `no-ui-screenshots` | PR | メンテナー | UI Screenshots | スクリーンショットのルールを免除する。UI の変更に見るべきものがない場合。付けた後にチェックを再実行する |
+| `no-new-invariant` | PR | メンテナー | PR Checks (`Invariant coverage`) | invariant のカバレッジのルールを免除する。新しい書き込み元にまたがるルールがない場合。付けた後にチェックを再実行する |
 | `priority:high` | issue | 人 | Issue-to-PR automation | 同じポーリングでほかの issue より先にこの issue を始める |
 
 ## ループをリセットする

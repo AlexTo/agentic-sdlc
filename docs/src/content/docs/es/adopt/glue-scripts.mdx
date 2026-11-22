@@ -1,68 +1,69 @@
 ---
 title: 5. Los scripts de pegamento
-description: Añade los scripts con tests unitarios que deciden qué issue se abre, cuándo vuelve el agente y cuándo se detiene.
+description: Copia los scripts con tests unitarios que deciden qué issue se abre, cuándo vuelve el agente, cuándo se detiene y qué prueba el Tester.
 sidebar:
   order: 5
 ---
 
 import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
-**Al terminar tendrás:** un proyecto `common-scripts` con seis targets de Nx y 143 tests unitarios pasando.
-Los workflows de los pasos 6 y 7 solo llaman a estos targets.
+**Al terminar tendrás:** un proyecto `tooling-agent` con diez targets de Nx y 223 tests unitarios pasando.
+Los workflows de los pasos 6, 7 y 9 solo llaman a estos targets.
 
 <Steps>
 
-1. **Crea el proyecto.** Copia `packages/common/scripts/` de este repositorio (su
-   `package.json`, `project.json`, `tsconfig*.json` y `vitest.config.mts`), y borra
-   `src/dynamodb/`, que pertenece a la app de ejemplo. Renómbralo a `@your-scope/common-scripts` en
-   `package.json` y `project.json`, y en el `name` de `vitest.config.mts`. Un proyecto TypeScript
-   generado con el Nx Plugin for AWS tiene la misma estructura, si prefieres generar uno.
-
-2. **Copia las cuatro carpetas de pegamento** de `packages/common/scripts/src/` de este repositorio:
+1. **Copia `packages/tooling/agent/`** de este repositorio, entero. Su `project.json` ya
+   declara cada target que llaman los workflows, y su `AGENTS.md` le dice a un agente qué contiene
+   cada carpeta:
 
    <FileTree>
-   - packages/common/scripts/src/
-     - agent-issues/ spec → issue: gate, discover, tasks, validate, issue, plan-issue, create-next-issue, main, validate-main, y archive, archive-specs, archive-main para archivar
-     - agent-ci/ CI → agente: plan, run, main
-     - agent-review/ review → agente: plan, run, main
-     - ui-screenshots/ la regla de capturas de pantalla: check, main
+   - packages/tooling/agent/src/
+     - agent-issues/ spec → issue, el validador de `tasks.md` y el archivado de specs terminadas
+     - agent-ci/ CI en rojo → agente
+     - agent-review/ "changes requested" → agente
+     - helpers/ bloquear las issues que lee un agente, y distinguir a los autores de confianza de los desconocidos
+     - ui-screenshots/ la regla de capturas de pantalla, y el comentario `E2E screenshots`
+     - invariant-coverage/ qué código escribe qué entidad, y la regla de que los nuevos writers necesitan invariantes
+     - post-merge-test/ PR desplegado → issue de test para el Tester
    </FileTree>
 
-   Solo dependen de los módulos integrados de Node y de la CLI `gh`. `tsx` los ejecuta.
+   Solo dependen de los módulos integrados de Node, de TypeScript (para el escaneo de invariantes) y de la
+   CLI `gh`. `tsx` los ejecuta. Añade la carpeta al `pnpm-workspace.yaml` de tu workspace y a las references
+   del `tsconfig.json` raíz si tus globs no cubren ya `packages/tooling/*`.
 
-3. **Añade los targets** al `project.json` del proyecto, bajo `targets`:
+2. **Renombra el scope.** Sustituye `@agentic-sdlc/` por el scope de tu workspace en el `package.json`,
+   el `project.json` y el `vitest.config.mts` del proyecto, y en los comentarios de sus archivos
+   `main.ts`. Cada workflow que copies después nombra también `@agentic-sdlc/tooling-agent`.
 
-   ```json
-   "agent-issue":         { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/main.ts",    "cwd": "{projectRoot}" } },
-   "archive-specs":       { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/archive-main.ts", "cwd": "{projectRoot}" } },
-   "agent-ci-status":     { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-ci/main.ts",        "cwd": "{projectRoot}" } },
-   "agent-review-status": { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-review/main.ts",    "cwd": "{projectRoot}" } },
-   "ui-screenshots":      { "executor": "nx:run-commands", "options": { "command": "tsx src/ui-screenshots/main.ts",  "cwd": "{projectRoot}" } },
-   "validate-tasks":      { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/validate-main.ts", "cwd": "{projectRoot}" } }
-   ```
-
-4. **Cambia las constantes para tu configuración**, si cambiaste alguna decisión en
-   [el resumen](../overview/):
+3. **Cambia las constantes para tu configuración.** Las que están en negrita apuntan a la app de notas
+   de este repositorio, así que casi seguro las cambiarás. El resto solo cambia si cambiaste alguna decisión
+   en [el resumen](../overview/):
 
    | Constante | Archivo | Predeterminado |
    | --- | --- | --- |
+   | **`UI_SOURCE`** | `ui-screenshots/check.ts` | `.tsx`/`.css` bajo `packages/notes-website/src/` y `packages/common/shadcn/src/` |
+   | **`WRITER_PACKAGES`**, **`ENTITIES_PACKAGE`** | `invariant-coverage/scan.ts` | Los paquetes cuyo código escribe en la tabla, y el que contiene sus entidades (`notes-table`) |
+   | **`WRITER_MAP_PATH`**, **`INVARIANTS_PATH`**, **`HELPERS`** | `invariant-coverage/check.ts` | `packages/notes-table/entity-writers.json`, `packages/notes-table/src/helpers/invariants`, `notes-table` |
+   | **`UI_PATHS`**, **`NOT_DEPLOYED`** | `post-merge-test/plan.ts` | Lo que cuenta como un cambio de UI que merece la pena recorrer, y las rutas que nunca llegan a un stack desplegado |
    | `SPEC_READY_LABEL`, `AGENT_BRANCH_PREFIX` | `agent-issues/gate.ts` | `spec-ready`, `openhands/` |
    | `AGENT_LABEL` | `agent-issues/issue.ts` | `openhands` |
    | `AGENT_BRANCH`, `REVIEW_STATUS_CONTEXT`, `MAX_CI_FIX_ATTEMPTS` | `agent-ci/plan.ts` | `^openhands\/issue-\d+$`, `software-factory/review`, `5` |
    | `MAX_REVIEW_FIX_ATTEMPTS`, `CHANGES_REQUESTED` | `agent-review/plan.ts` | `5`, `🔄 CHANGES REQUESTED` |
-   | `UI_SOURCE`, `SCENARIO`, `WAIVER_LABEL` | `ui-screenshots/check.ts` | `.tsx`/`.css` del portal y de la UI compartida, `packages/e2e/src/scenarios/*.e2e.ts`, `no-ui-screenshots` |
+   | `WAIVER_LABEL` | `ui-screenshots/check.ts`, `invariant-coverage/check.ts` | `no-ui-screenshots`, `no-new-invariant` |
 
-   `UI_SOURCE` es la que casi seguro cambiarás. Apúntala al código fuente de tus frontends.
+   Si todavía no vas a comprobar invariantes, deja la carpeta `invariant-coverage` en su sitio y no
+   copies su job de PR Checks en el paso 6. Algunos tests unitarios leen los archivos de invariantes reales,
+   así que actualiza esos tests (en `invariant-coverage/check.test.ts`) o las rutas de arriba.
 
    <Aside type="caution">
    No cambies `REVIEW_STATUS_CONTEXT`. `software-factory/review` es el status que busca el worker
    issue-to-PR de OpenHands. Con cualquier otro nombre, el agente nunca se devuelve.
    </Aside>
 
-5. **Ejecuta los tests.**
+4. **Ejecuta los tests.**
 
    ```bash
-   pnpm nx run @your-scope/common-scripts:test
+   pnpm nx run @your-scope/tooling-agent:test
    ```
 
 </Steps>
@@ -70,19 +71,19 @@ Los workflows de los pasos 6 y 7 solo llaman a estos targets.
 ## Comprueba que funciona
 
 ```text
- Test Files  10 passed (10)
-      Tests  143 passed (143)
+ Test Files  19 passed (19)
+      Tests  223 passed (223)
 ```
 
 ## Prueba una ejecución en seco
 
-Cada uno de los tres scripts de agente lee el evento de GitHub desde `GITHUB_EVENT_PATH`, y con
+Cada uno de los scripts de agente lee el evento de GitHub desde `GITHUB_EVENT_PATH`, y con
 `DRY_RUN=true` imprime su decisión en lugar de actuar. Para reproducir un caso real, guarda un payload
 de una ejecución anterior del workflow y apunta el script a él:
 
 ```bash
 DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_PATH=./event.json \
-  pnpm nx run @your-scope/common-scripts:agent-ci-status
+  pnpm nx run @your-scope/tooling-agent:agent-ci-status
 ```
 
 ```json

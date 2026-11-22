@@ -16,24 +16,35 @@ uma spec para o app de notas e ela passa pelo loop descrito em [Como funciona](.
 ## O que você recebe
 
 <FileTree>
+- AGENTS.md o que todo agent lê primeiro, escrito para o app de notas
 - .specify/ templates, scripts e a constitution do Speckit
+- .husky/ Conventional Commits, scan de secrets e Biome no commit, mapa de invariantes no push
+- scripts/setup-repository.sh labels, branch protection e as outras configurações que um fork não copia
 - .github/
-  - ISSUE_TEMPLATE/implement-phase.md as instruções que toda issue de implementação carrega
-  - actions/init-monorepo/ configuração de CI compartilhada
+  - ISSUE_TEMPLATE/
+    - implement-phase.md as instruções que toda issue de implementação carrega
+    - test-deployed-pr.md uma issue de teste para o agent Testador, à mão
+  - actions/ configuração de CI compartilhada, o Chromium do Playwright, checks de caminhos alterados
+  - dependabot.yml mantém atualizadas as actions fixadas e as dependências
   - workflows/
-    - pr-checks.yml lint, testes, build, formato de tasks, e2e, comentário de screenshots
+    - pr-checks.yml lint, testes, build, formato de tasks, cobertura de invariantes, e2e, comentário de screenshots
     - ui-screenshots.yml a regra de screenshots
     - ci.yml checks, Trivy e o deploy da documentação na main
     - agent-issues.yml spec → issue, merge → próxima issue
     - archive-specs.yml spec concluída → PR de arquivamento
     - agent-ci.yml CI vermelho → agent
     - agent-review.yml "changes requested" → agent
+    - agent-status.yml os passos que esses dois compartilham
+    - deploy.yml main verde → um stage, desligado até você adicionar infraestrutura
+    - post-merge-verify.yml PR com deploy → issue de teste para o Testador
+    - cache-cleanup.yml os caches de um PR fechado
 - packages/
-  - common/scripts/src/ as regras da cola, com 143 testes unitários
-  - notes-table/ entidade ElectroDB, DynamoDB local
+  - tooling/agent/ as regras da cola, com 223 testes unitários
+  - tooling/local-dev/ sobe o DynamoDB local para o `pnpm dev`
+  - notes-table/ entidade ElectroDB, DynamoDB local, invariantes
   - notes-api/ procedures tRPC
   - notes-website/ React, Vite, TanStack Router, shadcn/ui
-  - e2e/ cenários Playwright e o helper `screenshot()`
+  - e2e/ cenários Playwright, o helper `screenshot()`, invariantes depois de cada teste
 - docs/ este site
 </FileTree>
 
@@ -44,15 +55,17 @@ rodar seus testes e2e e o agent nunca precisa de credenciais de nuvem.
 
 Só o que não pode ficar em um repositório:
 
-1. **Configurações do GitHub**: Issues e Actions ativados, os labels, branch protection. Um fork não os
-   copia.
-2. **OpenHands**: Agent Canvas na sua máquina, um token do GitHub e as duas automations apontadas para
+1. **Configurações do GitHub**: um fork não as copia, então o `scripts/setup-repository.sh` as aplica
+   de uma vez.
+2. **OpenHands**: Agent Canvas na sua máquina, um token do GitHub e as automations apontadas para
    o seu fork.
 
-## O que fica de fora
+## O que fica desligado até você adicionar
 
-O deploy do Discava na AWS. O app de notas não tem infraestrutura em nuvem, então um merge não entrega nada
-além do site de documentação. [Deploy e segurança](../../discava/deploy-and-security/) descreve o
-pipeline do Discava, e [Adote: deploy](../../adopt/deploy/) mostra como adicionar um.
+A nuvem. O app de notas não tem infraestrutura em nuvem, então um merge não entrega nada além do site
+de documentação. `deploy.yml` e `post-merge-verify.yml` estão no lugar, mas nunca rodam sozinhos:
+adicione um app CDK em `packages/infra` e defina `AUTO_DEPLOY_STAGE`, e toda `main` verde sai no
+deploy, e então o agent Testador testa o que foi publicado. [Adote: deploy](../../adopt/deploy/) tem os
+passos, e [Deploy e segurança](../../discava/deploy-and-security/) descreve o pipeline do Discava.
 
 <LinkCard title="Configure: fork, configuração e sua primeira feature" href="/agentic-sdlc/pt/setup/before-you-start/" />

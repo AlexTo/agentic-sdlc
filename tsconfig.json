@@ -7,7 +7,10 @@
       "path": "./packages/notes-table"
     },
     {
-      "path": "./packages/common/scripts"
+      "path": "./packages/tooling/agent"
+    },
+    {
+      "path": "./packages/tooling/local-dev"
     },
     {
       "path": "./packages/notes-api"

@@ -1,6 +1,6 @@
 ---
 title: 6. PR checks e CI
-description: Adicione o workflow PR Checks (lint, test, build, formato das tasks, e2e, screenshots) e o CI na main.
+description: Copie o workflow PR Checks (lint, test, build, formato das tasks, cobertura de invariantes, e2e, screenshots) e o CI na main.
 sidebar:
   order: 6
 ---
@@ -12,56 +12,45 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 <Steps>
 
-1. **Copie `.github/workflows/pr-checks.yml`** deste repositório. Mantenha o `name: PR Checks`
-   exatamente assim: o Agent CI Status escuta um workflow com esse nome. Os jobs dele:
+1. **Copie quatro workflows** de `.github/workflows/` deste repositório:
 
-   | Job | Manter como está? |
+   | Arquivo | O que faz |
    | --- | --- |
-   | `checks`, uma matriz de `lint`, `test`, `build` com `fail-fast: false` | Sim |
-   | `tasks-format` | Sim |
-   | `e2e`, em shards, mais `e2e-result` juntando os shards em um único check `E2E tests` | Ajuste o número de shards à sua suíte |
-   | `e2e-screenshots` | Sim, depois que o [passo 8](../local-stack-and-e2e/) estiver feito |
+   | `pr-checks.yml` | Lint, test e build do que o PR afeta; `Tasks format`; `Invariant coverage`; e2e em shards juntados em um único check `E2E tests`; o comentário `E2E screenshots` |
+   | `ui-screenshots.yml` | A regra dos screenshots, como workflow próprio, para que adicionar ou remover o label `no-ui-screenshots` rode de novo só este check. O Discava a roda como um job do PR Checks. Os dois jeitos funcionam |
+   | `ci.yml` | Os mesmos checks em todo push na `main`, Trivy, o cache do Playwright e o deploy deste site de documentação |
+   | `cache-cleanup.yml` | Apaga os caches de um PR quando ele é fechado |
 
-2. **Copie `.github/workflows/ui-screenshots.yml`.** Neste repositório, a regra dos screenshots é um
-   workflow próprio, disparado em `opened, synchronize, reopened, labeled, unlabeled`. Adicionar ou
-   remover o label `no-ui-screenshots` então roda de novo só este check, não a suíte e2e inteira. O
-   Discava roda a mesma regra como um job do PR Checks. Qualquer um funciona.
+   Mantenha o `name: PR Checks` do `pr-checks.yml` exatamente assim: o Agent CI Status escuta um
+   workflow com esse nome.
 
-3. **Copie `.github/workflows/ci.yml`** para pushes na `main`. Mantenha o passo `Check for mutations`
-   (`git diff --ignore-space-at-eol --exit-code` depois do build). Ele pega arquivos gerados que o
-   agent esqueceu de commitar. Mantenha o job `playwright-cache` se você usa Playwright: execuções
-   de PR só conseguem restaurar caches salvos na `main`.
+2. **Aponte-os para os seus projetos.** Procure `@agentic-sdlc/` nos arquivos copiados e troque o
+   scope. Depois, no `pr-checks.yml`:
 
-   O job `build` passa `nx-cache-scope: main` para o `init-monorepo`, que salva o cache de tasks do
-   Nx. A primeira execução de um PR começa a partir dele, então as tasks cujos inputs a `main` já
-   buildou são reaproveitadas, não rodadas de novo, e o agent espera menos em cada rodada de
-   correção. Cada perna de `checks` no PR Checks mantém seu próprio cache do mesmo jeito, exceto
-   `lint`, que só restaura, já que o lint é mais rápido do que salvar um cache. O `init-monorepo`
-   limita o cache a 1 GB.
+   | Job | Mudança |
+   | --- | --- |
+   | `invariant-coverage` | Os `paths` do código que poderia escrever na sua tabela, os mesmos de `WRITER_PACKAGES` no passo 5. Ou apague o job se você ainda não checa invariantes |
+   | `e2e` | O número de shards em `matrix.shard`, de acordo com a sua suíte. Um shard custa uns dois minutos antes do primeiro teste, então pare de adicioná-los quando os testes de cada um levarem mais ou menos isso |
+   | `e2e-screenshots` | Nada, depois que o [passo 8](../local-stack-and-e2e/) estiver feito |
 
-4. **Copie `.github/workflows/cache-cleanup.yml`.** Ele apaga os caches de um PR quando o PR é
-   fechado. Nada mais consegue lê-los, e sem ele eles contam para os 10 GB de cache de Actions do
-   repositório até o GitHub removê-los, começando pelos de PRs ainda abertos. Veja
+   No `ci.yml`, apague o job `deploy_docs` e a permissão `pages: write` dele, a menos que você
+   publique um site de documentação a partir de `docs/`.
+
+3. **Mantenha o que deixa o agent rápido.** O passo `Check for mutations` no `ci.yml` (`git diff
+   --exit-code` depois do build) pega arquivos gerados que o agent esqueceu de commitar. O job
+   `playwright-cache` salva o Chromium a partir da `main`, já que execuções de PR só conseguem
+   restaurar caches salvos lá. O job `build` salva o cache de tasks do Nx a partir da `main`, então a
+   primeira execução de um PR reaproveita o que a `main` já buildou, e o agent espera menos a cada
+   rodada de correção. Cada perna de `checks` no PR Checks mantém o próprio cache do mesmo jeito,
+   exceto `lint`, que só restaura. O `init-monorepo` limita o cache a 1 GB, e o Cache Cleanup libera a
+   parte de um PR fechado nos 10 GB do repositório. Veja
    [Mantendo tudo rápido](../../discava/pr-checks/#mantendo-tudo-rápido) para o quanto isso economizou para o
    Discava.
 
-5. **Fixe cada action em um SHA de commit**, como os arquivos copiados fazem, e adicione
-   `.github/dependabot.yml` para que os pins fiquem atualizados:
-
-   ```yaml
-   version: 2
-   updates:
-     - package-ecosystem: 'npm'
-       directory: '/'
-       schedule: { interval: 'weekly' }
-       groups: { all: { patterns: ['*'] } }
-     - package-ecosystem: 'github-actions'
-       directories: ['/', '/.github/actions/*']
-       schedule: { interval: 'weekly' }
-       groups: { github-actions: { applies-to: version-updates, patterns: ['*'] } }
-   ```
-
 </Steps>
+
+Toda action está fixada em um SHA de commit, e o `dependabot.yml` que você copiou no passo 1 mantém
+as versões fixadas atualizadas.
 
 ## Confira se funcionou
 

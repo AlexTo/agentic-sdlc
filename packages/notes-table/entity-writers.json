@@ -1,0 +1,5 @@
+{
+  "note": {
+    "notes-api": ["packages/notes-api/src/procedures/notes.ts"]
+  }
+}

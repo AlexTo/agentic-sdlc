@@ -8,12 +8,13 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **このステップで得られるもの:** spec から issue を開き、CI が赤のときや「changes requested」のレビューのときに
-エージェントを差し戻す 3 つの workflow と、すべてのタスクにチェックが入った spec をアーカイブする 4 つ目の workflow。
+エージェントを差し戻し、すべてのタスクにチェックが入った spec をアーカイブする workflow。
 
 <Steps>
 
-1. このリポジトリの `.github/workflows/` から **3 つの workflow をコピーします**。`agent-issues.yml`、
-   `agent-ci.yml`、`agent-review.yml` です。トリガーと権限は
+1. このリポジトリの `.github/workflows/` から **4 つの workflow をコピーします**。`agent-issues.yml`、
+   `agent-ci.yml`、`agent-review.yml`、そして 2 つのステータス workflow が共有するステップを持つ
+   `agent-status.yml` です。その中の `@agentic-sdlc/` スコープを変更します。トリガーと権限は
    [リファレンス: workflow](../../reference/workflows/) に一覧があります。
 
 2. **`if:` の条件が自分の決定と合っているか確認します。** ブランチのプレフィックスやラベルを変えた場合は、
@@ -48,15 +49,20 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    `pull-requests: write` は不要に見えますが、そうではありません。PR へのラベルとコメントは issues API を通り、
    この権限がないと issues API は workflow のトークンを拒否します。
 
-   2 つのステータス workflow は **デフォルトブランチ** をチェックアウトします。Agent Issues は
+   2 つのステータス workflow は `agent-status.yml` の中で **デフォルトブランチ** をチェックアウトします。Agent Issues は
    **マージコミット** をチェックアウトするので、マージされた PR が入れたチェックを見ることができます。
    どちらも PR の head をチェックアウトするようには決して変更しないでください。これらのジョブは書き込みできるトークンを持っています。
 
-4. **concurrency グループを保ちます。** どれも PR ごとまたはブランチごとで、`cancel-in-progress: false` です。
+4. **ラベルの前のロックを保ちます。** Agent Issues は各 issue を `openhands` ラベルなしで開き、
+   その会話をロックして、エージェントが読むものにコラボレーターだけがコメントできるようにしてから、
+   はじめてラベルを付けます。ロックに失敗するとラベルは付かず、実行は失敗し、手でロックすべき issue を
+   示します。コードは `helpers/conversation-lock.ts` です。
+
+5. **concurrency グループを保ちます。** どれも PR ごとまたはブランチごとで、`cancel-in-progress: false` です。
    これにより、1 つの PR に対する 2 つのイベントがそれぞれ試行を数えることはなく、
    別々の PR のマージが互いをキャンセルすることもありません。
 
-5. 完了した spec を片付けたい場合は、**`archive-specs.yml` をコピーします**。`main` への push で
+6. 完了した spec を片付けたい場合は、**`archive-specs.yml` をコピーします**。`main` への push で
    有効な `specs/*/tasks.md` が変わると、**(human)** を含むすべてのタスクにチェックが入った spec ごとに、
    ブランチ `archive-spec/<folder>` で PR を開きます。この PR はフォルダーを `specs/_archive/` に移し、
    そのフォルダーとの間のリンクを書き換えます。Agent Issues は `specs/_archive/` をスキップし、
@@ -66,8 +72,8 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    spec を有効なまま残すには、その PR をマージせずに閉じます。
 
    <Aside type="caution">
-   **Settings → Actions → General → Allow GitHub Actions to create and approve pull
-   requests** をオンにしてください。そうしないと workflow は PR を開けません。workflow のトークンで開かれた PR では
+   Actions が pull request を作成できるようにしないと、workflow は PR を開けません。この設定は
+   `scripts/setup-repository.sh` がオンにします。workflow のトークンで開かれた PR では
    PR Checks が始まりません。PR Checks を実行するには、それぞれの PR を閉じてから開き直します。
    </Aside>
 

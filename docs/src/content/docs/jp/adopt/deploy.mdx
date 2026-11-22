@@ -11,77 +11,53 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 開発ステージに出荷する Deploy workflow、人を待つ本番デプロイ、そして必要であれば、マージされた変更を毎回
 開発ステージでテストするテスト担当エージェント。
 
-このステップの詳細は Discava 固有（AWS、CDK）ですが、全体の形はどのクラウドでも使えます。このリポジトリの
-ノートアプリの例にはデプロイがないので、[Discava の `deploy.yml`](https://github.com/AlexTo/discava/blob/main/.github/workflows/deploy.yml)
-からコピーします。
+このリポジトリは workflow をオフの状態で同梱しています。`deploy.yml` は手動で実行したときか、
+`AUTO_DEPLOY_STAGE` を設定したときだけ実行され、`post-merge-verify.yml` はデプロイの後にだけ実行されます。
+ノートアプリにはクラウドインフラがないので、書くべき部分はあなたのものです。手順は Discava と同じく AWS と CDK を
+前提にしていますが、全体の形はどのクラウドでも使えます。
 
 <Steps>
 
 1. スキャンしたいプロジェクトに **`trivy` ターゲットを追加します**（ルートの `pnpm trivy` は
-   `nx run-many --target trivy --all` を実行します）。このリポジトリと同じように、`ci.yml` に `trivy` ジョブを追加します。
-   `build` とは別のジョブにしておくと、新たに公開された CVE が他を何もブロックせずに `main` にフラグを立てます。
+   `nx run-many --target trivy --all` を実行します）。コピーした `ci.yml` の `trivy` ジョブが、`main` への push のたびに
+   `build` とは別のジョブとしてこれを実行するので、新たに公開された CVE が他を何もブロックせずに `main` にフラグを立てます。
    受け入れた検出結果は、1 行に 1 つの ID で `.trivyignore` に記録します。
 
-2. **キーレスのクラウドアクセスを設定します。** AWS では、Discava の `scripts/setup-stage.sh` がステージごとに次を作成します:
-   GitHub OIDC プロバイダー、`repo:owner/repo:environment:<stage>` に対してのみ信頼されるデプロイロール、
-   permissions boundary 付きの CloudFormation 実行ロール、そして GitHub environment の変数
-   （`AWS_REGION`、`AWS_DEPLOY_ROLE_ARN`、`AWS_EXECUTION_ROLE_ARN`）。他のクラウドでも、
-   GitHub Actions 向けの OIDC フェデレーションを同じように使います。アクセスキーは保存しないでください。
+2. `packages/infra` に CDK アプリとして **インフラを追加します**。その `src/main.ts` に、environment ごとに
+   1 つのステージを置きます。
 
-3. **Deploy workflow を追加します**。トリガーは `main` での CI の完了と手動実行です。
-
-   ```yaml
-   on:
-     workflow_run: { workflows: [CI], types: [completed], branches: [main] }
-     workflow_dispatch:
-       inputs: { stage: { type: string, required: true } }
-
-   jobs:
-     deploy:
-       if: ${{ github.event_name == 'workflow_dispatch' ||
-               (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
-       environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
-       concurrency: { group: 'deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}', cancel-in-progress: false }
-       steps:
-         - uses: actions/checkout@<sha>
-           with: { ref: '${{ github.event.workflow_run.head_sha || github.sha }}' }
-         # init, then: pnpm trivy, configure credentials (OIDC), synth
-         - name: Check commit is still main's latest
-           id: freshness
-           if: ${{ github.event_name == 'workflow_run' }}
-           run: |
-             main_sha="$(git ls-remote --exit-code origin refs/heads/main | cut -f1)"
-             if [[ "$main_sha" == "$(git rev-parse HEAD)" ]]; then
-               echo "current=true" >> "$GITHUB_OUTPUT"
-             else
-               echo "::notice::Skipping deploy: no longer main's latest commit"
-               echo "current=false" >> "$GITHUB_OUTPUT"
-             fi
-         - name: Deploy
-           if: ${{ github.event_name != 'workflow_run' || steps.freshness.outputs.current == 'true' }}
-           run: pnpm nx run @your-scope/infra:deploy-ci "$STAGE/*" --role-arn "$AWS_EXECUTION_ROLE_ARN"
+   ```bash
+   pnpm nx g @aws/nx-plugin:ts#infra --name=infra
    ```
 
-   最新かどうかのチェックは concurrency のスロットの *内側* にあるので、実行が別の実行の後ろで待っていた場合でも、
-   デプロイ直前の `main` を反映します。
+   その `deploy-ci` ターゲットが、Deploy workflow が実行するものです。ノートのウェブサイト用の construct は
+   すでに `packages/common/constructs` にあります。
 
-4. 開発ステージの **自動デプロイをオンにします**。**Settings → Secrets and
+3. ステージごとに **キーレスのクラウドアクセスを設定します**。GitHub OIDC プロバイダー、
+   `repo:owner/repo:environment:<stage>` に対してのみ信頼されるデプロイロール、permissions boundary 付きの
+   CloudFormation 実行ロール、CDK の bootstrap、そしてステージ名を付けた GitHub environment と、その変数
+   `AWS_REGION`、`AWS_DEPLOY_ROLE_ARN`、`AWS_EXECUTION_ROLE_ARN` です。Discava の
+   [`scripts/setup-stage.sh`](https://github.com/AlexTo/discava/blob/main/scripts/setup-stage.sh)
+   は自分のステージに対してこれをすべて行います。流用する前に読んでください。アクセスキーは保存しないでください。
+
+4. fork で作業していない場合は、**`.github/workflows/deploy.yml` をコピーし**、その `@agentic-sdlc/` スコープと
+   デフォルトのステージ名を変更します。この workflow は CI が検証したコミットをチェックアウトし、`packages/infra` や
+   environment の変数が足りなければ明確なエラーで早めに止まり、Trivy を実行し、synth し、そのコミットがまだ `main` の
+   最新である場合にだけデプロイします。この最新かどうかのチェックはジョブの concurrency のスロットの *内側* にあるので、
+   実行が別の実行の後ろで待っていた場合でも、デプロイ直前の `main` を反映します。
+
+5. 開発ステージの **自動デプロイをオンにします**。**Settings → Secrets and
    variables → Actions → Variables** で、リポジトリ変数 `AUTO_DEPLOY_STAGE` を開発ステージの名前で追加します。
 
-5. **本番を保護します。** **Settings → Environments** で本番ステージの environment を開き、
+6. **本番を保護します。** **Settings → Environments** で本番ステージの environment を開き、
    **Required reviewers** を追加します。本番にデプロイするには、**Actions → Deploy → Run
    workflow** を開いて本番ステージを入力します。するとジョブは承認を待ちます。
 
-6. デプロイされた変更を毎回テストしたい場合は、**テスト担当エージェントを追加します**（ギャップ 11）。これは最も新しい
-   部品で、このリポジトリではなく Discava にあります。そこから次をコピーします:
-
-   - `packages/tooling/agent/src/post-merge-test/` と `src/helpers/`、および Nx ターゲット
-     `post-merge-test`
-   - `.github/workflows/post-merge-verify.yml`
-   - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`（テスト issue を手動で開くためのもの）
-
-   次に、ステージ名（`TEST_STAGE`）と、デプロイされたスタックに決して届かないパス
-   （`plan.ts` の `NOT_DEPLOYED`）を、あなたのリポジトリに合わせて設定します。
+7. デプロイされた変更を毎回テストしたい場合は、**テスト担当エージェントを追加します**（ギャップ 11）。このリポジトリから、
+   そのグルー（ステップ 5 の `post-merge-test/`）、issue テンプレート（ステップ 4）、そして
+   `.github/workflows/post-merge-verify.yml` がすでに手元にあります。この workflow は、Deploy の実行がテストステージに
+   載せた pull request ごとにテスト issue を開きます。テストは `TEST_STAGE` 上で行われます。これはリポジトリ変数で、
+   デフォルトは `AUTO_DEPLOY_STAGE` です。
 
    OpenHands 側では、`tester` エージェントプロファイルと、`openhands-test` ラベルの付いた issue を
    ポーリングする automation を追加します。これにはカタログのテンプレートがありません。Discava のワーカーとそのプロンプトは
@@ -94,11 +70,9 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
    <Aside type="caution" title="公開リポジトリですか? 先にコメントをコラボレーターに限定する">
    テスト担当は、これらの認証情報を持ったまま issue、pull request、そのコメントを読みます。リポジトリが
-   公開されている場合、見知らぬ人のコメントがテスト担当への指示を運ぶ可能性があります。有効にする前に、
-   **Settings → Moderation options → Interaction limits** を開き、**Limit to repository collaborators** を
-   選んでください。制限の期間は最長 6 か月なので、いつ更新するかを控えておいてください。
-
-   また、`helpers/conversation-lock.ts` のロックを維持し、「どうテストするか」は issue ではなく
+   公開されている場合、見知らぬ人のコメントがテスト担当への指示を運ぶ可能性があります。
+   `scripts/setup-repository.sh` はやり取りをコラボレーターに限定しますが、期間は最長 6 か月なので、
+   制限が切れる前にもう一度実行してください。また、`helpers/conversation-lock.ts` のロックを維持し、「どうテストするか」は issue ではなく
    automation 自身のプロンプトに置き、データが重要なステージには決して向けないでください。
    </Aside>
 

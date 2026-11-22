@@ -9,6 +9,6 @@
     "lib": ["es2022", "dom"]
   },
   "include": ["src/**/*.ts", "playwright.config.ts"],
-  "references": [],
+  "references": [{ "path": "../notes-table/tsconfig.lib.json" }],
   "exclude": []
 }

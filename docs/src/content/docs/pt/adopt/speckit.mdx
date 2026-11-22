@@ -1,6 +1,6 @@
 ---
 title: 2. Instale o Speckit
-description: Instale o specify-cli 1.3.2, inicialize ele no repositório com a extensão git e mude para numeração por timestamp.
+description: Instale o specify-cli 1.3.2, copie o .specify/ já configurado deste repositório e adicione os comandos para o seu coding agent.
 sidebar:
   order: 2
 ---
@@ -23,31 +23,28 @@ coding agent, e pastas de spec nomeadas por timestamp.
    specify 1.3.2
    ```
 
-2. **Inicialize no repositório** para o seu coding agent, com a extensão git incluída. O Discava
-   usou a integração `claude`, que instala os comandos como skills:
+2. **Copie o `.specify/`** deste repositório. Ele já está configurado do jeito que o workflow precisa:
+
+   | Configuração | Onde | Valor |
+   | --- | --- | --- |
+   | Pastas de spec nomeadas por timestamp | `extensions/git/git-config.yml` | `branch_numbering: timestamp`, para que duas pessoas escrevendo specs ao mesmo tempo nunca colidam: `specs/20261116-013307-course-reviews/`, não `specs/001-course-reviews/` |
+   | Conventional commits a cada passo | `extensions/git/git-config.yml` | `commit_style: conventional` |
+   | Os hooks da extensão git rodam sem perguntar | `extensions.yml` | `auto_execute_hooks: true`: uma branch antes de `/speckit-specify`, um commit depois de cada passo |
+   | Os templates e a constitution | `templates/`, `memory/` | Já trazem as mudanças do [passo 3](../constitution-and-templates/) |
+
+3. **Adicione os comandos para o seu coding agent.** Se ele lê skills do Claude Code, copie
+   `.claude/skills/speckit-*` deste repositório. Caso contrário, deixe o Speckit escrevê-los para o
+   seu agent em uma pasta temporária e copie só os arquivos de comandos:
 
    ```bash
-   specify init --here --integration claude --script sh --extension git
+   mkdir /tmp/speckit && cd /tmp/speckit
+   specify init --here --integration <your-agent> --script sh --extension git
    ```
 
-   Rode `specify init --help` para ver as outras integrações. Escolha a que o agent do seu time lê.
+   Rode `specify init --help` para ver a lista de integrações. Copie a pasta que ele cria para os
+   comandos do seu agent, não o `.specify/` dele, que desfaria o passo 2.
 
-3. **Mude para numeração por timestamp.** Em `.specify/extensions/git/git-config.yml`:
-
-   ```yaml
-   branch_numbering: timestamp
-   commit_style: conventional
-   ```
-
-   As pastas viram `specs/20261116-013307-course-reviews/` em vez de `specs/001-course-reviews/`,
-   então duas pessoas escrevendo specs ao mesmo tempo nunca colidem.
-
-4. **Confira os hooks da extensão git** em `.specify/extensions.yml`. O Discava mantém os padrões:
-   `speckit.git.feature` antes de `/speckit-specify` (cria uma branch), e `speckit.git.commit` depois
-   de cada passo (um commit por passo). Ele define `auto_execute_hooks: true` para que eles rodem
-   sem perguntar.
-
-5. **Faça commit de `.specify/`** e dos arquivos de comandos ou skills da integração.
+4. **Faça commit de `.specify/`** e dos arquivos de comandos ou skills.
 
 </Steps>
 
@@ -58,7 +55,7 @@ coding agent, e pastas de spec nomeadas por timestamp.
   - extensions/git/ git-config.yml, comandos, scripts
   - extensions.yml
   - init-options.json
-  - memory/constitution.md ainda o template, preenchido no próximo passo
+  - memory/constitution.md a do app de notas, reescrita para o seu no próximo passo
   - scripts/bash/
   - templates/ templates de spec, plan, tasks, checklist e constitution
 </FileTree>

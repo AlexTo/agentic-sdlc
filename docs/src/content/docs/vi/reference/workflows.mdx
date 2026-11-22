@@ -7,16 +7,17 @@ sidebar:
 
 | Workflow | File | Trigger | Permission | Checkout |
 | --- | --- | --- | --- | --- |
-| PR Checks | `pr-checks.yml` | `pull_request` vào `main` | `contents: read`, cộng `pull-requests: write` cho job comment ảnh chụp màn hình | PR |
+| PR Checks | `pr-checks.yml` | `pull_request` vào `main` | `contents: read`, cộng `pull-requests: write` cho job comment ảnh chụp màn hình | PR, trừ job comment ảnh chụp màn hình: nhánh mặc định |
 | UI Screenshots | `ui-screenshots.yml` | `pull_request` vào `main`, kể cả `labeled`/`unlabeled` | `contents: read`, `pull-requests: read` | Nhánh mặc định (đọc diff từ API) |
 | CI | `ci.yml` | `push` lên `main`, `workflow_dispatch` | `contents: read`, `pages: write`, `id-token: write` | `main` |
 | Agent Issues | `agent-issues.yml` | `pull_request: [closed, labeled]` vào `main`, `workflow_dispatch(spec_folder)` | `contents: read`, `issues: write`, `pull-requests: write` | Merge commit |
 | Archive Specs | `archive-specs.yml` | `push` lên `main` thay đổi `specs/*/tasks.md`, `workflow_dispatch` | `contents: write`, `issues: read`, `pull-requests: write` | `main` |
-| Agent CI Status | `agent-ci.yml` | `workflow_run` của PR Checks, `completed` | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` | Nhánh mặc định |
-| Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` | Nhánh mặc định |
+| Agent CI Status | `agent-ci.yml` | `workflow_run` của PR Checks, `completed` | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` | Nhánh mặc định (qua Agent Status) |
+| Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` | Nhánh mặc định (qua Agent Status) |
+| Agent Status | `agent-status.yml` | `workflow_call` từ hai workflow trên, với Nx target cần chạy | Của workflow gọi | Nhánh mặc định |
 | Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | Không gì cả (truyền số PR cho `gh`) |
-| Deploy (Discava) | `deploy.yml` | `workflow_run` của CI trên `main`, `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | Commit mà CI đã xác minh |
-| Post-merge Verify (Discava) | `post-merge-verify.yml` | `workflow_run` của Deploy, `completed`, `workflow_dispatch(pr_number)` | `contents: read`, `actions: read`, `issues: write`, `pull-requests: write` | Nhánh mặc định |
+| Deploy | `deploy.yml` | `workflow_run` của CI trên `main` (chỉ khi `AUTO_DEPLOY_STAGE` được đặt), `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | Commit mà CI đã xác minh |
+| Post-merge Verify | `post-merge-verify.yml` | `workflow_run` của Deploy, `completed`, `workflow_dispatch(pr_number)` | `contents: read`, `actions: read`, `issues: write`, `pull-requests: write` | Nhánh mặc định |
 
 ## Tên job cần yêu cầu trong branch protection
 
@@ -24,6 +25,7 @@ sidebar:
 | --- | --- |
 | `Checks (lint)`, `Checks (test)`, `Checks (build)` | PR Checks |
 | `Tasks format` | PR Checks |
+| `Invariant coverage` | PR Checks |
 | `E2E tests` | PR Checks (gom các shard) |
 | `UI Screenshots` | UI Screenshots |
 
@@ -44,7 +46,7 @@ một lần, và nhóm theo từng PR nghĩa là các PR không liên quan khôn
 
 ## Các Nx target chúng chạy
 
-Tất cả trong `@your-scope/common-scripts`:
+Tất cả trong `@your-scope/tooling-agent`:
 
 | Target | Entry point | Biến môi trường nó đọc |
 | --- | --- | --- |
@@ -52,11 +54,18 @@ Tất cả trong `@your-scope/common-scripts`:
 | `archive-specs` | `src/agent-issues/archive-main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_WORKSPACE`, `BASE_BRANCH`, `DRY_RUN` |
 | `agent-ci-status` | `src/agent-ci/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
 | `agent-review-status` | `src/agent-review/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
-| `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH` |
 | `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`, `GITHUB_ACTIONS` (cho annotation) |
-
-Discava giữ cùng các target đó trong `@discava/tooling-agent`, với một target nữa cho Tester:
-
-| Target | Entry point | Biến môi trường nó đọc |
-| --- | --- | --- |
+| `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH` |
+| `screenshots-comment` | `src/ui-screenshots/comment-main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_STEP_SUMMARY`, `PR`, `SHA`, `RUN_URL`, `SCREENSHOTS_DIR` |
+| `invariant-coverage` | `src/invariant-coverage/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `BASE_REF` |
+| `entity-writers` | `src/invariant-coverage/write.ts` | Không gì cả. Được chạy bởi pre-push hook, hoặc bằng tay |
 | `post-merge-test` | `src/post-merge-test/main.ts` | `GH_TOKEN`, `GH_REPO`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH`, `PR_NUMBER`, `TEST_STAGE`, `DRY_RUN` |
+
+## Biến repository
+
+| Biến | Đọc bởi | Mặc định |
+| --- | --- | --- |
+| `AUTO_DEPLOY_STAGE` | Deploy | Không đặt: Deploy chỉ chạy bằng tay |
+| `TEST_STAGE` | Post-merge Verify | `AUTO_DEPLOY_STAGE` |
+| `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `AWS_EXECUTION_ROLE_ARN` | Deploy, trên GitHub environment của mỗi stage | Không có. Deploy dừng lại và nêu tên thứ còn thiếu |
+| `AWS_DOCKER_LOGIN_ROLE_ARN` | `init-monorepo`, cho các lần pull từ Amazon ECR Public | Không đặt: pull ẩn danh |

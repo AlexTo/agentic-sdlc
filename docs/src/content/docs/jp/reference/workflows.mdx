@@ -7,16 +7,17 @@ sidebar:
 
 | Workflow | ファイル | トリガー | 権限 | チェックアウトするもの |
 | --- | --- | --- | --- | --- |
-| PR Checks | `pr-checks.yml` | `main` への `pull_request` | `contents: read`。スクリーンショットのコメントジョブには `pull-requests: write` も | PR |
+| PR Checks | `pr-checks.yml` | `main` への `pull_request` | `contents: read`。スクリーンショットのコメントジョブには `pull-requests: write` も | PR。ただしスクリーンショットのコメントジョブはデフォルトブランチ |
 | UI Screenshots | `ui-screenshots.yml` | `main` への `pull_request`。`labeled`/`unlabeled` も含む | `contents: read`、`pull-requests: read` | デフォルトブランチ（差分は API から読む） |
 | CI | `ci.yml` | `main` への `push`、`workflow_dispatch` | `contents: read`、`pages: write`、`id-token: write` | `main` |
 | Agent Issues | `agent-issues.yml` | `main` への `pull_request: [closed, labeled]`、`workflow_dispatch(spec_folder)` | `contents: read`、`issues: write`、`pull-requests: write` | マージコミット |
 | Archive Specs | `archive-specs.yml` | `specs/*/tasks.md` を変更する `main` への `push`、`workflow_dispatch` | `contents: write`、`issues: read`、`pull-requests: write` | `main` |
-| Agent CI Status | `agent-ci.yml` | PR Checks の `workflow_run`、`completed` | `contents: read`、`actions: read`、`statuses: write`、`issues: write`、`pull-requests: write` | デフォルトブランチ |
-| Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`、`statuses: write`、`issues: write`、`pull-requests: write` | デフォルトブランチ |
+| Agent CI Status | `agent-ci.yml` | PR Checks の `workflow_run`、`completed` | `contents: read`、`actions: read`、`statuses: write`、`issues: write`、`pull-requests: write` | デフォルトブランチ（Agent Status 経由） |
+| Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`、`statuses: write`、`issues: write`、`pull-requests: write` | デフォルトブランチ（Agent Status 経由） |
+| Agent Status | `agent-status.yml` | 上の 2 つからの `workflow_call`。実行する Nx ターゲットを渡す | 呼び出し元のもの | デフォルトブランチ |
 | Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | なし（PR 番号を `gh` に渡す） |
-| Deploy (Discava) | `deploy.yml` | `main` での CI の `workflow_run`、`workflow_dispatch(stage)` | `contents: read`、`id-token: write` | CI が検証したコミット |
-| Post-merge Verify (Discava) | `post-merge-verify.yml` | Deploy の `workflow_run`、`completed`、`workflow_dispatch(pr_number)` | `contents: read`、`actions: read`、`issues: write`、`pull-requests: write` | デフォルトブランチ |
+| Deploy | `deploy.yml` | `main` での CI の `workflow_run`（`AUTO_DEPLOY_STAGE` が設定されている場合のみ）、`workflow_dispatch(stage)` | `contents: read`、`id-token: write` | CI が検証したコミット |
+| Post-merge Verify | `post-merge-verify.yml` | Deploy の `workflow_run`、`completed`、`workflow_dispatch(pr_number)` | `contents: read`、`actions: read`、`issues: write`、`pull-requests: write` | デフォルトブランチ |
 
 ## ブランチ保護で必須にするジョブ名
 
@@ -24,6 +25,7 @@ sidebar:
 | --- | --- |
 | `Checks (lint)`、`Checks (test)`、`Checks (build)` | PR Checks |
 | `Tasks format` | PR Checks |
+| `Invariant coverage` | PR Checks |
 | `E2E tests` | PR Checks（シャードをまとめる） |
 | `UI Screenshots` | UI Screenshots |
 
@@ -44,7 +46,7 @@ sidebar:
 
 ## 実行する Nx ターゲット
 
-すべて `@your-scope/common-scripts` にあります。
+すべて `@your-scope/tooling-agent` にあります。
 
 | ターゲット | エントリポイント | 読む環境変数 |
 | --- | --- | --- |
@@ -52,11 +54,18 @@ sidebar:
 | `archive-specs` | `src/agent-issues/archive-main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_WORKSPACE`、`BASE_BRANCH`、`DRY_RUN` |
 | `agent-ci-status` | `src/agent-ci/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH`、`DRY_RUN` |
 | `agent-review-status` | `src/agent-review/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH`、`DRY_RUN` |
-| `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH` |
 | `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`、`GITHUB_ACTIONS`（注釈用） |
-
-Discava は同じターゲットを `@discava/tooling-agent` に置いていて、テスト担当のためにさらに 1 つあります。
-
-| ターゲット | エントリポイント | 読む環境変数 |
-| --- | --- | --- |
+| `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH` |
+| `screenshots-comment` | `src/ui-screenshots/comment-main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_STEP_SUMMARY`、`PR`、`SHA`、`RUN_URL`、`SCREENSHOTS_DIR` |
+| `invariant-coverage` | `src/invariant-coverage/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH`、`BASE_REF` |
+| `entity-writers` | `src/invariant-coverage/write.ts` | なし。pre-push フック、または手動で実行する |
 | `post-merge-test` | `src/post-merge-test/main.ts` | `GH_TOKEN`、`GH_REPO`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_NAME`、`GITHUB_EVENT_PATH`、`PR_NUMBER`、`TEST_STAGE`、`DRY_RUN` |
+
+## リポジトリ変数
+
+| 変数 | 読むもの | デフォルト |
+| --- | --- | --- |
+| `AUTO_DEPLOY_STAGE` | Deploy | 未設定: Deploy は手動でのみ実行される |
+| `TEST_STAGE` | Post-merge Verify | `AUTO_DEPLOY_STAGE` |
+| `AWS_REGION`、`AWS_DEPLOY_ROLE_ARN`、`AWS_EXECUTION_ROLE_ARN` | Deploy。各ステージの GitHub environment 上 | なし。Deploy は停止し、足りないものを示す |
+| `AWS_DOCKER_LOGIN_ROLE_ARN` | `init-monorepo`。Amazon ECR Public からの pull 用 | 未設定: 匿名で pull する |

@@ -1,73 +1,49 @@
 ---
 title: 4. Hướng dẫn cho agent và issue template
-description: Viết AGENTS.md, và thêm issue template có hướng dẫn được đưa vào mọi issue triển khai.
+description: Viết AGENTS.md dựa trên bản của repository này, và chép các issue template có hướng dẫn được đưa vào mọi agent issue.
 sidebar:
   order: 4
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Kết quả:** một `AGENTS.md` mà mọi agent đọc đầu tiên, và
-`.github/ISSUE_TEMPLATE/implement-phase.md`, nguồn của các hướng dẫn cố định trong mọi issue triển
-khai.
+**Kết quả:** một `AGENTS.md` mà mọi agent đọc đầu tiên, và các issue template dưới
+`.github/ISSUE_TEMPLATE/`, nguồn của các hướng dẫn cố định trong mọi issue triển khai.
 
 <Steps>
 
-1. **Viết `AGENTS.md`** ở thư mục gốc của repository. Chỉ giữ những gì agent cần trong mọi lần chạy,
-   và liên kết đến `CONTRIBUTING.md` cho phần còn lại. Dùng các mục sau:
+1. **Chép `AGENTS.md`** từ repository này, và viết lại từng mục cho dự án của bạn. Nó ngắn một cách
+   có chủ ý: những gì agent cần trong mọi lần chạy, và không gì khác.
 
-   ```markdown
-   # AGENTS.md
-
-   Read CONTRIBUTING.md before opening a PR.
-
-   ## What this is
-   One paragraph: the product, the stack, the monorepo tool.
-
-   ## Commands
-   Install; build, lint, test everything; one project's tests, once (not watch mode);
-   one test file; `nx affected`; e2e; local dev; resetting local data.
-
-   ## Architecture
-   One bullet per package: what it is, what it may import, where new code of each kind goes.
-
-   ## Conventions
-   - Conventional Commits for commit and PR titles (enforced by commitlint).
-   - The formatter and linter, by name, so the agent doesn't add another.
-   - Where helpers go. Where shared code goes.
-   - Every rule a reviewer has had to repeat twice.
-   ```
+   | Mục | Viết gì |
+   | --- | --- |
+   | What this is | Một đoạn: sản phẩm, stack, công cụ monorepo |
+   | Commands | Cài đặt; build, lint, test mọi thứ; test của một project, một lần (không ở chế độ watch); một file test; `nx affected`; e2e; dev ở local |
+   | Architecture | Một gạch đầu dòng cho mỗi package: nó là gì, nó được import gì, code mới mỗi loại đặt ở đâu |
+   | Conventions | Conventional Commits, tên của formatter, helper đặt ở đâu, và mọi quy tắc mà người review đã phải nhắc lại hai lần |
 
    <Aside type="tip">
    Mục lệnh là quan trọng nhất. Một agent không tìm thấy cách "chạy một file test, một lần" sẽ chạy
-   cả bộ test ở chế độ watch và bị treo.
+   cả bộ test ở chế độ watch và bị treo. Chạy thử mỗi lệnh bạn liệt kê một lần, để chắc nó hoạt động.
    </Aside>
 
    Khi mục kiến trúc không còn gói gọn trong một dòng cho mỗi package, hãy chuyển chi tiết của từng
    package vào một `AGENTS.md` lồng trong thư mục của nó, và để ở file gốc một dòng trỏ tới đó. Agent
    chỉ nạp một file lồng khi nó làm việc trong thư mục đó, nên mỗi lần chạy chỉ đọc chi tiết nó cần.
+   `packages/tooling/agent/AGENTS.md` của repository này là một ví dụ; chép nó cùng với glue ở
+   [bước 5](../glue-scripts/).
 
-2. **Chép issue template** từ repository này sang
-   `.github/ISSUE_TEMPLATE/implement-phase.md`. Script Agent Issues tự viết các mục spec và scope
-   của issue, và đọc mọi thứ dưới `## Instructions for the agent` từ template lúc chạy:
+   Nếu agent của bạn đọc một file có tên khác, như `CLAUDE.md`, hãy cho file đó trỏ tới `AGENTS.md`.
+   `CLAUDE.md` của repository này bắt đầu bằng `@AGENTS.md`, mà Claude Code hiểu là "chèn file đó vào
+   đây".
 
-   ```markdown
-   ## Instructions for the agent
+2. **Chép `.github/ISSUE_TEMPLATE/`** từ repository này: `implement-phase.md` cho Developer, và
+   `test-deployed-pr.md` cho Tester, nếu bạn thêm nó ở [bước 9](../deploy/).
 
-   - Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
-   - Work through the scope in order, writing each story's tests first. Tick each task in `tasks.md` in the same commit that completes it.
-   - Do not use `pnpm dev`, Docker or the e2e runner locally. Run unit and component tests (once, not in watch mode), `pnpm lint`, typecheck and `pnpm build` on what you changed. E2E and concurrency tests run on PR CI: write them, then read CI's result.
-   - A change to what a user sees ships with `screenshot(page, 'name')` calls (`packages/e2e/src/helpers/screenshots.ts`) in the e2e scenario for that flow, at each state a reviewer would want to see: PR CI posts them as the `E2E screenshots` comment, and the `UI Screenshots` check fails without them. Don't leave screenshots to a **(human)** task.
-   - Skip tasks marked **(human)** and list them in the PR description for the reviewer.
-   - Use Conventional Commits for every commit. The PR title is a Conventional Commit too, for example `feat(assignments): submit work to an upload assignment`, not `[#n] ...`.
-   - In the PR description write `Refs #<parent>`. Never use `Closes` or `Fixes` against the parent issue; closing this issue is fine.
-   - Never weaken a test to make it pass, never edit `.github/workflows/`, never merge, and don't touch cloud credentials.
-   - If you are blocked, comment on this issue with what you tried and stop.
-   ```
-
-   Giữ nguyên văn `#<parent>`. Script thay nó bằng parent issue của spec, và bỏ gạch đầu dòng đó khi
-   spec không có parent issue. Giữ chính xác heading `## Instructions for the agent`, vì script tìm
-   nó và sẽ thất bại nếu không có.
+   Script Agent Issues tự viết các mục spec và scope của issue, và đọc mọi thứ dưới
+   `## Instructions for the agent` trong `implement-phase.md` lúc chạy. Giữ chính xác heading đó, vì
+   script tìm nó và sẽ thất bại nếu không có. Giữ nguyên văn cả `#<parent>`: script thay nó bằng
+   parent issue của spec, và bỏ gạch đầu dòng đó khi spec không có parent issue.
 
 3. **Sửa các hướng dẫn cho khớp với stack của bạn**: các lệnh, đường dẫn helper ảnh chụp màn hình, và
    "thông tin đăng nhập cloud" có nghĩa là gì với bạn.

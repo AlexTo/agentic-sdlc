@@ -11,78 +11,56 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 lên một stage development, các lần deploy production chờ một người, và, nếu bạn muốn, một agent
 Tester test mỗi thay đổi đã merge trên stage development.
 
-Chi tiết của bước này là riêng cho Discava (AWS, CDK), nhưng cấu trúc thì dùng được cho mọi cloud. Ứng
-dụng ghi chú ví dụ trong repository này không có deploy, nên hãy chép từ
-[`deploy.yml` của Discava](https://github.com/AlexTo/discava/blob/main/.github/workflows/deploy.yml).
+Repository này đã kèm sẵn các workflow, ở trạng thái tắt: `deploy.yml` chỉ chạy thủ công hoặc khi
+`AUTO_DEPLOY_STAGE` được đặt, và `post-merge-verify.yml` chỉ chạy sau một lần deploy. Ứng dụng ghi
+chú không có hạ tầng cloud, nên phần cần viết là của bạn. Các bước nói về AWS và CDK, như Discava
+dùng, nhưng cấu trúc thì dùng được cho mọi cloud.
 
 <Steps>
 
 1. **Thêm target `trivy`** vào các project bạn muốn quét (`pnpm trivy` ở gốc chạy
-   `nx run-many --target trivy --all`). Thêm job `trivy` vào `ci.yml`, như trong repository này. Giữ
-   nó là một job tách khỏi `build`, để một CVE mới công bố gắn cờ `main` mà không chặn thứ gì khác. Ghi
-   các phát hiện được chấp nhận, mỗi dòng một ID, trong `.trivyignore`.
+   `nx run-many --target trivy --all`). Job `trivy` trong `ci.yml` đã chép chạy nó trên mọi lần push
+   lên `main`, như một job tách khỏi `build`, để một CVE mới công bố gắn cờ `main` mà không chặn thứ
+   gì khác. Ghi các phát hiện được chấp nhận, mỗi dòng một ID, trong `.trivyignore`.
 
-2. **Thiết lập truy cập cloud không cần key.** Trên AWS, `scripts/setup-stage.sh` của Discava tạo,
-   cho mỗi stage: GitHub OIDC provider, một deploy role chỉ được tin cậy cho
-   `repo:owner/repo:environment:<stage>`, một CloudFormation execution role với permissions boundary,
-   và các biến của GitHub environment (`AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `AWS_EXECUTION_ROLE_ARN`).
-   Dùng OIDC federation của cloud bạn cho GitHub Actions theo cùng cách. Đừng lưu access key.
+2. **Thêm hạ tầng của bạn** dưới dạng một CDK app tại `packages/infra`, với mỗi environment một stage
+   trong `src/main.ts` của nó:
 
-3. **Thêm workflow Deploy**, kích hoạt khi CI hoàn tất trên `main` và chạy thủ công:
-
-   ```yaml
-   on:
-     workflow_run: { workflows: [CI], types: [completed], branches: [main] }
-     workflow_dispatch:
-       inputs: { stage: { type: string, required: true } }
-
-   jobs:
-     deploy:
-       if: ${{ github.event_name == 'workflow_dispatch' ||
-               (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
-       environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
-       concurrency: { group: 'deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}', cancel-in-progress: false }
-       steps:
-         - uses: actions/checkout@<sha>
-           with: { ref: '${{ github.event.workflow_run.head_sha || github.sha }}' }
-         # init, then: pnpm trivy, configure credentials (OIDC), synth
-         - name: Check commit is still main's latest
-           id: freshness
-           if: ${{ github.event_name == 'workflow_run' }}
-           run: |
-             main_sha="$(git ls-remote --exit-code origin refs/heads/main | cut -f1)"
-             if [[ "$main_sha" == "$(git rev-parse HEAD)" ]]; then
-               echo "current=true" >> "$GITHUB_OUTPUT"
-             else
-               echo "::notice::Skipping deploy: no longer main's latest commit"
-               echo "current=false" >> "$GITHUB_OUTPUT"
-             fi
-         - name: Deploy
-           if: ${{ github.event_name != 'workflow_run' || steps.freshness.outputs.current == 'true' }}
-           run: pnpm nx run @your-scope/infra:deploy-ci "$STAGE/*" --role-arn "$AWS_EXECUTION_ROLE_ARN"
+   ```bash
+   pnpm nx g @aws/nx-plugin:ts#infra --name=infra
    ```
 
-   Kiểm tra độ mới nằm *bên trong* slot concurrency, nên nó phản ánh `main` ngay trước khi deploy, kể
-   cả khi lần chạy phải chờ sau một lần chạy khác.
+   Target `deploy-ci` của nó là thứ mà workflow Deploy chạy. Các construct cho website ghi chú đã có
+   sẵn trong `packages/common/constructs`.
 
-4. **Bật deploy tự động** cho stage development. Trong **Settings → Secrets and
+3. **Thiết lập truy cập cloud không cần key** cho mỗi stage: GitHub OIDC provider, một deploy role
+   chỉ được tin cậy cho `repo:owner/repo:environment:<stage>`, một CloudFormation execution role với
+   permissions boundary, CDK bootstrap, và một GitHub environment mang tên stage với các biến
+   `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN` và `AWS_EXECUTION_ROLE_ARN`.
+   [`scripts/setup-stage.sh`](https://github.com/AlexTo/discava/blob/main/scripts/setup-stage.sh) của
+   Discava làm tất cả những việc đó cho các stage của nó; hãy đọc nó trước khi điều chỉnh. Đừng lưu
+   access key.
+
+4. **Chép `.github/workflows/deploy.yml`**, nếu bạn không làm việc trong một bản fork, và đổi scope
+   `@agentic-sdlc/` cùng tên stage mặc định của nó. Nó checkout commit mà CI đã xác minh, dừng sớm với
+   một lỗi rõ ràng nếu thiếu `packages/infra` hoặc các biến của environment, chạy Trivy, synth, và chỉ
+   deploy nếu commit vẫn là commit mới nhất của `main`. Kiểm tra độ mới đó nằm *bên trong* slot
+   concurrency của job, nên nó phản ánh `main` ngay trước khi deploy, kể cả khi lần chạy phải chờ sau
+   một lần chạy khác.
+
+5. **Bật deploy tự động** cho stage development. Trong **Settings → Secrets and
    variables → Actions → Variables**, thêm một repository variable `AUTO_DEPLOY_STAGE` với tên
    stage development của bạn.
 
-5. **Bảo vệ production.** Trong **Settings → Environments**, mở environment của stage production
+6. **Bảo vệ production.** Trong **Settings → Environments**, mở environment của stage production
    và thêm **Required reviewers**. Để deploy nó, mở **Actions → Deploy → Run workflow** và nhập
    stage production. Job khi đó chờ được duyệt.
 
-6. **Thêm agent Tester**, nếu bạn muốn mỗi thay đổi đã deploy được test (khoảng trống 11). Đây là
-   mảnh mới nhất, và nó nằm trong Discava, không phải trong repository này. Hãy chép từ đó:
-
-   - `packages/tooling/agent/src/post-merge-test/` và `src/helpers/`, cùng Nx target
-     `post-merge-test`
-   - `.github/workflows/post-merge-verify.yml`
-   - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`, để mở một issue test thủ công
-
-   Sau đó đặt tên stage (`TEST_STAGE`), và các đường dẫn không bao giờ đến một stack đã deploy
-   (`NOT_DEPLOYED` trong `plan.ts`), cho khớp với repository của bạn.
+7. **Thêm agent Tester**, nếu bạn muốn mỗi thay đổi đã deploy được test (khoảng trống 11). Từ
+   repository này bạn đã có glue của nó (`post-merge-test/` ở bước 5), issue template của nó (bước
+   4), và `.github/workflows/post-merge-verify.yml`, workflow mở một issue test cho mỗi pull request
+   mà một lần chạy Deploy đã đưa lên stage test. Nó test trên `TEST_STAGE`, một repository variable có
+   giá trị mặc định là `AUTO_DEPLOY_STAGE`.
 
    Ở phía OpenHands, thêm một agent profile `tester` và một automation poll các issue có label
    `openhands-test`. Không có template catalog nào cho nó. Worker của Discava và prompt của nó được
@@ -95,13 +73,11 @@ dụng ghi chú ví dụ trong repository này không có deploy, nên hãy ché
 
    <Aside type="caution" title="Repository công khai? Hãy giới hạn comment cho collaborator trước">
    Tester đọc issue, pull request và các comment của chúng trong khi đang giữ các thông tin đăng nhập
-   đó. Nếu repository của bạn công khai, comment của một người lạ có thể mang chỉ dẫn đến nó. Trước
-   khi bật nó, hãy mở **Settings → Moderation options → Interaction limits** và chọn **Limit to
-   repository collaborators**. Giới hạn này kéo dài tối đa sáu tháng, nên hãy ghi lại khi nào cần gia
-   hạn.
-
-   Đồng thời giữ việc khóa trong `helpers/conversation-lock.ts`, giữ phần "test như thế nào" trong prompt
-   riêng của automation thay vì trong issue, và đừng bao giờ trỏ nó vào một stage có dữ liệu quan trọng.
+   đó. Nếu repository của bạn công khai, comment của một người lạ có thể mang chỉ dẫn đến nó.
+   `scripts/setup-repository.sh` giới hạn tương tác cho collaborator, trong tối đa sáu tháng, nên hãy
+   chạy lại nó trước khi giới hạn hết hạn. Đồng thời giữ việc khóa trong
+   `helpers/conversation-lock.ts`, giữ phần "test như thế nào" trong prompt riêng của automation thay
+   vì trong issue, và đừng bao giờ trỏ nó vào một stage có dữ liệu quan trọng.
    </Aside>
 
 </Steps>

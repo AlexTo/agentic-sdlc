@@ -1,61 +1,57 @@
 ---
 title: 5. 粘合脚本
-description: 添加经过单元测试的脚本，它们决定开哪个 issue、何时把智能体打回去，以及何时停止。
+description: 复制经过单元测试的脚本，它们决定开哪个 issue、何时把智能体打回去、何时停止，以及测试智能体测试什么。
 sidebar:
   order: 5
 ---
 
 import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
-**完成后你将拥有：** 一个 `common-scripts` 项目，带有六个 Nx target 和 143 个通过的单元测试。第 6 步和第 7 步中的 workflow 只调用这些 target。
+**完成后你将拥有：** 一个 `tooling-agent` 项目，带有十个 Nx target 和 223 个通过的单元测试。第 6、7 和 9 步中的 workflow 只调用这些 target。
 
 <Steps>
 
-1. **创建项目。** 从这个仓库复制 `packages/common/scripts/`（它的 `package.json`、`project.json`、`tsconfig*.json` 和 `vitest.config.mts`），并删除属于示例应用的 `src/dynamodb/`。在 `package.json` 和 `project.json` 中，以及 `vitest.config.mts` 的 `name` 中，把它重命名为 `@your-scope/common-scripts`。如果你更愿意生成一个，用 Nx Plugin for AWS 生成的 TypeScript 项目结构相同。
-
-2. 从这个仓库的 `packages/common/scripts/src/` **复制四个粘合文件夹**：
+1. 从这个仓库**整个复制 `packages/tooling/agent/`**。它的 `project.json` 已经声明了 workflow 调用的每一个 target，它的 `AGENTS.md` 会告诉智能体每个文件夹里有什么：
 
    <FileTree>
-   - packages/common/scripts/src/
-     - agent-issues/ spec → issue：gate、discover、tasks、validate、issue、plan-issue、create-next-issue、main、validate-main，以及用于归档的 archive、archive-specs、archive-main
-     - agent-ci/ CI → 智能体：plan、run、main
-     - agent-review/ 评审 → 智能体：plan、run、main
-     - ui-screenshots/ 截图规则：check、main
+   - packages/tooling/agent/src/
+     - agent-issues/ spec → issue、`tasks.md` 校验器，以及归档已完成的 spec
+     - agent-ci/ 红色 CI → 智能体
+     - agent-review/ "changes requested" → 智能体
+     - helpers/ 锁定智能体读取的 issue，并区分可信作者与陌生人
+     - ui-screenshots/ 截图规则，以及 `E2E screenshots` 评论
+     - invariant-coverage/ 哪些代码写入哪个实体，以及新的写入方需要不变式的规则
+     - post-merge-test/ 已部署的 PR → 给测试智能体的测试 issue
    </FileTree>
 
-   它们只依赖 Node 内置模块和 `gh` CLI，由 `tsx` 运行。
+   它们只依赖 Node 内置模块、TypeScript（用于不变式扫描）和 `gh` CLI，由 `tsx` 运行。如果你的 glob 还没有覆盖 `packages/tooling/*`，把这个文件夹加入工作区的 `pnpm-workspace.yaml` 和根 `tsconfig.json` 的 references 中。
 
-3. 在项目的 `project.json` 中，于 `targets` 之下**添加这些 target**：
+2. **重命名 scope。** 在项目的 `package.json`、`project.json` 和 `vitest.config.mts` 中，以及它各个 `main.ts` 文件的注释中，把 `@agentic-sdlc/` 替换为你工作区的 scope。你之后复制的每个 workflow 中也都写着 `@agentic-sdlc/tooling-agent`。
 
-   ```json
-   "agent-issue":         { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/main.ts",    "cwd": "{projectRoot}" } },
-   "archive-specs":       { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/archive-main.ts", "cwd": "{projectRoot}" } },
-   "agent-ci-status":     { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-ci/main.ts",        "cwd": "{projectRoot}" } },
-   "agent-review-status": { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-review/main.ts",    "cwd": "{projectRoot}" } },
-   "ui-screenshots":      { "executor": "nx:run-commands", "options": { "command": "tsx src/ui-screenshots/main.ts",  "cwd": "{projectRoot}" } },
-   "validate-tasks":      { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/validate-main.ts", "cwd": "{projectRoot}" } }
-   ```
-
-4. 如果你改动了[概览](../overview/)中的任何决定，**按你的配置修改这些常量**：
+3. **按你的配置修改这些常量。** 加粗的那些指向这个仓库的笔记应用，所以你几乎肯定要改它们。其余的只有在你改动了[概览](../overview/)中的某个决定时才需要改：
 
    | 常量 | 文件 | 默认值 |
    | --- | --- | --- |
+   | **`UI_SOURCE`** | `ui-screenshots/check.ts` | `packages/notes-website/src/` 和 `packages/common/shadcn/src/` 下的 `.tsx`/`.css` |
+   | **`WRITER_PACKAGES`**、**`ENTITIES_PACKAGE`** | `invariant-coverage/scan.ts` | 其代码会写入表的那些包，以及存放表实体的包（`notes-table`） |
+   | **`WRITER_MAP_PATH`**、**`INVARIANTS_PATH`**、**`HELPERS`** | `invariant-coverage/check.ts` | `packages/notes-table/entity-writers.json`、`packages/notes-table/src/helpers/invariants`、`notes-table` |
+   | **`UI_PATHS`**、**`NOT_DEPLOYED`** | `post-merge-test/plan.ts` | 哪些算作值得点一遍的 UI 改动，以及永远不会进入已部署栈的路径 |
    | `SPEC_READY_LABEL`、`AGENT_BRANCH_PREFIX` | `agent-issues/gate.ts` | `spec-ready`、`openhands/` |
    | `AGENT_LABEL` | `agent-issues/issue.ts` | `openhands` |
    | `AGENT_BRANCH`、`REVIEW_STATUS_CONTEXT`、`MAX_CI_FIX_ATTEMPTS` | `agent-ci/plan.ts` | `^openhands\/issue-\d+$`、`software-factory/review`、`5` |
    | `MAX_REVIEW_FIX_ATTEMPTS`、`CHANGES_REQUESTED` | `agent-review/plan.ts` | `5`、`🔄 CHANGES REQUESTED` |
-   | `UI_SOURCE`、`SCENARIO`、`WAIVER_LABEL` | `ui-screenshots/check.ts` | portal 和共享 UI 的 `.tsx`/`.css`、`packages/e2e/src/scenarios/*.e2e.ts`、`no-ui-screenshots` |
+   | `WAIVER_LABEL` | `ui-screenshots/check.ts`、`invariant-coverage/check.ts` | `no-ui-screenshots`、`no-new-invariant` |
 
-   `UI_SOURCE` 几乎肯定是你要改的那一个。把它指向你的前端源码。
+   如果你暂时不检查不变式，就把 `invariant-coverage` 文件夹留在原处，并且在第 6 步中不要复制它的 PR Checks job。有些单元测试会读取真实的不变式文件，所以请更新这些测试（在 `invariant-coverage/check.test.ts` 中）或上面的路径。
 
    <Aside type="caution">
    不要修改 `REVIEW_STATUS_CONTEXT`。`software-factory/review` 是 OpenHands issue-to-PR worker 查找的 status。换成任何其他名称，智能体都永远不会被打回去。
    </Aside>
 
-5. **运行测试。**
+4. **运行测试。**
 
    ```bash
-   pnpm nx run @your-scope/common-scripts:test
+   pnpm nx run @your-scope/tooling-agent:test
    ```
 
 </Steps>
@@ -63,17 +59,17 @@ import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 ## 检查是否成功
 
 ```text
- Test Files  10 passed (10)
-      Tests  143 passed (143)
+ Test Files  19 passed (19)
+      Tests  223 passed (223)
 ```
 
 ## 试一次 dry run
 
-三个智能体脚本都从 `GITHUB_EVENT_PATH` 读取 GitHub 事件，在 `DRY_RUN=true` 时会打印出它的决定，而不是执行它。要重放一个真实的案例，从过去的某次 workflow 运行中保存一份 payload，然后让脚本指向它：
+每个智能体脚本都从 `GITHUB_EVENT_PATH` 读取 GitHub 事件，在 `DRY_RUN=true` 时会打印出它的决定，而不是执行它。要重放一个真实的案例，从过去的某次 workflow 运行中保存一份 payload，然后让脚本指向它：
 
 ```bash
 DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_PATH=./event.json \
-  pnpm nx run @your-scope/common-scripts:agent-ci-status
+  pnpm nx run @your-scope/tooling-agent:agent-ci-status
 ```
 
 ```json

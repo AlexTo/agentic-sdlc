@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-import { Steps, Aside } from '@astrojs/starlight/components';
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
 **Kết quả:** một pnpm workspace với Nx, Biome, Conventional Commits được thực thi trên mọi commit, và
 một bước kiểm tra secret trước mọi commit.
@@ -23,74 +23,44 @@ glue chạy như một Nx target. Nếu bạn dùng công cụ monorepo khác, h
    pnpm create @aws/nx-workspace your-project --iac=cdk --no-interactive
    ```
 
-   Lệnh này cũng cài hook pre-commit git-secrets được dùng ở bước 4. Một Nx workspace có sẵn cũng
-   được. Ghim pnpm trong `package.json` ở gốc, để CI và agent dùng cùng phiên bản:
+   Một Nx workspace có sẵn cũng được. Ghim pnpm trong `package.json` ở gốc bằng `packageManager`,
+   để CI và agent dùng cùng phiên bản.
 
-   ```json
-   { "packageManager": "pnpm@<version>" }
-   ```
+2. **Chép các file này** từ repository này sang cùng đường dẫn trong repository của bạn:
 
-2. **Thêm các script ở gốc** mà `AGENTS.md`, CI và agent sẽ gọi:
+   <FileTree>
+   - commitlint.config.js Conventional Commits
+   - lint-staged.config.js Biome trên các file đã stage
+   - .husky/
+     - commit-msg chạy commitlint
+     - pre-commit git-secrets, rồi lint-staged, và thất bại nếu Biome thay đổi gì, để agent stage lại và commit lần nữa
+     - prepare-commit-msg Commitizen, cho những người commit tương tác. Nó tự bỏ qua với `git commit -m`, cách agent commit
+   - .git-secrets/ script git-secrets mà hook pre-commit chạy
+   - .gitallowed các pattern mà git-secrets cho qua
+   - .github/
+     - actions/init-monorepo/ thiết lập CI dùng chung
+     - actions/changed-paths/ "PR này có thay đổi đường dẫn nào trong số này không?", để bỏ qua job
+     - actions/playwright-setup/ Chromium cho Playwright, cache theo phiên bản
+     - dependabot.yml giữ các action và dependency đã ghim luôn cập nhật
+   </FileTree>
 
-   ```json
-   "scripts": {
-     "dev": "nx run-many --target dev",
-     "build": "nx run-many --target build",
-     "lint": "nx run-many --target lint --configuration=fix",
-     "test": "nx run-many --target test --all",
-     "trivy": "nx run-many --target trivy --all",
-     "prepare": "husky"
-   }
-   ```
+   Để `.husky/pre-push` lại cho đến [bước 8](../local-stack-and-e2e/): nó kiểm tra bản đồ invariant.
+   `init-monorepo` cài pnpm (thử ba lần, vì một timeout của registry sẽ khiến agent mất một lượt
+   fix-up), Node 24 và tùy chọn uv, khôi phục cache pnpm và Nx, cài dependency, và đặt
+   `NX_BASE`/`NX_HEAD` cho `nx affected`.
 
-3. **Thêm Conventional Commits với commitlint.** Tiêu đề issue mà glue viết là header Conventional
-   Commit, và agent dùng lại chúng.
-
-   ```bash
-   pnpm add -Dw @commitlint/config-conventional commitlint husky lint-staged
-   echo "export default { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
-   ```
-
-   `.husky/commit-msg`:
-
-   ```bash
-   FORCE_COLOR=1 pnpm commitlint --edit "$1"
-   ```
-
-4. **Thêm hook pre-commit.** Nó đăng ký các pattern secret AWS một lần, từ chối commit chứa secret,
-   chạy Biome trên các file đã stage, và thất bại nếu việc đó thay đổi gì, để agent stage lại và commit
-   lần nữa. `.husky/pre-commit`:
+3. **Chép các script ở gốc và dev dependency** từ `package.json` của repository này: khối `scripts`
+   (mà `AGENTS.md`, CI và agent gọi), và từ `devDependencies`, `@commitlint/config-conventional`,
+   `commitlint`, `commitizen`, `husky` và `lint-staged`. Rồi:
 
    ```bash
-   if ! git config --get-all secrets.patterns >/dev/null 2>&1; then
-     bash .git-secrets/git-secrets --register-aws
-   fi
-   bash .git-secrets/git-secrets --pre_commit_hook
-
-   PRE_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
-   FORCE_COLOR=1 pnpm lint-staged
-   POST_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
-
-   if [ "$PRE_SHA" != "$POST_SHA" ]; then
-     echo "Pre-commit modified your working directory"
-     echo "Please verify and stage changed, then retry git commit"
-     exit 1
-   fi
+   pnpm install
    ```
 
-   Một workspace từ Nx Plugin for AWS đã có `.git-secrets/git-secrets`, `.gitallowed` và phần lớn hook
-   này. Nếu không, hãy chép chúng từ repository này. `lint-staged.config.js`:
+   Script `prepare` của nó cài các hook.
 
-   ```js
-   export default {
-     'packages/**/*.{ts,tsx,js,jsx,json,css,scss}': ['biome check --write --no-errors-on-unmatched'],
-     '*.{js,json}': ['biome check --write --no-errors-on-unmatched'],
-   };
-   ```
-
-5. **Chép action thiết lập CI dùng chung** từ repository này: `.github/actions/init-monorepo/`. Nó cài
-   pnpm (thử ba lần, vì một timeout của registry sẽ khiến agent mất một lượt fix-up), Node 24 và tùy
-   chọn uv, khôi phục cache pnpm, cài dependency, và đặt `NX_BASE`/`NX_HEAD` cho `nx affected`.
+4. **Đổi package scope** trong `.github/actions/playwright-setup/action.yml`
+   (`@agentic-sdlc/e2e`) thành tên project e2e của bạn.
 
 </Steps>
 
@@ -109,8 +79,8 @@ git commit --allow-empty -m "not conventional"
 Sau đó `git commit --allow-empty -m "chore: check hooks"` thành công.
 
 <Aside type="note">
-Discava cũng chạy Commitizen từ `prepare-commit-msg` cho những người commit tương tác. Nó tự bỏ qua khi
-message được đưa bằng `-m`, cách agent commit, nên nó là tùy chọn.
+Tiêu đề issue mà glue viết là header Conventional Commit, và agent dùng lại chúng cho commit và pull
+request của nó. Đó là lý do commitlint đi đầu tiên.
 </Aside>
 
 Tiếp theo: [2. Cài Speckit](../speckit/).

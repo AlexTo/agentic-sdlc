@@ -32,20 +32,21 @@ jobs:
       # only that leg needs uv. init-monorepo also sets NX_BASE/NX_HEAD so
       # `nx affected` diffs against the PR's target branch.
       #
-      # Each leg keeps its own Nx cache, restored from its last run on this
-      # branch or else from main's (ci.yml). The lint leg restores main's but
-      # saves none of its own: Biome lints the projects a pull request changed
-      # in seconds, less time than saving a cache takes, and the cache would
-      # count toward the repository's 10 GB. Cache Cleanup deletes the saved
-      # ones when the pull request closes.
+      # The lint leg restores main's Nx cache but saves none of its own: Biome
+      # lints the projects a pull request changed in seconds, less time than
+      # saving a cache takes, and the cache would count toward the
+      # repository's 10 GB.
       - uses: ./.github/actions/init-monorepo
         with:
           setup-uv: ${{ matrix.target == 'build' }}
           nx-cache-scope: ${{ matrix.target }}
           nx-cache-save: ${{ matrix.target != 'lint' }}
 
+      # Four tasks at a time, not nx.json's eight: each Vitest task starts
+      # workers of its own, and eight of them on a runner's few cores took
+      # about 13% longer than four when timed on four cores.
       - name: Run ${{ matrix.target }}
-        run: pnpm nx affected --target ${{ matrix.target }}
+        run: pnpm nx affected --target ${{ matrix.target }} --parallel=4
 
       - name: Upload coverage reports to Codecov
         if: matrix.target == 'test'
@@ -67,33 +68,73 @@ jobs:
 
       - name: Check whether a tasks.md or its reader changed
         id: changed
-        env:
-          BASE_REF: ${{ github.base_ref }}
-        run: |
-          if git diff --quiet "origin/$BASE_REF...HEAD" -- \
-            'specs/*/tasks.md' 'packages/common/scripts/src/agent-issues/'; then
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          fi
+        uses: ./.github/actions/changed-paths
+        with:
+          paths: |
+            specs/*/tasks.md
+            packages/tooling/agent/src/agent-issues/
 
       - uses: ./.github/actions/init-monorepo
-        if: steps.changed.outputs.run == 'true'
+        if: steps.changed.outputs.changed == 'true'
         with:
           setup-uv: "false"
           set-nx-shas: "false"
 
       - name: Validate every tasks.md
-        if: steps.changed.outputs.run == 'true'
-        run: pnpm nx run @agentic-sdlc/common-scripts:validate-tasks
+        if: steps.changed.outputs.changed == 'true'
+        run: pnpm nx run @agentic-sdlc/tooling-agent:validate-tasks
+
+  # A pull request that changes who writes the notes table (an entity gaining
+  # a second writing package, a new direct write to an entity several
+  # packages write, or a new entity) must also change notes-table's
+  # src/helpers/invariants/, since rules spanning those writers are what it
+  # checks. A maintainer waives it with the `no-new-invariant` label and
+  # re-runs this job. It also fails while notes-table's entity-writers.json,
+  # the map it compares with the base branch's, is out of date with the code.
+  # The rules are in packages/tooling/agent/src/invariant-coverage/.
+  invariant-coverage:
+    name: Invariant coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Check whether code that could write the notes table changed
+        id: changed
+        uses: ./.github/actions/changed-paths
+        with:
+          paths: |
+            packages/notes-api
+            packages/notes-table
+            packages/tooling
+
+      - uses: ./.github/actions/init-monorepo
+        if: steps.changed.outputs.changed == 'true'
+        with:
+          setup-uv: "false"
+          set-nx-shas: "false"
+
+      - name: Check the pull request
+        if: steps.changed.outputs.changed == 'true'
+        run: pnpm nx run @agentic-sdlc/tooling-agent:invariant-coverage
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          GH_TOKEN: ${{ github.token }}
 
   # End-to-end tests (#3): Playwright drives the portals in Chromium against
-  # the whole local stack, which it starts with `pnpm dev` (DynamoDB local,
-  # S3Mock and the local OIDC server in Docker; no AWS). Only when something
+  # the whole local stack, which it starts with `pnpm dev` (DynamoDB local in
+  # Docker; no AWS). Only when something
   # the e2e project depends on changed.
   #
   # Sharded over runners, each starting its own stack (E2E_SHARD, read by
-  # playwright.config.ts). The `E2E tests` job below gathers the legs into one
+  # playwright.config.ts, which gives each shard files adding up to about the
+  # same run time). A shard costs about two minutes before its first test
+  # (install, stack start-up), so more of them stop paying off once the tests
+  # in each take about that long. The `E2E tests` job below gathers the legs into one
   # check, so a required check by that name keeps working whatever the count.
   e2e:
     name: E2E tests (${{ matrix.shard }}/${{ strategy.job-total }})
@@ -122,27 +163,8 @@ jobs:
           aws-docker-login-role-arn: ${{ vars.AWS_DOCKER_LOGIN_ROLE_ARN }}
           setup-uv: "false"
 
-      # Chromium's download is cached per Playwright version. Its system
-      # libraries come from apt, outside the cache, so they're installed
-      # either way.
-      - name: Get the Playwright version
-        id: playwright
-        run: echo "version=$(pnpm --filter @agentic-sdlc/e2e exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
-
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: playwright-cache
-        name: Cache Chromium for Playwright
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
-
-      - name: Install Chromium for Playwright
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter @agentic-sdlc/e2e exec playwright install --with-deps chromium
-
-      - name: Install Chromium's system libraries
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: pnpm --filter @agentic-sdlc/e2e exec playwright install-deps chromium
+      # Chromium's download is cached per Playwright version.
+      - uses: ./.github/actions/playwright-setup
 
       # Static output, so the job log lists each test even when they all pass.
       - name: Run e2e
@@ -185,7 +207,10 @@ jobs:
   # One comment on the pull request, kept up to date, naming the screenshots
   # the e2e scenarios took (and where to download them). Images can't be
   # embedded: an artifact has no public URL. Only for a pull request from this
-  # repository, whose token can write; a fork's can't.
+  # repository, whose token can write; a fork's can't. The list also goes in
+  # the job summary, which still shows it if the pull request's conversation
+  # is locked: the Actions token can't comment on a locked conversation,
+  # whatever its permissions.
   e2e-screenshots:
     name: E2E screenshots
     needs: e2e
@@ -197,36 +222,30 @@ jobs:
       actions: read
       pull-requests: write
     steps:
+      # The default branch's code, not the pull request's: this job can write
+      # to the pull request, so it never runs anything the pull request wrote
+      # (it only reads the diff from the API, like ui-screenshots.yml).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - uses: ./.github/actions/init-monorepo
+        with:
+          setup-uv: false
+          set-nx-shas: false
+
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           pattern: e2e-screenshots-*
           path: screenshots
 
+      # Leads with the pictures whose `screenshot(` call this pull request
+      # adds, and folds the ones from scenarios that were already there.
       - name: Comment on the pull request
+        run: pnpm nx run @agentic-sdlc/tooling-agent:screenshots-comment
         env:
           GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
           SHA: ${{ github.event.pull_request.head.sha }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          marker='<!-- e2e-screenshots -->'
-          short="${SHA:0:7}"
-          files=$(cd screenshots 2>/dev/null && find . -name '*.png' | sed 's|^\./[^/]*/||' | sort || true)
-          {
-            printf '%s\n### E2E screenshots\n\n' "$marker"
-            if [ -z "$files" ]; then
-              printf 'No scenario took screenshots on `%s`. A pull request that changes what a user sees should add `screenshot(page, '"'"'name'"'"')` calls to an e2e scenario (see packages/e2e/README.md).\n' "$short"
-            else
-              printf 'Taken by the e2e scenarios on `%s`: %s pictures. Download the `e2e-screenshots-*` artifacts from [the run](%s#artifacts).\n\n' \
-                "$short" "$(echo "$files" | wc -l)" "$RUN_URL"
-              echo "$files" | sed 's|^|- `|; s|$|`|'
-            fi
-          } > body.md
-          id=$(gh api --paginate "repos/$REPO/issues/$PR/comments" \
-            --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -n1)
-          if [ -n "$id" ]; then
-            gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@body.md
-          else
-            gh api "repos/$REPO/issues/$PR/comments" -F body=@body.md
-          fi
+          SCREENSHOTS_DIR: ${{ github.workspace }}/screenshots

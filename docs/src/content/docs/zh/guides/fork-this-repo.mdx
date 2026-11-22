@@ -16,24 +16,35 @@ spec，它就会走完[工作原理](../how-it-works/)中描述的循环。
 ## 你会得到什么
 
 <FileTree>
+- AGENTS.md 每个智能体最先读取的内容，为笔记应用编写
 - .specify/ Speckit 模板、脚本和 constitution
+- .husky/ 提交时检查 Conventional Commits、扫描 secret 并运行 Biome，推送时检查不变式映射
+- scripts/setup-repository.sh 标签、分支保护，以及 fork 不会复制的其他设置
 - .github/
-  - ISSUE_TEMPLATE/implement-phase.md 每个实现 issue 都携带的指令
-  - actions/init-monorepo/ 共享的 CI 配置
+  - ISSUE_TEMPLATE/
+    - implement-phase.md 每个实现 issue 都携带的指令
+    - test-deployed-pr.md 手动为测试智能体开的测试 issue
+  - actions/ 共享的 CI 配置、Playwright 的 Chromium、变更路径检查
+  - dependabot.yml 让固定版本的 action 和依赖保持最新
   - workflows/
-    - pr-checks.yml lint、测试、构建、tasks 格式、e2e、截图评论
+    - pr-checks.yml lint、测试、构建、tasks 格式、不变式覆盖、e2e、截图评论
     - ui-screenshots.yml 截图规则
     - ci.yml main 上的检查、Trivy 和文档部署
     - agent-issues.yml spec → issue，合并 → 下一个 issue
     - archive-specs.yml 完成的 spec → 归档 PR
     - agent-ci.yml 红色 CI → 智能体
     - agent-review.yml "changes requested" → 智能体
+    - agent-status.yml 上面两者共用的步骤
+    - deploy.yml 绿色的 main → 一个 stage，在你添加基础设施之前处于关闭状态
+    - post-merge-verify.yml 已部署的 PR → 给测试智能体的测试 issue
+    - cache-cleanup.yml 已关闭 PR 的缓存
 - packages/
-  - common/scripts/src/ 粘合代码的规则，带 143 个单元测试
-  - notes-table/ ElectroDB 实体，DynamoDB local
+  - tooling/agent/ 粘合代码的规则，带 223 个单元测试
+  - tooling/local-dev/ 为 `pnpm dev` 启动 DynamoDB local
+  - notes-table/ ElectroDB 实体，DynamoDB local，不变式
   - notes-api/ tRPC 过程
   - notes-website/ React、Vite、TanStack Router、shadcn/ui
-  - e2e/ Playwright 场景和 `screenshot()` 辅助函数
+  - e2e/ Playwright 场景、`screenshot()` 辅助函数，每个测试之后检查不变式
 - docs/ 本站点
 </FileTree>
 
@@ -44,14 +55,15 @@ e2e 测试，智能体也从不需要云凭证。
 
 只有那些无法放进仓库的东西：
 
-1. **GitHub 设置**：开启 Issues 和 Actions、创建标签、配置分支保护。fork 不会复制这些。
+1. **GitHub 设置**：fork 不会复制这些，所以 `scripts/setup-repository.sh` 一次运行就把它们设好。
 2. **OpenHands**：在你的机器上运行 Agent Canvas、一个 GitHub token，以及指向你的 fork 的
-   两个自动化。
+   各个自动化。
 
-## 没有包含什么
+## 在你添加之前处于关闭状态的部分
 
-Discava 的 AWS 部署。笔记应用没有云基础设施，所以合并除了文档站点之外不会发布任何东西。
-[部署与安全](../../discava/deploy-and-security/)介绍了 Discava 的流水线，
-[采用：部署](../../adopt/deploy/)则展示了如何添加一条流水线。
+云。笔记应用没有云基础设施，所以合并除了文档站点之外不会发布任何东西。`deploy.yml` 和
+`post-merge-verify.yml` 已经就位，但从不自行运行：在 `packages/infra` 添加一个 CDK 应用并设置
+`AUTO_DEPLOY_STAGE`，之后每个绿色的 `main` 都会部署，然后测试智能体会测试部署上去的内容。
+[采用：部署](../../adopt/deploy/)给出了步骤，[部署与安全](../../discava/deploy-and-security/)介绍了 Discava 的流水线。
 
 <LinkCard title="动手搭建：fork、配置、运行你的第一个功能" href="/agentic-sdlc/zh/setup/before-you-start/" />

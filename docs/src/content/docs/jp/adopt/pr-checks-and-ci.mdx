@@ -1,6 +1,6 @@
 ---
 title: 6. PR チェックと CI
-description: PR Checks workflow（lint、test、build、tasks の形式、e2e、スクリーンショット）と main の CI を追加します。
+description: PR Checks workflow（lint、test、build、tasks の形式、invariant のカバレッジ、e2e、スクリーンショット）と main の CI をコピーします。
 sidebar:
   order: 6
 ---
@@ -12,54 +12,42 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 <Steps>
 
-1. このリポジトリから **`.github/workflows/pr-checks.yml` をコピーします**。`name: PR Checks` は
-   そのまま残してください。Agent CI Status はその名前の workflow を待ち受けています。ジョブは次のとおりです。
+1. このリポジトリの `.github/workflows/` から **4 つの workflow をコピーします**。
 
-   | ジョブ | そのまま使う？ |
+   | ファイル | 役割 |
    | --- | --- |
-   | `checks`。`lint`、`test`、`build` の matrix で、`fail-fast: false` | はい |
-   | `tasks-format` | はい |
-   | `e2e`。シャード分割され、`e2e-result` がシャードを 1 つの `E2E tests` チェックにまとめる | シャード数を自分のテストスイートに合わせる |
-   | `e2e-screenshots` | はい。[ステップ 8](../local-stack-and-e2e/) を終えたら |
+   | `pr-checks.yml` | PR が影響するものの lint、test、build。`Tasks format`。`Invariant coverage`。シャード分割され、1 つの `E2E tests` チェックにまとめられる e2e。`E2E screenshots` コメント |
+   | `ui-screenshots.yml` | スクリーンショットのルール。独立した workflow なので、`no-ui-screenshots` ラベルを付け外しするとこのチェックだけが再実行される。Discava は代わりに PR Checks のジョブとして実行している。どちらでも構わない |
+   | `ci.yml` | `main` への push のたびに同じチェック、Trivy、Playwright のキャッシュ、このドキュメントサイトのデプロイ |
+   | `cache-cleanup.yml` | PR がクローズされたときにその PR のキャッシュを削除する |
 
-2. **`.github/workflows/ui-screenshots.yml` をコピーします。** このリポジトリでは、スクリーンショットのルールは
-   独立した workflow で、`opened, synchronize, reopened, labeled, unlabeled` でトリガーされます。そのため
-   `no-ui-screenshots` ラベルを付け外ししても、e2e スイート全体ではなくこのチェックだけが再実行されます。
-   Discava は同じルールを PR Checks のジョブとして実行しています。どちらでも構いません。
+   `pr-checks.yml` の `name: PR Checks` はそのまま残してください。Agent CI Status はその名前の workflow を
+   待ち受けています。
 
-3. `main` への push 用に **`.github/workflows/ci.yml` をコピーします**。`Check for mutations` ステップ
-   （build の後の `git diff --ignore-space-at-eol --exit-code`）は残してください。エージェントがコミットし忘れた
-   生成ファイルを見つけます。Playwright を使うなら `playwright-cache` ジョブも残してください。PR の実行は
-   `main` で保存されたキャッシュしか復元できません。
+2. **自分のプロジェクトに向けます。** コピーしたファイルで `@agentic-sdlc/` を検索し、スコープを変更します。
+   続いて `pr-checks.yml` で次を変更します。
 
-   `build` ジョブは `init-monorepo` に `nx-cache-scope: main` を渡し、Nx のタスクキャッシュを保存します。
-   PR の最初の実行はそこから始まるので、`main` がすでにビルドした入力を持つタスクは再実行されずに再生され、
-   修正のたびにエージェントが待つ時間が減ります。PR Checks の各 `checks` レグも同じように自分のキャッシュを
-   保持しますが、`lint` だけは復元のみです。lint はキャッシュを保存するより速いからです。`init-monorepo` は
-   キャッシュを 1 GB までに制限します。
+   | ジョブ | 変更するもの |
+   | --- | --- |
+   | `invariant-coverage` | テーブルに書き込む可能性のあるコードの `paths`。ステップ 5 の `WRITER_PACKAGES` と同じ。まだ invariant をチェックしないなら、このジョブを削除する |
+   | `e2e` | `matrix.shard` のシャード数を自分のテストスイートに合わせる。1 つのシャードは最初のテストまでに約 2 分かかるので、各シャードのテストがそれくらいの時間になったら追加をやめる |
+   | `e2e-screenshots` | [ステップ 8](../local-stack-and-e2e/) を終えたら、何もない |
 
-4. **`.github/workflows/cache-cleanup.yml` をコピーします。** PR がクローズされたときに、その PR の
-   キャッシュを削除します。ほかからは読めないキャッシュですが、これがないと GitHub が追い出すまでリポジトリの
-   10 GB の Actions キャッシュにカウントされ、まだオープン中の PR のキャッシュから追い出されていきます。
-   これで Discava がどれだけ節約できたかは [速さを保つ](../../discava/pr-checks/#速さを保つ) を参照してください。
+   `ci.yml` では、`docs/` からドキュメントサイトを公開するのでなければ、`deploy_docs` ジョブとその
+   `pages: write` 権限を削除します。
 
-5. コピーしたファイルと同じように、**すべての action をコミット SHA に固定し**、
-   `.github/dependabot.yml` を追加して固定を最新に保ちます。
-
-   ```yaml
-   version: 2
-   updates:
-     - package-ecosystem: 'npm'
-       directory: '/'
-       schedule: { interval: 'weekly' }
-       groups: { all: { patterns: ['*'] } }
-     - package-ecosystem: 'github-actions'
-       directories: ['/', '/.github/actions/*']
-       schedule: { interval: 'weekly' }
-       groups: { github-actions: { applies-to: version-updates, patterns: ['*'] } }
-   ```
+3. **エージェントを速く保つものは残します。** `ci.yml` の `Check for mutations` ステップ（build の後の `git diff
+   --exit-code`）は、エージェントがコミットし忘れた生成ファイルを見つけます。`playwright-cache` ジョブは
+   `main` から Chromium を保存します。PR の実行は `main` で保存されたキャッシュしか復元できないためです。
+   `build` ジョブは `main` から Nx のタスクキャッシュを保存するので、PR の最初の実行では `main` がすでにビルドしたものが
+   再生され、修正のたびにエージェントが待つ時間が減ります。PR Checks の各 `checks` レグも同じように自分のキャッシュを
+   保持しますが、`lint` だけは復元のみです。`init-monorepo` はキャッシュを 1 GB までに制限し、Cache Cleanup は
+   クローズされた PR がリポジトリの 10 GB のうちに占めていた分を解放します。これで Discava がどれだけ節約できたかは
+   [速さを保つ](../../discava/pr-checks/#速さを保つ) を参照してください。
 
 </Steps>
+
+すべての action はコミット SHA に固定されていて、ステップ 1 でコピーした `dependabot.yml` がその固定を最新に保ちます。
 
 ## 動作を確認する
 

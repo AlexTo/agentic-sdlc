@@ -1,131 +1,61 @@
 ---
 title: 3. Costituzione e template
-description: Scrivi la costituzione con le clausole da cui dipende il workflow, e modifica due template di Speckit perché l'automazione possa leggerne l'output.
+description: Riscrivi la costituzione per il tuo progetto, mantenendo le clausole da cui dipende il workflow, e punta i template sui tuoi package.
 sidebar:
   order: 3
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Alla fine avrai:** una costituzione ratificata, un `tasks-template.md` che produce file che il workflow Agent
-Issues può leggere, e uno `spec-template.md` con una riga per la issue padre.
+**Alla fine avrai:** una costituzione ratificata tutta tua, e template di Speckit che producono file
+che il workflow Agent Issues può leggere.
+
+Il `.specify/` che hai copiato al [passaggio 2](../speckit/) contiene già una costituzione e dei
+template funzionanti, scritti per l'app di note. Questo passaggio li rende tuoi.
 
 <Steps>
 
-1. **Scrivi la tua costituzione.** Nel tuo coding agent:
+1. **Riscrivi la costituzione per il tuo progetto.** Nel tuo coding agent:
 
    ```text
    /speckit-constitution
    ```
 
-   Dagli i principi del tuo progetto: architettura, modello dei dati, impostazioni di sicurezza predefinite, convenzioni
-   del codice. [Quella di Discava](../../discava/constitution-and-guidance/) è un esempio completo. Poi assicurati
-   che contenga queste clausole, perché il resto del workflow dipende da esse. Adatta i
-   comandi al tuo stack:
+   Dagli i principi del tuo progetto: architettura, modello dei dati, impostazioni di sicurezza
+   predefinite, convenzioni del codice. [Quella di Discava](../../discava/constitution-and-guidance/)
+   è un esempio completo. Mantieni queste parti di quella copiata, adattando i comandi e i nomi dei
+   package al tuo stack, perché il resto del workflow dipende da esse:
 
-   ```markdown
-   ### Layered tests
-   - **Unit tests.** New business logic MUST ship with unit tests covering its main behavior and
-     the rules it enforces.
-   - **End to end.** A change to a main user flow MUST add or extend an e2e scenario. Scenarios
-     MUST make their own users and uniquely named data.
-   - **Tests are a specification.** A failing test MUST be resolved by fixing the code, unless the
-     spec or plan changes the behavior it covers. Weakening an existing test (loosening an
-     assertion, deleting a case, adding `skip` or `only`, widening a mock or snapshot) is allowed
-     only when a task names the behavior change that justifies it, and the PR description says
-     so. Never edit a test just to turn it green.
+   | Mantieni | Dalla costituzione copiata | Perché |
+   | --- | --- | --- |
+   | Unit test, invarianti e test e2e sono obbligatori, e i test sono una specifica | III. Layered Tests | L'agente non può indebolire un test per far diventare verde la CI |
+   | Tutto gira con `pnpm dev`, senza account cloud | II. Everything Runs Locally | La CI delle PR può così eseguire la suite e2e e dare all'agente un feedback reale |
+   | Gli agenti implementano sul proprio branch e sulla propria PR, non avviano mai lo stack locale, e marcano **(human)** i task che ne hanno bisogno | Development Workflow | L'agente non ha Docker. La CI esegue ciò che lui non può |
+   | La CI delle PR è il cancello. Un agente non fa mai merge, non fa push su `main`, non modifica i workflow della CI e non indebolisce un test | Development Workflow | È ciò che tiene un agente nella sua corsia |
 
-   ### Everything runs locally
-   A feature MUST work under `pnpm dev` with Docker and no cloud account. Any cloud service a
-   feature adds MUST get a local stand-in or a documented, justified exception.
+2. **Cambia i percorsi dei package in `tasks-template.md`.** I suoi task di test nominano i package di
+   questo repository: `packages/notes-table/src/helpers/invariants/` e `@agentic-sdlc/e2e`. Puntali sui
+   tuoi. Lascia il resto del template com'è: le regole di formato sotto **Read by automation**, il
+   marcatore **(human)**, i test obbligatori e la nota contro la modifica dei test esistenti sono ciò
+   su cui si basano il workflow Agent Issues e il check `Tasks format`.
 
-   ## Development Workflow
-   - Features are implemented by autonomous agents, each on its own branch and pull request, so a
-     task list MUST NOT require a local stack, Docker or `pnpm dev`. The agent runs unit tests,
-     lint, typecheck and build itself. It writes the e2e tests, but pull request CI runs them. A
-     task that needs a running local stack or people MUST be marked `(human)` in `tasks.md` and
-     is done by a reviewer before merge.
-   - Pull request CI is the gate. An agent MUST NOT merge, push to `main`, edit CI workflows, or
-     weaken a test to make CI pass.
-   - Plans MUST pass the Constitution Check, and any violation MUST be recorded in the plan's
-     Complexity Tracking with a justification.
-   ```
-
-2. **Rendi i test obbligatori in `tasks-template.md`.** Sostituisci la riga originale che inizia con
-   `**Tests**: The examples below include test tasks. Tests are OPTIONAL` con:
-
-   ```markdown
-   **Tests**: The constitution requires tests, so include them. Unit tests cover new business
-   logic. A change to a main user flow needs an e2e scenario. Drop only the layers the feature
-   doesn't touch.
-
-   **Who runs what**: an automated agent implements these tasks without `pnpm dev` or Docker. It
-   runs unit and component tests, lint, typecheck and `build` locally. The e2e scenarios are
-   written by the agent but run on PR CI; a CI failure is the feedback for those. Mark a task
-   **(human)** when it needs a running local stack or people (manual checks, timing, screen
-   readers); a reviewer does those before merge.
-   ```
-
-   Togli `(OPTIONAL - only if tests requested)` da ogni intestazione `### Tests for User Story <n>`.
-
-3. **Aggiungi le regole di formato a `tasks-template.md`**, dopo la legenda del formato (`[P]`, `[Story]`).
-   Aggiungi questa riga alla legenda:
-
-   ```markdown
-   - **(human)**: needs a running local stack or people; not done by the agent. Not for
-     screenshots: a task that changes what a user sees adds `screenshot()` calls to its e2e
-     scenario, and CI posts them on the pull request (`UI Screenshots` fails without them)
-   ```
-
-   Poi aggiungi questo blocco:
-
-   ```markdown
-   **Read by automation**: the Agent Issues workflow reads this file to decide which tasks to hand
-   the implementing agent, so keep this structure (PR checks refuse a file that strays from it):
-
-   - every phase is a heading `## Phase <number>: <title>`, numbered upwards, with at least one
-     task;
-   - a user story's phase is titled `User Story <n> - <what it delivers>`; the first one ends the
-     first implementation issue (setup, foundations and that story);
-   - every task is a line `- [ ] T<3 digits> <description>` starting in the first column, under a
-     phase, with an id no other task has; a task added later takes the next unused id, wherever
-     it is placed;
-   - a finished task is ticked in place (`- [x]`), never deleted or renumbered.
-   ```
-
-4. **Aggiungi task di test a ogni user story** in `tasks-template.md`, sotto `### Tests for User Story 1`
-   (e 2, 3), così `/speckit-tasks` li genera sempre:
-
-   ```markdown
-   - [ ] T01A [P] [US1] Unit tests for new procedures/access patterns in the API's `*.test.ts`
-   - [ ] T01C [US1] (If it changes a main user flow) E2E scenario in `packages/e2e/src/scenarios/[flow].e2e.ts`
-   ```
-
-   Discava ne aggiunge un terzo, per i suoi invarianti: *"(If a rule spans records or writers) Invariant in
-   `helpers/invariants/` and a test that breaks it, written before the shared write helper"*.
-
-5. **Aggiungi una riga alle note in fondo** a `tasks-template.md`:
-
-   ```markdown
-   - Do not edit existing tests to make them pass. If one looks wrong, stop and raise it. A task
-     that changes an existing test must cite the spec change behind it
-   ```
-
-6. **Aggiungi la riga della issue padre a `spec-template.md`**, sotto i campi dell'intestazione:
+3. **Mantieni la riga della issue padre** in `spec-template.md`:
 
    ```markdown
    **Parent issue**: [#<number>, or "none" if there is no tracking issue]
    ```
 
+   Agent Issues ne ricava il `Refs #<parent>` che scrive in ogni issue.
+
 </Steps>
 
 ## Verifica che funzioni
 
-Genera una spec e dei task usa e getta per una feature minuscola. Poi, quando gli script del collante sono a posto
+Genera una spec e dei task usa e getta per una feature minuscola. Poi, quando il collante è a posto
 ([passaggio 5](../glue-scripts/)):
 
 ```bash
-pnpm nx run @your-scope/common-scripts:validate-tasks
+pnpm nx run @your-scope/tooling-agent:validate-tasks
 ```
 
 ```text

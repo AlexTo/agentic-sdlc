@@ -70,6 +70,6 @@
     "@agentic-sdlc/notes-website",
     "@agentic-sdlc/notes-api",
     "@agentic-sdlc/notes-table",
-    "@agentic-sdlc/common-scripts"
+    "@agentic-sdlc/tooling-local-dev"
   ]
 }

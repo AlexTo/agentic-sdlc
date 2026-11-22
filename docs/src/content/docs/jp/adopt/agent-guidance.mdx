@@ -1,6 +1,6 @@
 ---
 title: 4. エージェント向けガイダンスと issue テンプレート
-description: AGENTS.md を書き、すべての実装 issue に入る指示の元になる issue テンプレートを追加します。
+description: このリポジトリのものをもとに AGENTS.md を書き、すべてのエージェント issue に入る指示の元になる issue テンプレートをコピーします。
 sidebar:
   order: 4
 ---
@@ -8,65 +8,41 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **このステップで得られるもの:** すべてのエージェントが最初に読む `AGENTS.md` と、すべての実装 issue に入る定型の指示の元になる
-`.github/ISSUE_TEMPLATE/implement-phase.md`。
+`.github/ISSUE_TEMPLATE/` 以下の issue テンプレート。
 
 <Steps>
 
-1. **リポジトリのルートに `AGENTS.md` を書きます。** エージェントが毎回の実行で必要とすることだけに絞り、
-   それ以外は `CONTRIBUTING.md` へリンクします。次のセクションを使います。
+1. このリポジトリから **`AGENTS.md` をコピーし**、各セクションを自分のプロジェクト用に書き直します。
+   意図的に短くしてあります。エージェントが毎回の実行で必要とすることだけで、それ以外は何もありません。
 
-   ```markdown
-   # AGENTS.md
-
-   Read CONTRIBUTING.md before opening a PR.
-
-   ## What this is
-   One paragraph: the product, the stack, the monorepo tool.
-
-   ## Commands
-   Install; build, lint, test everything; one project's tests, once (not watch mode);
-   one test file; `nx affected`; e2e; local dev; resetting local data.
-
-   ## Architecture
-   One bullet per package: what it is, what it may import, where new code of each kind goes.
-
-   ## Conventions
-   - Conventional Commits for commit and PR titles (enforced by commitlint).
-   - The formatter and linter, by name, so the agent doesn't add another.
-   - Where helpers go. Where shared code goes.
-   - Every rule a reviewer has had to repeat twice.
-   ```
+   | セクション | 書くこと |
+   | --- | --- |
+   | What this is | 1 段落: プロダクト、スタック、モノレポツール |
+   | Commands | インストール。すべてのビルド、lint、テスト。1 つのプロジェクトのテストを 1 回だけ（watch モードではなく）。1 つのテストファイル。`nx affected`。e2e。ローカル開発 |
+   | Architecture | パッケージごとに 1 項目: それが何か、何を import してよいか、各種類の新しいコードをどこに置くか |
+   | Conventions | Conventional Commits、フォーマッターの名前、ヘルパーの置き場所、そしてレビュアーが 2 回繰り返す必要があったすべてのルール |
 
    <Aside type="tip">
    最も重要なのはコマンドのセクションです。「テストファイルを 1 つ、1 回だけ実行する」方法を見つけられないエージェントは、
-   スイート全体を watch モードで実行して止まってしまいます。
+   スイート全体を watch モードで実行して止まってしまいます。挙げたコマンドは、動くことを確かめるために一度ずつ実行してください。
    </Aside>
 
    アーキテクチャのセクションがパッケージごとに 1 行では収まらなくなったら、各パッケージの詳細をそのフォルダー内の
    ネストした `AGENTS.md` に移し、ルートにはそこを指す 1 行を残します。エージェントはネストしたファイルを
    そのフォルダーで作業するときにだけ読み込むので、1 回の実行で読むのは必要な詳細だけになります。
+   このリポジトリの `packages/tooling/agent/AGENTS.md` がその一つです。[ステップ 5](../glue-scripts/) でグルーと一緒に
+   コピーしてください。
 
-2. **このリポジトリから issue テンプレートを** `.github/ISSUE_TEMPLATE/implement-phase.md` に
-   **コピーします。** Agent Issues スクリプトは issue の spec とスコープのセクションを自分で書き、
-   `## Instructions for the agent` 以下のすべてを実行時にテンプレートから読み込みます。
+   エージェントが `CLAUDE.md` のような別の名前のファイルを読む場合は、そのファイルが `AGENTS.md` を指すようにします。
+   このリポジトリの `CLAUDE.md` は `@AGENTS.md` で始まっていて、Claude Code はこれを「そのファイルをここに含める」と読みます。
 
-   ```markdown
-   ## Instructions for the agent
+2. このリポジトリから **`.github/ISSUE_TEMPLATE/` をコピーします**。開発担当用の `implement-phase.md` と、
+   [ステップ 9](../deploy/) で追加する場合はテスト担当用の `test-deployed-pr.md` です。
 
-   - Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
-   - Work through the scope in order, writing each story's tests first. Tick each task in `tasks.md` in the same commit that completes it.
-   - Do not use `pnpm dev`, Docker or the e2e runner locally. Run unit and component tests (once, not in watch mode), `pnpm lint`, typecheck and `pnpm build` on what you changed. E2E and concurrency tests run on PR CI: write them, then read CI's result.
-   - A change to what a user sees ships with `screenshot(page, 'name')` calls (`packages/e2e/src/helpers/screenshots.ts`) in the e2e scenario for that flow, at each state a reviewer would want to see: PR CI posts them as the `E2E screenshots` comment, and the `UI Screenshots` check fails without them. Don't leave screenshots to a **(human)** task.
-   - Skip tasks marked **(human)** and list them in the PR description for the reviewer.
-   - Use Conventional Commits for every commit. The PR title is a Conventional Commit too, for example `feat(assignments): submit work to an upload assignment`, not `[#n] ...`.
-   - In the PR description write `Refs #<parent>`. Never use `Closes` or `Fixes` against the parent issue; closing this issue is fine.
-   - Never weaken a test to make it pass, never edit `.github/workflows/`, never merge, and don't touch cloud credentials.
-   - If you are blocked, comment on this issue with what you tried and stop.
-   ```
-
-   `#<parent>` はそのまま残します。スクリプトがこれを spec の親 issue に置き換え、spec に親 issue がない場合は
-   その箇条書きを削除します。見出し `## Instructions for the agent` も正確にそのまま残します。
-   スクリプトはこの見出しを探し、見つからないと失敗するためです。
+   Agent Issues スクリプトは issue の spec とスコープのセクションを自分で書き、`implement-phase.md` の
+   `## Instructions for the agent` 以下のすべてを実行時に読み込みます。この見出しは正確にそのまま残してください。
+   スクリプトはこの見出しを探し、見つからないと失敗するためです。`#<parent>` もそのまま残します。スクリプトが
+   これを spec の親 issue に置き換え、spec に親 issue がない場合はその箇条書きを削除します。
 
 3. **指示を自分のスタックに合わせて編集します**。コマンド、スクリーンショットのヘルパーのパス、
    そして自分の環境で「cloud credentials」が何を指すかです。

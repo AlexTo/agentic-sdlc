@@ -7,14 +7,15 @@ sidebar:
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**You'll end with:** three workflows that open issues from specs and send the agent back on red
-CI or a "changes requested" review, and a fourth that archives a spec once every task is ticked.
+**You'll end with:** workflows that open issues from specs, send the agent back on red CI or a
+"changes requested" review, and archive a spec once every task is ticked.
 
 <Steps>
 
-1. **Copy the three workflows** from this repository's `.github/workflows/`: `agent-issues.yml`,
-   `agent-ci.yml` and `agent-review.yml`. Their triggers and permissions are listed in
-   [Reference: workflows](../../reference/workflows/).
+1. **Copy the four workflows** from this repository's `.github/workflows/`: `agent-issues.yml`,
+   `agent-ci.yml`, `agent-review.yml`, and `agent-status.yml`, which holds the steps the two status
+   workflows share. Change the `@agentic-sdlc/` scope in them. Their triggers and permissions are
+   listed in [Reference: workflows](../../reference/workflows/).
 
 2. **Check the `if:` conditions match your decisions.** If you changed the branch prefix or the
    labels, change them here too:
@@ -48,15 +49,20 @@ CI or a "changes requested" review, and a fourth that archives a spec once every
    it writes. `pull-requests: write` looks spare but isn't: labels and comments on a PR go through
    the issues API, which refuses the workflow token without it.
 
-   The two status workflows check out the **default branch**. Agent Issues checks out the
+   The two status workflows check out the **default branch**, in `agent-status.yml`. Agent Issues checks out the
    **merge commit**, so it sees the ticks the merged PR made. Never change either to check out the
    PR's head: these jobs hold a token that can write.
 
-4. **Keep the concurrency groups.** Each is per PR or per branch, with `cancel-in-progress: false`.
+4. **Keep the lock before the label.** Agent Issues opens each issue without its `openhands`
+   label, locks its conversation so only collaborators can comment on what the agent reads, and
+   only then adds the label. If the lock fails, the label is never added and the run fails, naming
+   the issue to lock by hand. The code is `helpers/conversation-lock.ts`.
+
+5. **Keep the concurrency groups.** Each is per PR or per branch, with `cancel-in-progress: false`.
    That way two events for one PR can't each count an attempt, and merges of different PRs never
    cancel each other.
 
-5. **Copy `archive-specs.yml`**, if you want finished specs moved out of the way. When a push to
+6. **Copy `archive-specs.yml`**, if you want finished specs moved out of the way. When a push to
    `main` changes a live `specs/*/tasks.md`, it opens a PR on branch `archive-spec/<folder>` for
    each spec with every task ticked, **(human)** ones included. The PR moves the folder to
    `specs/_archive/` and rewrites the links to and from it. Agent Issues skips `specs/_archive/`,
@@ -66,9 +72,9 @@ CI or a "changes requested" review, and a fourth that archives a spec once every
    PR unmerged to keep the spec live.
 
    <Aside type="caution">
-   Turn on **Settings → Actions → General → Allow GitHub Actions to create and approve pull
-   requests**, or the workflow can't open its PRs. PRs opened with the workflow's token don't
-   start PR Checks: close and reopen each one to run them.
+   The workflow can't open its PRs unless Actions may create pull requests, which
+   `scripts/setup-repository.sh` turns on. PRs opened with the workflow's token don't start PR
+   Checks: close and reopen each one to run them.
    </Aside>
 
 </Steps>

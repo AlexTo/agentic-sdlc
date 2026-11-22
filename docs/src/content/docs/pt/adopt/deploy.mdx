@@ -11,79 +11,55 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 `main` verde para um stage de desenvolvimento, deploys de produção que esperam por uma pessoa e, se
 você quiser, um agent Testador que testa cada mudança mergeada no stage de desenvolvimento.
 
-Os detalhes deste passo são específicos do Discava (AWS, CDK), mas o formato funciona para qualquer
-cloud. O app de notas de exemplo deste repositório não tem deploy, então copie do
-[`deploy.yml` do Discava](https://github.com/AlexTo/discava/blob/main/.github/workflows/deploy.yml).
+Este repositório traz os workflows, desligados: o `deploy.yml` só roda à mão ou depois que
+`AUTO_DEPLOY_STAGE` é definida, e o `post-merge-verify.yml` só roda depois de um deploy. O app de
+notas não tem infraestrutura em nuvem, então a parte a escrever é sua. Os passos falam de AWS e CDK,
+como o Discava usa, mas o formato funciona para qualquer cloud.
 
 <Steps>
 
 1. **Adicione um target `trivy`** aos projetos que você quer escanear (o `pnpm trivy` da raiz roda
-   `nx run-many --target trivy --all`). Adicione o job `trivy` ao `ci.yml`, como neste repositório.
-   Mantenha-o como um job separado do `build`, para que uma CVE recém-publicada sinalize a `main` sem
+   `nx run-many --target trivy --all`). O job `trivy` no `ci.yml` copiado o roda em todo push na
+   `main`, como um job separado do `build`, para que uma CVE recém-publicada sinalize a `main` sem
    bloquear mais nada. Registre os achados aceitos, um ID por linha, em `.trivyignore`.
 
-2. **Configure acesso à cloud sem chaves.** Na AWS, o `scripts/setup-stage.sh` do Discava cria, por
-   stage: o provedor OIDC do GitHub, uma role de deploy confiável apenas para
-   `repo:owner/repo:environment:<stage>`, uma role de execução do CloudFormation com um permissions
-   boundary, e as variáveis do environment do GitHub (`AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`,
-   `AWS_EXECUTION_ROLE_ARN`). Use a federação OIDC da sua cloud para GitHub Actions do mesmo jeito.
-   Não guarde access keys.
+2. **Adicione sua infraestrutura** como um app CDK em `packages/infra`, com um stage por ambiente no
+   `src/main.ts` dele:
 
-3. **Adicione o workflow Deploy**, disparado pela conclusão do CI na `main` e manualmente:
-
-   ```yaml
-   on:
-     workflow_run: { workflows: [CI], types: [completed], branches: [main] }
-     workflow_dispatch:
-       inputs: { stage: { type: string, required: true } }
-
-   jobs:
-     deploy:
-       if: ${{ github.event_name == 'workflow_dispatch' ||
-               (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
-       environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
-       concurrency: { group: 'deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}', cancel-in-progress: false }
-       steps:
-         - uses: actions/checkout@<sha>
-           with: { ref: '${{ github.event.workflow_run.head_sha || github.sha }}' }
-         # init, then: pnpm trivy, configure credentials (OIDC), synth
-         - name: Check commit is still main's latest
-           id: freshness
-           if: ${{ github.event_name == 'workflow_run' }}
-           run: |
-             main_sha="$(git ls-remote --exit-code origin refs/heads/main | cut -f1)"
-             if [[ "$main_sha" == "$(git rev-parse HEAD)" ]]; then
-               echo "current=true" >> "$GITHUB_OUTPUT"
-             else
-               echo "::notice::Skipping deploy: no longer main's latest commit"
-               echo "current=false" >> "$GITHUB_OUTPUT"
-             fi
-         - name: Deploy
-           if: ${{ github.event_name != 'workflow_run' || steps.freshness.outputs.current == 'true' }}
-           run: pnpm nx run @your-scope/infra:deploy-ci "$STAGE/*" --role-arn "$AWS_EXECUTION_ROLE_ARN"
+   ```bash
+   pnpm nx g @aws/nx-plugin:ts#infra --name=infra
    ```
 
-   A verificação de atualidade fica *dentro* do slot de concurrency, então ela reflete a `main` logo
-   antes do deploy, mesmo que a execução tenha esperado atrás de outra.
+   O target `deploy-ci` dele é o que o workflow Deploy roda. Os constructs do site de notas já estão
+   em `packages/common/constructs`.
 
-4. **Ative os deploys automáticos** para o stage de desenvolvimento. Em **Settings → Secrets and
+3. **Configure acesso à cloud sem chaves** para cada stage: o provedor OIDC do GitHub, uma role de
+   deploy confiável apenas para `repo:owner/repo:environment:<stage>`, uma role de execução do
+   CloudFormation com um permissions boundary, o bootstrap do CDK, e um environment do GitHub com o
+   nome do stage e as variáveis `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN` e `AWS_EXECUTION_ROLE_ARN`. O
+   [`scripts/setup-stage.sh`](https://github.com/AlexTo/discava/blob/main/scripts/setup-stage.sh) do
+   Discava faz tudo isso para os stages dele; leia-o antes de adaptá-lo. Não guarde access keys.
+
+4. **Copie `.github/workflows/deploy.yml`**, se você não está trabalhando em um fork, e troque o scope
+   `@agentic-sdlc/` e o nome do stage padrão. Ele faz checkout do commit que o CI verificou, para cedo
+   com um erro claro se `packages/infra` ou as variáveis do environment estiverem faltando, roda o
+   Trivy, faz o synth e só faz deploy se o commit ainda for o último da `main`. Essa verificação de
+   atualidade fica *dentro* do slot de concurrency do job, então ela reflete a `main` logo antes do
+   deploy, mesmo que a execução tenha esperado atrás de outra.
+
+5. **Ative os deploys automáticos** para o stage de desenvolvimento. Em **Settings → Secrets and
    variables → Actions → Variables**, adicione uma variável de repositório `AUTO_DEPLOY_STAGE` com o
    nome do seu stage de desenvolvimento.
 
-5. **Proteja a produção.** Em **Settings → Environments**, abra o environment do seu stage de
+6. **Proteja a produção.** Em **Settings → Environments**, abra o environment do seu stage de
    produção e adicione **Required reviewers**. Para fazer deploy, abra **Actions → Deploy → Run
    workflow** e informe o stage de produção. O job então espera a aprovação.
 
-6. **Adicione o agent Testador**, se você quiser que cada mudança que sai no deploy seja testada
-   (lacuna 11). Esta é a peça mais nova, e ela fica no Discava, não neste repositório. Copie de lá:
-
-   - `packages/tooling/agent/src/post-merge-test/` e `src/helpers/`, com o target Nx
-     `post-merge-test`
-   - `.github/workflows/post-merge-verify.yml`
-   - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`, para abrir uma issue de teste à mão
-
-   Depois ajuste o nome do stage (`TEST_STAGE`) e os caminhos que nunca chegam a uma stack com
-   deploy (`NOT_DEPLOYED` em `plan.ts`) para o seu repositório.
+7. **Adicione o agent Testador**, se você quiser que cada mudança que sai no deploy seja testada
+   (lacuna 11). Deste repositório você já tem a cola dele (`post-merge-test/` no passo 5), o template
+   de issue dele (passo 4) e o `.github/workflows/post-merge-verify.yml`, que abre uma issue de teste
+   para cada pull request que uma execução do Deploy colocou no stage de teste. Ele testa em
+   `TEST_STAGE`, uma variável de repositório cujo padrão é `AUTO_DEPLOY_STAGE`.
 
    Do lado do OpenHands, adicione um agent profile `tester` e uma automation que faz polling de
    issues com o label `openhands-test`. Não há template de catálogo para ela. O worker do Discava e
@@ -98,13 +74,11 @@ cloud. O app de notas de exemplo deste repositório não tem deploy, então copi
 
    <Aside type="caution" title="Repositório público? Limite os comentários aos colaboradores antes">
    O Testador lê issues, pull requests e os comentários deles enquanto tem essas credenciais em mãos. Se
-   o seu repositório é público, o comentário de um estranho pode levar instruções a ele. Antes de
-   ativá-lo, abra **Settings → Moderation options → Interaction limits** e escolha **Limit to
-   repository collaborators**. O limite dura no máximo seis meses, então anote quando renová-lo.
-
-   Mantenha também o trancamento em `helpers/conversation-lock.ts`, mantenha o "como testar" no
-   próprio prompt da automation em vez de na issue, e nunca o aponte para um stage cujos dados
-   importam.
+   o seu repositório é público, o comentário de um estranho pode levar instruções a ele.
+   O `scripts/setup-repository.sh` limita as interações aos colaboradores, por no máximo seis meses,
+   então rode-o de novo antes que o limite acabe. Mantenha também o trancamento em
+   `helpers/conversation-lock.ts`, mantenha o "como testar" no próprio prompt da automation em vez de
+   na issue, e nunca o aponte para um stage cujos dados importam.
    </Aside>
 
 </Steps>

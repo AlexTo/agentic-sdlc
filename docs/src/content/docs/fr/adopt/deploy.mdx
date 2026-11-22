@@ -11,79 +11,55 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 au vert sur un stage de développement, des déploiements en production qui attendent une personne, et,
 si vous le souhaitez, un agent Testeur qui teste chaque changement mergé sur le stage de développement.
 
-Les détails de cette étape sont propres à Discava (AWS, CDK), mais la structure convient à n'importe quel cloud. L'application
-de notes d'exemple de ce dépôt n'a pas de déploiement, donc copiez depuis
-[le `deploy.yml` de Discava](https://github.com/AlexTo/discava/blob/main/.github/workflows/deploy.yml).
+Ce dépôt fournit les workflows, désactivés : `deploy.yml` ne s'exécute qu'à la main ou une fois
+`AUTO_DEPLOY_STAGE` défini, et `post-merge-verify.yml` ne s'exécute qu'après un déploiement. L'application de notes n'a
+pas d'infrastructure cloud, donc la partie à écrire vous revient. Les étapes parlent d'AWS et de CDK, comme Discava,
+mais la structure convient à n'importe quel cloud.
 
 <Steps>
 
 1. **Ajoutez une cible `trivy`** aux projets que vous voulez scanner (le `pnpm trivy` racine lance
-   `nx run-many --target trivy --all`). Ajoutez le job `trivy` à `ci.yml`, comme dans ce dépôt. Gardez-le
-   séparé du job `build`, pour qu'une CVE nouvellement publiée signale `main` sans bloquer quoi que ce soit
+   `nx run-many --target trivy --all`). Le job `trivy` du `ci.yml` copié le lance à chaque push sur `main`,
+   dans un job séparé de `build`, pour qu'une CVE nouvellement publiée signale `main` sans bloquer quoi que ce soit
    d'autre. Consignez les résultats acceptés, un ID par ligne, dans `.trivyignore`.
 
-2. **Mettez en place un accès cloud sans clé.** Sur AWS, le `scripts/setup-stage.sh` de Discava crée, par stage :
-   le fournisseur OIDC de GitHub, un rôle de déploiement approuvé uniquement pour
-   `repo:owner/repo:environment:<stage>`, un rôle d'exécution CloudFormation avec une limite de
-   permissions, et les variables de l'environnement GitHub (`AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`,
-   `AWS_EXECUTION_ROLE_ARN`). Utilisez de la même façon la fédération OIDC de votre cloud pour GitHub Actions.
-   Ne stockez pas de clés d'accès.
+2. **Ajoutez votre infrastructure** sous forme d'application CDK dans `packages/infra`, avec un stage par environnement
+   dans son `src/main.ts` :
 
-3. **Ajoutez le workflow Deploy**, déclenché par la fin de la CI sur `main` et à la main :
-
-   ```yaml
-   on:
-     workflow_run: { workflows: [CI], types: [completed], branches: [main] }
-     workflow_dispatch:
-       inputs: { stage: { type: string, required: true } }
-
-   jobs:
-     deploy:
-       if: ${{ github.event_name == 'workflow_dispatch' ||
-               (github.event.workflow_run.conclusion == 'success' && vars.AUTO_DEPLOY_STAGE != '') }}
-       environment: ${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}
-       concurrency: { group: 'deploy-${{ inputs.stage || vars.AUTO_DEPLOY_STAGE }}', cancel-in-progress: false }
-       steps:
-         - uses: actions/checkout@<sha>
-           with: { ref: '${{ github.event.workflow_run.head_sha || github.sha }}' }
-         # init, then: pnpm trivy, configure credentials (OIDC), synth
-         - name: Check commit is still main's latest
-           id: freshness
-           if: ${{ github.event_name == 'workflow_run' }}
-           run: |
-             main_sha="$(git ls-remote --exit-code origin refs/heads/main | cut -f1)"
-             if [[ "$main_sha" == "$(git rev-parse HEAD)" ]]; then
-               echo "current=true" >> "$GITHUB_OUTPUT"
-             else
-               echo "::notice::Skipping deploy: no longer main's latest commit"
-               echo "current=false" >> "$GITHUB_OUTPUT"
-             fi
-         - name: Deploy
-           if: ${{ github.event_name != 'workflow_run' || steps.freshness.outputs.current == 'true' }}
-           run: pnpm nx run @your-scope/infra:deploy-ci "$STAGE/*" --role-arn "$AWS_EXECUTION_ROLE_ARN"
+   ```bash
+   pnpm nx g @aws/nx-plugin:ts#infra --name=infra
    ```
 
-   La vérification de fraîcheur se trouve *à l'intérieur* du créneau de concurrence, donc elle reflète `main` juste avant le
-   déploiement, même si l'exécution a attendu derrière une autre.
+   Sa cible `deploy-ci` est ce que lance le workflow Deploy. Les constructs du site web des notes
+   se trouvent déjà dans `packages/common/constructs`.
 
-4. **Activez les déploiements automatiques** pour le stage de développement. Sous **Settings → Secrets and
+3. **Mettez en place un accès cloud sans clé** pour chaque stage : le fournisseur OIDC de GitHub, un rôle de déploiement
+   approuvé uniquement pour `repo:owner/repo:environment:<stage>`, un rôle d'exécution CloudFormation avec une
+   limite de permissions, le bootstrap CDK, et un environnement GitHub nommé d'après le stage avec
+   les variables `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN` et `AWS_EXECUTION_ROLE_ARN`. Le
+   [`scripts/setup-stage.sh`](https://github.com/AlexTo/discava/blob/main/scripts/setup-stage.sh) de Discava
+   fait tout cela pour ses stages ; lisez-le avant de l'adapter. Ne stockez pas de clés d'accès.
+
+4. **Copiez `.github/workflows/deploy.yml`**, si vous ne travaillez pas dans un fork, et changez son
+   scope `@agentic-sdlc/` et le nom du stage par défaut. Il fait le checkout du commit vérifié par la CI, s'arrête
+   tôt avec une erreur claire si `packages/infra` ou les variables de l'environnement manquent, lance
+   Trivy, synthétise, et ne déploie que si le commit est toujours le dernier de `main`. Cette vérification de
+   fraîcheur se trouve *à l'intérieur* du créneau de concurrence du job, donc elle reflète `main` juste avant le déploiement,
+   même si l'exécution a attendu derrière une autre.
+
+5. **Activez les déploiements automatiques** pour le stage de développement. Sous **Settings → Secrets and
    variables → Actions → Variables**, ajoutez une variable de dépôt `AUTO_DEPLOY_STAGE` contenant le nom de votre
    stage de développement.
 
-5. **Protégez la production.** Sous **Settings → Environments**, ouvrez l'environnement de votre stage de
+6. **Protégez la production.** Sous **Settings → Environments**, ouvrez l'environnement de votre stage de
    production et ajoutez des **Required reviewers**. Pour le déployer, ouvrez **Actions → Deploy → Run
    workflow** et saisissez le stage de production. Le job attend alors une approbation.
 
-6. **Ajoutez l'agent Testeur**, si vous voulez que chaque changement déployé soit testé (manque 11). C'est la
-   pièce la plus récente, et elle vit dans Discava, pas dans ce dépôt. Copiez depuis là-bas :
-
-   - `packages/tooling/agent/src/post-merge-test/` et `src/helpers/`, avec la cible Nx
-     `post-merge-test`
-   - `.github/workflows/post-merge-verify.yml`
-   - `.github/ISSUE_TEMPLATE/test-deployed-pr.md`, pour ouvrir une issue de test à la main
-
-   Adaptez ensuite à votre dépôt le nom du stage (`TEST_STAGE`), et les chemins qui n'atteignent jamais une
-   stack déployée (`NOT_DEPLOYED` dans `plan.ts`).
+7. **Ajoutez l'agent Testeur**, si vous voulez que chaque changement déployé soit testé (manque 11). Depuis ce
+   dépôt, vous avez déjà sa glue (`post-merge-test/` à l'étape 5), son template d'issue (étape
+   4), et `.github/workflows/post-merge-verify.yml`, qui ouvre une issue de test pour chaque pull
+   request qu'une exécution de Deploy a mise sur le stage de test. Il teste sur `TEST_STAGE`, une variable de dépôt
+   qui vaut par défaut `AUTO_DEPLOY_STAGE`.
 
    Côté OpenHands, ajoutez un profil d'agent `tester` et une automatisation qui recherche les issues
    portant le label `openhands-test`. Il n'existe pas de template de catalogue pour cela. Le worker de Discava
@@ -96,11 +72,9 @@ de notes d'exemple de ce dépôt n'a pas de déploiement, donc copiez depuis
 
    <Aside type="caution" title="Dépôt public ? Limitez d'abord les commentaires aux collaborateurs">
    Le Testeur lit des issues, des pull requests et leurs commentaires tout en détenant ces identifiants.
-   Si votre dépôt est public, le commentaire d'un inconnu peut lui transmettre des instructions. Avant de
-   l'activer, ouvrez **Settings → Moderation options → Interaction limits** et choisissez **Limit to
-   repository collaborators**. La limite dure au plus six mois, donc notez quand la renouveler.
-
-   Gardez aussi le verrouillage dans `helpers/conversation-lock.ts`, gardez le « comment tester » dans le prompt propre de
+   Si votre dépôt est public, le commentaire d'un inconnu peut lui transmettre des instructions.
+   `scripts/setup-repository.sh` limite les interactions aux collaborateurs, pour au plus six mois, donc
+   relancez-le avant la fin de la limite. Gardez aussi le verrouillage dans `helpers/conversation-lock.ts`, gardez le « comment tester » dans le prompt propre de
    l'automatisation plutôt que dans l'issue, et ne le pointez jamais vers un stage dont les données comptent.
    </Aside>
 

@@ -5,7 +5,7 @@ sidebar:
   order: 8
 ---
 
-import { Steps, Aside } from '@astrojs/starlight/components';
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
 **このステップで得られるもの:** ローカルの代替サービスでアプリ全体を起動する `pnpm dev`、CI がすべての PR で実行する
 Playwright スイート、PR に投稿されるスクリーンショット、そして各テストの後にチェックされる invariant。
@@ -16,69 +16,50 @@ Playwright スイート、PR に投稿されるスクリーンショット、そ
 <Steps>
 
 1. **すべてのクラウドサービスにローカルの代替を用意し**、`dev` ターゲットで起動して、`pnpm dev` ですべてが
-   動くようにします。[Discava のローカル代替](../../discava/local-stack/#ローカルで動くもの) は DynamoDB、
-   S3、SQS、OpenSearch、Cognito をカバーし、さらに、クラウドで Lambda のトリガー、ストリーム、EventBridge が
-   呼び出すのと同じハンドラーを呼び出す「イベントランナー」プロセスも含みます。
+   動くようにします。このリポジトリの `packages/tooling/local-dev/` は、notes のテーブル用に Docker で DynamoDB local を
+   起動します。[Discava のローカル代替](../../discava/local-stack/#ローカルで動くもの) はさらに S3、SQS、OpenSearch、
+   Cognito をカバーし、クラウドで Lambda のトリガー、ストリーム、EventBridge が呼び出すのと同じハンドラーを
+   呼び出す「イベントランナー」プロセスも含みます。
 
    バックエンドのコードは 1 つのフラグ（`LOCAL_DEV=true`）で切り替え、エンドポイントは 1 つの共有モジュールにまとめます。
-   まだクラウドでしか動かないものは `CONTRIBUTING.md` に列挙し、それを必要とするタスクには
+   まだクラウドでしか動かないものはコントリビューションガイドに列挙し、それを必要とするタスクには
    **(human)** を付けます。
 
-2. ユーザーフローごとに 1 つのシナリオファイルを持つ **Playwright プロジェクトを追加します**。このリポジトリの
-   `packages/e2e` は最小限の例です。`playwright.config.ts` では、CI のマトリックスがスイートを分割できるように、
-   シャードを環境変数から読み込みます。
+2. このリポジトリから **e2e プロジェクト** `packages/e2e/` を**コピーし**、そのシナリオを自分のものに置き換えます。
+   ユーザーフローごとに 1 ファイルです。残すものは次のとおりです。
 
-   ```ts
-   const [shardCurrent, shardTotal] = (process.env.E2E_SHARD ?? '').split('/').map(Number);
-
-   export default defineConfig({
-     testDir: './src',
-     testMatch: ['scenarios/**/*.e2e.ts'],
-     workers: 1,
-     forbidOnly: !!process.env.CI,
-     retries: process.env.CI ? 1 : 0,
-     shard: shardCurrent && shardTotal ? { current: shardCurrent, total: shardTotal } : null,
-     webServer: { command: 'pnpm dev', reuseExistingServer: !process.env.CI /* … */ },
-   });
-   ```
+   <FileTree>
+   - packages/e2e/
+     - playwright.config.ts CI のマトリックスがスイートを分割できるように `E2E_SHARD` を読み、`pnpm dev` を起動し、ワーカーは 1 つ、リトライは CI でのみ
+     - src/helpers/
+       - screenshots.ts `screenshot(page, 'name')`。PR Checks の `e2e` ジョブがアップロードする画像を保存する
+       - table-invariants.ts シナリオのたびに invariant をチェックする Playwright の `test`
+   </FileTree>
 
    各シナリオは自分のユーザーと一意な名前のデータを作り、どのシナリオもローカルのデータをリセットしないので、
-   どの順番でも実行できます。
-
-3. このリポジトリから **スクリーンショットのヘルパーをコピーします**: `packages/e2e/src/helpers/screenshots.ts`。
-   このヘルパーは `dist/packages/e2e/screenshots/<scenario>/<nn>-<name>.png` に保存します。これは PR Checks の
-   `e2e` ジョブがアップロードするフォルダーです。人が目で確認する箇所で、表示内容に対する `expect` の後に呼び出します。
+   どの順番でも実行できます。人が目で確認する箇所で、表示内容に対する `expect` の後に `screenshot` を呼び出します。
 
    ```ts
    await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible();
    await screenshot(page, 'reviews section with three reviews');
    ```
 
-4. **テストのたびに invariant をチェックします。** 異なるコードが書き込むレコードにまたがるルール
-   （カウンター、集計、順序）ごとに、データを走査して違反を返す関数を書きます。そして、それを自動でチェックする
-   `test` をシナリオに渡します。次は Discava のパターンを簡略化したものです。
+3. `packages/notes-table/src/helpers/invariants/` から、自分のテーブルを持つパッケージに **invariant をコピーします**。
+   異なるコードが書き込むレコードにまたがるルール（カウンター、集計、順序）ごとに、データのスナップショットを走査して
+   違反を返すチェックを書き、それを破るユニットテストも書きます。`packages/notes-table/README.md` の
+   「Rules that span records」で、追加の手順を説明しています。
 
-   ```ts
-   export const test = base.extend<{ tableInvariants: void }>({
-     tableInvariants: [
-       async ({}, use, testInfo) => {
-         const before = new Set((await findViolations()).map(violationId));
-         await use();
-         if (testInfo.status !== testInfo.expectedStatus) return;
-         await expect
-           .poll(async () => (await findViolations()).filter((v) => !before.has(violationId(v))), {
-             message: 'The scenario left the table breaking invariants',
-             timeout: 30_000,
-           })
-           .toEqual([]);
-       },
-       { auto: true },
-     ],
-   });
-   ```
+   シナリオは `@playwright/test` ではなく `table-invariants.ts` から `test` を取得します。各シナリオの後、
+   以前にはなかった違反がテーブルにあれば、そのシナリオを失敗させます。数えるのは *新しい* 違反だけなので、
+   古いローカルデータが原因で失敗することはなく、`expect.poll` はバックグラウンドの処理（ストリームハンドラー、再計算）が
+   追いつくまでの時間を与えます。
 
-   テストを失敗させるのは *新しい* 違反だけなので、古いローカルデータが原因で失敗することはありません。`expect.poll` は
-   バックグラウンドの処理（ストリームハンドラー、再計算）が追いつくまでの時間を与えます。
+4. **書き込み元マップを生成し、pre-push フックをコピーします。**
+   `pnpm nx run @your-scope/tooling-agent:entity-writers` を実行し、それが書き出す `entity-writers.json` をコミットします。
+   このリポジトリから `.husky/pre-push` をコピーし、その `MAP` と `PATHS` を自分のものに向けます。ブランチが
+   テーブルに書き込む可能性のあるコードを変更すると、このフックはマップを再生成し、マップが変わっていれば push を止めます。
+   その後、`Invariant coverage` PR チェックがマップをベースブランチのものと比較し、書き込み元を追加する PR を、
+   invariant がそのエンティティを挙げるまで保留します。
 
 5. 2 人のユーザーが競合しうる書き込みについて **並行性テストを追加します**。`Promise.all` で同じ API リクエストを
    同時に送り、その結果と invariant をアサートします。

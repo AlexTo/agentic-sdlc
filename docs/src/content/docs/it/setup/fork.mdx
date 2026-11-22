@@ -1,14 +1,13 @@
 ---
 title: 1. Fai il fork del repository
-description: Fai il fork di questo repository, riattiva ciò che GitHub disattiva nei fork, e verifica che giri.
+description: Fai il fork di questo repository, clonalo, e verifica che giri.
 sidebar:
   order: 1
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Alla fine avrai:** il tuo fork, con Issues e Actions attivi, clonato in locale, con i suoi
-check che passano.
+**Alla fine avrai:** il tuo fork, clonato in locale, con i suoi check che passano.
 
 <Steps>
 
@@ -26,13 +25,7 @@ check che passano.
    gh repo set-default <you>/agentic-sdlc
    ```
 
-3. **Attiva le Issues.** GitHub le disattiva nei fork, e tutto il workflow gira sulle issue. Nel
-   tuo fork, apri **Settings → General → Features** e spunta **Issues**.
-
-4. **Attiva Actions.** Apri la scheda **Actions** del tuo fork e clicca **I understand my workflows, go
-   ahead and enable them**. GitHub non esegue i workflow in un fork finché non lo fai.
-
-5. **Installa ed esegui i check in locale**, gli stessi che esegue la CI:
+3. **Installa ed esegui i check in locale**, gli stessi che esegue la CI:
 
    ```bash
    pnpm install
@@ -41,20 +34,31 @@ check che passano.
    pnpm nx run-many --target build --all
    ```
 
-   Per eseguire l'app di note (serve Docker): `pnpm dev`, poi apri l'URL che stampa il sito.
+   `pnpm install` installa anche gli hook git: Conventional Commits su ogni messaggio di commit, una
+   scansione dei secret e Biome prima di ogni commit, e un controllo della mappa degli invarianti prima
+   di ogni push. Per eseguire l'app di note (serve Docker): `pnpm dev`, poi apri l'URL che stampa il sito.
 
 </Steps>
 
 ## Verifica che funzioni
 
-Il tuo fork mostra una scheda **Issues**, e la sua scheda **Actions** elenca i workflow. In locale, i tre
-comandi `nx run-many` passano.
+I tre comandi `nx run-many` passano, e un commit con un messaggio che non è un Conventional Commit
+viene rifiutato:
+
+```bash
+git commit --allow-empty -m "not conventional"
+```
+
+```text
+✖   subject may not be empty [subject-empty]
+✖   type may not be empty [type-empty]
+```
+
+GitHub disattiva Issues e Actions in un fork. Lo script del passaggio successivo li riattiva.
 
 <Aside type="note">
-Due cose funzionano diversamente in un fork, e nessuna delle due blocca il workflow. Senza il secret
-`CODECOV_TOKEN`, il passaggio di upload della coverage registra un errore e prosegue. Il job **Deploy Docs** nella CI fallisce
-finché non attivi GitHub Pages (**Settings → Pages → Source: GitHub Actions**), oppure puoi
-ignorarlo.
+Senza il secret `CODECOV_TOKEN`, il passaggio di upload della coverage della CI registra un errore e
+prosegue. Aggiungi il secret, o elimina il passaggio, se vuoi che taccia.
 </Aside>
 
 Avanti: [2. Configura il repository](../github-repository/).

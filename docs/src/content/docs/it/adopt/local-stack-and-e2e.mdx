@@ -5,7 +5,7 @@ sidebar:
   order: 8
 ---
 
-import { Steps, Aside } from '@astrojs/starlight/components';
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
 **Alla fine avrai:** `pnpm dev` che avvia l'intera app con sostituti locali, una suite Playwright che la CI
 esegue su ogni PR, screenshot pubblicati sulla PR, e invarianti verificati dopo ogni test.
@@ -16,70 +16,52 @@ feedback reale senza credenziali cloud.
 <Steps>
 
 1. **Dai a ogni servizio cloud un sostituto locale**, avviato da un target `dev`, così `pnpm dev` esegue
-   tutto. [I sostituti di Discava](../../discava/local-stack/#cosa-gira-in-locale) coprono DynamoDB,
-   S3, SQS, OpenSearch e Cognito, più un processo "event runner" che chiama gli stessi handler
+   tutto. `packages/tooling/local-dev/` di questo repository avvia DynamoDB local in Docker per la
+   tabella delle note. [I sostituti di Discava](../../discava/local-stack/#cosa-gira-in-locale) coprono
+   anche S3, SQS, OpenSearch e Cognito, più un processo "event runner" che chiama gli stessi handler
    che nel cloud chiamano i trigger Lambda, gli stream ed EventBridge.
 
    Fai dipendere il codice backend da un solo flag (`LOCAL_DEV=true`), con gli endpoint in un unico modulo condiviso.
-   Elenca in `CONTRIBUTING.md` ciò che gira ancora solo nel cloud, e segna come **(human)** i task che ne hanno
-   bisogno.
+   Elenca nella tua guida per chi contribuisce ciò che gira ancora solo nel cloud, e segna come
+   **(human)** i task che ne hanno bisogno.
 
-2. **Aggiungi un progetto Playwright** con un file di scenario per ogni flusso utente. `packages/e2e` di questo
-   repository è un esempio minimo. In `playwright.config.ts`, leggi lo shard dall'ambiente
-   così la matrice della CI può dividere la suite:
+2. **Copia il progetto e2e** da questo repository, `packages/e2e/`, e sostituisci il suo scenario con
+   i tuoi, un file per ogni flusso utente. Cosa mantenere:
 
-   ```ts
-   const [shardCurrent, shardTotal] = (process.env.E2E_SHARD ?? '').split('/').map(Number);
-
-   export default defineConfig({
-     testDir: './src',
-     testMatch: ['scenarios/**/*.e2e.ts'],
-     workers: 1,
-     forbidOnly: !!process.env.CI,
-     retries: process.env.CI ? 1 : 0,
-     shard: shardCurrent && shardTotal ? { current: shardCurrent, total: shardTotal } : null,
-     webServer: { command: 'pnpm dev', reuseExistingServer: !process.env.CI /* … */ },
-   });
-   ```
+   <FileTree>
+   - packages/e2e/
+     - playwright.config.ts legge `E2E_SHARD` così la matrice della CI può dividere la suite, avvia `pnpm dev`, un worker, retry solo in CI
+     - src/helpers/
+       - screenshots.ts `screenshot(page, 'name')`, che salva le immagini caricate dal job `e2e` dei PR Checks
+       - table-invariants.ts un `test` Playwright che verifica gli invarianti dopo ogni scenario
+   </FileTree>
 
    Ogni scenario crea i propri utenti e dati con nomi univoci, e nessuno azzera i dati locali, quindi
-   girano in qualsiasi ordine.
-
-3. **Copia l'helper per gli screenshot** da questo repository: `packages/e2e/src/helpers/screenshots.ts`.
-   Salva `dist/packages/e2e/screenshots/<scenario>/<nn>-<name>.png`, la cartella che carica il job `e2e`
-   dei PR Checks. Chiamalo dove guarderebbe una persona, dopo un `expect` su ciò che viene mostrato:
+   girano in qualsiasi ordine. Chiama `screenshot` dove guarderebbe una persona, dopo un `expect` su
+   ciò che viene mostrato:
 
    ```ts
    await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible();
    await screenshot(page, 'reviews section with three reviews');
    ```
 
-4. **Verifica gli invarianti dopo ogni test.** Per ogni regola che riguarda record scritti da codice
-   diverso (contatori, aggregati, ordinamento), scrivi una funzione che scansiona i dati e restituisce le
-   violazioni. Poi dai agli scenari un `test` che le verifica in automatico. Questo è lo schema di Discava,
-   ridotto:
+3. **Copia gli invarianti** da `packages/notes-table/src/helpers/invariants/` nel package che possiede
+   la tua tabella. Per ogni regola che riguarda record scritti da codice diverso (contatori,
+   aggregati, ordinamento), scrivi un controllo che scansiona un'istantanea dei dati e restituisce le
+   violazioni, con uno unit test che lo viola. `packages/notes-table/README.md`, "Rules that span
+   records", spiega passo passo come aggiungerne uno.
 
-   ```ts
-   export const test = base.extend<{ tableInvariants: void }>({
-     tableInvariants: [
-       async ({}, use, testInfo) => {
-         const before = new Set((await findViolations()).map(violationId));
-         await use();
-         if (testInfo.status !== testInfo.expectedStatus) return;
-         await expect
-           .poll(async () => (await findViolations()).filter((v) => !before.has(violationId(v))), {
-             message: 'The scenario left the table breaking invariants',
-             timeout: 30_000,
-           })
-           .toEqual([]);
-       },
-       { auto: true },
-     ],
-   });
-   ```
+   Gli scenari prendono `test` da `table-invariants.ts` invece che da `@playwright/test`. Dopo ognuno,
+   fa fallire lo scenario se la tabella ha una violazione che prima non aveva. Contano solo le
+   violazioni *nuove*, quindi i vecchi dati locali non fanno mai fallire un'esecuzione, e `expect.poll`
+   dà al lavoro in background (handler degli stream, ricalcoli) il tempo di mettersi in pari.
 
-   Solo le violazioni *nuove* fanno fallire il test, quindi i vecchi dati locali non lo fanno mai. `expect.poll` dà
-   al lavoro in background (handler degli stream, ricalcoli) il tempo di mettersi in pari.
+4. **Genera la mappa dei writer, e copia l'hook pre-push.** Esegui
+   `pnpm nx run @your-scope/tooling-agent:entity-writers` e fai il commit dell'`entity-writers.json` che
+   scrive. Copia `.husky/pre-push` da questo repository, con i suoi `MAP` e `PATHS` puntati sui tuoi:
+   quando un branch modifica codice che potrebbe scrivere nella tabella, rigenera la mappa e blocca il
+   push se è cambiata. Il check di PR `Invariant coverage` confronta poi la mappa con quella del branch
+   base, e trattiene una PR che aggiunge un writer finché gli invarianti non nominano l'entità.
 
 5. **Aggiungi test di concorrenza** per le scritture su cui due utenti potrebbero entrare in conflitto: invia le stesse richieste API
    nello stesso momento con `Promise.all`, poi fai asserzioni sul risultato e sugli invarianti.

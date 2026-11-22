@@ -5,7 +5,7 @@ sidebar:
   order: 8
 ---
 
-import { Steps, Aside } from '@astrojs/starlight/components';
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
 **You'll end with:** `pnpm dev` starting the whole app with local stand-ins, a Playwright suite CI
 runs on every PR, screenshots posted on the PR, and invariants checked after each test.
@@ -16,70 +16,51 @@ feedback without cloud credentials.
 <Steps>
 
 1. **Give every cloud service a local stand-in**, started by a `dev` target, so `pnpm dev` runs
-   everything. [Discava's stand-ins](../../discava/local-stack/#what-runs-locally) cover DynamoDB,
+   everything. This repository's `packages/tooling/local-dev/` starts DynamoDB local in Docker for
+   the notes table. [Discava's stand-ins](../../discava/local-stack/#what-runs-locally) also cover
    S3, SQS, OpenSearch and Cognito, plus an "event runner" process that calls the same handlers
    that Lambda triggers, streams and EventBridge call in the cloud.
 
    Switch backend code on one flag (`LOCAL_DEV=true`), with the endpoints in one shared module.
-   List what still only runs in the cloud in `CONTRIBUTING.md`, and mark tasks that need it
+   List what still only runs in the cloud in your contributing guide, and mark tasks that need it
    **(human)**.
 
-2. **Add a Playwright project** with one scenario file per user flow. This repository's
-   `packages/e2e` is a minimal one. In `playwright.config.ts`, read the shard from the environment
-   so the CI matrix can split the suite:
+2. **Copy the e2e project** from this repository, `packages/e2e/`, and replace its scenario with
+   yours, one file per user flow. What to keep:
 
-   ```ts
-   const [shardCurrent, shardTotal] = (process.env.E2E_SHARD ?? '').split('/').map(Number);
-
-   export default defineConfig({
-     testDir: './src',
-     testMatch: ['scenarios/**/*.e2e.ts'],
-     workers: 1,
-     forbidOnly: !!process.env.CI,
-     retries: process.env.CI ? 1 : 0,
-     shard: shardCurrent && shardTotal ? { current: shardCurrent, total: shardTotal } : null,
-     webServer: { command: 'pnpm dev', reuseExistingServer: !process.env.CI /* … */ },
-   });
-   ```
+   <FileTree>
+   - packages/e2e/
+     - playwright.config.ts reads `E2E_SHARD` so the CI matrix can split the suite, starts `pnpm dev`, one worker, retries only in CI
+     - src/helpers/
+       - screenshots.ts `screenshot(page, 'name')`, which saves the pictures the PR Checks `e2e` job uploads
+       - table-invariants.ts a Playwright `test` that checks invariants after every scenario
+   </FileTree>
 
    Each scenario makes its own users and uniquely named data, and none resets local data, so they
-   run in any order.
-
-3. **Copy the screenshot helper** from this repository: `packages/e2e/src/helpers/screenshots.ts`.
-   It saves `dist/packages/e2e/screenshots/<scenario>/<nn>-<name>.png`, the folder the PR Checks
-   `e2e` job uploads. Call it where a person would look, after an `expect` on what shows:
+   run in any order. Call `screenshot` where a person would look, after an `expect` on what shows:
 
    ```ts
    await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible();
    await screenshot(page, 'reviews section with three reviews');
    ```
 
-4. **Check invariants after every test.** For each rule that spans records written by different
-   code (counters, aggregates, ordering), write a function that scans the data and returns
-   violations. Then give scenarios a `test` that checks them automatically. This is Discava's
-   pattern, trimmed:
+3. **Copy the invariants** from `packages/notes-table/src/helpers/invariants/` into the package
+   that owns your table. For each rule that spans records written by different code (counters,
+   aggregates, ordering), write a check that scans a snapshot of the data and returns violations,
+   with a unit test that breaks it. `packages/notes-table/README.md`, "Rules that span records",
+   walks through adding one.
 
-   ```ts
-   export const test = base.extend<{ tableInvariants: void }>({
-     tableInvariants: [
-       async ({}, use, testInfo) => {
-         const before = new Set((await findViolations()).map(violationId));
-         await use();
-         if (testInfo.status !== testInfo.expectedStatus) return;
-         await expect
-           .poll(async () => (await findViolations()).filter((v) => !before.has(violationId(v))), {
-             message: 'The scenario left the table breaking invariants',
-             timeout: 30_000,
-           })
-           .toEqual([]);
-       },
-       { auto: true },
-     ],
-   });
-   ```
+   Scenarios take `test` from `table-invariants.ts` instead of `@playwright/test`. After each
+   one, it fails the scenario if the table has a violation it didn't have before. Only *new*
+   violations count, so old local data never fails a run, and `expect.poll` gives background work
+   (stream handlers, recalculation) time to catch up.
 
-   Only *new* violations fail the test, so old local data never does. `expect.poll` gives
-   background work (stream handlers, recalculation) time to catch up.
+4. **Generate the writer map, and copy the pre-push hook.** Run
+   `pnpm nx run @your-scope/tooling-agent:entity-writers` and commit the `entity-writers.json` it
+   writes. Copy `.husky/pre-push` from this repository, with its `MAP` and `PATHS` pointed at
+   yours: when a branch changes code that could write the table, it regenerates the map and stops
+   the push if it changed. The `Invariant coverage` PR check then compares the map with the base
+   branch's, and holds a PR that adds a writer until the invariants name the entity.
 
 5. **Add concurrency tests** for writes two users could race on: fire the same API requests at
    the same moment with `Promise.all`, then assert on the result and the invariants.

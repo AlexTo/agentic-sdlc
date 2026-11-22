@@ -18,9 +18,9 @@ opinionated GitHub Actions automation, with a working example you can run. It is
 used in practice to build [Discava](https://github.com/AlexTo/discava), a serverless learning
 management system on AWS.
 
-In the seven days after the workflow went live on Discava on 14 November 2026, twenty-four feature specs
-were written this way and 139 agent pull requests were merged to implement them, each one written,
-fixed and reviewed by agents. Over the same period, 222 commits landed on main. All of this with a
+In the eight days after the workflow went live on Discava on 14 November 2026, twenty-six feature specs
+were written this way and 175 agent pull requests were merged to implement them, each one written,
+fixed and reviewed by agents. Over the same period, 269 commits landed on main. All of this with a
 single maintainer, a dad with a full-time job who works on Discava casually in his spare time. 😅
 
 ## 🐌 The problem: the prompt-wait-fix loop
@@ -125,7 +125,7 @@ walkthrough of how to set each one up:
 | The agent can't run the real stack without cloud access | Local emulators for every service (database, queue, storage, search, login), so it runs the e2e tests before opening a PR, with no credentials |
 | Merging doesn't ship anything | A green build on `main` deploys by itself, skips a commit that is no longer the latest, and production waits for a human approval |
 | An agent can commit a leaked secret or a vulnerable dependency | A security scan runs on every build, and again before each deploy |
-| Nobody checks the merged change where it actually runs | Each deploy opens a test issue per merged PR, and the Tester agent tests it on the deployed stage (in Discava; the example app here has no deploy) |
+| Nobody checks the merged change where it actually runs | Each deploy opens a test issue per merged PR, and the Tester agent tests it on the deployed stage (the workflows are here, off until you give the example app a cloud deploy) |
 
 Wire these together and you get the end-to-end loop above.
 
@@ -192,9 +192,13 @@ the complete pipeline, so you can see the workflow end to end rather than read a
 | Spec → issue automation | `.github/workflows/agent-issues.yml` |
 | Finished spec → archive PR | `.github/workflows/archive-specs.yml` |
 | Issue template handed to OpenHands | `.github/ISSUE_TEMPLATE/implement-phase.md` |
-| CI and PR checks (lint, test, e2e, screenshots) | `.github/workflows/ci.yml`, `pr-checks.yml`, `ui-screenshots.yml` |
-| Bounded fix-up loops | `.github/workflows/agent-ci.yml`, `agent-review.yml` |
-| The rules behind the automation (unit-tested) | `packages/common/scripts/src/agent-*` |
+| Agent guidance | `AGENTS.md` |
+| CI and PR checks (lint, test, invariants, e2e, screenshots) | `.github/workflows/ci.yml`, `pr-checks.yml`, `ui-screenshots.yml` |
+| Bounded fix-up loops | `.github/workflows/agent-ci.yml`, `agent-review.yml`, `agent-status.yml` |
+| Deploy, then the Tester (off until you add infrastructure) | `.github/workflows/deploy.yml`, `post-merge-verify.yml` |
+| The rules behind the automation (unit-tested) | `packages/tooling/agent/src/` |
+| Commit hooks (Conventional Commits, secrets, Biome) | `.husky/`, `commitlint.config.js`, `lint-staged.config.js` |
+| GitHub settings a fork doesn't copy | `scripts/setup-repository.sh` |
 | Example app | `packages/notes-*`, `packages/e2e` |
 
 ## 📚 Learn more

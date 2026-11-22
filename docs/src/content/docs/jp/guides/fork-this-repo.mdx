@@ -16,24 +16,35 @@ import { FileTree, LinkCard } from '@astrojs/starlight/components';
 ## 手に入るもの
 
 <FileTree>
+- AGENTS.md すべてのエージェントが最初に読むもの。ノートアプリ向けに書かれています
 - .specify/ Speckit のテンプレート、スクリプト、constitution
+- .husky/ コミット時に Conventional Commits、シークレットスキャン、Biome。push 時に invariant マップ
+- scripts/setup-repository.sh ラベル、ブランチ保護など、fork ではコピーされない設定
 - .github/
-  - ISSUE_TEMPLATE/implement-phase.md すべての実装 issue に含まれる指示
-  - actions/init-monorepo/ 共通の CI セットアップ
+  - ISSUE_TEMPLATE/
+    - implement-phase.md すべての実装 issue に含まれる指示
+    - test-deployed-pr.md テスト担当エージェント向けのテスト issue (手動用)
+  - actions/ 共通の CI セットアップ、Playwright の Chromium、変更パスのチェック
+  - dependabot.yml 固定したアクションと依存関係を最新に保つ
   - workflows/
-    - pr-checks.yml lint、テスト、ビルド、tasks の形式、e2e、スクリーンショットのコメント
+    - pr-checks.yml lint、テスト、ビルド、tasks の形式、invariant のカバレッジ、e2e、スクリーンショットのコメント
     - ui-screenshots.yml スクリーンショットのルール
     - ci.yml main でのチェック、Trivy、ドキュメントのデプロイ
     - agent-issues.yml spec → issue、マージ → 次の issue
     - archive-specs.yml 完了した spec → アーカイブ PR
     - agent-ci.yml 赤い CI → エージェント
     - agent-review.yml "changes requested" → エージェント
+    - agent-status.yml その 2 つが共有するステップ
+    - deploy.yml 緑の main → ステージ。インフラを追加するまではオフ
+    - post-merge-verify.yml デプロイされた PR → テスト担当向けのテスト issue
+    - cache-cleanup.yml 閉じた PR のキャッシュ
 - packages/
-  - common/scripts/src/ グルーのルールと 143 個のユニットテスト
-  - notes-table/ ElectroDB エンティティ、DynamoDB local
+  - tooling/agent/ グルーのルールと 223 個のユニットテスト
+  - tooling/local-dev/ `pnpm dev` 用に DynamoDB local を起動する
+  - notes-table/ ElectroDB エンティティ、DynamoDB local、invariant
   - notes-api/ tRPC プロシージャ
   - notes-website/ React、Vite、TanStack Router、shadcn/ui
-  - e2e/ Playwright のシナリオと `screenshot()` ヘルパー
+  - e2e/ Playwright のシナリオ、`screenshot()` ヘルパー、各テスト後の invariant
 - docs/ このサイト
 </FileTree>
 
@@ -44,13 +55,15 @@ e2e テストを実行でき、エージェントがクラウドの認証情報�
 
 リポジトリに置けないものだけです。
 
-1. **GitHub の設定**: Issues と Actions の有効化、ラベル、ブランチ保護。fork ではこれらはコピーされません。
-2. **OpenHands**: 自分のマシン上の Agent Canvas、GitHub トークン、そして fork に向けた 2 つの automation。
+1. **GitHub の設定**: fork ではこれらはコピーされないので、`scripts/setup-repository.sh` が 1 回の実行で設定します。
+2. **OpenHands**: 自分のマシン上の Agent Canvas、GitHub トークン、そして fork に向けた automation。
 
-## 含まれないもの
+## 追加するまでオフのもの
 
-Discava の AWS デプロイです。ノートアプリにはクラウドインフラがないため、マージしてもドキュメントサイト以外は何も
-出荷されません。[デプロイとセキュリティ](../../discava/deploy-and-security/)では Discava の
-パイプラインを説明し、[導入: デプロイ](../../adopt/deploy/)ではパイプラインの追加方法を示します。
+クラウドです。ノートアプリにはクラウドインフラがないため、マージしてもドキュメントサイト以外は何も
+出荷されません。`deploy.yml` と `post-merge-verify.yml` は用意されていますが、自動では実行されません。
+`packages/infra` に CDK アプリを追加して `AUTO_DEPLOY_STAGE` を設定すると、緑の `main` のたびにデプロイされ、
+その後テスト担当エージェントがデプロイされたものをテストします。手順は[導入: デプロイ](../../adopt/deploy/)にあり、
+[デプロイとセキュリティ](../../discava/deploy-and-security/)では Discava のパイプラインを説明しています。
 
 <LinkCard title="セットアップ: fork し、設定し、最初の機能を動かす" href="/agentic-sdlc/jp/setup/before-you-start/" />

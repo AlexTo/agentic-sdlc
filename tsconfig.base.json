@@ -26,9 +26,6 @@
       "@agentic-sdlc/notes-table": [
         "./packages/notes-table/src/index.ts"
       ],
-      "@agentic-sdlc/common-scripts": [
-        "./packages/common/scripts/src/index.ts"
-      ],
       "@agentic-sdlc/notes-api": [
         "./packages/notes-api/src/index.ts"
       ],

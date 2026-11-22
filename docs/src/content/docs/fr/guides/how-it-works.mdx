@@ -57,8 +57,8 @@ stage. Pendant que les agents travaillent, vous pouvez écrire la spec suivante.
 | De la CI à l'agent | `.github/workflows/agent-ci.yml` |
 | Du Relecteur à l'agent | `.github/workflows/agent-review.yml` |
 | Checks | `.github/workflows/pr-checks.yml`, `ui-screenshots.yml`, `ci.yml` |
-| Du déploiement à l'issue de test (Discava uniquement) | `.github/workflows/deploy.yml`, `post-merge-verify.yml` |
-| Les règles derrière la glue, testées unitairement | `packages/common/scripts/src/agent-*`, `ui-screenshots/` |
+| Du déploiement à l'issue de test | `.github/workflows/deploy.yml`, `post-merge-verify.yml` (désactivés tant que vous n'ajoutez pas de déploiement) |
+| Les règles derrière la glue, testées unitairement | `packages/tooling/agent/src/` |
 | Le runtime de l'agent et le prompt de chaque rôle | OpenHands Agent Canvas, en dehors du dépôt |
 
 Les détails sont dans Concepts : [comment les phases deviennent des issues](../../concepts/one-phase-at-a-time/),

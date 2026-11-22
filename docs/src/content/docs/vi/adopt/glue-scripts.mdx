@@ -1,68 +1,68 @@
 ---
 title: 5. Các script glue
-description: Thêm các script có unit test quyết định issue nào mở, khi nào agent quay lại, và khi nào nó dừng.
+description: Chép các script có unit test quyết định issue nào mở, khi nào agent quay lại, khi nào nó dừng, và Tester test những gì.
 sidebar:
   order: 5
 ---
 
 import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
-**Kết quả:** một project `common-scripts` với sáu Nx target và 143 unit test pass. Các workflow ở bước
-6 và 7 chỉ gọi những target này.
+**Kết quả:** một project `tooling-agent` với mười Nx target và 223 unit test pass. Các workflow ở bước
+6, 7 và 9 chỉ gọi những target này.
 
 <Steps>
 
-1. **Tạo project.** Chép `packages/common/scripts/` từ repository này (`package.json`, `project.json`,
-   `tsconfig*.json` và `vitest.config.mts` của nó), và xóa `src/dynamodb/`, thứ thuộc về ứng dụng ví
-   dụ. Đổi tên nó thành `@your-scope/common-scripts` trong `package.json` và `project.json`, và trong
-   `name` ở `vitest.config.mts`. Một project TypeScript được sinh bởi Nx Plugin for AWS có cùng cấu
-   trúc, nếu bạn muốn sinh một cái.
-
-2. **Chép bốn thư mục glue** từ `packages/common/scripts/src/` của repository này:
+1. **Chép `packages/tooling/agent/`** từ repository này, nguyên vẹn. `project.json` của nó đã khai
+   báo mọi target mà các workflow gọi, và `AGENTS.md` của nó cho agent biết mỗi thư mục chứa gì:
 
    <FileTree>
-   - packages/common/scripts/src/
-     - agent-issues/ spec → issue: gate, discover, tasks, validate, issue, plan-issue, create-next-issue, main, validate-main, và archive, archive-specs, archive-main cho việc lưu trữ
-     - agent-ci/ CI → agent: plan, run, main
-     - agent-review/ review → agent: plan, run, main
-     - ui-screenshots/ quy tắc ảnh chụp màn hình: check, main
+   - packages/tooling/agent/src/
+     - agent-issues/ spec → issue, bộ validate `tasks.md`, và lưu trữ các spec đã xong
+     - agent-ci/ CI đỏ → agent
+     - agent-review/ "changes requested" → agent
+     - helpers/ khóa các issue mà agent đọc, và phân biệt tác giả tin cậy với người lạ
+     - ui-screenshots/ quy tắc ảnh chụp màn hình, và comment `E2E screenshots`
+     - invariant-coverage/ code nào ghi entity nào, và quy tắc rằng writer mới cần invariant
+     - post-merge-test/ PR đã deploy → issue test cho Tester
    </FileTree>
 
-   Chúng chỉ phụ thuộc vào built-in của Node và CLI `gh`. `tsx` chạy chúng.
+   Chúng chỉ phụ thuộc vào built-in của Node, TypeScript (cho việc quét invariant) và CLI `gh`.
+   `tsx` chạy chúng. Thêm thư mục này vào `pnpm-workspace.yaml` và các reference trong
+   `tsconfig.json` ở gốc của workspace nếu các glob của bạn chưa bao gồm `packages/tooling/*`.
 
-3. **Thêm các target** vào `project.json` của project, dưới `targets`:
+2. **Đổi tên scope.** Thay `@agentic-sdlc/` bằng scope của workspace của bạn trong `package.json`,
+   `project.json` và `vitest.config.mts` của project, và trong comment của các file `main.ts` của nó.
+   Mọi workflow bạn chép sau này cũng nêu tên `@agentic-sdlc/tooling-agent`.
 
-   ```json
-   "agent-issue":         { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/main.ts",    "cwd": "{projectRoot}" } },
-   "archive-specs":       { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/archive-main.ts", "cwd": "{projectRoot}" } },
-   "agent-ci-status":     { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-ci/main.ts",        "cwd": "{projectRoot}" } },
-   "agent-review-status": { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-review/main.ts",    "cwd": "{projectRoot}" } },
-   "ui-screenshots":      { "executor": "nx:run-commands", "options": { "command": "tsx src/ui-screenshots/main.ts",  "cwd": "{projectRoot}" } },
-   "validate-tasks":      { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/validate-main.ts", "cwd": "{projectRoot}" } }
-   ```
-
-4. **Đổi các hằng số cho thiết lập của bạn**, nếu bạn đã thay đổi bất kỳ quyết định nào trong
-   [phần tổng quan](../overview/):
+3. **Đổi các hằng số cho thiết lập của bạn.** Các hằng số in đậm trỏ vào ứng dụng ghi chú của
+   repository này, nên bạn gần như chắc chắn sẽ đổi chúng. Phần còn lại chỉ đổi nếu bạn đã thay đổi
+   một quyết định trong [phần tổng quan](../overview/):
 
    | Hằng số | File | Mặc định |
    | --- | --- | --- |
+   | **`UI_SOURCE`** | `ui-screenshots/check.ts` | `.tsx`/`.css` dưới `packages/notes-website/src/` và `packages/common/shadcn/src/` |
+   | **`WRITER_PACKAGES`**, **`ENTITIES_PACKAGE`** | `invariant-coverage/scan.ts` | Các package có code ghi vào bảng, và package chứa các entity của nó (`notes-table`) |
+   | **`WRITER_MAP_PATH`**, **`INVARIANTS_PATH`**, **`HELPERS`** | `invariant-coverage/check.ts` | `packages/notes-table/entity-writers.json`, `packages/notes-table/src/helpers/invariants`, `notes-table` |
+   | **`UI_PATHS`**, **`NOT_DEPLOYED`** | `post-merge-test/plan.ts` | Những gì được tính là thay đổi UI đáng để bấm thử, và các đường dẫn không bao giờ đến một stack đã deploy |
    | `SPEC_READY_LABEL`, `AGENT_BRANCH_PREFIX` | `agent-issues/gate.ts` | `spec-ready`, `openhands/` |
    | `AGENT_LABEL` | `agent-issues/issue.ts` | `openhands` |
    | `AGENT_BRANCH`, `REVIEW_STATUS_CONTEXT`, `MAX_CI_FIX_ATTEMPTS` | `agent-ci/plan.ts` | `^openhands\/issue-\d+$`, `software-factory/review`, `5` |
    | `MAX_REVIEW_FIX_ATTEMPTS`, `CHANGES_REQUESTED` | `agent-review/plan.ts` | `5`, `🔄 CHANGES REQUESTED` |
-   | `UI_SOURCE`, `SCENARIO`, `WAIVER_LABEL` | `ui-screenshots/check.ts` | `.tsx`/`.css` của portal và UI dùng chung, `packages/e2e/src/scenarios/*.e2e.ts`, `no-ui-screenshots` |
+   | `WAIVER_LABEL` | `ui-screenshots/check.ts`, `invariant-coverage/check.ts` | `no-ui-screenshots`, `no-new-invariant` |
 
-   `UI_SOURCE` là hằng số bạn gần như chắc chắn sẽ đổi. Trỏ nó vào mã nguồn frontend của bạn.
+   Nếu bạn chưa kiểm tra invariant, cứ để thư mục `invariant-coverage` ở đó và đừng chép job PR
+   Checks của nó ở bước 6. Một số unit test đọc các file invariant thật, nên hãy cập nhật các test
+   đó (trong `invariant-coverage/check.test.ts`) hoặc các đường dẫn ở trên.
 
    <Aside type="caution">
    Đừng đổi `REVIEW_STATUS_CONTEXT`. `software-factory/review` là status mà worker issue-to-PR của
    OpenHands tìm. Bất kỳ tên nào khác thì agent sẽ không bao giờ được gửi quay lại.
    </Aside>
 
-5. **Chạy test.**
+4. **Chạy test.**
 
    ```bash
-   pnpm nx run @your-scope/common-scripts:test
+   pnpm nx run @your-scope/tooling-agent:test
    ```
 
 </Steps>
@@ -70,19 +70,19 @@ import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 ## Kiểm tra kết quả
 
 ```text
- Test Files  10 passed (10)
-      Tests  143 passed (143)
+ Test Files  19 passed (19)
+      Tests  223 passed (223)
 ```
 
 ## Thử chạy dry run
 
-Mỗi script trong ba script agent đọc sự kiện GitHub từ `GITHUB_EVENT_PATH`, và với `DRY_RUN=true` in
-ra quyết định của nó thay vì thực hiện. Để phát lại một trường hợp thật, lưu một payload từ một lần
-chạy workflow trước đây và trỏ script vào đó:
+Mỗi script agent đọc sự kiện GitHub từ `GITHUB_EVENT_PATH`, và với `DRY_RUN=true` in ra quyết định
+của nó thay vì thực hiện. Để phát lại một trường hợp thật, lưu một payload từ một lần chạy workflow
+trước đây và trỏ script vào đó:
 
 ```bash
 DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_PATH=./event.json \
-  pnpm nx run @your-scope/common-scripts:agent-ci-status
+  pnpm nx run @your-scope/tooling-agent:agent-ci-status
 ```
 
 ```json

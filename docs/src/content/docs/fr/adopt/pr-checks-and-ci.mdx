@@ -1,6 +1,6 @@
 ---
 title: 6. Checks de PR et CI
-description: Ajoutez le workflow PR Checks (lint, test, build, format des tâches, e2e, captures d'écran) et la CI sur main.
+description: Copiez le workflow PR Checks (lint, test, build, format des tâches, couverture des invariants, e2e, captures d'écran) et la CI sur main.
 sidebar:
   order: 6
 ---
@@ -12,54 +12,43 @@ et la **CI** sur `main`.
 
 <Steps>
 
-1. **Copiez `.github/workflows/pr-checks.yml`** depuis ce dépôt. Gardez exactement son `name: PR Checks` :
-   Agent CI Status écoute un workflow portant ce nom. Ses jobs :
+1. **Copiez quatre workflows** depuis le dossier `.github/workflows/` de ce dépôt :
 
-   | Job | À garder tel quel ? |
+   | Fichier | Ce qu'il fait |
    | --- | --- |
-   | `checks`, une matrice de `lint`, `test`, `build` avec `fail-fast: false` | Oui |
-   | `tasks-format` | Oui |
-   | `e2e`, découpé en shards, plus `e2e-result` qui regroupe les shards en un seul check `E2E tests` | Réglez le nombre de shards selon votre suite |
-   | `e2e-screenshots` | Oui, une fois l'[étape 8](../local-stack-and-e2e/) faite |
+   | `pr-checks.yml` | Lint, test et build de ce que la PR affecte ; `Tasks format` ; `Invariant coverage` ; e2e découpé en shards, regroupés en un seul check `E2E tests` ; le commentaire `E2E screenshots` |
+   | `ui-screenshots.yml` | La règle des captures d'écran, dans son propre workflow, pour qu'ajouter ou retirer le label `no-ui-screenshots` ne relance que ce check. Discava l'exécute plutôt comme job de PR Checks. Les deux fonctionnent |
+   | `ci.yml` | Les mêmes checks à chaque push sur `main`, Trivy, le cache Playwright, et le déploiement de ce site de documentation |
+   | `cache-cleanup.yml` | Supprime les caches d'une PR quand elle est fermée |
 
-2. **Copiez `.github/workflows/ui-screenshots.yml`.** Dans ce dépôt, la règle des captures d'écran est un
-   workflow à part, déclenché sur `opened, synchronize, reopened, labeled, unlabeled`. Ajouter ou
-   retirer le label `no-ui-screenshots` ne relance alors que ce check, pas toute la suite e2e.
-   Discava applique plutôt la même règle comme job de PR Checks. Les deux fonctionnent.
+   Gardez exactement le `name: PR Checks` de `pr-checks.yml` : Agent CI Status écoute un workflow portant
+   ce nom.
 
-3. **Copiez `.github/workflows/ci.yml`** pour les pushs sur `main`. Gardez l'étape `Check for mutations`
-   (`git diff --ignore-space-at-eol --exit-code` après le build). Elle repère les fichiers générés que
-   l'agent a oublié de committer. Gardez le job `playwright-cache` si vous utilisez Playwright : les exécutions de PR ne peuvent
-   restaurer que des caches enregistrés sur `main`.
+2. **Faites-les pointer vers vos projets.** Cherchez `@agentic-sdlc/` dans les fichiers copiés et changez le
+   scope. Puis, dans `pr-checks.yml` :
 
-   Le job `build` passe `nx-cache-scope: main` à `init-monorepo`, qui enregistre le cache de tâches de Nx.
-   La première exécution d'une PR part de ce cache, donc les tâches dont `main` a déjà construit les entrées sont rejouées, pas
-   réexécutées, et l'agent attend moins à chaque tour de correction. Chaque branche de `checks` dans PR Checks garde
-   son propre cache de la même façon, sauf `lint`, qui ne fait que restaurer, car le lint est plus rapide que
-   l'enregistrement d'un cache. `init-monorepo` plafonne le cache à 1 Go.
+   | Job | À changer |
+   | --- | --- |
+   | `invariant-coverage` | Les `paths` du code qui pourrait écrire dans votre table, les mêmes que `WRITER_PACKAGES` à l'étape 5. Ou supprimez le job si vous ne vérifiez pas encore les invariants |
+   | `e2e` | Le nombre de shards dans `matrix.shard`, selon votre suite. Un shard coûte environ deux minutes avant son premier test, donc arrêtez d'en ajouter une fois que les tests de chacun prennent à peu près ce temps |
+   | `e2e-screenshots` | Rien, une fois l'[étape 8](../local-stack-and-e2e/) faite |
 
-4. **Copiez `.github/workflows/cache-cleanup.yml`.** Il supprime les caches d'une PR quand elle est fermée.
-   Rien d'autre ne peut les lire, et sans lui ils comptent dans les 10 Go de cache Actions du dépôt
-   jusqu'à ce que GitHub les évince, en commençant par ceux des PR encore ouvertes. Voir
-   [Rester rapide](../../discava/pr-checks/#garder-les-checks-rapides) pour ce que cela a fait gagner à Discava.
+   Dans `ci.yml`, supprimez le job `deploy_docs` et sa permission `pages: write` sauf si vous publiez
+   un site de documentation depuis `docs/`.
 
-5. **Épinglez chaque action sur un SHA de commit**, comme le font les fichiers copiés, et ajoutez
-   `.github/dependabot.yml` pour que les épinglages restent à jour :
-
-   ```yaml
-   version: 2
-   updates:
-     - package-ecosystem: 'npm'
-       directory: '/'
-       schedule: { interval: 'weekly' }
-       groups: { all: { patterns: ['*'] } }
-     - package-ecosystem: 'github-actions'
-       directories: ['/', '/.github/actions/*']
-       schedule: { interval: 'weekly' }
-       groups: { github-actions: { applies-to: version-updates, patterns: ['*'] } }
-   ```
+3. **Gardez ce qui garde l'agent rapide.** L'étape `Check for mutations` de `ci.yml` (`git diff
+   --exit-code` après le build) repère les fichiers générés que l'agent a oublié de committer. Le
+   job `playwright-cache` enregistre Chromium depuis `main`, puisque les exécutions de PR ne peuvent restaurer que des caches
+   enregistrés là. Le job `build` enregistre le cache de tâches de Nx depuis `main`, pour que la première exécution d'une PR rejoue ce que
+   `main` a déjà construit, et l'agent attend moins à chaque tour de correction. Chaque branche de `checks` dans PR
+   Checks garde son propre cache de la même façon, sauf `lint`, qui ne fait que restaurer. `init-monorepo`
+   plafonne le cache à 1 Go, et Cache Cleanup libère la part d'une PR fermée dans les 10 Go du dépôt.
+   Voir [Garder les checks rapides](../../discava/pr-checks/#garder-les-checks-rapides) pour ce que cela a fait gagner à Discava.
 
 </Steps>
+
+Chaque action est épinglée sur un SHA de commit, et le `dependabot.yml` que vous avez copié à l'étape 1 garde les
+épinglages à jour.
 
 ## Vérifier que ça marche
 

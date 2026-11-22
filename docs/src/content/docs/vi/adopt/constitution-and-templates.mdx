@@ -1,121 +1,51 @@
 ---
 title: 3. Constitution và template
-description: Viết constitution với các điều khoản mà quy trình phụ thuộc vào, và thay đổi hai template Speckit để automation đọc được output của chúng.
+description: Viết lại constitution cho dự án của bạn, giữ các điều khoản mà quy trình phụ thuộc vào, và trỏ các template vào package của bạn.
 sidebar:
   order: 3
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Kết quả:** một constitution đã phê chuẩn, một `tasks-template.md` tạo ra file mà workflow Agent
-Issues đọc được, và một `spec-template.md` có dòng parent issue.
+**Kết quả:** một constitution đã phê chuẩn của riêng bạn, và các template Speckit tạo ra file mà
+workflow Agent Issues đọc được.
+
+`.specify/` bạn đã chép ở [bước 2](../speckit/) đã chứa sẵn một constitution và các template hoạt
+động được, viết cho ứng dụng ghi chú. Bước này biến chúng thành của bạn.
 
 <Steps>
 
-1. **Viết constitution của bạn.** Trong coding agent của bạn:
+1. **Viết lại constitution cho dự án của bạn.** Trong coding agent của bạn:
 
    ```text
    /speckit-constitution
    ```
 
    Đưa cho nó các nguyên tắc riêng của dự án: kiến trúc, mô hình dữ liệu, mặc định bảo mật, quy ước
-   code. [Constitution của Discava](../../discava/constitution-and-guidance/) là một ví dụ đầy đủ. Sau
-   đó đảm bảo có các điều khoản sau, vì phần còn lại của quy trình phụ thuộc vào chúng. Điều chỉnh các
-   lệnh cho phù hợp với stack của bạn:
+   code. [Constitution của Discava](../../discava/constitution-and-guidance/) là một ví dụ đầy đủ.
+   Giữ lại những phần sau của bản đã chép, điều chỉnh các lệnh và tên package cho phù hợp với stack
+   của bạn, vì phần còn lại của quy trình phụ thuộc vào chúng:
 
-   ```markdown
-   ### Layered tests
-   - **Unit tests.** New business logic MUST ship with unit tests covering its main behavior and
-     the rules it enforces.
-   - **End to end.** A change to a main user flow MUST add or extend an e2e scenario. Scenarios
-     MUST make their own users and uniquely named data.
-   - **Tests are a specification.** A failing test MUST be resolved by fixing the code, unless the
-     spec or plan changes the behavior it covers. Weakening an existing test (loosening an
-     assertion, deleting a case, adding `skip` or `only`, widening a mock or snapshot) is allowed
-     only when a task names the behavior change that justifies it, and the PR description says
-     so. Never edit a test just to turn it green.
+   | Giữ | Từ constitution đã chép | Vì sao |
+   | --- | --- | --- |
+   | Unit test, invariant và e2e test là bắt buộc, và test là một đặc tả | III. Layered Tests | Agent không được làm yếu một test để CI chuyển xanh |
+   | Mọi thứ chạy dưới `pnpm dev`, không cần tài khoản cloud | II. Everything Runs Locally | Nhờ đó CI của PR chạy được bộ e2e và cho agent phản hồi thật |
+   | Agent triển khai trên nhánh và PR riêng, không bao giờ chạy local stack, và đánh dấu **(human)** cho task cần nó | Development Workflow | Agent không có Docker. CI chạy những gì agent không chạy được |
+   | CI của PR là cổng kiểm soát. Agent không bao giờ merge, push lên `main`, sửa CI workflow hay làm yếu một test | Development Workflow | Thứ giữ agent trong làn của nó |
 
-   ### Everything runs locally
-   A feature MUST work under `pnpm dev` with Docker and no cloud account. Any cloud service a
-   feature adds MUST get a local stand-in or a documented, justified exception.
+2. **Đổi các đường dẫn package trong `tasks-template.md`.** Các task test của nó nêu tên package của
+   repository này: `packages/notes-table/src/helpers/invariants/` và `@agentic-sdlc/e2e`. Trỏ chúng
+   vào package của bạn. Giữ nguyên phần còn lại của template: các quy tắc định dạng dưới
+   **Read by automation**, dấu **(human)**, các test bắt buộc, và ghi chú cấm sửa test có sẵn là
+   những thứ mà workflow Agent Issues và check `Tasks format` dựa vào.
 
-   ## Development Workflow
-   - Features are implemented by autonomous agents, each on its own branch and pull request, so a
-     task list MUST NOT require a local stack, Docker or `pnpm dev`. The agent runs unit tests,
-     lint, typecheck and build itself. It writes the e2e tests, but pull request CI runs them. A
-     task that needs a running local stack or people MUST be marked `(human)` in `tasks.md` and
-     is done by a reviewer before merge.
-   - Pull request CI is the gate. An agent MUST NOT merge, push to `main`, edit CI workflows, or
-     weaken a test to make CI pass.
-   - Plans MUST pass the Constitution Check, and any violation MUST be recorded in the plan's
-     Complexity Tracking with a justification.
-   ```
-
-2. **Bắt buộc test trong `tasks-template.md`.** Thay dòng gốc bắt đầu bằng
-   `**Tests**: The examples below include test tasks. Tests are OPTIONAL` bằng:
-
-   ```markdown
-   **Tests**: The constitution requires tests, so include them. Unit tests cover new business
-   logic. A change to a main user flow needs an e2e scenario. Drop only the layers the feature
-   doesn't touch.
-
-   **Who runs what**: an automated agent implements these tasks without `pnpm dev` or Docker. It
-   runs unit and component tests, lint, typecheck and `build` locally. The e2e scenarios are
-   written by the agent but run on PR CI; a CI failure is the feedback for those. Mark a task
-   **(human)** when it needs a running local stack or people (manual checks, timing, screen
-   readers); a reviewer does those before merge.
-   ```
-
-   Gỡ `(OPTIONAL - only if tests requested)` khỏi mỗi heading `### Tests for User Story <n>`.
-
-3. **Thêm các quy tắc định dạng vào `tasks-template.md`**, sau phần chú giải định dạng (`[P]`,
-   `[Story]`). Thêm dòng này vào phần chú giải:
-
-   ```markdown
-   - **(human)**: needs a running local stack or people; not done by the agent. Not for
-     screenshots: a task that changes what a user sees adds `screenshot()` calls to its e2e
-     scenario, and CI posts them on the pull request (`UI Screenshots` fails without them)
-   ```
-
-   Sau đó thêm khối này:
-
-   ```markdown
-   **Read by automation**: the Agent Issues workflow reads this file to decide which tasks to hand
-   the implementing agent, so keep this structure (PR checks refuse a file that strays from it):
-
-   - every phase is a heading `## Phase <number>: <title>`, numbered upwards, with at least one
-     task;
-   - a user story's phase is titled `User Story <n> - <what it delivers>`; the first one ends the
-     first implementation issue (setup, foundations and that story);
-   - every task is a line `- [ ] T<3 digits> <description>` starting in the first column, under a
-     phase, with an id no other task has; a task added later takes the next unused id, wherever
-     it is placed;
-   - a finished task is ticked in place (`- [x]`), never deleted or renumbered.
-   ```
-
-4. **Thêm task test cho mỗi user story** trong `tasks-template.md`, dưới `### Tests for User Story 1`
-   (và 2, 3), để `/speckit-tasks` luôn sinh ra chúng:
-
-   ```markdown
-   - [ ] T01A [P] [US1] Unit tests for new procedures/access patterns in the API's `*.test.ts`
-   - [ ] T01C [US1] (If it changes a main user flow) E2E scenario in `packages/e2e/src/scenarios/[flow].e2e.ts`
-   ```
-
-   Discava thêm một task thứ ba, cho invariant: *"(If a rule spans records or writers) Invariant in
-   `helpers/invariants/` and a test that breaks it, written before the shared write helper"*.
-
-5. **Thêm một dòng vào phần ghi chú ở cuối** `tasks-template.md`:
-
-   ```markdown
-   - Do not edit existing tests to make them pass. If one looks wrong, stop and raise it. A task
-     that changes an existing test must cite the spec change behind it
-   ```
-
-6. **Thêm dòng parent issue vào `spec-template.md`**, dưới các trường header:
+3. **Giữ dòng parent issue** trong `spec-template.md`:
 
    ```markdown
    **Parent issue**: [#<number>, or "none" if there is no tracking issue]
    ```
+
+   Agent Issues viết `Refs #<parent>` vào mỗi issue từ dòng này.
 
 </Steps>
 
@@ -125,7 +55,7 @@ Sinh một spec và task dùng thử cho một tính năng nhỏ xíu. Sau đó,
 ([bước 5](../glue-scripts/)):
 
 ```bash
-pnpm nx run @your-scope/common-scripts:validate-tasks
+pnpm nx run @your-scope/tooling-agent:validate-tasks
 ```
 
 ```text

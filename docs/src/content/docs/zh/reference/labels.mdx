@@ -5,6 +5,9 @@ sidebar:
   order: 1
 ---
 
+`scripts/setup-repository.sh` 会创建所有这些标签。参见
+[2. 配置仓库](../../setup/github-repository/)。
+
 | 标签 | 作用于 | 设置者 | 读取者 | 含义 |
 | --- | --- | --- | --- | --- |
 | `spec-ready` | Spec PR | 人 | Agent Issues | 合并这个 PR 即开始实现。给已经合并的 PR 加上它也一样 |
@@ -17,6 +20,7 @@ sidebar:
 | `review-fix-1` … `review-fix-5` | 智能体 PR | Agent Review Status | Agent Review Status | 已用掉这么多次针对“要求修改”的修复 |
 | `review-fix-exhausted` | 智能体 PR | Agent Review Status | Agent Review Status、人 | 评审修复次数已用完，由人接手 |
 | `no-ui-screenshots` | PR | 维护者 | UI Screenshots | 豁免截图规则：这次 UI 改动没有可看的东西。加上后重新运行该检查 |
+| `no-new-invariant` | PR | 维护者 | PR Checks（`Invariant coverage`） | 豁免不变式覆盖规则：没有任何规则涉及新的写入方。加上后重新运行该检查 |
 | `priority:high` | Issue | 人 | Issue-to-PR automation | 在同一次轮询中优先开始这个 issue |
 
 ## 重置循环

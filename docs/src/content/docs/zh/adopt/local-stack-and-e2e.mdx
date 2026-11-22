@@ -5,7 +5,7 @@ sidebar:
   order: 8
 ---
 
-import { Steps, Aside } from '@astrojs/starlight/components';
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
 **完成后你将拥有：** 用本地替身启动整个应用的 `pnpm dev`、CI 在每个 PR 上运行的 Playwright 测试套件、发布在 PR 上的截图，以及在每个测试之后检查的不变式。
 
@@ -13,57 +13,32 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 <Steps>
 
-1. **给每个云服务一个本地替身**，由一个 `dev` target 启动，这样 `pnpm dev` 就能运行所有东西。[Discava 的替身](../../discava/local-stack/#本地运行的内容)覆盖 DynamoDB、S3、SQS、OpenSearch 和 Cognito，外加一个 “event runner” 进程，它调用的处理函数与云上 Lambda 触发器、stream 和 EventBridge 所调用的相同。
+1. **给每个云服务一个本地替身**，由一个 `dev` target 启动，这样 `pnpm dev` 就能运行所有东西。这个仓库的 `packages/tooling/local-dev/` 在 Docker 中为笔记表启动 DynamoDB local。[Discava 的替身](../../discava/local-stack/#本地运行的内容)还覆盖 S3、SQS、OpenSearch 和 Cognito，外加一个 “event runner” 进程，它调用的处理函数与云上 Lambda 触发器、stream 和 EventBridge 所调用的相同。
 
-   让后端代码通过一个开关（`LOCAL_DEV=true`）切换，端点集中在一个共享模块中。在 `CONTRIBUTING.md` 中列出仍然只能在云上运行的部分，并把需要它们的任务标记为 **(human)**。
+   让后端代码通过一个开关（`LOCAL_DEV=true`）切换，端点集中在一个共享模块中。在你的贡献指南中列出仍然只能在云上运行的部分，并把需要它们的任务标记为 **(human)**。
 
-2. **添加一个 Playwright 项目**，每个用户流程对应一个场景文件。这个仓库的 `packages/e2e` 是一个最小的例子。在 `playwright.config.ts` 中，从环境变量读取分片，以便 CI 矩阵拆分测试套件：
+2. 从这个仓库**复制 e2e 项目** `packages/e2e/`，并把它的场景替换为你自己的，每个用户流程一个文件。需要保留的部分：
 
-   ```ts
-   const [shardCurrent, shardTotal] = (process.env.E2E_SHARD ?? '').split('/').map(Number);
+   <FileTree>
+   - packages/e2e/
+     - playwright.config.ts 读取 `E2E_SHARD` 以便 CI 矩阵拆分测试套件，启动 `pnpm dev`，单个 worker，只在 CI 中重试
+     - src/helpers/
+       - screenshots.ts `screenshot(page, 'name')`，保存 PR Checks 的 `e2e` job 上传的图片
+       - table-invariants.ts 一个在每个场景之后检查不变式的 Playwright `test`
+   </FileTree>
 
-   export default defineConfig({
-     testDir: './src',
-     testMatch: ['scenarios/**/*.e2e.ts'],
-     workers: 1,
-     forbidOnly: !!process.env.CI,
-     retries: process.env.CI ? 1 : 0,
-     shard: shardCurrent && shardTotal ? { current: shardCurrent, total: shardTotal } : null,
-     webServer: { command: 'pnpm dev', reuseExistingServer: !process.env.CI /* … */ },
-   });
-   ```
-
-   每个场景都创建自己的用户和名称唯一的数据，并且没有场景会重置本地数据，因此它们可以按任意顺序运行。
-
-3. 从这个仓库**复制截图辅助函数**：`packages/e2e/src/helpers/screenshots.ts`。它保存到 `dist/packages/e2e/screenshots/<scenario>/<nn>-<name>.png`，也就是 PR Checks 的 `e2e` job 上传的文件夹。在人会去看的地方调用它，放在对显示内容的 `expect` 之后：
+   每个场景都创建自己的用户和名称唯一的数据，并且没有场景会重置本地数据，因此它们可以按任意顺序运行。在人会去看的地方调用 `screenshot`，放在对显示内容的 `expect` 之后：
 
    ```ts
    await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible();
    await screenshot(page, 'reviews section with three reviews');
    ```
 
-4. **在每个测试之后检查不变式。** 对于每条跨越由不同代码写入的记录的规则（计数器、聚合值、排序），编写一个扫描数据并返回违规项的函数。然后给场景提供一个自动检查它们的 `test`。下面是精简过的 Discava 模式：
+3. 把 `packages/notes-table/src/helpers/invariants/` 中的**不变式复制**到拥有你的表的那个包中。对于每条跨越由不同代码写入的记录的规则（计数器、聚合值、排序），编写一个检查，扫描数据快照并返回违规项，并配一个会打破它的单元测试。`packages/notes-table/README.md` 中的 “Rules that span records” 一节逐步介绍了如何添加一条。
 
-   ```ts
-   export const test = base.extend<{ tableInvariants: void }>({
-     tableInvariants: [
-       async ({}, use, testInfo) => {
-         const before = new Set((await findViolations()).map(violationId));
-         await use();
-         if (testInfo.status !== testInfo.expectedStatus) return;
-         await expect
-           .poll(async () => (await findViolations()).filter((v) => !before.has(violationId(v))), {
-             message: 'The scenario left the table breaking invariants',
-             timeout: 30_000,
-           })
-           .toEqual([]);
-       },
-       { auto: true },
-     ],
-   });
-   ```
+   场景从 `table-invariants.ts` 而不是 `@playwright/test` 获取 `test`。每个场景结束后，如果表中出现了之前没有的违规，它就让该场景失败。只有*新的*违规才算数，所以旧的本地数据永远不会导致运行失败，`expect.poll` 则给后台工作（stream 处理函数、重新计算）留出追上的时间。
 
-   只有*新的*违规才会让测试失败，所以旧的本地数据永远不会导致失败。`expect.poll` 给后台工作（stream 处理函数、重新计算）留出追上的时间。
+4. **生成写入方映射，并复制 pre-push hook。** 运行 `pnpm nx run @your-scope/tooling-agent:entity-writers`，并提交它写出的 `entity-writers.json`。从这个仓库复制 `.husky/pre-push`，把其中的 `MAP` 和 `PATHS` 指向你自己的：当一个分支改动了可能写入表的代码时，它会重新生成映射，如果映射变了就阻止推送。随后 `Invariant coverage` PR 检查会把映射与基础分支的映射进行比较，并拦住新增了写入方的 PR，直到不变式中提到了那个实体。
 
 5. 为两个用户可能产生竞争的写操作**添加并发测试**：用 `Promise.all` 在同一时刻发出相同的 API 请求，然后对结果和不变式进行断言。
 

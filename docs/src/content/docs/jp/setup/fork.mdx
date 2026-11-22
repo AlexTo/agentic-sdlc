@@ -1,13 +1,13 @@
 ---
 title: 1. リポジトリを fork する
-description: このリポジトリを fork し、GitHub が fork で無効にしている機能を有効にして、動作を確認します。
+description: このリポジトリを fork してクローンし、動作を確認します。
 sidebar:
   order: 1
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**完了時の状態:** Issues と Actions が有効で、ローカルにクローンされ、チェックが通る自分の fork。
+**完了時の状態:** ローカルにクローンされ、チェックが通る自分の fork。
 
 <Steps>
 
@@ -25,13 +25,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    gh repo set-default <you>/agentic-sdlc
    ```
 
-3. **Issues を有効にします。** GitHub は fork では Issues を無効にしますが、workflow 全体は issue の上で動きます。
-   fork で **Settings → General → Features** を開き、**Issues** にチェックを入れます。
-
-4. **Actions を有効にします。** fork の **Actions** タブを開き、**I understand my workflows, go
-   ahead and enable them** をクリックします。これを行うまで、GitHub は fork で workflow を実行しません。
-
-5. CI と同じ **チェックをローカルでインストールして実行します**:
+3. CI と同じ **チェックをローカルでインストールして実行します**:
 
    ```bash
    pnpm install
@@ -40,19 +34,30 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    pnpm nx run-many --target build --all
    ```
 
+   `pnpm install` は git フックもインストールします。すべてのコミットメッセージに Conventional Commits、
+   すべてのコミット前にシークレットスキャンと Biome、すべての push 前に invariant マップのチェックが行われます。
    notes アプリを実行するには(Docker が必要): `pnpm dev` を実行し、ウェブサイトが表示する URL を開きます。
 
 </Steps>
 
 ## 動作を確認する
 
-fork に **Issues** タブが表示され、**Actions** タブに workflow が一覧されます。ローカルでは、3 つの
-`nx run-many` コマンドが通ります。
+3 つの `nx run-many` コマンドが通り、Conventional Commit ではないメッセージのコミットは拒否されます。
+
+```bash
+git commit --allow-empty -m "not conventional"
+```
+
+```text
+✖   subject may not be empty [subject-empty]
+✖   type may not be empty [type-empty]
+```
+
+GitHub は fork で Issues と Actions を無効にします。次のステップのスクリプトがそれらを有効に戻します。
 
 <Aside type="note">
-fork では 2 つの点が異なりますが、どちらも workflow を妨げません。`CODECOV_TOKEN`
-シークレットがないため、カバレッジのアップロードステップはエラーをログに出して続行します。CI の **Deploy Docs** ジョブは、
-GitHub Pages を有効にする(**Settings → Pages → Source: GitHub Actions**)まで失敗します。無視してもかまいません。
+`CODECOV_TOKEN` シークレットがないと、CI のカバレッジのアップロードステップはエラーをログに出して続行します。
+静かにしたい場合は、シークレットを追加するか、そのステップを削除してください。
 </Aside>
 
 次へ: [2. リポジトリを設定する](../github-repository/)。

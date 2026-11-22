@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-import { Steps, Aside } from '@astrojs/starlight/components';
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
 **결과:** Nx와 Biome가 있고, 모든 커밋에 Conventional Commits가 강제되며, 매 커밋 전에
 secret 검사를 하는 pnpm workspace.
@@ -23,75 +23,44 @@ glue는 Nx가 필요하지 않습니다. 하지만 `nx affected` 덕분에 PR �
    pnpm create @aws/nx-workspace your-project --iac=cdk --no-interactive
    ```
 
-   이 명령은 4단계에서 쓰는 git-secrets pre-commit hook도 설치합니다. 기존 Nx workspace도
-   됩니다. CI와 에이전트가 같은 버전을 쓰도록 루트 `package.json`에 pnpm 버전을 고정하세요.
+   기존 Nx workspace도 됩니다. CI와 에이전트가 같은 버전을 쓰도록 루트 `package.json`에
+   `packageManager`로 pnpm 버전을 고정하세요.
 
-   ```json
-   { "packageManager": "pnpm@<version>" }
-   ```
+2. 이 저장소에서 다음 **파일을 복사**해 여러분 저장소의 같은 경로에 둡니다.
 
-2. `AGENTS.md`, CI, 에이전트가 호출할 **루트 script를 추가**합니다.
+   <FileTree>
+   - commitlint.config.js Conventional Commits
+   - lint-staged.config.js staged 파일에 Biome 실행
+   - .husky/
+     - commit-msg commitlint 실행
+     - pre-commit git-secrets, 그다음 lint-staged를 실행하고, Biome가 무언가를 바꿨다면 실패하므로 에이전트가 다시 stage하고 다시 커밋함
+     - prepare-commit-msg 대화형으로 커밋하는 사람을 위한 Commitizen. 에이전트가 커밋하는 방식인 `git commit -m`에서는 스스로 건너뜀
+   - .git-secrets/ pre-commit hook이 실행하는 git-secrets script
+   - .gitallowed git-secrets가 통과시키는 패턴
+   - .github/
+     - actions/init-monorepo/ 공유 CI 설정
+     - actions/changed-paths/ job을 건너뛰기 위한 "이 PR이 이 경로들 중 하나라도 바꿨는가?"
+     - actions/playwright-setup/ Playwright용 Chromium, 버전별로 캐시
+     - dependabot.yml 고정된 action과 의존성을 최신으로 유지
+   </FileTree>
 
-   ```json
-   "scripts": {
-     "dev": "nx run-many --target dev",
-     "build": "nx run-many --target build",
-     "lint": "nx run-many --target lint --configuration=fix",
-     "test": "nx run-many --target test --all",
-     "trivy": "nx run-many --target trivy --all",
-     "prepare": "husky"
-   }
-   ```
+   `.husky/pre-push`는 [8단계](../local-stack-and-e2e/)까지 남겨 두세요: invariant 맵을 검사하는
+   hook입니다. `init-monorepo`는 pnpm을 설치하고 (registry timeout이 나면 에이전트가 수정 시도 한 번을
+   잃게 되므로 세 번 시도합니다), Node 24와 선택적으로 uv를 설치하고, pnpm과 Nx 캐시를 복원하고,
+   의존성을 설치하고, `nx affected`를 위해 `NX_BASE`/`NX_HEAD`를 설정합니다.
 
-3. **commitlint로 Conventional Commits를 추가**합니다. glue가 작성하는 issue 제목은 Conventional
-   Commit header이고, 에이전트가 이를 재사용합니다.
-
-   ```bash
-   pnpm add -Dw @commitlint/config-conventional commitlint husky lint-staged
-   echo "export default { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
-   ```
-
-   `.husky/commit-msg`:
-
-   ```bash
-   FORCE_COLOR=1 pnpm commitlint --edit "$1"
-   ```
-
-4. **pre-commit hook을 추가**합니다. 이 hook은 AWS secret 패턴을 한 번 등록하고, secret이 들어 있는
-   커밋을 거부하고, staged 파일에 Biome를 실행하며, 그것이 무언가를 바꿨다면 실패합니다. 그러면
-   에이전트가 다시 stage하고 다시 커밋합니다. `.husky/pre-commit`:
+3. 이 저장소의 `package.json`에서 **루트 script와 dev 의존성을 복사**합니다: `scripts` 블록
+   (`AGENTS.md`, CI, 에이전트가 호출함), 그리고 `devDependencies`에서
+   `@commitlint/config-conventional`, `commitlint`, `commitizen`, `husky`, `lint-staged`. 그다음:
 
    ```bash
-   if ! git config --get-all secrets.patterns >/dev/null 2>&1; then
-     bash .git-secrets/git-secrets --register-aws
-   fi
-   bash .git-secrets/git-secrets --pre_commit_hook
-
-   PRE_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
-   FORCE_COLOR=1 pnpm lint-staged
-   POST_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
-
-   if [ "$PRE_SHA" != "$POST_SHA" ]; then
-     echo "Pre-commit modified your working directory"
-     echo "Please verify and stage changed, then retry git commit"
-     exit 1
-   fi
+   pnpm install
    ```
 
-   Nx Plugin for AWS로 만든 workspace에는 이미 `.git-secrets/git-secrets`, `.gitallowed`,
-   그리고 이 hook의 대부분이 있습니다. 그렇지 않다면 이 저장소에서 복사하세요. `lint-staged.config.js`:
+   `prepare` script가 hook을 설치합니다.
 
-   ```js
-   export default {
-     'packages/**/*.{ts,tsx,js,jsx,json,css,scss}': ['biome check --write --no-errors-on-unmatched'],
-     '*.{js,json}': ['biome check --write --no-errors-on-unmatched'],
-   };
-   ```
-
-5. 이 저장소에서 **공유 CI setup action을 복사**합니다: `.github/actions/init-monorepo/`. 이 action은
-   pnpm을 설치하고 (registry timeout이 나면 에이전트가 수정 시도 한 번을 잃게 되므로 세 번 시도합니다),
-   Node 24와 선택적으로 uv를 설치하고, pnpm 캐시를 복원하고, 의존성을 설치하고,
-   `nx affected`를 위해 `NX_BASE`/`NX_HEAD`를 설정합니다.
+4. `.github/actions/playwright-setup/action.yml`의 **패키지 scope**(`@agentic-sdlc/e2e`)를
+   여러분의 e2e 프로젝트 이름으로 바꿉니다.
 
 </Steps>
 
@@ -110,8 +79,8 @@ git commit --allow-empty -m "not conventional"
 그다음 `git commit --allow-empty -m "chore: check hooks"`는 성공합니다.
 
 <Aside type="note">
-Discava는 대화형으로 커밋하는 사람들을 위해 `prepare-commit-msg`에서 Commitizen도 실행합니다.
-에이전트가 커밋하는 방식처럼 `-m`으로 메시지를 주면 스스로 건너뛰므로, 선택 사항입니다.
+glue가 작성하는 issue 제목은 Conventional Commit header이고, 에이전트는 이를 커밋과 pull request에
+재사용합니다. commitlint가 가장 먼저 오는 이유입니다.
 </Aside>
 
 다음: [2. Speckit 설치하기](../speckit/).

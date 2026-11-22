@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-import { Steps, Aside } from '@astrojs/starlight/components';
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
 **No final você terá:** um workspace pnpm com Nx, Biome, Conventional Commits aplicado em todo
 commit, e uma verificação de secrets antes de cada commit.
@@ -23,76 +23,44 @@ monorepo, mantenha a ideia: rode só o que o PR afeta, e exponha cada script com
    pnpm create @aws/nx-workspace your-project --iac=cdk --no-interactive
    ```
 
-   Isso também instala o hook de pre-commit do git-secrets usado no passo 4. Um workspace Nx
-   existente também funciona. Fixe a versão do pnpm no `package.json` raiz, para que o CI e o agent
-   usem a mesma versão:
+   Um workspace Nx existente também funciona. Fixe o pnpm no `package.json` raiz com
+   `packageManager`, para que o CI e o agent usem a mesma versão.
 
-   ```json
-   { "packageManager": "pnpm@<version>" }
-   ```
+2. **Copie estes arquivos** deste repositório para os mesmos caminhos no seu:
 
-2. **Adicione os scripts raiz** que o `AGENTS.md`, o CI e o agent vão chamar:
+   <FileTree>
+   - commitlint.config.js Conventional Commits
+   - lint-staged.config.js Biome nos arquivos em stage
+   - .husky/
+     - commit-msg roda o commitlint
+     - pre-commit git-secrets, depois lint-staged, e falha se o Biome mudou alguma coisa, para que o agent coloque em stage de novo e faça commit outra vez
+     - prepare-commit-msg Commitizen, para quem faz commits de forma interativa. Ele se pula com `git commit -m`, que é como os agents fazem commit
+   - .git-secrets/ o script do git-secrets que o hook de pre-commit roda
+   - .gitallowed padrões que o git-secrets deixa passar
+   - .github/
+     - actions/init-monorepo/ configuração de CI compartilhada
+     - actions/changed-paths/ "este PR mudou algum destes caminhos?", para pular jobs
+     - actions/playwright-setup/ Chromium para o Playwright, em cache por versão
+     - dependabot.yml mantém atualizadas as actions fixadas e as dependências
+   </FileTree>
 
-   ```json
-   "scripts": {
-     "dev": "nx run-many --target dev",
-     "build": "nx run-many --target build",
-     "lint": "nx run-many --target lint --configuration=fix",
-     "test": "nx run-many --target test --all",
-     "trivy": "nx run-many --target trivy --all",
-     "prepare": "husky"
-   }
-   ```
+   Deixe o `.husky/pre-push` para o [passo 8](../local-stack-and-e2e/): ele confere o mapa de
+   invariantes. O `init-monorepo` instala o pnpm (com três tentativas, porque um timeout do registry
+   custaria ao agent uma tentativa de correção), o Node 24 e opcionalmente o uv, restaura os caches
+   do pnpm e do Nx, instala as dependências e define `NX_BASE`/`NX_HEAD` para o `nx affected`.
 
-3. **Adicione Conventional Commits com commitlint.** Os títulos de issue que a cola escreve são
-   cabeçalhos de Conventional Commit, e o agent os reutiliza.
-
-   ```bash
-   pnpm add -Dw @commitlint/config-conventional commitlint husky lint-staged
-   echo "export default { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
-   ```
-
-   `.husky/commit-msg`:
-
-   ```bash
-   FORCE_COLOR=1 pnpm commitlint --edit "$1"
-   ```
-
-4. **Adicione o hook de pre-commit.** Ele registra os padrões de secrets da AWS uma vez, recusa um
-   commit com um secret, roda o Biome nos arquivos em stage, e falha se isso mudou alguma coisa,
-   para que o agent faça stage de novo e commit outra vez. `.husky/pre-commit`:
+3. **Copie os scripts raiz e as dev dependencies** do `package.json` deste repositório: o bloco
+   `scripts` (que o `AGENTS.md`, o CI e o agent chamam), e, de `devDependencies`,
+   `@commitlint/config-conventional`, `commitlint`, `commitizen`, `husky` e `lint-staged`. Depois:
 
    ```bash
-   if ! git config --get-all secrets.patterns >/dev/null 2>&1; then
-     bash .git-secrets/git-secrets --register-aws
-   fi
-   bash .git-secrets/git-secrets --pre_commit_hook
-
-   PRE_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
-   FORCE_COLOR=1 pnpm lint-staged
-   POST_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
-
-   if [ "$PRE_SHA" != "$POST_SHA" ]; then
-     echo "Pre-commit modified your working directory"
-     echo "Please verify and stage changed, then retry git commit"
-     exit 1
-   fi
+   pnpm install
    ```
 
-   Um workspace do Nx Plugin for AWS já tem `.git-secrets/git-secrets`, `.gitallowed` e a maior
-   parte deste hook. Caso contrário, copie-os deste repositório. `lint-staged.config.js`:
+   O script `prepare` dele instala os hooks.
 
-   ```js
-   export default {
-     'packages/**/*.{ts,tsx,js,jsx,json,css,scss}': ['biome check --write --no-errors-on-unmatched'],
-     '*.{js,json}': ['biome check --write --no-errors-on-unmatched'],
-   };
-   ```
-
-5. **Copie a action compartilhada de setup do CI** deste repositório: `.github/actions/init-monorepo/`.
-   Ela instala o pnpm (com três tentativas, porque um timeout do registry custaria ao agent uma
-   tentativa de correção), o Node 24 e, opcionalmente, o uv, restaura o cache do pnpm, instala as
-   dependências e define `NX_BASE`/`NX_HEAD` para o `nx affected`.
+4. **Troque o scope do pacote** em `.github/actions/playwright-setup/action.yml`
+   (`@agentic-sdlc/e2e`) pelo nome do seu projeto de e2e.
 
 </Steps>
 
@@ -111,9 +79,8 @@ git commit --allow-empty -m "not conventional"
 Depois, `git commit --allow-empty -m "chore: check hooks"` funciona.
 
 <Aside type="note">
-O Discava também roda o Commitizen a partir do `prepare-commit-msg` para quem faz commits de forma
-interativa. Ele se pula quando uma mensagem é passada com `-m`, que é como os agents fazem commit,
-então é opcional.
+Os títulos de issue que a cola escreve são cabeçalhos de Conventional Commit, e o agent os reutiliza
+nos commits e pull requests dele. É por isso que o commitlint vem primeiro.
 </Aside>
 
 Próximo: [2. Instale o Speckit](../speckit/).

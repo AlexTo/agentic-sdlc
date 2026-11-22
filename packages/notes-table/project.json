@@ -59,7 +59,7 @@
     "pull-image": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsx ../common/scripts/src/dynamodb/pull-image.ts",
+        "command": "tsx ../tooling/local-dev/src/dynamodb/pull-image.ts",
         "cwd": "{projectRoot}"
       }
     },
@@ -69,8 +69,8 @@
       "continuous": true,
       "options": {
         "commands": [
-          "tsx ../common/scripts/src/dynamodb/start-container.ts",
-          "tsx ../common/scripts/src/dynamodb/create-local-table.ts"
+          "tsx ../tooling/local-dev/src/dynamodb/start-container.ts",
+          "tsx ../tooling/local-dev/src/dynamodb/create-local-table.ts"
         ],
         "parallel": true,
         "cwd": "{projectRoot}"

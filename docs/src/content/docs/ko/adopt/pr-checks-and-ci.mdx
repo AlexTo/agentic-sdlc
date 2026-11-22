@@ -1,6 +1,6 @@
 ---
 title: 6. PR 검사와 CI
-description: PR Checks workflow (lint, test, build, tasks format, e2e, 스크린샷)와 main의 CI를 추가합니다.
+description: PR Checks workflow (lint, test, build, tasks format, invariant 커버리지, e2e, 스크린샷)와 main의 CI를 복사합니다.
 sidebar:
   order: 6
 ---
@@ -12,54 +12,43 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 <Steps>
 
-1. 이 저장소에서 **`.github/workflows/pr-checks.yml`을 복사**합니다. `name: PR Checks`는
-   정확히 그대로 두세요. Agent CI Status가 그 이름의 workflow를 기다립니다. job은 다음과 같습니다.
+1. 이 저장소의 `.github/workflows/`에서 **workflow 네 개를 복사**합니다.
 
-   | Job | 그대로 둘까요? |
+   | 파일 | 하는 일 |
    | --- | --- |
-   | `checks`, `fail-fast: false`인 `lint`, `test`, `build`의 matrix | 예 |
-   | `tasks-format` | 예 |
-   | 샤드로 나뉜 `e2e`, 그리고 샤드를 하나의 `E2E tests` 검사로 모으는 `e2e-result` | 샤드 수를 여러분의 suite에 맞게 설정합니다 |
-   | `e2e-screenshots` | 예, [8단계](../local-stack-and-e2e/)를 마친 뒤에 |
+   | `pr-checks.yml` | PR이 영향을 주는 것의 lint, test, build; `Tasks format`; `Invariant coverage`; 하나의 `E2E tests` 검사로 모이는 샤드로 나뉜 e2e; `E2E screenshots` 댓글 |
+   | `ui-screenshots.yml` | 스크린샷 규칙을 별도의 workflow로 실행하므로, `no-ui-screenshots` label을 추가하거나 제거하면 이 검사만 다시 실행됩니다. Discava는 대신 PR Checks의 job으로 실행합니다. 어느 쪽이든 됩니다 |
+   | `ci.yml` | `main`으로의 모든 push에서 같은 검사, Trivy, Playwright 캐시, 그리고 이 문서 사이트의 배포 |
+   | `cache-cleanup.yml` | PR이 닫히면 그 PR의 캐시를 삭제 |
 
-2. **`.github/workflows/ui-screenshots.yml`을 복사**합니다. 이 저장소에서 스크린샷 규칙은
-   `opened, synchronize, reopened, labeled, unlabeled`에서 trigger되는 별도의 workflow입니다. 그래서
-   `no-ui-screenshots` label을 추가하거나 제거하면 전체 e2e suite가 아니라 이 검사만 다시 실행됩니다.
-   Discava는 대신 같은 규칙을 PR Checks의 job으로 실행합니다. 어느 쪽이든 됩니다.
+   `pr-checks.yml`의 `name: PR Checks`는 정확히 그대로 두세요. Agent CI Status가 그 이름의 workflow를
+   기다립니다.
 
-3. `main`으로의 push를 위해 **`.github/workflows/ci.yml`을 복사**합니다. `Check for mutations` step
-   (build 후의 `git diff --ignore-space-at-eol --exit-code`)은 유지하세요. 에이전트가 커밋하는 것을 잊은
-   생성 파일을 잡아냅니다. Playwright를 쓴다면 `playwright-cache` job도 유지하세요. PR 실행은 `main`에서
-   저장된 캐시만 복원할 수 있습니다.
+2. **workflow가 여러분의 프로젝트를 가리키게 합니다.** 복사한 파일에서 `@agentic-sdlc/`를 찾아 scope를
+   바꿉니다. 그다음 `pr-checks.yml`에서:
 
-   `build` job은 `init-monorepo`에 `nx-cache-scope: main`을 넘겨 Nx의 task 캐시를 저장합니다.
-   PR의 첫 실행은 이 캐시에서 시작하므로, `main`이 이미 build한 입력을 가진 task는 다시 실행되지 않고
-   재생되며, 에이전트는 매 수정 라운드마다 덜 기다립니다. PR Checks의 각 `checks` 갈래도 같은 방식으로
-   자신의 캐시를 유지하지만, `lint`는 예외로 복원만 합니다. lint가 캐시를 저장하는 것보다 빠르기 때문입니다.
-   `init-monorepo`는 캐시를 1 GB로 제한합니다.
+   | Job | 바꿀 것 |
+   | --- | --- |
+   | `invariant-coverage` | 테이블에 쓸 수 있는 코드의 `paths`. 5단계의 `WRITER_PACKAGES`와 같습니다. 아직 invariant를 검사하지 않는다면 job을 삭제하세요 |
+   | `e2e` | `matrix.shard`의 샤드 수를 여러분의 suite에 맞게. 샤드 하나는 첫 테스트 전까지 약 2분이 걸리므로, 각 샤드의 테스트가 그 정도 걸리게 되면 샤드를 더 추가하지 마세요 |
+   | `e2e-screenshots` | [8단계](../local-stack-and-e2e/)를 마치면 바꿀 것 없음 |
 
-4. **`.github/workflows/cache-cleanup.yml`을 복사**합니다. PR이 닫히면 그 PR의 캐시를 삭제합니다.
-   다른 어떤 것도 그 캐시를 읽을 수 없으며, 이 workflow가 없으면 GitHub가 제거할 때까지 저장소의
-   10 GB Actions 캐시 용량을 차지하고, GitHub는 아직 열려 있는 PR의 캐시부터 제거합니다. 이것으로 Discava가
-   얼마나 절약했는지는 [빠르게 유지하기](../../discava/pr-checks/#빠르게-유지하기)를 참고하세요.
+   `docs/`에서 문서 사이트를 게시하지 않는다면, `ci.yml`에서 `deploy_docs` job과 그 `pages: write` 권한을
+   삭제하세요.
 
-5. 복사한 파일처럼 **모든 action을 커밋 SHA로 고정**하고, 고정한 버전이 최신으로 유지되도록
-   `.github/dependabot.yml`을 추가합니다.
-
-   ```yaml
-   version: 2
-   updates:
-     - package-ecosystem: 'npm'
-       directory: '/'
-       schedule: { interval: 'weekly' }
-       groups: { all: { patterns: ['*'] } }
-     - package-ecosystem: 'github-actions'
-       directories: ['/', '/.github/actions/*']
-       schedule: { interval: 'weekly' }
-       groups: { github-actions: { applies-to: version-updates, patterns: ['*'] } }
-   ```
+3. **에이전트를 빠르게 유지하는 것은 그대로 둡니다.** `ci.yml`의 `Check for mutations` step (build 후의
+   `git diff --exit-code`)은 에이전트가 커밋하는 것을 잊은 생성 파일을 잡아냅니다. `playwright-cache` job은
+   `main`에서 Chromium을 저장합니다. PR 실행은 `main`에서 저장된 캐시만 복원할 수 있기 때문입니다. `build`
+   job은 `main`에서 Nx의 task 캐시를 저장하므로, PR의 첫 실행은 `main`이 이미 build한 것을 재생하고,
+   에이전트는 매 수정 라운드마다 덜 기다립니다. PR Checks의 각 `checks` 갈래도 같은 방식으로 자신의 캐시를
+   유지하지만, `lint`는 예외로 복원만 합니다. `init-monorepo`는 캐시를 1 GB로 제한하고, Cache Cleanup은
+   저장소의 10 GB 중 닫힌 PR이 차지하던 몫을 비웁니다. 이것으로 Discava가 얼마나 절약했는지는
+   [빠르게 유지하기](../../discava/pr-checks/#빠르게-유지하기)를 참고하세요.
 
 </Steps>
+
+모든 action은 커밋 SHA로 고정되어 있으며, 1단계에서 복사한 `dependabot.yml`이 고정한 버전을 최신으로
+유지합니다.
 
 ## 동작 확인
 

@@ -1,86 +1,71 @@
 ---
 title: 2. リポジトリを設定する
-description: ラベルを作成し、main を保護し、見知らぬ人がコメントできないようにします。fork ではどれもコピーされません。
+description: fork ではコピーされない設定のためにスクリプトを 1 つ実行し、エージェントの招待を承認します。
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**完了時の状態:** workflow が使うすべてのラベル、チェックがグリーンで承認済みの pull request だけを
-受け付ける `main` ブランチ、コラボレーターに限定されたコメント、そしてコラボレーターとして追加された
+**完了時の状態:** 有効になった Issues と Actions、workflow が使うすべてのラベル、チェックがグリーンで承認済みの
+pull request だけを受け付ける `main` ブランチ、コラボレーターに限定されたコメント、そしてコラボレーターとして追加された
 エージェント専用のアカウント。
+
+fork はコードをコピーしますが、設定はコピーしません。`scripts/setup-repository.sh` が `gh` CLI でそれらをすべて設定します。
+各ステップは毎回同じ状態を設定するので、再実行しても安全です。
 
 <Steps>
 
-1. **ラベルを作成します。** 16 個あるので、UI よりスクリプトのほうが早く済みます。クローンから実行します。
-   `--force` は既存のラベルを更新するので、再実行しても安全です。
+1. **エージェントのアカウントを作成します。** エージェントは、ほかの用途には使わないマシンアカウントである
+   専用の GitHub アカウントで作業します。Discava では `discava-bot` です。アカウントを 1 つ作成してください。
+   [手順 3](../openhands/) で作成するのはこのアカウントのトークンで、エージェントの pull request とコメントは
+   このアカウントの名前で表示されるので、ほかの人のものと同じように承認できます。
+
+2. fork のオーナーとして `gh` にサインインした状態で、エージェントのアカウントを指定して、クローンから
+   **スクリプトを実行します**。
 
    ```bash
-   gh label create spec-ready           --force --description "Merging this spec PR starts the agent"
-   gh label create openhands            --force --description "OpenHands implements this issue"
-   gh label create openhands-review     --force --description "OpenHands reviews this PR's head"
-   gh label create no-ui-screenshots    --force --description "Waives the UI Screenshots check: a UI change with nothing to look at"
-   for n in 1 2 3 4 5; do
-     gh label create ci-fix-$n          --force --description "CI fix-up attempt $n of 5"
-     gh label create review-fix-$n      --force --description "Review fix-up attempt $n of 5"
-   done
-   gh label create ci-fix-exhausted     --force --description "CI fix-ups used up; a person takes over"
-   gh label create review-fix-exhausted --force --description "Review fix-ups used up; a person takes over"
+   ./scripts/setup-repository.sh <you>/agentic-sdlc <agents-account>
    ```
 
-2. **`main` を保護します。** fork で **Settings → Branches → Add classic branch protection
-   rule** を開き、次のように設定します:
+   実行前に各 `gh` コマンドを確認したい場合は、先に `--dry-run` を付けてください。スクリプトが設定するものは次のとおりです。
 
-   | 設定 | 値 |
+   | 設定するもの | 理由 |
    | --- | --- |
-   | Branch name pattern | `main` |
-   | Require a pull request before merging | オン、必要な承認は 1 件 |
-   | Dismiss stale pull request approvals when new commits are pushed | オン |
-   | Require status checks to pass before merging | オン、下記の 6 つのチェック |
-   | Do not allow bypassing the above settings | オフ |
+   | Issues と Actions を有効化 | GitHub は fork でどちらも無効にするが、workflow は issue の上で動く |
+   | 20 個のラベル | [リファレンス: ラベル](../../reference/labels/) のすべてのラベル |
+   | `main` のブランチ保護 | pull request、1 件の承認、古い承認の取り消し、そして 7 つの必須チェック: `Checks (lint)`、`Checks (test)`、`Checks (build)`、`Tasks format`、`Invariant coverage`、`E2E tests`、`UI Screenshots` |
+   | Actions が pull request を開けるようにする | Archive Specs は、完了した spec を `specs/_archive/` に移す pull request を開く |
+   | やり取りをコラボレーターに限定（6 か月間） | 公開リポジトリの fork は公開され、エージェントは push できるトークンを持ったまま、作業対象のすべてのコメントを読む |
+   | Actions からの GitHub Pages | CI の **Deploy Docs** ジョブがこのサイトを公開する |
+   | エージェントのアカウントを書き込み権限で招待 | エージェントがブランチを push し、pull request を開けるようにする |
 
-   6 つのチェック: `Checks (lint)`、`Checks (test)`、`Checks (build)`、`Tasks format`、`E2E tests`、
-   `UI Screenshots`。GitHub は一度実行されたチェックしか検索ボックスに表示しないので、見つからない場合は
-   先に何か PR を開いてください。
+   保護ではバイパスを許可したままにしてあるので、オーナーであるあなたは、spec PR のように自分で開いた
+   pull request をマージできます。そうした PR は GitHub では自分で承認できません。
 
-   バイパスを許可したままにしておくと、オーナーであるあなたが、spec PR のように自分で開いた PR を
-   マージできます。そうした PR は GitHub では自分で承認できません。
+3. エージェントのアカウントでサインインした状態で **招待を承認します**。
 
-   <Aside type="caution">
-   `software-factory/review` ステータスを必須にしないでください。これはエージェントへのシグナルで、
-   常に `failure` としてしか投稿されないため、必須にするとすべての PR がブロックされます。
-   </Aside>
-
-3. **Actions が pull request を開けるようにします。** **Settings → Actions → General** を開き、
-   **Workflow permissions** の下で **Allow GitHub Actions to create and approve pull requests** にチェックを入れます。
-   Archive Specs workflow は、完了した spec を `specs/_archive/` に移す PR を開くためにこれを必要とします。
-
-4. **コメントをコラボレーターに限定します。** 公開リポジトリの fork は公開されます。そしてエージェントは、
-   push できるトークンを持ったまま、作業する issue と pull request のすべてのコメントを読みます。
-   **Settings → Moderation options → Interaction limits** を開き、**Limit to repository collaborators** を
-   6 か月の期間で選びます。これで、それ以外の人はコメントも、issue や pull request の作成もできなくなります。
-
-   <Aside type="caution">
-   制限は設定してから最長 6 か月で失効し、何も警告されません。日付を控えておき、それまでに設定し直してください。
-   後でクラウドの認証情報を持つテスト担当エージェントを追加する場合、見知らぬ人のコメントがそこに届かないようにするのは
-   この制限です。[誰がコメントできるか](../../discava/post-merge-verify/#誰がコメントできるか)を参照してください。
-   </Aside>
-
-5. **エージェントのアカウントを追加します。** エージェントは、ほかの用途には使わないマシンアカウントである
-   専用の GitHub アカウントで作業します。Discava では `discava-bot` です。アカウントを作成したら、fork の
-   **Settings → Collaborators** を開いて **Write** ロールで招待し、そのアカウントでサインインした状態で
-   招待を承認します。[手順 3](../openhands/) で作成するのは、このアカウントのトークンです。
-
-   これでエージェントの PR とコメントはそのアカウントの名前で表示され、エージェントの PR もほかの人の PR と
-   同じように承認できます。
+4. **Actions が有効か確認します。** fork の **Actions** タブにまだ **I understand my
+   workflows, go ahead and enable them** が表示されている場合は、クリックしてください。API で Actions を
+   有効にした後でも、GitHub がこのクリックを求めることがあります。
 
 </Steps>
 
+<Aside type="caution">
+やり取りの制限は設定してから 6 か月で失効し、何も警告されません。日付を控えておき、それまでにスクリプトを
+もう一度実行してください。後でクラウドの認証情報を持つテスト担当エージェントを追加する場合、見知らぬ人のコメントが
+そこに届かないようにするのはこの制限です。[誰がコメントできるか](../../discava/post-merge-verify/#誰がコメントできるか)を参照してください。
+</Aside>
+
+<Aside type="caution">
+`software-factory/review` を必須チェックに追加しないでください。これはエージェントへのシグナルで、
+常に `failure` としてしか投稿されないため、必須にするとすべての PR がブロックされます。
+</Aside>
+
 ## 動作を確認する
 
-fork の **Issues → Labels** ページに新しい 16 個のラベルが一覧され、**Settings → Branches** に
-6 つの必須チェックを持つ `main` のルールが表示され、**Settings → Moderation options → Interaction limits** に
+fork の **Issues → Labels** ページに 20 個のラベルが一覧され、**Settings → Branches** に
+7 つの必須チェックを持つ `main` のルールが表示され、**Settings → Moderation options → Interaction limits** に
 終了日付きのコラボレーターのみの制限が表示されます。**Settings → Collaborators** には、
 エージェントのアカウントが **Write** ロールで一覧されます。
 

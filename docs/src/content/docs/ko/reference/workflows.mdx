@@ -7,16 +7,17 @@ sidebar:
 
 | Workflow | 파일 | Trigger | 권한 | Checkout 대상 |
 | --- | --- | --- | --- | --- |
-| PR Checks | `pr-checks.yml` | `main`으로의 `pull_request` | `contents: read`, 그리고 스크린샷 댓글 job에 `pull-requests: write` | PR |
+| PR Checks | `pr-checks.yml` | `main`으로의 `pull_request` | `contents: read`, 그리고 스크린샷 댓글 job에 `pull-requests: write` | PR. 단, 스크린샷 댓글 job은 기본 브랜치 |
 | UI Screenshots | `ui-screenshots.yml` | `labeled`/`unlabeled`를 포함한 `main`으로의 `pull_request` | `contents: read`, `pull-requests: read` | 기본 브랜치 (API에서 diff를 읽음) |
 | CI | `ci.yml` | `main`으로의 `push`, `workflow_dispatch` | `contents: read`, `pages: write`, `id-token: write` | `main` |
 | Agent Issues | `agent-issues.yml` | `main`으로의 `pull_request: [closed, labeled]`, `workflow_dispatch(spec_folder)` | `contents: read`, `issues: write`, `pull-requests: write` | merge 커밋 |
 | Archive Specs | `archive-specs.yml` | `specs/*/tasks.md`를 바꾸는 `main`으로의 `push`, `workflow_dispatch` | `contents: write`, `issues: read`, `pull-requests: write` | `main` |
-| Agent CI Status | `agent-ci.yml` | PR Checks의 `workflow_run`, `completed` | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` | 기본 브랜치 |
-| Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` | 기본 브랜치 |
+| Agent CI Status | `agent-ci.yml` | PR Checks의 `workflow_run`, `completed` | `contents: read`, `actions: read`, `statuses: write`, `issues: write`, `pull-requests: write` | 기본 브랜치 (Agent Status를 통해) |
+| Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`, `statuses: write`, `issues: write`, `pull-requests: write` | 기본 브랜치 (Agent Status를 통해) |
+| Agent Status | `agent-status.yml` | 위 두 workflow의 `workflow_call`, 실행할 Nx target 포함 | 호출한 쪽의 권한 | 기본 브랜치 |
 | Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | 없음 (PR 번호를 `gh`에 전달) |
-| Deploy (Discava) | `deploy.yml` | `main`에서 CI의 `workflow_run`, `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | CI가 검증한 커밋 |
-| Post-merge Verify (Discava) | `post-merge-verify.yml` | Deploy의 `workflow_run`, `completed`, `workflow_dispatch(pr_number)` | `contents: read`, `actions: read`, `issues: write`, `pull-requests: write` | 기본 브랜치 |
+| Deploy | `deploy.yml` | `main`에서 CI의 `workflow_run` (`AUTO_DEPLOY_STAGE`가 설정된 경우에만), `workflow_dispatch(stage)` | `contents: read`, `id-token: write` | CI가 검증한 커밋 |
+| Post-merge Verify | `post-merge-verify.yml` | Deploy의 `workflow_run`, `completed`, `workflow_dispatch(pr_number)` | `contents: read`, `actions: read`, `issues: write`, `pull-requests: write` | 기본 브랜치 |
 
 ## Branch protection에서 필수로 지정할 job 이름
 
@@ -24,6 +25,7 @@ sidebar:
 | --- | --- |
 | `Checks (lint)`, `Checks (test)`, `Checks (build)` | PR Checks |
 | `Tasks format` | PR Checks |
+| `Invariant coverage` | PR Checks |
 | `E2E tests` | PR Checks (샤드를 모음) |
 | `UI Screenshots` | UI Screenshots |
 
@@ -44,7 +46,7 @@ PR별 그룹이므로 서로 관련 없는 PR이 서로를 기다리지 않습�
 
 ## 실행하는 Nx target
 
-모두 `@your-scope/common-scripts`에 있습니다.
+모두 `@your-scope/tooling-agent`에 있습니다.
 
 | Target | Entry point | 읽는 환경 변수 |
 | --- | --- | --- |
@@ -52,11 +54,18 @@ PR별 그룹이므로 서로 관련 없는 PR이 서로를 기다리지 않습�
 | `archive-specs` | `src/agent-issues/archive-main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_WORKSPACE`, `BASE_BRANCH`, `DRY_RUN` |
 | `agent-ci-status` | `src/agent-ci/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
 | `agent-review-status` | `src/agent-review/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `DRY_RUN` |
-| `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH` |
 | `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`, `GITHUB_ACTIONS` (annotation용) |
-
-Discava는 같은 target을 `@discava/tooling-agent`에 두며, 테스터를 위한 하나가 더 있습니다.
-
-| Target | Entry point | 읽는 환경 변수 |
-| --- | --- | --- |
+| `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH` |
+| `screenshots-comment` | `src/ui-screenshots/comment-main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_STEP_SUMMARY`, `PR`, `SHA`, `RUN_URL`, `SCREENSHOTS_DIR` |
+| `invariant-coverage` | `src/invariant-coverage/main.ts` | `GH_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_PATH`, `BASE_REF` |
+| `entity-writers` | `src/invariant-coverage/write.ts` | 없음. pre-push hook이 실행하거나 직접 실행 |
 | `post-merge-test` | `src/post-merge-test/main.ts` | `GH_TOKEN`, `GH_REPO`, `GITHUB_REPOSITORY`, `GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH`, `PR_NUMBER`, `TEST_STAGE`, `DRY_RUN` |
+
+## 저장소 변수
+
+| 변수 | 읽는 주체 | 기본값 |
+| --- | --- | --- |
+| `AUTO_DEPLOY_STAGE` | Deploy | 설정 안 됨: Deploy는 직접 실행할 때만 동작 |
+| `TEST_STAGE` | Post-merge Verify | `AUTO_DEPLOY_STAGE` |
+| `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `AWS_EXECUTION_ROLE_ARN` | Deploy, 각 stage의 GitHub environment에서 | 없음. Deploy가 멈추고 무엇이 빠졌는지 알려 줌 |
+| `AWS_DOCKER_LOGIN_ROLE_ARN` | `init-monorepo`, Amazon ECR Public에서 pull할 때 | 설정 안 됨: 익명 pull |

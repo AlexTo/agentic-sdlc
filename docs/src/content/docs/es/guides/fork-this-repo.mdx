@@ -17,24 +17,35 @@ una spec para la app de notas y recorrerá el bucle descrito en [Cómo funciona]
 ## Qué obtienes
 
 <FileTree>
+- AGENTS.md lo primero que lee cada agente, escrito para la app de notas
 - .specify/ plantillas, scripts y constitución de Speckit
+- .husky/ Conventional Commits, escaneo de secrets y Biome al hacer commit, mapa de invariantes al hacer push
+- scripts/setup-repository.sh labels, protección de ramas y el resto de ajustes que un fork no copia
 - .github/
-  - ISSUE_TEMPLATE/implement-phase.md las instrucciones que lleva cada issue de implementación
-  - actions/init-monorepo/ configuración de CI compartida
+  - ISSUE_TEMPLATE/
+    - implement-phase.md las instrucciones que lleva cada issue de implementación
+    - test-deployed-pr.md una issue de test para el agente Tester, a mano
+  - actions/ configuración de CI compartida, el Chromium de Playwright, checks de rutas cambiadas
+  - dependabot.yml mantiene al día las actions fijadas y las dependencias
   - workflows/
-    - pr-checks.yml lint, tests, build, formato de tasks, e2e, comentario de capturas
+    - pr-checks.yml lint, tests, build, formato de tasks, cobertura de invariantes, e2e, comentario de capturas
     - ui-screenshots.yml la regla de las capturas
     - ci.yml checks, Trivy y el despliegue de la documentación en main
     - agent-issues.yml spec → issue, merge → siguiente issue
     - archive-specs.yml spec terminada → PR de archivo
     - agent-ci.yml CI en rojo → agente
     - agent-review.yml "changes requested" → agente
+    - agent-status.yml los pasos que comparten esos dos
+    - deploy.yml main en verde → un stage, desactivado hasta que añadas infraestructura
+    - post-merge-verify.yml PR desplegado → issue de test para el Tester
+    - cache-cleanup.yml las cachés de un PR cerrado
 - packages/
-  - common/scripts/src/ las reglas del pegamento, con 143 tests unitarios
-  - notes-table/ entidad de ElectroDB, DynamoDB local
+  - tooling/agent/ las reglas del pegamento, con 223 tests unitarios
+  - tooling/local-dev/ arranca DynamoDB local para `pnpm dev`
+  - notes-table/ entidad de ElectroDB, DynamoDB local, invariantes
   - notes-api/ procedimientos de tRPC
   - notes-website/ React, Vite, TanStack Router, shadcn/ui
-  - e2e/ escenarios de Playwright y el helper `screenshot()`
+  - e2e/ escenarios de Playwright, el helper `screenshot()`, invariantes tras cada test
 - docs/ este sitio
 </FileTree>
 
@@ -45,15 +56,17 @@ que el CI puede ejecutar sus tests e2e y el agente nunca necesita credenciales d
 
 Solo lo que no puede vivir en un repositorio:
 
-1. **Configuración de GitHub**: Issues y Actions activados, las labels y la protección de ramas.
-   Un fork no las copia.
-2. **OpenHands**: Agent Canvas en tu máquina, un token de GitHub y las dos automatizaciones apuntando
+1. **Configuración de GitHub**: un fork no la copia, así que `scripts/setup-repository.sh` la aplica
+   en una sola ejecución.
+2. **OpenHands**: Agent Canvas en tu máquina, un token de GitHub y las automatizaciones apuntando
    a tu fork.
 
-## Qué queda fuera
+## Qué está desactivado hasta que lo añadas
 
-El despliegue de Discava en AWS. La app de notas no tiene infraestructura en la nube, así que hacer
-merge no publica nada más allá del sitio de documentación. [Despliegue y seguridad](../../discava/deploy-and-security/)
-describe el pipeline de Discava, y [Adoptar: despliegue](../../adopt/deploy/) muestra cómo añadir uno.
+La nube. La app de notas no tiene infraestructura en la nube, así que hacer merge no publica nada más
+allá del sitio de documentación. `deploy.yml` y `post-merge-verify.yml` están en su sitio, pero nunca se
+ejecutan solos: añade una app de CDK en `packages/infra` y define `AUTO_DEPLOY_STAGE`, y cada `main` en
+verde se despliega, y después el agente Tester prueba lo desplegado. [Adoptar: despliegue](../../adopt/deploy/)
+tiene los pasos, y [Despliegue y seguridad](../../discava/deploy-and-security/) describe el pipeline de Discava.
 
 <LinkCard title="Configúralo: haz el fork, configura y ejecuta tu primera feature" href="/agentic-sdlc/es/setup/before-you-start/" />

@@ -1,66 +1,57 @@
 ---
 title: 2. 配置仓库
-description: 创建标签、保护 main，并阻止陌生人评论。fork 不会复制其中任何一项。
+description: 运行一个脚本，完成 fork 不会复制的设置，然后接受智能体账号的邀请。
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**完成后你将拥有：** 工作流用到的所有标签、一个只接受检查全绿且已获批准的 pull request 的 `main` 分支、仅限协作者的评论，以及作为协作者加入的智能体专用账号。
+**完成后你将拥有：** 已开启的 Issues 和 Actions、工作流用到的所有标签、一个只接受检查全绿且已获批准的 pull request 的 `main` 分支、仅限协作者的评论，以及作为协作者加入的智能体专用账号。
+
+fork 复制的是代码，而不是设置。`scripts/setup-repository.sh` 用 `gh` CLI 设好所有这些设置。每一步每次都会设置成同样的状态，所以可以放心重复运行。
 
 <Steps>
 
-1. **创建标签。** 一共 16 个，所以用脚本比在 UI 中操作更快。在你的克隆中运行它。`--force` 会更新已存在的标签，所以可以放心重复运行。
+1. **创建智能体的账号。** 智能体在它们自己的 GitHub 账号下工作，这是一个不做其他用途的机器账号。Discava 的账号是 `discava-bot`。创建一个这样的账号。你在[第 3 步](../openhands/)中创建的就是它的 token，它的 pull request 和评论都会显示在这个账号名下，所以你能像批准其他人的一样批准它们。
+
+2. 在你的克隆中，以 fork 所有者的身份登录 `gh`，带上智能体的账号**运行脚本**：
 
    ```bash
-   gh label create spec-ready           --force --description "Merging this spec PR starts the agent"
-   gh label create openhands            --force --description "OpenHands implements this issue"
-   gh label create openhands-review     --force --description "OpenHands reviews this PR's head"
-   gh label create no-ui-screenshots    --force --description "Waives the UI Screenshots check: a UI change with nothing to look at"
-   for n in 1 2 3 4 5; do
-     gh label create ci-fix-$n          --force --description "CI fix-up attempt $n of 5"
-     gh label create review-fix-$n      --force --description "Review fix-up attempt $n of 5"
-   done
-   gh label create ci-fix-exhausted     --force --description "CI fix-ups used up; a person takes over"
-   gh label create review-fix-exhausted --force --description "Review fix-ups used up; a person takes over"
+   ./scripts/setup-repository.sh <you>/agentic-sdlc <agents-account>
    ```
 
-2. **保护 `main`。** 在你的 fork 中打开 **Settings → Branches → Add classic branch protection
-   rule**，然后设置：
+   如果你想在每条 `gh` 命令运行之前先看到它，先加上 `--dry-run` 运行一次。这个脚本会设置：
 
-   | 设置 | 值 |
+   | 设置 | 原因 |
    | --- | --- |
-   | Branch name pattern | `main` |
-   | Require a pull request before merging | 开启，需要 1 个批准 |
-   | Dismiss stale pull request approvals when new commits are pushed | 开启 |
-   | Require status checks to pass before merging | 开启，并选择下面六项检查 |
-   | Do not allow bypassing the above settings | 关闭 |
+   | 开启 Issues 和 Actions | GitHub 在 fork 中把两者都关闭了，而工作流运行在 issue 之上 |
+   | 20 个标签 | [参考：标签](../../reference/labels/)中的每一个标签 |
+   | `main` 上的分支保护 | 需要 pull request、1 个批准、推送新 commit 时撤销过时的批准，以及七项必需检查：`Checks (lint)`、`Checks (test)`、`Checks (build)`、`Tasks format`、`Invariant coverage`、`E2E tests`、`UI Screenshots` |
+   | 允许 Actions 开启 pull request | Archive Specs 会开启把已完成的 spec 移到 `specs/_archive/` 的 pull request |
+   | 互动限制为协作者，期限六个月 | 公开仓库的 fork 也是公开的，而智能体会阅读它们处理的内容上的每一条评论，同时持有一个可以推送的 token |
+   | 从 Actions 发布 GitHub Pages | CI 的 **Deploy Docs** job 会发布本站点 |
+   | 以写权限邀请智能体的账号 | 这样智能体才能推送分支并开启 pull request |
 
-   六项检查是：`Checks (lint)`、`Checks (test)`、`Checks (build)`、`Tasks format`、`E2E tests` 和 `UI Screenshots`。一项检查至少运行过一次后，GitHub 才会在搜索框中提供它，所以如果缺了哪一项，先随便开一个 PR。
+   这个保护规则允许绕过，所以你作为所有者能合并你自己开的 pull request，例如 spec PR，GitHub 不允许你批准这类 PR。
 
-   保留允许绕过的设置，你作为所有者就能合并你自己开的 PR，例如 spec PR，GitHub 不允许你批准这类 PR。
+3. 以智能体的账号登录，**接受邀请**。
 
-   <Aside type="caution">
-   不要把 `software-factory/review` status 设为必需。它是发给智能体的信号，只会以 `failure` 的形式发布，把它设为必需会阻塞每一个 PR。
-   </Aside>
-
-3. **允许 Actions 开启 pull request。** 打开 **Settings → Actions → General**，在 **Workflow permissions** 下勾选 **Allow GitHub Actions to create and approve pull requests**。Archive Specs workflow 需要它来开启把已完成的 spec 移到 `specs/_archive/` 的 PR。
-
-4. **把评论限制为协作者。** 公开仓库的 fork 也是公开的，而智能体会阅读它们处理的 issue 和 pull request 上的每一条评论，同时持有一个可以推送的 token。打开 **Settings → Moderation options → Interaction limits**，选择 **Limit to repository collaborators**，期限六个月。这样其他任何人都不能评论、开 issue 或开 pull request。
-
-   <Aside type="caution">
-   这个限制会过期，最长在你设置后六个月，而且不会有任何提醒。记下日期，并在那之前重新设置。如果你之后加入持有云凭证的测试智能体，正是这个限制让陌生人的评论无法触及它。参见[谁可以评论](../../discava/post-merge-verify/#谁可以评论)。
-   </Aside>
-
-5. **添加智能体的账号。** 智能体在它们自己的 GitHub 账号下工作，这是一个不做其他用途的机器账号。Discava 的账号是 `discava-bot`。创建一个这样的账号，然后在你的 fork 中打开 **Settings → Collaborators**，以 **Write** 角色邀请它，并在以该账号登录的状态下接受邀请。你在[第 3 步](../openhands/)中创建的就是它的 token。
-
-   之后智能体的 PR 和评论都会显示在这个账号名下，你也能像批准其他人的 PR 一样批准它们的 PR。
+4. **确认 Actions 已开启。** 如果你的 fork 的 **Actions** 标签页仍然显示 **I understand my
+   workflows, go ahead and enable them**，点击它。即使 API 已经开启了 Actions，GitHub 有时仍会要求点这一下。
 
 </Steps>
 
+<Aside type="caution">
+互动限制会在你设置后六个月过期，而且不会有任何提醒。记下日期，并在那之前再运行一次脚本。如果你之后加入持有云凭证的测试智能体，正是这个限制让陌生人的评论无法触及它。参见[谁可以评论](../../discava/post-merge-verify/#谁可以评论)。
+</Aside>
+
+<Aside type="caution">
+不要把 `software-factory/review` 加入必需检查。它是发给智能体的信号，只会以 `failure` 的形式发布，把它设为必需会阻塞每一个 PR。
+</Aside>
+
 ## 检查是否成功
 
-fork 的 **Issues → Labels** 页面列出了 16 个新标签，**Settings → Branches** 显示 `main` 上的规则，带有六项必需检查，**Settings → Moderation options → Interaction limits** 显示仅限协作者的限制及其截止日期。**Settings → Collaborators** 列出智能体的账号，角色为 **Write**。
+fork 的 **Issues → Labels** 页面列出了 20 个标签，**Settings → Branches** 显示 `main` 上的规则，带有七项必需检查，**Settings → Moderation options → Interaction limits** 显示仅限协作者的限制及其截止日期。**Settings → Collaborators** 列出智能体的账号，角色为 **Write**。
 
 下一步：[3. 安装 OpenHands](../openhands/)。

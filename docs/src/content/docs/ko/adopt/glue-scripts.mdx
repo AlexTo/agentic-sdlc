@@ -1,68 +1,68 @@
 ---
 title: 5. Glue script
-description: 어떤 issue가 열릴지, 언제 에이전트를 되돌려 보낼지, 언제 멈출지를 결정하는, 단위 테스트를 거친 script를 추가합니다.
+description: 어떤 issue가 열릴지, 언제 에이전트를 되돌려 보낼지, 언제 멈출지, 테스터가 무엇을 테스트할지를 결정하는, 단위 테스트를 거친 script를 복사합니다.
 sidebar:
   order: 5
 ---
 
 import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
-**결과:** Nx target 여섯 개와 통과하는 단위 테스트 143개가 있는 `common-scripts` 프로젝트.
-6단계와 7단계의 workflow는 이 target만 호출합니다.
+**결과:** Nx target 열 개와 통과하는 단위 테스트 223개가 있는 `tooling-agent` 프로젝트.
+6단계, 7단계, 9단계의 workflow는 이 target만 호출합니다.
 
 <Steps>
 
-1. **프로젝트를 만듭니다.** 이 저장소에서 `packages/common/scripts/`를 복사하고 (그 안의
-   `package.json`, `project.json`, `tsconfig*.json`, `vitest.config.mts`), 예제 앱에 속하는
-   `src/dynamodb/`는 삭제합니다. `package.json`과 `project.json`, 그리고 `vitest.config.mts`의 `name`에서
-   이름을 `@your-scope/common-scripts`로 바꿉니다. 직접 생성하고 싶다면 Nx Plugin for AWS로 생성한
-   TypeScript 프로젝트도 같은 구조입니다.
-
-2. 이 저장소의 `packages/common/scripts/src/`에서 **glue 폴더 네 개를 복사**합니다.
+1. 이 저장소에서 **`packages/tooling/agent/`를 통째로 복사**합니다. 그 `project.json`에는 workflow가
+   호출하는 모든 target이 이미 선언되어 있고, 그 `AGENTS.md`는 각 폴더에 무엇이 있는지 에이전트에게
+   알려 줍니다.
 
    <FileTree>
-   - packages/common/scripts/src/
-     - agent-issues/ spec → issue: gate, discover, tasks, validate, issue, plan-issue, create-next-issue, main, validate-main, 그리고 archive용 archive, archive-specs, archive-main
-     - agent-ci/ CI → 에이전트: plan, run, main
-     - agent-review/ 리뷰 → 에이전트: plan, run, main
-     - ui-screenshots/ 스크린샷 규칙: check, main
+   - packages/tooling/agent/src/
+     - agent-issues/ spec → issue, `tasks.md` validator, 완료된 spec의 archive
+     - agent-ci/ 빨간 CI → 에이전트
+     - agent-review/ "changes requested" → 에이전트
+     - helpers/ 에이전트가 읽는 issue의 lock, 신뢰할 수 있는 작성자와 낯선 사람의 구분
+     - ui-screenshots/ 스크린샷 규칙과 `E2E screenshots` 댓글
+     - invariant-coverage/ 어떤 코드가 어떤 엔터티를 쓰는지, 그리고 새 writer에는 invariant가 필요하다는 규칙
+     - post-merge-test/ 배포된 PR → 테스터를 위한 테스트 issue
    </FileTree>
 
-   이 폴더들은 Node 내장 모듈과 `gh` CLI에만 의존합니다. `tsx`가 이들을 실행합니다.
+   이 폴더들은 Node 내장 모듈, TypeScript (invariant 스캔용), `gh` CLI에만 의존합니다. `tsx`가 이들을
+   실행합니다. glob이 아직 `packages/tooling/*`을 포함하지 않는다면, workspace의 `pnpm-workspace.yaml`과
+   루트 `tsconfig.json`의 references에 이 폴더를 추가하세요.
 
-3. 프로젝트의 `project.json`의 `targets` 아래에 **target을 추가**합니다.
+2. **scope 이름을 바꿉니다.** 프로젝트의 `package.json`, `project.json`, `vitest.config.mts`, 그리고
+   `main.ts` 파일들의 주석에서 `@agentic-sdlc/`를 여러분 workspace의 scope로 바꿉니다. 나중에 복사하는
+   모든 workflow에도 `@agentic-sdlc/tooling-agent`가 적혀 있습니다.
 
-   ```json
-   "agent-issue":         { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/main.ts",    "cwd": "{projectRoot}" } },
-   "archive-specs":       { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/archive-main.ts", "cwd": "{projectRoot}" } },
-   "agent-ci-status":     { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-ci/main.ts",        "cwd": "{projectRoot}" } },
-   "agent-review-status": { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-review/main.ts",    "cwd": "{projectRoot}" } },
-   "ui-screenshots":      { "executor": "nx:run-commands", "options": { "command": "tsx src/ui-screenshots/main.ts",  "cwd": "{projectRoot}" } },
-   "validate-tasks":      { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/validate-main.ts", "cwd": "{projectRoot}" } }
-   ```
-
-4. [개요](../overview/)의 결정 중 바꾼 것이 있다면 **여러분의 설정에 맞게 상수를
-   바꿉니다**.
+3. **여러분의 설정에 맞게 상수를 바꿉니다.** 굵게 표시한 상수는 이 저장소의 노트 앱을 가리키므로 거의
+   확실히 바꾸게 됩니다. 나머지는 [개요](../overview/)의 결정 중 바꾼 것이 있을 때만 바꿉니다.
 
    | 상수 | 파일 | 기본값 |
    | --- | --- | --- |
+   | **`UI_SOURCE`** | `ui-screenshots/check.ts` | `packages/notes-website/src/`와 `packages/common/shadcn/src/` 아래의 `.tsx`/`.css` |
+   | **`WRITER_PACKAGES`**, **`ENTITIES_PACKAGE`** | `invariant-coverage/scan.ts` | 코드가 테이블에 쓰는 패키지들, 그리고 엔터티를 담은 패키지 (`notes-table`) |
+   | **`WRITER_MAP_PATH`**, **`INVARIANTS_PATH`**, **`HELPERS`** | `invariant-coverage/check.ts` | `packages/notes-table/entity-writers.json`, `packages/notes-table/src/helpers/invariants`, `notes-table` |
+   | **`UI_PATHS`**, **`NOT_DEPLOYED`** | `post-merge-test/plan.ts` | 클릭해 볼 가치가 있는 UI 변경으로 치는 것, 그리고 배포된 스택에 결코 도달하지 않는 경로 |
    | `SPEC_READY_LABEL`, `AGENT_BRANCH_PREFIX` | `agent-issues/gate.ts` | `spec-ready`, `openhands/` |
    | `AGENT_LABEL` | `agent-issues/issue.ts` | `openhands` |
    | `AGENT_BRANCH`, `REVIEW_STATUS_CONTEXT`, `MAX_CI_FIX_ATTEMPTS` | `agent-ci/plan.ts` | `^openhands\/issue-\d+$`, `software-factory/review`, `5` |
    | `MAX_REVIEW_FIX_ATTEMPTS`, `CHANGES_REQUESTED` | `agent-review/plan.ts` | `5`, `🔄 CHANGES REQUESTED` |
-   | `UI_SOURCE`, `SCENARIO`, `WAIVER_LABEL` | `ui-screenshots/check.ts` | portal과 공유 UI의 `.tsx`/`.css`, `packages/e2e/src/scenarios/*.e2e.ts`, `no-ui-screenshots` |
+   | `WAIVER_LABEL` | `ui-screenshots/check.ts`, `invariant-coverage/check.ts` | `no-ui-screenshots`, `no-new-invariant` |
 
-   거의 확실히 바꾸게 될 것은 `UI_SOURCE`입니다. frontend 소스를 가리키도록 하세요.
+   아직 invariant를 검사하지 않을 거라면, `invariant-coverage` 폴더는 그대로 두고 6단계에서 그 PR Checks
+   job을 복사하지 마세요. 일부 단위 테스트는 실제 invariant 파일을 읽으므로, 그 테스트
+   (`invariant-coverage/check.test.ts`)나 위의 경로를 고치세요.
 
    <Aside type="caution">
    `REVIEW_STATUS_CONTEXT`는 바꾸지 마세요. `software-factory/review`는 OpenHands
    issue-to-PR worker가 찾는 상태입니다. 다른 이름이면 에이전트가 절대 되돌아가지 않습니다.
    </Aside>
 
-5. **테스트를 실행합니다.**
+4. **테스트를 실행합니다.**
 
    ```bash
-   pnpm nx run @your-scope/common-scripts:test
+   pnpm nx run @your-scope/tooling-agent:test
    ```
 
 </Steps>
@@ -70,19 +70,19 @@ import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 ## 동작 확인
 
 ```text
- Test Files  10 passed (10)
-      Tests  143 passed (143)
+ Test Files  19 passed (19)
+      Tests  223 passed (223)
 ```
 
 ## Dry run 해 보기
 
-세 개의 에이전트 script는 각각 `GITHUB_EVENT_PATH`에서 GitHub event를 읽고,
+각 에이전트 script는 `GITHUB_EVENT_PATH`에서 GitHub event를 읽고,
 `DRY_RUN=true`이면 실행하는 대신 결정을 출력합니다. 실제 사례를 재현하려면 지난 workflow 실행의
 payload를 저장하고 script가 그것을 가리키게 하세요.
 
 ```bash
 DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_PATH=./event.json \
-  pnpm nx run @your-scope/common-scripts:agent-ci-status
+  pnpm nx run @your-scope/tooling-agent:agent-ci-status
 ```
 
 ```json

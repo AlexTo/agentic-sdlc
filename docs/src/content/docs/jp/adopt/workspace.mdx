@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-import { Steps, Aside } from '@astrojs/starlight/components';
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
 **最終的に手に入るもの:** Nx と Biome を備えた pnpm ワークスペース、すべてのコミットで強制される
 Conventional Commits、そしてコミットのたびに行われるシークレットのチェック。
@@ -23,75 +23,44 @@ Conventional Commits、そしてコミットのたびに行われるシークレ
    pnpm create @aws/nx-workspace your-project --iac=cdk --no-interactive
    ```
 
-   これでステップ 4 で使う git-secrets の pre-commit フックもインストールされます。既存の Nx ワークスペースでも
-   構いません。CI とエージェントが同じバージョンを使うよう、ルートの `package.json` で pnpm を固定します。
+   既存の Nx ワークスペースでも構いません。CI とエージェントが同じバージョンを使うよう、ルートの
+   `package.json` で `packageManager` を使って pnpm を固定します。
 
-   ```json
-   { "packageManager": "pnpm@<version>" }
-   ```
+2. このリポジトリから、自分のリポジトリの同じパスに**次のファイルをコピーします**。
 
-2. `AGENTS.md`、CI、エージェントが呼び出す**ルートのスクリプトを追加します**。
+   <FileTree>
+   - commitlint.config.js Conventional Commits
+   - lint-staged.config.js ステージされたファイルに Biome を実行
+   - .husky/
+     - commit-msg commitlint を実行
+     - pre-commit git-secrets、続いて lint-staged を実行し、Biome が何かを変えた場合は失敗する。そうするとエージェントはステージし直して再度コミットする
+     - prepare-commit-msg 対話的にコミットする人のための Commitizen。エージェントのコミット方法である `git commit -m` では自動でスキップされる
+   - .git-secrets/ pre-commit フックが実行する git-secrets スクリプト
+   - .gitallowed git-secrets が通すパターン
+   - .github/
+     - actions/init-monorepo/ 共通の CI セットアップ
+     - actions/changed-paths/ ジョブをスキップするための「この PR はこれらのパスのどれかを変更したか?」
+     - actions/playwright-setup/ Playwright 用の Chromium。バージョンごとにキャッシュ
+     - dependabot.yml 固定したアクションと依存関係を最新に保つ
+   </FileTree>
 
-   ```json
-   "scripts": {
-     "dev": "nx run-many --target dev",
-     "build": "nx run-many --target build",
-     "lint": "nx run-many --target lint --configuration=fix",
-     "test": "nx run-many --target test --all",
-     "trivy": "nx run-many --target trivy --all",
-     "prepare": "husky"
-   }
-   ```
-
-3. **commitlint で Conventional Commits を追加します。** グルーが書く issue のタイトルは Conventional
-   Commit のヘッダーで、エージェントはそれを再利用します。
-
-   ```bash
-   pnpm add -Dw @commitlint/config-conventional commitlint husky lint-staged
-   echo "export default { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
-   ```
-
-   `.husky/commit-msg`:
-
-   ```bash
-   FORCE_COLOR=1 pnpm commitlint --edit "$1"
-   ```
-
-4. **pre-commit フックを追加します。** AWS のシークレットパターンを一度だけ登録し、シークレットを含む
-   コミットを拒否し、ステージされたファイルに Biome を実行し、それで何かが変わった場合は失敗します。
-   そうするとエージェントはステージし直して再度コミットします。`.husky/pre-commit`:
-
-   ```bash
-   if ! git config --get-all secrets.patterns >/dev/null 2>&1; then
-     bash .git-secrets/git-secrets --register-aws
-   fi
-   bash .git-secrets/git-secrets --pre_commit_hook
-
-   PRE_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
-   FORCE_COLOR=1 pnpm lint-staged
-   POST_SHA="$(git diff HEAD --ignore-space-at-eol | shasum -a 256 --tag)"
-
-   if [ "$PRE_SHA" != "$POST_SHA" ]; then
-     echo "Pre-commit modified your working directory"
-     echo "Please verify and stage changed, then retry git commit"
-     exit 1
-   fi
-   ```
-
-   Nx Plugin for AWS で作ったワークスペースには、`.git-secrets/git-secrets`、`.gitallowed`、そしてこのフックの
-   大部分がすでにあります。そうでない場合は、このリポジトリからコピーしてください。`lint-staged.config.js`:
-
-   ```js
-   export default {
-     'packages/**/*.{ts,tsx,js,jsx,json,css,scss}': ['biome check --write --no-errors-on-unmatched'],
-     '*.{js,json}': ['biome check --write --no-errors-on-unmatched'],
-   };
-   ```
-
-5. このリポジトリから**共有の CI セットアップ action をコピーします**: `.github/actions/init-monorepo/`。
-   pnpm を（3 回までリトライして。レジストリのタイムアウトでエージェントが修正の試行を 1 回失わないように）、
-   Node 24 と、必要に応じて uv をインストールし、pnpm のキャッシュを復元し、依存関係をインストールし、
+   `.husky/pre-push` は [ステップ 8](../local-stack-and-e2e/) まで置いておきます。これは invariant マップをチェックします。
+   `init-monorepo` は pnpm を（3 回までリトライして。レジストリのタイムアウトでエージェントが修正の試行を 1 回失わないように）、
+   Node 24 と、必要に応じて uv をインストールし、pnpm と Nx のキャッシュを復元し、依存関係をインストールし、
    `nx affected` 用に `NX_BASE`/`NX_HEAD` を設定します。
+
+3. このリポジトリの `package.json` から**ルートのスクリプトと dev 依存関係をコピーします**。`scripts` ブロック
+   （`AGENTS.md`、CI、エージェントが呼び出すもの）と、`devDependencies` のうち
+   `@commitlint/config-conventional`、`commitlint`、`commitizen`、`husky`、`lint-staged` です。続いて:
+
+   ```bash
+   pnpm install
+   ```
+
+   その `prepare` スクリプトがフックをインストールします。
+
+4. `.github/actions/playwright-setup/action.yml` の**パッケージスコープ**（`@agentic-sdlc/e2e`）を、
+   自分の e2e プロジェクトの名前に変更します。
 
 </Steps>
 
@@ -110,8 +79,8 @@ git commit --allow-empty -m "not conventional"
 続いて `git commit --allow-empty -m "chore: check hooks"` は成功します。
 
 <Aside type="note">
-Discava は、対話的にコミットする人のために `prepare-commit-msg` から Commitizen も実行しています。
-`-m` でメッセージが渡されたときは自動でスキップされ、エージェントはそうやってコミットするので、これは任意です。
+グルーが書く issue のタイトルは Conventional Commit のヘッダーで、エージェントはそれをコミットと
+pull request に再利用します。commitlint が最初に来るのはそのためです。
 </Aside>
 
 次へ: [2. Speckit をインストールする](../speckit/)。

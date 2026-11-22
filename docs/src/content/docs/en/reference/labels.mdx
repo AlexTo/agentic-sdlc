@@ -5,6 +5,9 @@ sidebar:
   order: 1
 ---
 
+`scripts/setup-repository.sh` creates all of them. See
+[2. Configure the repository](../../setup/github-repository/).
+
 | Label | On | Set by | Read by | Means |
 | --- | --- | --- | --- | --- |
 | `spec-ready` | Spec PR | A person | Agent Issues | Merging this PR starts implementation. Adding it to an already merged PR does too |
@@ -17,6 +20,7 @@ sidebar:
 | `review-fix-1` … `review-fix-5` | Agent PR | Agent Review Status | Agent Review Status | That many fix-ups for "changes requested" have been used |
 | `review-fix-exhausted` | Agent PR | Agent Review Status | Agent Review Status, people | Review fix-ups are used up. A person takes over |
 | `no-ui-screenshots` | PR | A maintainer | UI Screenshots | Waive the screenshots rule: the UI change has nothing to look at. Re-run the check after adding it |
+| `no-new-invariant` | PR | A maintainer | PR Checks (`Invariant coverage`) | Waive the invariant coverage rule: no rule spans the new writer. Re-run the check after adding it |
 | `priority:high` | Issue | A person | Issue-to-PR automation | Start this issue before others in the same poll |
 
 ## Resetting a loop

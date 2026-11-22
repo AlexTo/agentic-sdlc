@@ -1,90 +1,73 @@
 ---
 title: 2. Configure the repository
-description: Create the labels, protect main, and keep strangers from commenting. A fork doesn't copy any of it.
+description: Run one script for the settings a fork doesn't copy, then accept the agents' invitation.
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**You'll end with:** every label the workflow uses, a `main` branch that only takes pull
-requests with green checks and an approval, comments limited to collaborators, and the agents'
-own account as a collaborator.
+**You'll end with:** Issues and Actions on, every label the workflow uses, a `main` branch that
+only takes pull requests with green checks and an approval, comments limited to collaborators, and
+the agents' own account as a collaborator.
+
+A fork copies the code, not the settings. `scripts/setup-repository.sh` sets all of them with the
+`gh` CLI. Each step sets the same state every time, so it is safe to run again.
 
 <Steps>
 
-1. **Create the labels.** There are 16, so this one is quicker as a script than in the UI. Run it
-   from your clone. `--force` updates a label that already exists, so it is safe to re-run.
+1. **Create the agents' account.** The agents work under their own GitHub account, a machine
+   account that nothing else uses. Discava's is `discava-bot`. Create one. Its token is the one
+   you create in [step 3](../openhands/), and its pull requests and comments show under it, so you
+   approve them like anyone else's.
+
+2. **Run the script** from your clone, signed in to `gh` as the fork's owner, with the agents'
+   account:
 
    ```bash
-   gh label create spec-ready           --force --description "Merging this spec PR starts the agent"
-   gh label create openhands            --force --description "OpenHands implements this issue"
-   gh label create openhands-review     --force --description "OpenHands reviews this PR's head"
-   gh label create no-ui-screenshots    --force --description "Waives the UI Screenshots check: a UI change with nothing to look at"
-   for n in 1 2 3 4 5; do
-     gh label create ci-fix-$n          --force --description "CI fix-up attempt $n of 5"
-     gh label create review-fix-$n      --force --description "Review fix-up attempt $n of 5"
-   done
-   gh label create ci-fix-exhausted     --force --description "CI fix-ups used up; a person takes over"
-   gh label create review-fix-exhausted --force --description "Review fix-ups used up; a person takes over"
+   ./scripts/setup-repository.sh <you>/agentic-sdlc <agents-account>
    ```
 
-2. **Protect `main`.** In your fork, open **Settings → Branches → Add classic branch protection
-   rule**, and set:
+   Add `--dry-run` first if you want to see each `gh` command before it runs. The script:
 
-   | Setting | Value |
+   | Sets | Why |
    | --- | --- |
-   | Branch name pattern | `main` |
-   | Require a pull request before merging | on, with 1 required approval |
-   | Dismiss stale pull request approvals when new commits are pushed | on |
-   | Require status checks to pass before merging | on, with the six checks below |
-   | Do not allow bypassing the above settings | off |
+   | Issues and Actions on | GitHub turns both off in a fork, and the workflow runs on issues |
+   | 20 labels | Every label in [Reference: labels](../../reference/labels/) |
+   | Branch protection on `main` | A pull request, one approval, stale approvals dismissed, and seven required checks: `Checks (lint)`, `Checks (test)`, `Checks (build)`, `Tasks format`, `Invariant coverage`, `E2E tests`, `UI Screenshots` |
+   | Actions may open pull requests | Archive Specs opens the pull request that moves a finished spec to `specs/_archive/` |
+   | Interactions limited to collaborators, for six months | A fork of a public repository is public, and the agents read every comment on what they work on while holding a token that can push |
+   | GitHub Pages from Actions | CI's **Deploy Docs** job publishes this site |
+   | The agents' account invited with write access | So the agents can push branches and open pull requests |
 
-   The six checks: `Checks (lint)`, `Checks (test)`, `Checks (build)`, `Tasks format`, `E2E tests`
-   and `UI Screenshots`. GitHub only offers a check in the search box after it has run once, so
-   open any PR first if one is missing.
+   The protection leaves bypass allowed, so you, as the owner, can merge a pull request you
+   opened yourself, such as a spec PR, which GitHub won't let you approve.
 
-   Leaving bypass allowed lets you, as the owner, merge a PR you opened yourself, such as a spec
-   PR, which GitHub won't let you approve.
+3. **Accept the invitation** while signed in as the agents' account.
 
-   <Aside type="caution">
-   Don't require the `software-factory/review` status. It is a signal to the agent, only ever
-   posted as `failure`, and requiring it would block every PR.
-   </Aside>
-
-3. **Let Actions open pull requests.** Open **Settings → Actions → General**, and under
-   **Workflow permissions** tick **Allow GitHub Actions to create and approve pull requests**.
-   The Archive Specs workflow needs it to open the PR that moves a finished spec to
-   `specs/_archive/`.
-
-4. **Limit comments to collaborators.** A fork of a public repository is public, and the agents
-   read every comment on the issues and pull requests they work on, while holding a token that
-   can push. Open **Settings → Moderation options → Interaction limits** and choose **Limit to
-   repository collaborators**, for six months. Then nobody else can comment, open an issue or open
-   a pull request.
-
-   <Aside type="caution">
-   The limit expires, at most six months after you set it, and nothing warns you. Note the date
-   and set it again before then. If you add the Tester agent later, which holds cloud credentials,
-   this limit is what keeps a stranger's comment from reaching it. See
-   [Who can comment](../../discava/post-merge-verify/#who-can-comment).
-   </Aside>
-
-5. **Add the agents' account.** The agents work under their own GitHub account, a machine account
-   that nothing else uses. Discava's is `discava-bot`. Create one, then open **Settings →
-   Collaborators** in your fork, invite it with the **Write** role, and accept the invitation
-   while signed in as it. Its token is the one you create in [step 3](../openhands/).
-
-   The agents' PRs and comments then show under that account, and you approve their PRs like
-   anyone else's.
+4. **Check Actions is on.** If your fork's **Actions** tab still shows **I understand my
+   workflows, go ahead and enable them**, click it. GitHub sometimes asks for that click even
+   after the API has turned Actions on.
 
 </Steps>
 
+<Aside type="caution">
+The interaction limit expires six months after you set it, and nothing warns you. Note the date,
+and run the script again before then. If you add the Tester agent later, which holds cloud
+credentials, this limit is what keeps a stranger's comment from reaching it. See
+[Who can comment](../../discava/post-merge-verify/#who-can-comment).
+</Aside>
+
+<Aside type="caution">
+Don't add `software-factory/review` to the required checks. It is a signal to the agent, only ever
+posted as `failure`, and requiring it would block every PR.
+</Aside>
+
 ## Check it worked
 
-The fork's **Issues → Labels** page lists the 16 new labels, **Settings → Branches** shows the
-rule on `main` with six required checks, and **Settings → Moderation options → Interaction limits**
-shows the collaborators-only limit with its end date. **Settings → Collaborators** lists the
-agents' account with the **Write** role.
+The fork's **Issues → Labels** page lists the 20 labels, **Settings → Branches** shows the rule on
+`main` with seven required checks, and **Settings → Moderation options → Interaction limits** shows
+the collaborators-only limit with its end date. **Settings → Collaborators** lists the agents'
+account with the **Write** role.
 
 Next: [3. Install OpenHands](../openhands/).

@@ -55,8 +55,8 @@ fork ではステップ 11 で止まります。
 | CI からエージェントへ | `.github/workflows/agent-ci.yml` |
 | レビュー担当からエージェントへ | `.github/workflows/agent-review.yml` |
 | チェック | `.github/workflows/pr-checks.yml`、`ui-screenshots.yml`、`ci.yml` |
-| デプロイからテスト issue へ (Discava のみ) | `.github/workflows/deploy.yml`、`post-merge-verify.yml` |
-| グルーの背後にあるユニットテスト済みのルール | `packages/common/scripts/src/agent-*`、`ui-screenshots/` |
+| デプロイからテスト issue へ | `.github/workflows/deploy.yml`、`post-merge-verify.yml` (デプロイを追加するまではオフ) |
+| グルーの背後にあるユニットテスト済みのルール | `packages/tooling/agent/src/` |
 | エージェントのランタイムと各役割のプロンプト | OpenHands Agent Canvas (リポジトリの外) |
 
 詳細はコンセプトにあります。[フェーズがどのように issue になるか](../../concepts/one-phase-at-a-time/)、

@@ -1,6 +1,6 @@
 ---
 title: 4. 에이전트 가이드와 issue 템플릿
-description: AGENTS.md를 작성하고, 모든 구현 issue에 지시 사항이 들어가는 issue 템플릿을 추가합니다.
+description: 이 저장소의 AGENTS.md를 바탕으로 여러분의 AGENTS.md를 작성하고, 모든 에이전트 issue에 지시 사항이 들어가는 issue 템플릿을 복사합니다.
 sidebar:
   order: 4
 ---
@@ -8,66 +8,41 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 **결과:** 모든 에이전트가 가장 먼저 읽는 `AGENTS.md`, 그리고 모든 구현 issue에 들어가는 상시 지시 사항의
-출처인 `.github/ISSUE_TEMPLATE/implement-phase.md`.
+출처인 `.github/ISSUE_TEMPLATE/` 아래의 issue 템플릿.
 
 <Steps>
 
-1. 저장소 루트에 **`AGENTS.md`를 작성**합니다. 에이전트가 매 실행에 필요한 내용만 담고,
-   나머지는 `CONTRIBUTING.md`로 링크하세요. 다음 섹션을 사용합니다.
+1. 이 저장소에서 **`AGENTS.md`를 복사**하고, 각 섹션을 여러분의 프로젝트에 맞게 다시 씁니다. 일부러
+   짧게 만든 파일입니다: 에이전트가 매 실행에 필요한 것만 담고, 그 밖의 것은 담지 않습니다.
 
-   ```markdown
-   # AGENTS.md
-
-   Read CONTRIBUTING.md before opening a PR.
-
-   ## What this is
-   One paragraph: the product, the stack, the monorepo tool.
-
-   ## Commands
-   Install; build, lint, test everything; one project's tests, once (not watch mode);
-   one test file; `nx affected`; e2e; local dev; resetting local data.
-
-   ## Architecture
-   One bullet per package: what it is, what it may import, where new code of each kind goes.
-
-   ## Conventions
-   - Conventional Commits for commit and PR titles (enforced by commitlint).
-   - The formatter and linter, by name, so the agent doesn't add another.
-   - Where helpers go. Where shared code goes.
-   - Every rule a reviewer has had to repeat twice.
-   ```
+   | 섹션 | 작성할 내용 |
+   | --- | --- |
+   | What this is | 한 문단: 제품, 스택, monorepo 도구 |
+   | Commands | 설치; 전체 build, lint, test; 한 프로젝트의 테스트를 한 번 (watch mode 아님); 테스트 파일 하나; `nx affected`; e2e; 로컬 개발 |
+   | Architecture | package마다 한 항목: 무엇인지, 무엇을 import할 수 있는지, 각 종류의 새 코드가 어디에 들어가는지 |
+   | Conventions | Conventional Commits, 이름을 밝힌 formatter, helper를 두는 곳, 그리고 리뷰어가 두 번 반복해야 했던 모든 규칙 |
 
    <Aside type="tip">
    명령 섹션이 가장 중요합니다. "테스트 파일 하나를 한 번 실행하기"를 찾지 못한 에이전트는
-   전체 suite를 watch mode로 실행하고 멈춰 버립니다.
+   전체 suite를 watch mode로 실행하고 멈춰 버립니다. 나열한 각 명령을 한 번씩 실행해 동작하는지 확인하세요.
    </Aside>
 
    아키텍처 섹션이 package당 한 줄을 넘어서면, 각 package의 세부 사항을 그 폴더의 중첩된
    `AGENTS.md`로 옮기고, 루트에는 그곳을 가리키는 한 줄만 남깁니다. 에이전트는 그 폴더에서 작업할 때만
-   중첩된 파일을 불러오므로, 한 번의 실행은 필요한 세부 사항만 읽습니다.
+   중첩된 파일을 불러오므로, 한 번의 실행은 필요한 세부 사항만 읽습니다. 이 저장소의
+   `packages/tooling/agent/AGENTS.md`가 그 예이며, [5단계](../glue-scripts/)에서 glue와 함께 복사하세요.
 
-2. 이 저장소의 **issue 템플릿을**
-   `.github/ISSUE_TEMPLATE/implement-phase.md`로 **복사**합니다. Agent Issues script는 issue의 spec과
-   범위 섹션을 직접 작성하고, `## Instructions for the agent` 아래의 모든 내용은 실행 시점에
-   템플릿에서 읽습니다.
+   에이전트가 `CLAUDE.md`처럼 다른 이름의 파일을 읽는다면, 그 파일이 `AGENTS.md`를 가리키게 하세요. 이
+   저장소의 `CLAUDE.md`는 `@AGENTS.md`로 시작하며, Claude Code는 이를 "그 파일을 여기에 포함하라"로
+   읽습니다.
 
-   ```markdown
-   ## Instructions for the agent
+2. 이 저장소에서 **`.github/ISSUE_TEMPLATE/`를 복사**합니다: 개발자용 `implement-phase.md`, 그리고
+   [9단계](../deploy/)에서 테스터를 추가한다면 테스터용 `test-deployed-pr.md`.
 
-   - Read `AGENTS.md`, `.specify/memory/constitution.md` and the spec folder first.
-   - Work through the scope in order, writing each story's tests first. Tick each task in `tasks.md` in the same commit that completes it.
-   - Do not use `pnpm dev`, Docker or the e2e runner locally. Run unit and component tests (once, not in watch mode), `pnpm lint`, typecheck and `pnpm build` on what you changed. E2E and concurrency tests run on PR CI: write them, then read CI's result.
-   - A change to what a user sees ships with `screenshot(page, 'name')` calls (`packages/e2e/src/helpers/screenshots.ts`) in the e2e scenario for that flow, at each state a reviewer would want to see: PR CI posts them as the `E2E screenshots` comment, and the `UI Screenshots` check fails without them. Don't leave screenshots to a **(human)** task.
-   - Skip tasks marked **(human)** and list them in the PR description for the reviewer.
-   - Use Conventional Commits for every commit. The PR title is a Conventional Commit too, for example `feat(assignments): submit work to an upload assignment`, not `[#n] ...`.
-   - In the PR description write `Refs #<parent>`. Never use `Closes` or `Fixes` against the parent issue; closing this issue is fine.
-   - Never weaken a test to make it pass, never edit `.github/workflows/`, never merge, and don't touch cloud credentials.
-   - If you are blocked, comment on this issue with what you tried and stop.
-   ```
-
-   `#<parent>`는 글자 그대로 두세요. script가 이를 spec의 상위 issue로 바꾸고, spec에 상위 issue가
-   없으면 그 항목을 뺍니다. `## Instructions for the agent` 제목도 정확히 그대로 두세요.
-   script가 이 제목을 찾으며, 없으면 실패합니다.
+   Agent Issues script는 issue의 spec과 범위 섹션을 직접 작성하고, `implement-phase.md`의
+   `## Instructions for the agent` 아래의 모든 내용은 실행 시점에 읽습니다. 이 제목은 정확히 그대로
+   두세요. script가 이 제목을 찾으며, 없으면 실패합니다. `#<parent>`도 글자 그대로 두세요: script가 이를
+   spec의 상위 issue로 바꾸고, spec에 상위 issue가 없으면 그 항목을 뺍니다.
 
 3. **여러분의 스택에 맞게 지시 사항을 수정**합니다: 명령, 스크린샷 helper 경로, 그리고
    여러분에게 "cloud credentials"가 의미하는 것.

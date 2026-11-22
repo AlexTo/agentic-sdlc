@@ -1,13 +1,13 @@
 ---
 title: 1. Fork 仓库
-description: Fork 这个仓库，打开 GitHub 对 fork 关闭的功能，并检查它能运行。
+description: Fork 这个仓库，克隆它，并检查它能运行。
 sidebar:
   order: 1
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**完成后你将拥有：** 你自己的 fork，已启用 Issues 和 Actions，已克隆到本地，并且检查全部通过。
+**完成后你将拥有：** 你自己的 fork，已克隆到本地，并且检查全部通过。
 
 <Steps>
 
@@ -24,12 +24,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    gh repo set-default <you>/agentic-sdlc
    ```
 
-3. **开启 Issues。** GitHub 对 fork 关闭了 Issues，而整个工作流都运行在 issue 之上。在你的 fork 中打开 **Settings → General → Features**，勾选 **Issues**。
-
-4. **开启 Actions。** 打开你的 fork 的 **Actions** 标签页，点击 **I understand my workflows, go
-   ahead and enable them**。在你这样做之前，GitHub 不会在 fork 中运行 workflow。
-
-5. **在本地安装并运行检查**，与 CI 运行的检查相同：
+3. **在本地安装并运行检查**，与 CI 运行的检查相同：
 
    ```bash
    pnpm install
@@ -38,16 +33,27 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    pnpm nx run-many --target build --all
    ```
 
-   运行笔记应用（需要 Docker）：`pnpm dev`，然后打开网站打印出的 URL。
+   `pnpm install` 还会安装 git hooks：每条 commit 信息都要符合 Conventional Commits，每次提交前扫描 secret 并运行 Biome，每次推送前检查不变式映射。运行笔记应用（需要 Docker）：`pnpm dev`，然后打开网站打印出的 URL。
 
 </Steps>
 
 ## 检查是否成功
 
-你的 fork 显示 **Issues** 标签页，它的 **Actions** 标签页列出了各个 workflow。在本地，三条 `nx run-many` 命令都通过。
+三条 `nx run-many` 命令都通过，并且 commit 信息不符合 Conventional Commits 的提交会被拒绝：
+
+```bash
+git commit --allow-empty -m "not conventional"
+```
+
+```text
+✖   subject may not be empty [subject-empty]
+✖   type may not be empty [type-empty]
+```
+
+GitHub 在 fork 中关闭了 Issues 和 Actions。下一步中的脚本会把它们重新打开。
 
 <Aside type="note">
-在 fork 中有两处行为不同，但都不会阻塞工作流。没有 `CODECOV_TOKEN` secret 时，覆盖率上传步骤会记录一个错误然后继续。CI 中的 **Deploy Docs** job 会一直失败，直到你开启 GitHub Pages（**Settings → Pages → Source: GitHub Actions**），你也可以忽略它。
+没有 `CODECOV_TOKEN` secret 时，CI 的覆盖率上传步骤会记录一个错误然后继续。如果你想让它安静下来，添加这个 secret，或者删除这一步。
 </Aside>
 
 下一步：[2. 配置仓库](../github-repository/)。

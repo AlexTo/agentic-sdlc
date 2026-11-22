@@ -16,24 +16,35 @@ workflow, 단위 테스트를 갖춘 glue가 작은 노트 앱을 감싸고 있�
 ## 얻는 것
 
 <FileTree>
+- AGENTS.md 모든 에이전트가 가장 먼저 읽는 파일, 노트 앱에 맞춰 작성됨
 - .specify/ Speckit 템플릿, 스크립트, constitution
+- .husky/ 커밋 시 Conventional Commits, secret 스캔, Biome, push 시 invariant 맵
+- scripts/setup-repository.sh label, branch protection, 그리고 fork가 복사하지 않는 그 밖의 설정
 - .github/
-  - ISSUE_TEMPLATE/implement-phase.md 모든 구현 issue에 담기는 지시 사항
-  - actions/init-monorepo/ 공유 CI 설정
+  - ISSUE_TEMPLATE/
+    - implement-phase.md 모든 구현 issue에 담기는 지시 사항
+    - test-deployed-pr.md 테스터 에이전트를 위한 테스트 issue, 직접 작성
+  - actions/ 공유 CI 설정, Playwright의 Chromium, 변경 경로 검사
+  - dependabot.yml 고정된 action과 의존성을 최신으로 유지
   - workflows/
-    - pr-checks.yml lint, test, build, tasks 형식, e2e, 스크린샷 댓글
+    - pr-checks.yml lint, test, build, tasks 형식, invariant 커버리지, e2e, 스크린샷 댓글
     - ui-screenshots.yml 스크린샷 규칙
     - ci.yml main에서의 검사, Trivy, 문서 배포
     - agent-issues.yml spec → issue, merge → 다음 issue
     - archive-specs.yml 완료된 spec → 아카이브 PR
     - agent-ci.yml 빨간 CI → 에이전트
     - agent-review.yml "changes requested" → 에이전트
+    - agent-status.yml 위 두 workflow가 공유하는 step
+    - deploy.yml 초록색 main → stage, 인프라를 추가하기 전까지는 꺼져 있음
+    - post-merge-verify.yml 배포된 PR → 테스터를 위한 테스트 issue
+    - cache-cleanup.yml 닫힌 PR의 캐시 정리
 - packages/
-  - common/scripts/src/ glue의 규칙, 단위 테스트 143개
-  - notes-table/ ElectroDB 엔터티, DynamoDB local
+  - tooling/agent/ glue의 규칙, 단위 테스트 223개
+  - tooling/local-dev/ `pnpm dev`용 DynamoDB local 시작
+  - notes-table/ ElectroDB 엔터티, DynamoDB local, invariant
   - notes-api/ tRPC 프로시저
   - notes-website/ React, Vite, TanStack Router, shadcn/ui
-  - e2e/ Playwright 시나리오와 `screenshot()` 헬퍼
+  - e2e/ Playwright 시나리오, `screenshot()` 헬퍼, 모든 테스트 후의 invariant 검사
 - docs/ 이 사이트
 </FileTree>
 
@@ -44,15 +55,17 @@ workflow, 단위 테스트를 갖춘 glue가 작은 노트 앱을 감싸고 있�
 
 저장소에 담을 수 없는 것만 추가하면 됩니다.
 
-1. **GitHub 설정**: Issues와 Actions 활성화, label, branch protection. fork는 이것들을 복사하지
-   않습니다.
-2. **OpenHands**: 여러분 컴퓨터의 Agent Canvas, GitHub 토큰, 그리고 fork를 가리키는 두 개의
+1. **GitHub 설정**: fork는 이것들을 복사하지 않으므로, `scripts/setup-repository.sh`가 한 번의
+   실행으로 설정합니다.
+2. **OpenHands**: 여러분 컴퓨터의 Agent Canvas, GitHub 토큰, 그리고 fork를 가리키는
    automation.
 
-## 빠진 것
+## 추가하기 전까지 꺼져 있는 것
 
-Discava의 AWS 배포입니다. 노트 앱에는 클라우드 인프라가 없으므로, merge해도 문서 사이트 외에는 아무것도
-배포되지 않습니다. [배포와 보안](../../discava/deploy-and-security/)에서 Discava의 파이프라인을 설명하고,
-[도입: 배포](../../adopt/deploy/)에서 파이프라인을 추가하는 방법을 보여 줍니다.
+클라우드입니다. 노트 앱에는 클라우드 인프라가 없으므로, merge해도 문서 사이트 외에는 아무것도
+배포되지 않습니다. `deploy.yml`과 `post-merge-verify.yml`은 들어 있지만 저절로 실행되지는 않습니다:
+`packages/infra`에 CDK 앱을 추가하고 `AUTO_DEPLOY_STAGE`를 설정하면, 초록색 `main`마다 배포되고
+테스터 에이전트가 배포된 것을 테스트합니다. [도입: 배포](../../adopt/deploy/)에 단계가 있고,
+[배포와 보안](../../discava/deploy-and-security/)에서 Discava의 파이프라인을 설명합니다.
 
 <LinkCard title="설정하기: fork, 구성, 첫 기능 실행" href="/agentic-sdlc/ko/setup/before-you-start/" />

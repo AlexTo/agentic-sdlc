@@ -57,8 +57,8 @@ next spec.
 | CI to agent | `.github/workflows/agent-ci.yml` |
 | Reviewer to agent | `.github/workflows/agent-review.yml` |
 | Checks | `.github/workflows/pr-checks.yml`, `ui-screenshots.yml`, `ci.yml` |
-| Deploy to test issue (Discava only) | `.github/workflows/deploy.yml`, `post-merge-verify.yml` |
-| The rules behind the glue, unit-tested | `packages/common/scripts/src/agent-*`, `ui-screenshots/` |
+| Deploy to test issue | `.github/workflows/deploy.yml`, `post-merge-verify.yml` (off until you add a deploy) |
+| The rules behind the glue, unit-tested | `packages/tooling/agent/src/` |
 | The agent runtime and each role's prompt | OpenHands Agent Canvas, outside the repository |
 
 The details are in Concepts: [how phases become issues](../../concepts/one-phase-at-a-time/), and

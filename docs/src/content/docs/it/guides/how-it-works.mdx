@@ -57,8 +57,8 @@ la spec successiva.
 | Dalla CI all'agente | `.github/workflows/agent-ci.yml` |
 | Dal Reviewer all'agente | `.github/workflows/agent-review.yml` |
 | Check | `.github/workflows/pr-checks.yml`, `ui-screenshots.yml`, `ci.yml` |
-| Dal deploy alla issue di test (solo Discava) | `.github/workflows/deploy.yml`, `post-merge-verify.yml` |
-| Le regole dietro il collante, con unit test | `packages/common/scripts/src/agent-*`, `ui-screenshots/` |
+| Dal deploy alla issue di test | `.github/workflows/deploy.yml`, `post-merge-verify.yml` (disattivati finché non aggiungi un deploy) |
+| Le regole dietro il collante, con unit test | `packages/tooling/agent/src/` |
 | Il runtime dell'agente e il prompt di ogni ruolo | OpenHands Agent Canvas, fuori dal repository |
 
 I dettagli sono nei Concetti: [come le fasi diventano issue](../../concepts/one-phase-at-a-time/), e

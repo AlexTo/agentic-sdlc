@@ -4,7 +4,7 @@ name: UI Screenshots
 # `screenshot(` call to an e2e scenario, so PR Checks' `E2E screenshots`
 # comment shows the reviewer the change. A maintainer waives it with the
 # `no-ui-screenshots` label. The rules are in
-# packages/common/scripts/src/ui-screenshots/.
+# packages/tooling/agent/src/ui-screenshots/.
 #
 # Its own workflow, not a PR Checks job, so applying or removing the label
 # re-runs only this check, not the whole e2e suite. Runs the default
@@ -29,7 +29,7 @@ permissions:
 
 jobs:
   ui-screenshots:
-    name: UI changes have screenshots
+    name: UI Screenshots
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -42,6 +42,6 @@ jobs:
           set-nx-shas: false
 
       - name: Check the pull request
-        run: pnpm nx run @agentic-sdlc/common-scripts:ui-screenshots
+        run: pnpm nx run @agentic-sdlc/tooling-agent:ui-screenshots
         env:
           GH_TOKEN: ${{ github.token }}

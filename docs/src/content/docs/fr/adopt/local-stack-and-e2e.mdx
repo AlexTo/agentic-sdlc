@@ -5,7 +5,7 @@ sidebar:
   order: 8
 ---
 
-import { Steps, Aside } from '@astrojs/starlight/components';
+import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
 **Résultat :** `pnpm dev` qui démarre toute l'application avec des substituts locaux, une suite Playwright que la CI
 lance sur chaque PR, des captures d'écran publiées sur la PR, et des invariants vérifiés après chaque test.
@@ -16,70 +16,51 @@ retour sans identifiants cloud.
 <Steps>
 
 1. **Donnez à chaque service cloud un substitut local**, démarré par une cible `dev`, pour que `pnpm dev` lance
-   tout. [Les substituts de Discava](../../discava/local-stack/#ce-qui-tourne-en-local) couvrent DynamoDB,
+   tout. Le `packages/tooling/local-dev/` de ce dépôt démarre DynamoDB local dans Docker pour
+   la table des notes. [Les substituts de Discava](../../discava/local-stack/#ce-qui-tourne-en-local) couvrent aussi
    S3, SQS, OpenSearch et Cognito, plus un processus « event runner » qui appelle les mêmes handlers
    que ceux qu'appellent les déclencheurs Lambda, les streams et EventBridge dans le cloud.
 
    Basculez le code backend sur un seul flag (`LOCAL_DEV=true`), avec les endpoints dans un module partagé.
-   Listez dans `CONTRIBUTING.md` ce qui ne tourne encore que dans le cloud, et marquez les tâches qui en ont besoin
+   Listez dans votre guide de contribution ce qui ne tourne encore que dans le cloud, et marquez les tâches qui en ont besoin
    **(human)**.
 
-2. **Ajoutez un projet Playwright** avec un fichier de scénario par parcours utilisateur. Le
-   `packages/e2e` de ce dépôt en est un minimal. Dans `playwright.config.ts`, lisez le shard depuis l'environnement
-   pour que la matrice de la CI puisse découper la suite :
+2. **Copiez le projet e2e** depuis ce dépôt, `packages/e2e/`, et remplacez son scénario par
+   les vôtres, un fichier par parcours utilisateur. Ce qu'il faut garder :
 
-   ```ts
-   const [shardCurrent, shardTotal] = (process.env.E2E_SHARD ?? '').split('/').map(Number);
-
-   export default defineConfig({
-     testDir: './src',
-     testMatch: ['scenarios/**/*.e2e.ts'],
-     workers: 1,
-     forbidOnly: !!process.env.CI,
-     retries: process.env.CI ? 1 : 0,
-     shard: shardCurrent && shardTotal ? { current: shardCurrent, total: shardTotal } : null,
-     webServer: { command: 'pnpm dev', reuseExistingServer: !process.env.CI /* … */ },
-   });
-   ```
+   <FileTree>
+   - packages/e2e/
+     - playwright.config.ts lit `E2E_SHARD` pour que la matrice de la CI puisse découper la suite, démarre `pnpm dev`, un seul worker, des relances uniquement en CI
+     - src/helpers/
+       - screenshots.ts `screenshot(page, 'name')`, qui enregistre les images que téléverse le job `e2e` de PR Checks
+       - table-invariants.ts un `test` Playwright qui vérifie les invariants après chaque scénario
+   </FileTree>
 
    Chaque scénario crée ses propres utilisateurs et des données aux noms uniques, et aucun ne réinitialise les données locales, donc ils
-   s'exécutent dans n'importe quel ordre.
-
-3. **Copiez le helper de captures d'écran** depuis ce dépôt : `packages/e2e/src/helpers/screenshots.ts`.
-   Il enregistre `dist/packages/e2e/screenshots/<scenario>/<nn>-<name>.png`, le dossier que téléverse le job `e2e`
-   de PR Checks. Appelez-le là où une personne regarderait, après un `expect` sur ce qui s'affiche :
+   s'exécutent dans n'importe quel ordre. Appelez `screenshot` là où une personne regarderait, après un `expect` sur ce qui s'affiche :
 
    ```ts
    await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible();
    await screenshot(page, 'reviews section with three reviews');
    ```
 
-4. **Vérifiez les invariants après chaque test.** Pour chaque règle qui porte sur des enregistrements écrits par du code
-   différent (compteurs, agrégats, ordre), écrivez une fonction qui parcourt les données et renvoie les
-   violations. Donnez ensuite aux scénarios un `test` qui les vérifie automatiquement. Voici le motif de Discava,
-   allégé :
+3. **Copiez les invariants** depuis `packages/notes-table/src/helpers/invariants/` dans le package
+   qui possède votre table. Pour chaque règle qui porte sur des enregistrements écrits par du code différent (compteurs,
+   agrégats, ordre), écrivez une vérification qui parcourt un instantané des données et renvoie les violations,
+   avec un test unitaire qui la casse. La section « Rules that span records » de `packages/notes-table/README.md`
+   explique comment en ajouter une.
 
-   ```ts
-   export const test = base.extend<{ tableInvariants: void }>({
-     tableInvariants: [
-       async ({}, use, testInfo) => {
-         const before = new Set((await findViolations()).map(violationId));
-         await use();
-         if (testInfo.status !== testInfo.expectedStatus) return;
-         await expect
-           .poll(async () => (await findViolations()).filter((v) => !before.has(violationId(v))), {
-             message: 'The scenario left the table breaking invariants',
-             timeout: 30_000,
-           })
-           .toEqual([]);
-       },
-       { auto: true },
-     ],
-   });
-   ```
+   Les scénarios prennent `test` depuis `table-invariants.ts` au lieu de `@playwright/test`. Après chacun,
+   il fait échouer le scénario si la table présente une violation qu'elle n'avait pas avant. Seules les *nouvelles*
+   violations comptent, donc d'anciennes données locales ne font jamais échouer une exécution, et `expect.poll` laisse au travail
+   en arrière-plan (handlers de streams, recalculs) le temps de rattraper son retard.
 
-   Seules les *nouvelles* violations font échouer le test, donc d'anciennes données locales ne le font jamais. `expect.poll` laisse
-   au travail en arrière-plan (handlers de streams, recalculs) le temps de rattraper son retard.
+4. **Générez la carte des writers, et copiez le hook pre-push.** Lancez
+   `pnpm nx run @your-scope/tooling-agent:entity-writers` et committez le `entity-writers.json` qu'il
+   écrit. Copiez `.husky/pre-push` depuis ce dépôt, avec ses `MAP` et `PATHS` pointés vers
+   les vôtres : quand une branche modifie du code qui pourrait écrire dans la table, il régénère la carte et arrête
+   le push si elle a changé. Le check de PR `Invariant coverage` compare ensuite la carte avec celle de la branche
+   de base, et retient une PR qui ajoute un writer jusqu'à ce que les invariants nomment l'entité.
 
 5. **Ajoutez des tests de concurrence** pour les écritures sur lesquelles deux utilisateurs pourraient entrer en concurrence : envoyez les mêmes requêtes d'API au
    même instant avec `Promise.all`, puis vérifiez le résultat et les invariants.

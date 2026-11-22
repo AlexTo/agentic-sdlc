@@ -1,67 +1,67 @@
 ---
 title: 5. グルースクリプト
-description: どの issue を開くか、いつエージェントを差し戻すか、いつ止めるかを決める、ユニットテスト済みのスクリプトを追加します。
+description: どの issue を開くか、いつエージェントを差し戻すか、いつ止めるか、テスト担当が何をテストするかを決める、ユニットテスト済みのスクリプトをコピーします。
 sidebar:
   order: 5
 ---
 
 import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 
-**このステップで得られるもの:** 6 つの Nx ターゲットと、通過する 143 件のユニットテストを持つ `common-scripts` プロジェクト。
-ステップ 6 と 7 の workflow は、これらのターゲットを呼び出すだけです。
+**このステップで得られるもの:** 10 個の Nx ターゲットと、通過する 223 件のユニットテストを持つ `tooling-agent` プロジェクト。
+ステップ 6、7、9 の workflow は、これらのターゲットを呼び出すだけです。
 
 <Steps>
 
-1. **プロジェクトを作成します。** このリポジトリから `packages/common/scripts/`（その
-   `package.json`、`project.json`、`tsconfig*.json`、`vitest.config.mts`）をコピーし、
-   例のアプリに属する `src/dynamodb/` を削除します。`package.json` と `project.json`、そして
-   `vitest.config.mts` の `name` で、名前を `@your-scope/common-scripts` に変更します。生成したい場合は、
-   Nx Plugin for AWS で生成した TypeScript プロジェクトも同じ形をしています。
-
-2. このリポジトリの `packages/common/scripts/src/` から **4 つのグルーフォルダーをコピーします**。
+1. このリポジトリから **`packages/tooling/agent/` を丸ごとコピーします**。その `project.json` には workflow が
+   呼び出すすべてのターゲットがすでに宣言されていて、その `AGENTS.md` は各フォルダーに何があるかをエージェントに伝えます。
 
    <FileTree>
-   - packages/common/scripts/src/
-     - agent-issues/ spec → issue: gate, discover, tasks, validate, issue, plan-issue, create-next-issue, main, validate-main、そしてアーカイブ用の archive, archive-specs, archive-main
-     - agent-ci/ CI → agent: plan, run, main
-     - agent-review/ review → agent: plan, run, main
-     - ui-screenshots/ スクリーンショットのルール: check, main
+   - packages/tooling/agent/src/
+     - agent-issues/ spec → issue、`tasks.md` の validator、完了した spec のアーカイブ
+     - agent-ci/ 赤い CI → エージェント
+     - agent-review/ "changes requested" → エージェント
+     - helpers/ エージェントが読む issue のロックと、信頼できる作成者と見知らぬ人の区別
+     - ui-screenshots/ スクリーンショットのルールと `E2E screenshots` コメント
+     - invariant-coverage/ どのコードがどのエンティティに書き込むか、そして新しい書き込み元には invariant が必要というルール
+     - post-merge-test/ デプロイされた PR → テスト担当向けのテスト issue
    </FileTree>
 
-   これらが依存するのは Node の組み込みモジュールと `gh` CLI だけです。実行には `tsx` を使います。
+   これらが依存するのは Node の組み込みモジュール、TypeScript（invariant のスキャン用）、`gh` CLI だけです。
+   実行には `tsx` を使います。glob がまだ `packages/tooling/*` をカバーしていない場合は、ワークスペースの
+   `pnpm-workspace.yaml` とルートの `tsconfig.json` の references にこのフォルダーを追加します。
 
-3. プロジェクトの `project.json` の `targets` の下に **ターゲットを追加します**。
+2. **スコープの名前を変えます。** プロジェクトの `package.json`、`project.json`、`vitest.config.mts`、
+   そして各 `main.ts` ファイルのコメントにある `@agentic-sdlc/` を、自分のワークスペースのスコープに置き換えます。
+   この後コピーする workflow もすべて `@agentic-sdlc/tooling-agent` を指しています。
 
-   ```json
-   "agent-issue":         { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/main.ts",    "cwd": "{projectRoot}" } },
-   "archive-specs":       { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/archive-main.ts", "cwd": "{projectRoot}" } },
-   "agent-ci-status":     { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-ci/main.ts",        "cwd": "{projectRoot}" } },
-   "agent-review-status": { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-review/main.ts",    "cwd": "{projectRoot}" } },
-   "ui-screenshots":      { "executor": "nx:run-commands", "options": { "command": "tsx src/ui-screenshots/main.ts",  "cwd": "{projectRoot}" } },
-   "validate-tasks":      { "executor": "nx:run-commands", "options": { "command": "tsx src/agent-issues/validate-main.ts", "cwd": "{projectRoot}" } }
-   ```
-
-4. [概要](../overview/) の決定のどれかを変えた場合は、**自分の構成に合わせて定数を変更します**。
+3. **自分の構成に合わせて定数を変更します。** 太字のものはこのリポジトリの notes アプリを指しているので、
+   ほぼ確実に変更することになります。残りは、[概要](../overview/) の決定を変えた場合にだけ変更します。
 
    | 定数 | ファイル | デフォルト |
    | --- | --- | --- |
+   | **`UI_SOURCE`** | `ui-screenshots/check.ts` | `packages/notes-website/src/` と `packages/common/shadcn/src/` の下の `.tsx`/`.css` |
+   | **`WRITER_PACKAGES`**, **`ENTITIES_PACKAGE`** | `invariant-coverage/scan.ts` | テーブルに書き込むコードを持つパッケージと、そのエンティティを持つパッケージ（`notes-table`） |
+   | **`WRITER_MAP_PATH`**, **`INVARIANTS_PATH`**, **`HELPERS`** | `invariant-coverage/check.ts` | `packages/notes-table/entity-writers.json`, `packages/notes-table/src/helpers/invariants`, `notes-table` |
+   | **`UI_PATHS`**, **`NOT_DEPLOYED`** | `post-merge-test/plan.ts` | クリックして確かめる価値のある UI の変更とみなすものと、デプロイされたスタックに決して届かないパス |
    | `SPEC_READY_LABEL`, `AGENT_BRANCH_PREFIX` | `agent-issues/gate.ts` | `spec-ready`, `openhands/` |
    | `AGENT_LABEL` | `agent-issues/issue.ts` | `openhands` |
    | `AGENT_BRANCH`, `REVIEW_STATUS_CONTEXT`, `MAX_CI_FIX_ATTEMPTS` | `agent-ci/plan.ts` | `^openhands\/issue-\d+$`, `software-factory/review`, `5` |
    | `MAX_REVIEW_FIX_ATTEMPTS`, `CHANGES_REQUESTED` | `agent-review/plan.ts` | `5`, `🔄 CHANGES REQUESTED` |
-   | `UI_SOURCE`, `SCENARIO`, `WAIVER_LABEL` | `ui-screenshots/check.ts` | ポータルと共有 UI の `.tsx`/`.css`, `packages/e2e/src/scenarios/*.e2e.ts`, `no-ui-screenshots` |
+   | `WAIVER_LABEL` | `ui-screenshots/check.ts`, `invariant-coverage/check.ts` | `no-ui-screenshots`, `no-new-invariant` |
 
-   ほぼ確実に変更することになるのは `UI_SOURCE` です。自分のフロントエンドのソースを指すようにします。
+   まだ invariant をチェックしない場合は、`invariant-coverage` フォルダーはそのまま残し、ステップ 6 でその
+   PR Checks のジョブをコピーしないでください。一部のユニットテストは実際の invariant のファイルを読むので、
+   それらのテスト（`invariant-coverage/check.test.ts` 内）か、上のパスを更新してください。
 
    <Aside type="caution">
    `REVIEW_STATUS_CONTEXT` は変更しないでください。`software-factory/review` は、OpenHands の
    issue から PR を作るワーカーが探すステータスです。別の名前にすると、エージェントは決して差し戻されません。
    </Aside>
 
-5. **テストを実行します。**
+4. **テストを実行します。**
 
    ```bash
-   pnpm nx run @your-scope/common-scripts:test
+   pnpm nx run @your-scope/tooling-agent:test
    ```
 
 </Steps>
@@ -69,19 +69,19 @@ import { Steps, Aside, FileTree } from '@astrojs/starlight/components';
 ## 動作を確認する
 
 ```text
- Test Files  10 passed (10)
-      Tests  143 passed (143)
+ Test Files  19 passed (19)
+      Tests  223 passed (223)
 ```
 
 ## ドライランを試す
 
-3 つのエージェントスクリプトはそれぞれ `GITHUB_EVENT_PATH` から GitHub のイベントを読み、
+エージェントスクリプトはそれぞれ `GITHUB_EVENT_PATH` から GitHub のイベントを読み、
 `DRY_RUN=true` のときは判断を実行する代わりに出力します。実際のケースを再現するには、過去の workflow 実行の
 ペイロードを保存し、スクリプトにそれを指定します。
 
 ```bash
 DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_PATH=./event.json \
-  pnpm nx run @your-scope/common-scripts:agent-ci-status
+  pnpm nx run @your-scope/tooling-agent:agent-ci-status
 ```
 
 ```json

@@ -1,14 +1,13 @@
 ---
 title: 1. Fork repository
-description: Fork repository này, bật những gì GitHub tắt cho bản fork, và kiểm tra nó chạy được.
+description: Fork repository này, clone nó, và kiểm tra nó chạy được.
 sidebar:
   order: 1
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Kết quả:** bản fork của riêng bạn, đã bật Issues và Actions, đã clone về máy, với các check đều
-pass.
+**Kết quả:** bản fork của riêng bạn, đã clone về máy, với các check đều pass.
 
 <Steps>
 
@@ -26,13 +25,7 @@ pass.
    gh repo set-default <you>/agentic-sdlc
    ```
 
-3. **Bật Issues.** GitHub tắt chúng cho bản fork, mà toàn bộ quy trình chạy trên issue. Trong bản
-   fork, mở **Settings → General → Features** và chọn **Issues**.
-
-4. **Bật Actions.** Mở tab **Actions** của bản fork và bấm **I understand my workflows, go
-   ahead and enable them**. GitHub không chạy workflow trong bản fork cho đến khi bạn làm vậy.
-
-5. **Cài đặt và chạy các check ở local**, đúng những check mà CI chạy:
+3. **Cài đặt và chạy các check ở local**, đúng những check mà CI chạy:
 
    ```bash
    pnpm install
@@ -41,20 +34,31 @@ pass.
    pnpm nx run-many --target build --all
    ```
 
-   Để chạy ứng dụng ghi chú (cần Docker): `pnpm dev`, rồi mở URL mà website in ra.
+   `pnpm install` cũng cài các git hook: Conventional Commits trên mọi commit message, quét secret
+   và Biome trước mọi commit, và kiểm tra bản đồ invariant trước mọi push. Để chạy ứng dụng ghi chú
+   (cần Docker): `pnpm dev`, rồi mở URL mà website in ra.
 
 </Steps>
 
 ## Kiểm tra kết quả
 
-Bản fork của bạn hiện một tab **Issues**, và tab **Actions** của nó liệt kê các workflow. Ở local,
-ba lệnh `nx run-many` đều pass.
+Ba lệnh `nx run-many` đều pass, và một commit có message không phải Conventional Commit bị từ
+chối:
+
+```bash
+git commit --allow-empty -m "not conventional"
+```
+
+```text
+✖   subject may not be empty [subject-empty]
+✖   type may not be empty [type-empty]
+```
+
+GitHub tắt Issues và Actions trong bản fork. Script ở bước tiếp theo bật chúng lại.
 
 <Aside type="note">
-Có hai thứ hoạt động khác trong bản fork, và không cái nào chặn quy trình. Không có secret
-`CODECOV_TOKEN`, bước upload coverage log một lỗi rồi tiếp tục. Job **Deploy Docs** trong CI thất
-bại cho đến khi bạn bật GitHub Pages (**Settings → Pages → Source: GitHub Actions**), hoặc bạn có
-thể bỏ qua nó.
+Không có secret `CODECOV_TOKEN`, bước upload coverage của CI log một lỗi rồi tiếp tục. Thêm secret,
+hoặc xóa bước đó, nếu bạn muốn nó im lặng.
 </Aside>
 
 Tiếp theo: [2. Cấu hình repository](../github-repository/).

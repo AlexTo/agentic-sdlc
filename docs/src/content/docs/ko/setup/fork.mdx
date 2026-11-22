@@ -1,14 +1,13 @@
 ---
 title: 1. 저장소 fork하기
-description: 이 저장소를 fork하고, GitHub가 fork에서 꺼 두는 기능을 켜고, 실행되는지 확인합니다.
+description: 이 저장소를 fork하고, clone하고, 실행되는지 확인합니다.
 sidebar:
   order: 1
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**결과:** Issues와 Actions가 활성화되고, 로컬에 clone되었으며, 검사가 통과하는
-나만의 fork.
+**결과:** 로컬에 clone되었으며 검사가 통과하는 나만의 fork.
 
 <Steps>
 
@@ -26,13 +25,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    gh repo set-default <you>/agentic-sdlc
    ```
 
-3. **Issues를 켭니다.** GitHub는 fork에서 Issues를 꺼 두는데, 전체 workflow가 issue 위에서 동작합니다.
-   fork에서 **Settings → General → Features**를 열고 **Issues**에 체크합니다.
-
-4. **Actions를 켭니다.** fork의 **Actions** 탭을 열고 **I understand my workflows, go
-   ahead and enable them**을 클릭합니다. 이렇게 하기 전까지 GitHub는 fork에서 workflow를 실행하지 않습니다.
-
-5. **설치하고 로컬에서 검사를 실행합니다.** CI가 실행하는 것과 같은 검사입니다.
+3. **설치하고 로컬에서 검사를 실행합니다.** CI가 실행하는 것과 같은 검사입니다.
 
    ```bash
    pnpm install
@@ -41,20 +34,31 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    pnpm nx run-many --target build --all
    ```
 
-   노트 앱을 실행하려면 (Docker 필요): `pnpm dev`를 실행한 뒤 웹사이트가 출력하는 URL을 엽니다.
+   `pnpm install`은 git hook도 설치합니다: 모든 커밋 메시지에 Conventional Commits, 모든 커밋 전에
+   secret 스캔과 Biome, 모든 push 전에 invariant 맵 검사. 노트 앱을 실행하려면 (Docker 필요):
+   `pnpm dev`를 실행한 뒤 웹사이트가 출력하는 URL을 엽니다.
 
 </Steps>
 
 ## 동작 확인
 
-fork에 **Issues** 탭이 보이고, **Actions** 탭에 workflow 목록이 나타납니다. 로컬에서는 세 개의
-`nx run-many` 명령이 통과합니다.
+세 개의 `nx run-many` 명령이 통과하고, Conventional Commit이 아닌 메시지로 한 커밋은
+거부됩니다.
+
+```bash
+git commit --allow-empty -m "not conventional"
+```
+
+```text
+✖   subject may not be empty [subject-empty]
+✖   type may not be empty [type-empty]
+```
+
+GitHub는 fork에서 Issues와 Actions를 꺼 둡니다. 다음 단계의 스크립트가 다시 켭니다.
 
 <Aside type="note">
-fork에서는 두 가지가 다르게 동작하지만, 어느 것도 workflow를 막지 않습니다. `CODECOV_TOKEN`
-secret이 없으면 coverage 업로드 step이 에러를 로그에 남기고 계속 진행합니다. CI의 **Deploy Docs** job은
-GitHub Pages를 켜기 전까지 실패합니다 (**Settings → Pages → Source: GitHub Actions**). 무시해도
-됩니다.
+`CODECOV_TOKEN` secret이 없으면 CI의 coverage 업로드 step이 에러를 로그에 남기고 계속 진행합니다.
+조용히 하고 싶다면 secret을 추가하거나 그 step을 삭제하세요.
 </Aside>
 
 다음: [2. 저장소 설정하기](../github-repository/).

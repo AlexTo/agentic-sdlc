@@ -5,6 +5,9 @@ sidebar:
   order: 1
 ---
 
+`scripts/setup-repository.sh`가 이 label을 모두 만듭니다.
+[2. 저장소 설정하기](../../setup/github-repository/)를 참고하세요.
+
 | Label | 대상 | 설정 주체 | 읽는 주체 | 의미 |
 | --- | --- | --- | --- | --- |
 | `spec-ready` | Spec PR | 사람 | Agent Issues | 이 PR을 merge하면 구현이 시작됩니다. 이미 merge된 PR에 추가해도 마찬가지입니다 |
@@ -17,6 +20,7 @@ sidebar:
 | `review-fix-1` … `review-fix-5` | 에이전트 PR | Agent Review Status | Agent Review Status | "changes requested"에 대한 수정을 그 횟수만큼 사용했습니다 |
 | `review-fix-exhausted` | 에이전트 PR | Agent Review Status | Agent Review Status, 사람 | 리뷰 수정을 모두 사용했습니다. 사람이 넘겨받습니다 |
 | `no-ui-screenshots` | PR | maintainer | UI Screenshots | 스크린샷 규칙을 면제합니다: UI 변경에 볼 것이 없습니다. 추가한 뒤 검사를 다시 실행합니다 |
+| `no-new-invariant` | PR | maintainer | PR Checks (`Invariant coverage`) | invariant 커버리지 규칙을 면제합니다: 새 writer에 걸치는 규칙이 없습니다. 추가한 뒤 검사를 다시 실행합니다 |
 | `priority:high` | Issue | 사람 | Issue-to-PR automation | 같은 폴링에서 다른 issue보다 이 issue를 먼저 시작합니다 |
 
 ## 루프 초기화

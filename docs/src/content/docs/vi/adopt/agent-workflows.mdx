@@ -7,14 +7,15 @@ sidebar:
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Kết quả:** ba workflow mở issue từ spec và gửi agent quay lại khi CI đỏ hoặc có review "changes
-requested", và một workflow thứ tư lưu trữ spec khi mọi task đã được đánh dấu.
+**Kết quả:** các workflow mở issue từ spec, gửi agent quay lại khi CI đỏ hoặc có review "changes
+requested", và lưu trữ spec khi mọi task đã được đánh dấu.
 
 <Steps>
 
-1. **Chép ba workflow** từ `.github/workflows/` của repository này: `agent-issues.yml`,
-   `agent-ci.yml` và `agent-review.yml`. Kích hoạt và permission của chúng được liệt kê trong
-   [Tham khảo: workflow](../../reference/workflows/).
+1. **Chép bốn workflow** từ `.github/workflows/` của repository này: `agent-issues.yml`,
+   `agent-ci.yml`, `agent-review.yml`, và `agent-status.yml`, file chứa các bước mà hai workflow
+   status dùng chung. Đổi scope `@agentic-sdlc/` trong chúng. Kích hoạt và permission của chúng được
+   liệt kê trong [Tham khảo: workflow](../../reference/workflows/).
 
 2. **Kiểm tra các điều kiện `if:` khớp với quyết định của bạn.** Nếu bạn đã đổi tiền tố nhánh hoặc
    label, hãy đổi chúng ở đây nữa:
@@ -48,15 +49,20 @@ requested", và một workflow thứ tư lưu trữ spec khi mọi task đã đ�
    `pull-requests: write` trông có vẻ thừa nhưng không phải: label và comment trên một PR đi qua
    issues API, vốn từ chối token của workflow nếu thiếu quyền này.
 
-   Hai workflow status checkout **nhánh mặc định**. Agent Issues checkout **merge commit**, để nó
+   Hai workflow status checkout **nhánh mặc định**, trong `agent-status.yml`. Agent Issues checkout **merge commit**, để nó
    thấy các dấu tích mà PR đã merge tạo ra. Không bao giờ đổi cái nào sang checkout head của PR: các
    job này giữ một token có quyền ghi.
 
-4. **Giữ các nhóm concurrency.** Mỗi nhóm là theo PR hoặc theo nhánh, với `cancel-in-progress: false`.
+4. **Giữ việc khóa trước khi gắn label.** Agent Issues mở mỗi issue mà không có label
+   `openhands`, khóa cuộc hội thoại của nó để chỉ collaborator mới comment được vào những gì agent
+   đọc, và chỉ khi đó mới thêm label. Nếu khóa thất bại, label không bao giờ được thêm và lần chạy
+   thất bại, nêu tên issue cần khóa bằng tay. Code nằm ở `helpers/conversation-lock.ts`.
+
+5. **Giữ các nhóm concurrency.** Mỗi nhóm là theo PR hoặc theo nhánh, với `cancel-in-progress: false`.
    Như vậy hai sự kiện cho một PR không thể mỗi cái tính một lượt thử, và merge của các PR khác nhau
    không bao giờ hủy lẫn nhau.
 
-5. **Chép `archive-specs.yml`**, nếu bạn muốn các spec đã xong được dọn sang một bên. Khi một push
+6. **Chép `archive-specs.yml`**, nếu bạn muốn các spec đã xong được dọn sang một bên. Khi một push
    lên `main` thay đổi một `specs/*/tasks.md` đang hoạt động, nó mở một PR trên nhánh
    `archive-spec/<folder>` cho mỗi spec mà mọi task đã được đánh dấu, kể cả task **(human)**. PR đó
    chuyển thư mục vào `specs/_archive/` và sửa các liên kết đến và đi từ nó. Agent Issues bỏ qua
@@ -67,8 +73,8 @@ requested", và một workflow thứ tư lưu trữ spec khi mọi task đã đ�
    để giữ spec ở trạng thái đang hoạt động.
 
    <Aside type="caution">
-   Bật **Settings → Actions → General → Allow GitHub Actions to create and approve pull requests**,
-   nếu không workflow không mở được PR. PR mở bằng token của workflow không khởi động PR Checks:
+   Workflow không mở được PR trừ khi Actions được phép tạo pull request, điều mà
+   `scripts/setup-repository.sh` bật lên. PR mở bằng token của workflow không khởi động PR Checks:
    đóng rồi mở lại từng PR để chạy chúng.
    </Aside>
 

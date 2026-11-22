@@ -5,6 +5,9 @@ sidebar:
   order: 1
 ---
 
+`scripts/setup-repository.sh` tạo tất cả các label này. Xem
+[2. Cấu hình repository](../../setup/github-repository/).
+
 | Label | Trên | Đặt bởi | Đọc bởi | Ý nghĩa |
 | --- | --- | --- | --- | --- |
 | `spec-ready` | Spec PR | Một người | Agent Issues | Merge PR này sẽ khởi động việc triển khai. Thêm nó vào một PR đã merge cũng vậy |
@@ -17,6 +20,7 @@ sidebar:
 | `review-fix-1` … `review-fix-5` | Agent PR | Agent Review Status | Agent Review Status | Đã dùng bấy nhiêu lượt fix-up cho "changes requested" |
 | `review-fix-exhausted` | Agent PR | Agent Review Status | Agent Review Status, con người | Đã hết lượt fix-up review. Một người tiếp quản |
 | `no-ui-screenshots` | PR | Một maintainer | UI Screenshots | Miễn trừ quy tắc ảnh chụp màn hình: thay đổi UI không có gì để nhìn. Chạy lại check sau khi thêm |
+| `no-new-invariant` | PR | Một maintainer | PR Checks (`Invariant coverage`) | Miễn trừ quy tắc invariant coverage: không quy tắc nào bao trùm writer mới. Chạy lại check sau khi thêm |
 | `priority:high` | Issue | Một người | Automation issue-to-PR | Bắt đầu issue này trước các issue khác trong cùng lần poll |
 
 ## Reset một vòng lặp

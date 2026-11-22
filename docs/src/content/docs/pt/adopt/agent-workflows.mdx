@@ -7,15 +7,16 @@ sidebar:
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**No final você terá:** três workflows que abrem issues a partir de specs e mandam o agent de volta
-quando o CI fica vermelho ou um review pede mudanças, e um quarto que arquiva uma spec quando todas
-as tasks estão marcadas.
+**No final você terá:** workflows que abrem issues a partir de specs, mandam o agent de volta
+quando o CI fica vermelho ou um review pede mudanças, e arquivam uma spec quando todas as tasks
+estão marcadas.
 
 <Steps>
 
-1. **Copie os três workflows** de `.github/workflows/` deste repositório: `agent-issues.yml`,
-   `agent-ci.yml` e `agent-review.yml`. Os gatilhos e as permissões deles estão listados em
-   [Referência: workflows](../../reference/workflows/).
+1. **Copie os quatro workflows** de `.github/workflows/` deste repositório: `agent-issues.yml`,
+   `agent-ci.yml`, `agent-review.yml` e `agent-status.yml`, que guarda os passos que os dois
+   workflows de status compartilham. Troque o scope `@agentic-sdlc/` neles. Os gatilhos e as
+   permissões deles estão listados em [Referência: workflows](../../reference/workflows/).
 
 2. **Confira se as condições `if:` batem com as suas decisões.** Se você mudou o prefixo de branch
    ou os labels, mude aqui também:
@@ -49,15 +50,20 @@ as tasks estão marcadas.
    escreve. `pull-requests: write` parece sobrar, mas não sobra: labels e comentários em um PR
    passam pela API de issues, que recusa o token do workflow sem isso.
 
-   Os dois workflows de status fazem checkout da **branch padrão**. O Agent Issues faz checkout do
+   Os dois workflows de status fazem checkout da **branch padrão**, no `agent-status.yml`. O Agent Issues faz checkout do
    **merge commit**, para ver as marcações que o PR mergeado fez. Nunca mude nenhum deles para fazer
    checkout do head do PR: esses jobs têm um token que pode escrever.
 
-4. **Mantenha os grupos de concurrency.** Cada um é por PR ou por branch, com
+4. **Mantenha o trancamento antes do label.** O Agent Issues abre cada issue sem o label
+   `openhands`, tranca a conversa dela para que só colaboradores possam comentar no que o agent lê,
+   e só então adiciona o label. Se o trancamento falhar, o label nunca é adicionado e a execução
+   falha, nomeando a issue a trancar à mão. O código é `helpers/conversation-lock.ts`.
+
+5. **Mantenha os grupos de concurrency.** Cada um é por PR ou por branch, com
    `cancel-in-progress: false`. Assim, dois eventos de um mesmo PR não podem contar cada um uma
    tentativa, e merges de PRs diferentes nunca cancelam um ao outro.
 
-5. **Copie `archive-specs.yml`**, se você quiser que as specs concluídas saiam do caminho. Quando um
+6. **Copie `archive-specs.yml`**, se você quiser que as specs concluídas saiam do caminho. Quando um
    push na `main` muda um `specs/*/tasks.md` ativo, ele abre um PR na branch `archive-spec/<folder>`
    para cada spec com todas as tasks marcadas, incluindo as **(human)**. O PR move a pasta para
    `specs/_archive/` e reescreve os links para ela e a partir dela. O Agent Issues pula
@@ -67,8 +73,8 @@ as tasks estão marcadas.
    esse PR sem merge para manter a spec ativa.
 
    <Aside type="caution">
-   Ative **Settings → Actions → General → Allow GitHub Actions to create and approve pull
-   requests**, ou o workflow não consegue abrir os PRs dele. PRs abertos com o token do workflow não
+   O workflow não consegue abrir os PRs dele a menos que as Actions possam criar pull requests, o
+   que o `scripts/setup-repository.sh` ativa. PRs abertos com o token do workflow não
    disparam o PR Checks: feche e reabra cada um para rodá-los.
    </Aside>
 

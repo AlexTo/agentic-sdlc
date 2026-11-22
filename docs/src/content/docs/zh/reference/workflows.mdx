@@ -7,16 +7,17 @@ sidebar:
 
 | Workflow | 文件 | 触发条件 | 权限 | 检出内容 |
 | --- | --- | --- | --- | --- |
-| PR Checks | `pr-checks.yml` | 针对 `main` 的 `pull_request` | `contents: read`，截图评论 job 另需 `pull-requests: write` | 该 PR |
+| PR Checks | `pr-checks.yml` | 针对 `main` 的 `pull_request` | `contents: read`，截图评论 job 另需 `pull-requests: write` | 该 PR，截图评论 job 除外：它检出默认分支 |
 | UI Screenshots | `ui-screenshots.yml` | 针对 `main` 的 `pull_request`，包括 `labeled`/`unlabeled` | `contents: read`、`pull-requests: read` | 默认分支（通过 API 读取 diff） |
 | CI | `ci.yml` | 推送到 `main` 的 `push`、`workflow_dispatch` | `contents: read`、`pages: write`、`id-token: write` | `main` |
 | Agent Issues | `agent-issues.yml` | 针对 `main` 的 `pull_request: [closed, labeled]`、`workflow_dispatch(spec_folder)` | `contents: read`、`issues: write`、`pull-requests: write` | 合并 commit |
 | Archive Specs | `archive-specs.yml` | 推送到 `main` 且改动了 `specs/*/tasks.md` 的 `push`、`workflow_dispatch` | `contents: write`、`issues: read`、`pull-requests: write` | `main` |
-| Agent CI Status | `agent-ci.yml` | PR Checks 的 `workflow_run`，`completed` | `contents: read`、`actions: read`、`statuses: write`、`issues: write`、`pull-requests: write` | 默认分支 |
-| Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`、`statuses: write`、`issues: write`、`pull-requests: write` | 默认分支 |
+| Agent CI Status | `agent-ci.yml` | PR Checks 的 `workflow_run`，`completed` | `contents: read`、`actions: read`、`statuses: write`、`issues: write`、`pull-requests: write` | 默认分支（通过 Agent Status） |
+| Agent Review Status | `agent-review.yml` | `pull_request_review: submitted` | `contents: read`、`statuses: write`、`issues: write`、`pull-requests: write` | 默认分支（通过 Agent Status） |
+| Agent Status | `agent-status.yml` | 由上面两者以 `workflow_call` 调用，并传入要运行的 Nx target | 调用方的权限 | 默认分支 |
 | Cache Cleanup | `cache-cleanup.yml` | `pull_request: closed` | `actions: write` | 无（把 PR 编号传给 `gh`） |
-| Deploy (Discava) | `deploy.yml` | `main` 上 CI 的 `workflow_run`、`workflow_dispatch(stage)` | `contents: read`、`id-token: write` | CI 验证过的 commit |
-| Post-merge Verify (Discava) | `post-merge-verify.yml` | Deploy 的 `workflow_run`，`completed`、`workflow_dispatch(pr_number)` | `contents: read`、`actions: read`、`issues: write`、`pull-requests: write` | 默认分支 |
+| Deploy | `deploy.yml` | `main` 上 CI 的 `workflow_run`（仅当设置了 `AUTO_DEPLOY_STAGE` 时）、`workflow_dispatch(stage)` | `contents: read`、`id-token: write` | CI 验证过的 commit |
+| Post-merge Verify | `post-merge-verify.yml` | Deploy 的 `workflow_run`，`completed`、`workflow_dispatch(pr_number)` | `contents: read`、`actions: read`、`issues: write`、`pull-requests: write` | 默认分支 |
 
 ## 在分支保护中设为必需的 job 名称
 
@@ -24,6 +25,7 @@ sidebar:
 | --- | --- |
 | `Checks (lint)`、`Checks (test)`、`Checks (build)` | PR Checks |
 | `Tasks format` | PR Checks |
+| `Invariant coverage` | PR Checks |
 | `E2E tests` | PR Checks（汇总各分片） |
 | `UI Screenshots` | UI Screenshots |
 
@@ -43,7 +45,7 @@ sidebar:
 
 ## 它们运行的 Nx target
 
-全部位于 `@your-scope/common-scripts`：
+全部位于 `@your-scope/tooling-agent`：
 
 | Target | 入口 | 读取的环境变量 |
 | --- | --- | --- |
@@ -51,11 +53,18 @@ sidebar:
 | `archive-specs` | `src/agent-issues/archive-main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_WORKSPACE`、`BASE_BRANCH`、`DRY_RUN` |
 | `agent-ci-status` | `src/agent-ci/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH`、`DRY_RUN` |
 | `agent-review-status` | `src/agent-review/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH`、`DRY_RUN` |
-| `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH` |
 | `validate-tasks` | `src/agent-issues/validate-main.ts` | `GITHUB_WORKSPACE`、`GITHUB_ACTIONS`（用于 annotations） |
-
-Discava 把同样的 target 放在 `@discava/tooling-agent` 中，并为测试智能体多加了一个：
-
-| Target | 入口 | 读取的环境变量 |
-| --- | --- | --- |
+| `ui-screenshots` | `src/ui-screenshots/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH` |
+| `screenshots-comment` | `src/ui-screenshots/comment-main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_STEP_SUMMARY`、`PR`、`SHA`、`RUN_URL`、`SCREENSHOTS_DIR` |
+| `invariant-coverage` | `src/invariant-coverage/main.ts` | `GH_TOKEN`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_PATH`、`BASE_REF` |
+| `entity-writers` | `src/invariant-coverage/write.ts` | 无。由 pre-push hook 运行，或手动运行 |
 | `post-merge-test` | `src/post-merge-test/main.ts` | `GH_TOKEN`、`GH_REPO`、`GITHUB_REPOSITORY`、`GITHUB_EVENT_NAME`、`GITHUB_EVENT_PATH`、`PR_NUMBER`、`TEST_STAGE`、`DRY_RUN` |
+
+## 仓库变量
+
+| 变量 | 读取者 | 默认值 |
+| --- | --- | --- |
+| `AUTO_DEPLOY_STAGE` | Deploy | 未设置：Deploy 只能手动运行 |
+| `TEST_STAGE` | Post-merge Verify | `AUTO_DEPLOY_STAGE` |
+| `AWS_REGION`、`AWS_DEPLOY_ROLE_ARN`、`AWS_EXECUTION_ROLE_ARN` | Deploy，设在每个 stage 的 GitHub environment 上 | 无。Deploy 会停止并指出缺少什么 |
+| `AWS_DOCKER_LOGIN_ROLE_ARN` | `init-monorepo`，用于从 Amazon ECR Public 拉取 | 未设置：匿名拉取 |
