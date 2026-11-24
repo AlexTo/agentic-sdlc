@@ -26,7 +26,7 @@ sidebar:
 | レビュー担当エージェント | ACP 経由の Claude Code、Opus | `reviewer` エージェントプロファイル |
 | テスト担当エージェント | ACP 経由の Claude Code、Opus | `tester` エージェントプロファイル |
 | Nx + pnpm | Nx 23 | monorepo、CI での `nx affected` |
-| Playwright | | ローカルスタックに対する E2E テスト。CI では 6 シャード。テスト担当エージェントもこれでデプロイされたポータルを操作する |
+| Playwright | | ローカルスタックに対する E2E テスト。CI では 12 シャード。テスト担当エージェントもこれでデプロイされたポータルを操作する |
 | Trivy, git-secrets, commitlint | | セキュリティスキャン、コミット前のシークレットチェック、コミットメッセージの形式 |
 
 ## ギャップとファイル
@@ -54,7 +54,8 @@ glue は `packages/tooling/agent/` (`@discava/tooling-agent`) にあります。
 | --- | --- |
 | プロジェクトのルール。すべての plan でチェックされる | `.specify/memory/constitution.md` (バージョン 1.2.1) |
 | コマンド、アーキテクチャ、規約 | `AGENTS.md` |
-| PR のプロセス、ローカルスタック、テスト | `CONTRIBUTING.md` |
+| PR のプロセス、ローカルスタック、テスト | `DEVELOPMENT.md` |
+| 外部からの issue や pull request は受け付けない。アイデアやバグ報告は Discussions へ | `CONTRIBUTING.md` |
 | すべての実装 issue に付く指示 | `.github/ISSUE_TEMPLATE/implement-phase.md` |
 | テスト issue を手動で開くときの書式 | `.github/ISSUE_TEMPLATE/test-deployed-pr.md` |
 | 各エージェントの役割の常設プロンプト | OpenHands 内、リポジトリの外。[エージェントのプロンプト](../agent-prompts/) を参照 |
@@ -62,12 +63,12 @@ glue は `packages/tooling/agent/` (`@discava/tooling-agent`) にあります。
 
 ## 数字で見る
 
-ワークフローが稼働した 11 月 14 日から 2026 年 11 月 22 日まで。
+ワークフローが稼働した 11 月 14 日から 2026 年 11 月 24 日まで。
 
-- Speckit で書かれた機能 spec は 26 件で、`specs/` の下にあります。
-- automation のスイープは 5,387 回で、5 分ごとに 1 回です。issue-to-PR のポーリングが 2,438 回、
-  レビューのポーリングが 2,176 回、テストのポーリングが 773 回でした。そのうち 377 回で作業が見つかり、エージェントが起動しました。
-- マージされたエージェントの PR は 176 件です。71 件は自動修正が不要で、56 件は 1 ラウンドの修正が必要で、
-  1 件はループを使い切りました。
+- Speckit で書かれた機能 spec は 29 件で、`specs/` の下にあります。
+- automation のスイープは 9,869 回で、最初は 5 分ごと、11 月 22 日からは 2 分ごとです。issue-to-PR のポーリングが 3,932 回、
+  レビューのポーリングが 3,670 回、テストのポーリングが 2,267 回でした。そのうち 603 回で作業が見つかり、エージェントが起動しました。
+- マージされたエージェントの PR は 263 件です。95 件は自動修正が不要で、81 件は 1 ラウンドの修正が必要で、
+  2 件はループを使い切りました。
 
 次へ: [constitution とガイダンス](../constitution-and-guidance/)。

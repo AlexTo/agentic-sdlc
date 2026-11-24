@@ -42,9 +42,9 @@ I numeri delle lacune si riferiscono a [Il collante mancante](../../concepts/the
 | Decisione | Predefinito | Cambialo se |
 | --- | --- | --- |
 | Label che avvia l'implementazione | `openhands` | Usi già quell'label |
-| Prefisso dei branch | `openhands/issue` | Raramente. Il collante cerca esattamente `openhands/issue-<n>`. Se lo cambi, cambia anche `AGENT_BRANCH` e le condizioni dei workflow |
+| Prefisso dei branch | `openhands/issue` | Raramente. Il worker rivede esattamente `openhands/issue-<n>`, e il collante risponde a qualsiasi branch di un solo segmento sotto `openhands/`. Se lo cambi, cambia anche `AGENT_BRANCH` e le condizioni dei workflow |
 | Label di review | `openhands-review` | Come sopra |
-| Intervallo di poll | ogni 5 minuti | Vuoi costi più bassi e puoi aspettare di più (il predefinito del catalogo è 15) |
+| Intervallo di poll | ogni 5 minuti | Vuoi costi più bassi e puoi aspettare di più (il predefinito del catalogo è 15), o tempi di risposta più rapidi (Discava fa polling ogni 2) |
 | Massimo di tentativi di correzione | 5 per loop | Raramente. È `MAX_*_FIX_ATTEMPTS` in due file `plan.ts` |
 | Numerazione delle cartelle delle spec | timestamp | Mai, con più di un autore di spec |
 

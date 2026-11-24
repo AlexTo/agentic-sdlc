@@ -98,7 +98,7 @@ et le prompt que chacune donne à son agent se trouve sur
 | Préfixe de branche | `openhands/issue` → branches `openhands/issue-<n>` |
 | Mode de pull request | Ready for review |
 | Secret du token GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Planning | `*/5 * * * *`, Australia/Sydney |
+| Planning | `*/2 * * * *`, Australia/Sydney |
 | Profil d'agent | `developer` |
 
 Un tour de révision dit à l'agent de remettre ensuite le label `openhands-review`, pour que la
@@ -115,7 +115,7 @@ nouvelle tête soit relue.
 | Nouvelles revues par passage | 2 |
 | Ton de la revue | Concise |
 | Mainteneurs | aucun |
-| Planning | `*/5 * * * *`, Australia/Sydney |
+| Planning | `*/2 * * * *`, Australia/Sydney |
 | Profil d'agent | `reviewer` |
 
 Tant que des checks tournent encore, le Relecteur publie un commentaire « ⏳ Review waiting on
@@ -139,7 +139,7 @@ catalogue, avec son prompt dans un fichier à côté de lui.
 | Nouveaux tests par passage | 2 |
 | Fichier de prompt | `prompt.md` |
 | Secret du token GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Planning | `*/5 * * * *`, Australia/Sydney |
+| Planning | `*/2 * * * *`, Australia/Sydney |
 | Profil d'agent | `tester` |
 
 À chaque passage, le worker :

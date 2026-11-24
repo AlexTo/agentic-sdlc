@@ -139,16 +139,18 @@ DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=workflow_dispatch \
 1. **(human)** のものも含め、すべてのタスクにチェックが付いた稼働中の spec を探します。
 2. open なエージェント issue がある spec と、すでにアーカイブ PR があった spec はスキップします。その PR を
    マージせずに閉じれば、spec は稼働中のままです。
-3. ブランチ `archive-spec/<folder>` で PR を開き、フォルダーを `specs/_archive/` に移動して、
-   そのフォルダーへのリンクとそこからのリンクを書き換えます。
+3. フォルダーを `specs/_archive/` に移動し、そのフォルダーへのリンクとそこからのリンクを書き換える
+   ブランチ `archive-spec/<folder>` を push し、その PR を開きます。
 
 Agent Issues は `specs/_archive/` をスキップするので、アーカイブ PR が issue を開くことはありません。`Tasks format`
 チェックはアーカイブされた `tasks.md` ファイルも読み、未チェックのタスクがあれば失敗します。
 
 <Aside type="caution">
-このワークフローにはリポジトリ設定 "Allow GitHub Actions to create and approve pull
-requests" が必要です。ワークフローのトークンで開かれた PR では PR Checks が始まりません。実行するには、
-それぞれをいったん閉じて開き直してください。
+Discava はリポジトリ設定 "Allow GitHub Actions to create and approve pull requests" をオフにしています。
+オンにするとワークフローが PR を承認することもできてしまうからです。そのため、ワークフローのトークンはブランチを
+push できますが、PR は開けません。実行の警告に、タイトルと本文が入力済みの PR を開くリンクが出るので、メンテナーが
+それを送信します。人が開いた PR では PR Checks が始まりますが、ワークフローのトークンで開いた PR では始まりません。
+誰かが送信するまで、実行のたびにブランチを再び push し、同じ警告を出します。
 </Aside>
 
 次へ: [フィードバックループ](../feedback-loops/)。

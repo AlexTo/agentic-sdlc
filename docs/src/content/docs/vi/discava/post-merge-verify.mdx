@@ -265,6 +265,12 @@ Nên Discava giữ người lạ ở ngoài cuộc hội thoại, theo hai cách
 | **Interaction limit** | **Settings → Moderation options → Interaction limits** của GitHub được đặt là **Limit to repository collaborators**. Không ai khác có thể comment, mở issue hay mở pull request ở bất kỳ đâu trong repository |
 | **Issue của agent được khóa** | Agent Issues và Post-merge Verify mở mỗi issue không có label, khóa nó (và, với một issue test, cả pull request mà nó test và các issue mà pull request đó đóng), và chỉ khi đó mới thêm label. Nếu có thứ gì không khóa được, label không bao giờ được thêm và lần chạy thất bại. Code dùng chung là `src/helpers/conversation-lock.ts` |
 
+Chính sách cũng nói như vậy. `CONTRIBUTING.md` của Discava nêu rằng dự án không nhận issue hay pull
+request từ bên ngoài, và lý do: agent đọc và hành động theo cả hai, nên văn bản trong một issue trở
+thành chỉ dẫn cho một agent. Ý tưởng, câu hỏi và báo lỗi được gửi vào GitHub Discussions, nơi không
+agent nào đọc, và một người duy trì biến những ý đáng làm thành spec. Hướng dẫn cho developer mà
+`CONTRIBUTING.md` từng chứa đã chuyển sang `DEVELOPMENT.md`.
+
 Có thêm hai quy tắc đi kèm:
 
 - **Marker được tin theo tác giả.** Các workflow tìm issue trước đó của chúng bằng một marker ẩn.

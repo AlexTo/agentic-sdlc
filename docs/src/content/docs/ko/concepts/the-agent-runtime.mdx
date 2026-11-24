@@ -51,7 +51,7 @@ github: GitHub {
 
 stage: 개발 stage {shape: cylinder}
 
-machine.canvas -> github: 5분마다 폴링
+machine.canvas -> github: 2분마다 폴링
 machine.dev -> github.prs: "push, 열기"
 machine.rev -> github.prs: 리뷰
 machine.tester -> stage: "클릭, 호출, 읽기"
@@ -126,7 +126,7 @@ pull request가 무엇을 바꿨는지 파악하고, 배포된 스택에서 테�
 
 ## 왜 webhook이 아니라 폴링인가
 
-automation은 폴링하므로(Discava에서는 5분마다, 기본값은 15분마다) Agent Canvas는 공개 URL도 webhook secret도 없는
+automation은 폴링하므로(Discava에서는 2분마다, 기본값은 15분마다) Agent Canvas는 공개 URL도 webhook secret도 없는
 노트북이나 홈 서버에서 실행할 수 있습니다. 대가는 최대 폴링 간격 하나만큼의 지연인데, 에이전트가 일하는 데 걸리는
 시간에 비하면 작습니다.
 

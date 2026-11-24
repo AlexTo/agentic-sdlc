@@ -140,15 +140,19 @@ bỏ qua.
 1. Tìm mỗi spec đang hoạt động mà mọi task đã được đánh dấu, kể cả task **(human)**.
 2. Bỏ qua spec còn agent issue đang mở, và spec đã từng có PR lưu trữ. Đóng PR đó mà không merge sẽ
    giữ spec ở trạng thái đang hoạt động.
-3. Mở một PR trên nhánh `archive-spec/<folder>`, chuyển thư mục vào `specs/_archive/` và sửa các
-   liên kết đến và đi từ nó.
+3. Push nhánh `archive-spec/<folder>`, nhánh này chuyển thư mục vào `specs/_archive/` và sửa các
+   liên kết đến và đi từ nó, rồi mở PR của nhánh đó.
 
 Agent Issues bỏ qua `specs/_archive/`, nên một PR lưu trữ không bao giờ mở issue. Check
 `Tasks format` cũng đọc các `tasks.md` đã lưu trữ, và thất bại nếu có task chưa được đánh dấu.
 
 <Aside type="caution">
-Workflow cần cài đặt repository "Allow GitHub Actions to create and approve pull requests". PR mở
-bằng token của workflow không khởi động PR Checks: đóng rồi mở lại từng PR để chạy chúng.
+Discava để cài đặt repository "Allow GitHub Actions to create and approve pull requests" ở trạng
+thái tắt, vì nó cũng sẽ cho phép một workflow duyệt một PR. Vì vậy token của workflow có thể push
+nhánh nhưng không mở được PR. Lần chạy cảnh báo kèm một liên kết mở PR, với tiêu đề và nội dung đã
+điền sẵn, và một người duy trì gửi nó. Một PR do người mở sẽ khởi động PR Checks, điều mà một PR mở
+bằng token của workflow không làm. Cho đến khi có người gửi, mỗi lần chạy lại push nhánh và lặp lại
+cảnh báo.
 </Aside>
 
 Tiếp theo: [Vòng phản hồi](../feedback-loops/).

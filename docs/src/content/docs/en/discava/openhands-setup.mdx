@@ -95,7 +95,7 @@ one gives its agent is on [The agents' prompts](../agent-prompts/).
 | Branch prefix | `openhands/issue` → branches `openhands/issue-<n>` |
 | Pull request mode | Ready for review |
 | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Schedule | `*/5 * * * *`, Australia/Sydney |
+| Schedule | `*/2 * * * *`, Australia/Sydney |
 | Agent profile | `developer` |
 
 A revise turn tells the agent to re-apply the `openhands-review` label afterwards, so the new head
@@ -112,7 +112,7 @@ is reviewed.
 | New reviews per scan | 2 |
 | Review tone | Concise |
 | Maintainers | none |
-| Schedule | `*/5 * * * *`, Australia/Sydney |
+| Schedule | `*/2 * * * *`, Australia/Sydney |
 | Agent profile | `reviewer` |
 
 While checks are still running, the Reviewer posts a "⏳ Review waiting on checks" comment and
@@ -135,7 +135,7 @@ it.
 | New tests per scan | 2 |
 | Prompt file | `prompt.md` |
 | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Schedule | `*/5 * * * *`, Australia/Sydney |
+| Schedule | `*/2 * * * *`, Australia/Sydney |
 | Agent profile | `tester` |
 
 On each poll, the worker:

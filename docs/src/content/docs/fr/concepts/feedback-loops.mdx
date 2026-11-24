@@ -58,8 +58,10 @@ PR tranquille.
 
 Chaque script refuse d'agir à moins que toutes ces conditions soient réunies :
 
-1. La branche est exactement `openhands/issue-<n>`. Une branche de seconde tentative, comme
-   `openhands/issue-308-2`, n'est jamais révisée par le worker, donc on n'y répond pas non plus.
+1. La branche est celle d'un agent : un seul segment sous `openhands/`, comme `openhands/issue-308` ou
+   `openhands/test-fix-782`. Le worker du Développeur ne révise que `openhands/issue-<n>` exactement.
+   Sur toute autre branche d'agent, le statut et les labels marquent quand même la PR comme renvoyée,
+   pour qu'une personne la voie.
 2. La PR est ouverte.
 3. L'exécution ou la revue porte sur le commit de tête **actuel** de la PR. Une exécution plus
    ancienne est périmée.

@@ -15,7 +15,7 @@ chiamato `software-factory/review` in stato `failure` sul commit di testa della 
 ## Agent CI Status
 
 `.github/workflows/agent-ci.yml` gira su `workflow_run`, quando **PR Checks** termina con `failure`
-o `timed_out` per una pull request su un branch `openhands/issue-`. Fa il checkout del branch di
+o `timed_out` per una pull request su un branch `openhands/`. Fa il checkout del branch di
 default ed esegue `agent-ci-status`. I passi che i due workflow condividono stanno in un unico
 workflow riutilizzabile, `agent-status.yml`. Ogni chiamante mantiene il proprio trigger, la propria
 condizione, il proprio gruppo di concorrenza e i propri permessi.
@@ -25,8 +25,10 @@ anche se PR Checks è girato sul codice della PR con un token in sola lettura.
 
 Lo script (`src/agent-ci/`):
 
-1. Verifica il nome del branch rispetto a `^openhands/issue-\d+$` **prima** di usarlo in qualsiasi
-   richiesta. Viene dall'autore della PR.
+1. Verifica il nome del branch rispetto a `^openhands/[A-Za-z0-9][A-Za-z0-9._-]*$` **prima** di
+   usarlo in qualsiasi richiesta. Viene dall'autore della PR. Fino al 22 novembre accettava solo
+   `openhands/issue-<n>`, quindi una PR di correzione che il Tester apriva su
+   `openhands/test-fix-<n>` non mostrava alcun segno dei suoi check falliti.
 2. Trova la PR aperta, le sue label e il commit di testa attuale, e gli status sul commit
    dell'esecuzione.
 3. Elenca i job falliti, come `E2E tests (3/4)` e `Checks (lint)`.

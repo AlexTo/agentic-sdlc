@@ -13,7 +13,7 @@ head 上一个名为 `software-factory/review`、状态为 `failure` 的 commit 
 
 ## Agent CI Status
 
-`.github/workflows/agent-ci.yml` 在 `workflow_run` 上运行，即当 **PR Checks** 针对 `openhands/issue-`
+`.github/workflows/agent-ci.yml` 在 `workflow_run` 上运行，即当 **PR Checks** 针对 `openhands/`
 分支上的 pull request 以 `failure` 或 `timed_out` 完成时。它检出默认分支，并运行 `agent-ci-status`。
 两个 workflow 共用的步骤放在一个可复用的 workflow `agent-status.yml` 中。每个调用方保留自己的触发器、
 条件、并发组和权限。
@@ -23,7 +23,9 @@ token 在 PR 的代码上运行的。
 
 脚本（`src/agent-ci/`）：
 
-1. 在任何请求中使用分支名**之前**，先用 `^openhands/issue-\d+$` 检查它。分支名来自 PR 作者。
+1. 在任何请求中使用分支名**之前**，先用 `^openhands/[A-Za-z0-9][A-Za-z0-9._-]*$` 检查它。分支名来自 PR
+   作者。在 11 月 22 日之前，它只匹配 `openhands/issue-<n>`，所以测试智能体在 `openhands/test-fix-<n>` 上
+   打开的修复 PR 不会显示任何检查失败的迹象。
 2. 找到打开的 PR、它的标签和当前 head，以及这次运行所针对 commit 上的状态。
 3. 列出失败的 job，例如 `E2E tests (3/4)` 和 `Checks (lint)`。
 4. 调用 `planCi()`，它返回 `ignore`、`send-back` 或 `give-up`。

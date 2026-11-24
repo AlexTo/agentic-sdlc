@@ -35,7 +35,7 @@ CLI `gh`. Cada passo deixa sempre o mesmo estado, então é seguro rodá-lo de n
    | Issues e Actions ligados | O GitHub desliga os dois em um fork, e o workflow roda em issues |
    | 20 labels | Todos os labels em [Referência: labels](../../reference/labels/) |
    | Branch protection na `main` | Um pull request, uma aprovação, aprovações antigas descartadas e sete checks obrigatórios: `Checks (lint)`, `Checks (test)`, `Checks (build)`, `Tasks format`, `Invariant coverage`, `E2E tests`, `UI Screenshots` |
-   | As Actions podem abrir pull requests | O Archive Specs abre o pull request que move uma spec concluída para `specs/_archive/` |
+   | Tokens de workflow só de leitura, e as Actions não podem abrir nem aprovar pull requests | Um workflow que pudesse abrir um pull request também poderia aprovar um. O Archive Specs faz push da branch que move uma spec concluída para `specs/_archive/` e avisa com um link que abre o pull request dela, preenchido, para você enviar |
    | Interações limitadas aos colaboradores, por seis meses | Um fork de um repositório público é público, e os agents leem todo comentário naquilo em que trabalham enquanto têm em mãos um token que pode fazer push |
    | GitHub Pages a partir das Actions | O job **Deploy Docs** do CI publica este site |
    | A conta dos agents convidada com acesso de escrita | Para que os agents possam fazer push de branches e abrir pull requests |

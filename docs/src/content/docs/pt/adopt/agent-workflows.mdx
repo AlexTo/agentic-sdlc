@@ -35,13 +35,13 @@ estão marcadas.
    # agent-ci.yml
    if: >-
      github.event.workflow_run.event == 'pull_request' &&
-     startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
+     startsWith(github.event.workflow_run.head_branch, 'openhands/') &&
      (github.event.workflow_run.conclusion == 'failure' ||
      github.event.workflow_run.conclusion == 'timed_out')
 
    # agent-review.yml
    if: >-
-     startsWith(github.event.pull_request.head.ref, 'openhands/issue-') &&
+     startsWith(github.event.pull_request.head.ref, 'openhands/') &&
      github.event.pull_request.head.repo.full_name == github.repository &&
      contains(github.event.review.body, 'CHANGES REQUESTED')
    ```
@@ -64,8 +64,8 @@ estão marcadas.
    tentativa, e merges de PRs diferentes nunca cancelam um ao outro.
 
 6. **Copie `archive-specs.yml`**, se você quiser que as specs concluídas saiam do caminho. Quando um
-   push na `main` muda um `specs/*/tasks.md` ativo, ele abre um PR na branch `archive-spec/<folder>`
-   para cada spec com todas as tasks marcadas, incluindo as **(human)**. O PR move a pasta para
+   push na `main` muda um `specs/*/tasks.md` ativo, ele prepara um PR na branch
+   `archive-spec/<folder>` para cada spec com todas as tasks marcadas, incluindo as **(human)**. O PR move a pasta para
    `specs/_archive/` e reescreve os links para ela e a partir dela. O Agent Issues pula
    `specs/_archive/`, e o `Tasks format` falha se um `tasks.md` arquivado tiver uma task não marcada.
 
@@ -73,9 +73,11 @@ estão marcadas.
    esse PR sem merge para manter a spec ativa.
 
    <Aside type="caution">
-   O workflow não consegue abrir os PRs dele a menos que as Actions possam criar pull requests, o
-   que o `scripts/setup-repository.sh` ativa. PRs abertos com o token do workflow não
-   disparam o PR Checks: feche e reabra cada um para rodá-los.
+   Deixe desligada a configuração do repositório "Allow GitHub Actions to create and approve pull
+   requests", como faz o `scripts/setup-repository.sh`: ela também deixaria um workflow aprovar um
+   PR. O workflow então faz push da branch, e a execução dele avisa com um link que abre o PR, com
+   título e descrição preenchidos, para você enviar. Um PR aberto por você dispara o PR Checks
+   sozinho. Até alguém abri-lo, cada execução faz push da branch de novo e repete o aviso.
    </Aside>
 
 </Steps>

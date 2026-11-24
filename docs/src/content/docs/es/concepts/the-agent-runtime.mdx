@@ -53,7 +53,7 @@ github: GitHub {
 
 stage: stage de desarrollo {shape: cylinder}
 
-machine.canvas -> github: sondea cada 5 minutos
+machine.canvas -> github: sondea cada 2 minutos
 machine.dev -> github.prs: "push, abrir"
 machine.rev -> github.prs: revisar
 machine.tester -> stage: "clic, llamar, leer"
@@ -137,7 +137,7 @@ Nada abre estas issues por defecto. Un workflow que abre una por cada pull reque
 
 ## Por qué sondeo y no webhooks
 
-Las automatizaciones sondean (cada 5 minutos en Discava, cada 15 por defecto), así que Agent Canvas
+Las automatizaciones sondean (cada 2 minutos en Discava, cada 15 por defecto), así que Agent Canvas
 puede ejecutarse en un portátil o en un servidor doméstico sin URL pública ni secreto de webhook. El
 coste es, como mucho, un intervalo de sondeo de latencia, que es poco comparado con el tiempo que
 tarda el agente en trabajar.

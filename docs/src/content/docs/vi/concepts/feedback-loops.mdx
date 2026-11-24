@@ -57,8 +57,10 @@ yên PR.
 
 Mỗi script từ chối hành động trừ khi tất cả các điều sau đều đúng:
 
-1. Nhánh chính xác là `openhands/issue-<n>`. Một nhánh thử lần hai, như
-   `openhands/issue-308-2`, không bao giờ được worker sửa, nên cũng không được phản hồi.
+1. Nhánh là của một agent: một cấp dưới `openhands/`, như `openhands/issue-308` hoặc
+   `openhands/test-fix-782`. Worker của Developer chỉ sửa lại đúng `openhands/issue-<n>`.
+   Trên mọi nhánh agent khác, status và label vẫn đánh dấu PR là đã bị gửi quay lại, để một người
+   nhìn thấy nó.
 2. PR đang mở.
 3. Lần chạy hoặc review là cho commit head **hiện tại** của PR. Một lần chạy cũ hơn là lỗi thời.
 4. Commit đó chưa được gửi quay lại. Chạy lại cùng các check không được dùng thêm một lượt thử.

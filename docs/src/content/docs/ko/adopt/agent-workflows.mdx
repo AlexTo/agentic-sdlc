@@ -34,13 +34,13 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    # agent-ci.yml
    if: >-
      github.event.workflow_run.event == 'pull_request' &&
-     startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
+     startsWith(github.event.workflow_run.head_branch, 'openhands/') &&
      (github.event.workflow_run.conclusion == 'failure' ||
      github.event.workflow_run.conclusion == 'timed_out')
 
    # agent-review.yml
    if: >-
-     startsWith(github.event.pull_request.head.ref, 'openhands/issue-') &&
+     startsWith(github.event.pull_request.head.ref, 'openhands/') &&
      github.event.pull_request.head.repo.full_name == github.repository &&
      contains(github.event.review.body, 'CHANGES REQUESTED')
    ```
@@ -64,7 +64,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 6. 완료된 spec을 치워 두고 싶다면 **`archive-specs.yml`을 복사**합니다. `main`으로의 push가 살아 있는
    `specs/*/tasks.md`를 바꾸면, **(human)** task를 포함해 모든 task가 체크된 각 spec에 대해
-   `archive-spec/<folder>` 브랜치로 PR을 엽니다. 이 PR은 폴더를 `specs/_archive/`로 옮기고
+   `archive-spec/<folder>` 브랜치로 PR을 준비합니다. 이 PR은 폴더를 `specs/_archive/`로 옮기고
    그 폴더로 가는 링크와 그 폴더에서 나가는 링크를 고쳐 씁니다. Agent Issues는 `specs/_archive/`를 건너뛰며,
    archive된 `tasks.md`에 체크되지 않은 task가 있으면 `Tasks format`이 실패합니다.
 
@@ -72,9 +72,11 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    상태로 두려면 그 PR을 merge하지 않고 닫으세요.
 
    <Aside type="caution">
-   Actions가 pull request를 만들 수 있어야 workflow가 PR을 열 수 있으며, 이 설정은
-   `scripts/setup-repository.sh`가 켭니다. workflow의 토큰으로 연 PR은
-   PR Checks를 시작하지 않습니다. 각 PR을 닫았다가 다시 열어 실행하세요.
+   저장소 설정 "Allow GitHub Actions to create and approve pull requests"는
+   `scripts/setup-repository.sh`처럼 꺼 두세요. 이 설정은 workflow가 PR을 승인하는 것도 허용합니다.
+   그러면 workflow는 브랜치를 push하고, 실행이 경고와 함께 링크를 남깁니다. 이 링크는 제목과 본문이
+   채워진 PR을 열어 주며, 여러분이 제출하면 됩니다. 여러분이 연 PR은 PR Checks를 스스로 시작합니다.
+   누군가 제출할 때까지 매 실행이 브랜치를 다시 push하고 같은 경고를 반복합니다.
    </Aside>
 
 </Steps>

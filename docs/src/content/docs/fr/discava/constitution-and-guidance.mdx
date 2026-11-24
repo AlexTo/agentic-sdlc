@@ -81,14 +81,23 @@ Le `AGENTS.md` à la racine de Discava fait environ 110 lignes. Il couvre :
   et jamais `lib/` dans les packages backend, et une fonction `*Writes` renvoie des éléments de
   transaction alors qu'une fonction nommée par un verbe effectue ses propres I/O.
 
-Les détails d'un package vivent dans un `AGENTS.md` imbriqué dans le dossier de ce package : neuf au
-total, de 5 à 28 lignes chacun, pour les API, le package de base de données, les événements,
-l'infrastructure, etc. Un agent n'en charge un que lorsqu'il travaille dans ce dossier. Quand le
+Les détails d'un package vivent dans un `AGENTS.md` imbriqué dans le dossier de ce package : onze au
+total, de 7 à 69 lignes chacun, pour les API, le package de base de données, les événements,
+l'infrastructure, les portails, etc. Un agent n'en charge un que lorsqu'il travaille dans ce dossier. Quand le
 fichier racine en était arrivé à un paragraphe par package, Discava a déplacé les détails vers le bas,
 pour que chaque exécution ne lise plus des informations sur des packages qu'elle ne touchait pas. Le
 fichier du package de base de données, par exemple, dit par quel utilitaire passe chaque écriture
 partagée, et que changer qui écrit dans la table implique de régénérer la carte que lit le check
 `Invariant coverage`.
+
+Le plus long est celui des portails, `packages/websites/AGENTS.md` : les règles d'UI de chaque écran.
+Il nomme les deux largeurs à vérifier (375px et 1440px), les états (chargement, vide, erreur, contenu
+long), et des règles de mise en page, de liens, de focus et d'erreurs, comme « a button whose action is
+running is a `PendingButton`, never `disabled={isPending}`: disabling the focused button sends focus to
+`<body>` ». Discava a mené une spec d'audit et de correction pour chaque portail. Le plan de chacune
+rédige les règles qu'enseignent ses corrections sous la forme de `contracts/ui-rules.md`, et sa dernière
+user story les écrit dans ce fichier et supprime tout ce qui est dit deux fois. Le prochain agent qui
+construit un écran part de ces règles au lieu de répéter les constats de l'audit.
 
 <Aside type="tip">
 Le `AGENTS.md` de Discava a grandi ligne par ligne, chaque fois qu'une revue repérait deux fois la

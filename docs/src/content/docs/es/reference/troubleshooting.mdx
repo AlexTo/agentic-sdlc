@@ -21,7 +21,7 @@ sidebar:
 | Síntoma | Qué está pasando | Qué hacer |
 | --- | --- | --- |
 | Una issue con la label nunca se toma | Agent Canvas está caído, la automatización está desactivada o el token no puede leer el repositorio | Comprueba que `agent-canvas` está en ejecución y la automatización activada. Revisa el log de la última ejecución de la automatización |
-| El PR está en rojo, se añadió `ci-fix-1`, el agente nunca lo revisa | El worker solo revisa exactamente `openhands/issue-<n>`, o la issue se cerró | Comprueba el nombre de la rama. Vuelve a abrir la issue |
+| El PR está en rojo, se añadió `ci-fix-1`, el agente nunca lo revisa | El worker solo revisa exactamente `openhands/issue-<n>` (los workflows de corrección también ponen labels en otras ramas `openhands/`), o la issue se cerró | Comprueba el nombre de la rama. Vuelve a abrir la issue, o hazte cargo del PR |
 | Sin label `ci-fix-*` tras una ejecución en rojo | Agent CI Status no se ejecutó, o la ignoró (consulta su aviso) | Abre la ejecución de Agent CI Status y lee el aviso, p. ej. `the pull request has a newer commit than this run` |
 | El agente revisa y después nada hace review del nuevo head | El agente no volvió a poner `openhands-review` | Vuelve a ponerla a mano |
 | Push rechazado: `refusing to allow a Personal Access Token to create or update workflow` | Al token le falta el scope `workflow`, y la rama toca `.github/workflows/` (a menudo por un merge de `main`) | Añade el scope. La siguiente consulta lo reintenta |

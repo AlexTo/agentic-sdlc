@@ -42,9 +42,9 @@ workflow를 얻는 가장 빠른 방법은 [이 저장소를 fork하는 것](../
 | 결정 | 기본값 | 바꿔야 하는 경우 |
 | --- | --- | --- |
 | 구현용 trigger label | `openhands` | 이미 그 label을 쓰고 있을 때 |
-| Branch prefix | `openhands/issue` | 거의 없습니다. glue는 정확히 `openhands/issue-<n>`과 일치하는지 봅니다. 바꾼다면 `AGENT_BRANCH`와 workflow 조건도 바꾸세요 |
+| Branch prefix | `openhands/issue` | 거의 없습니다. worker는 정확히 `openhands/issue-<n>`만 수정하고, glue는 `openhands/` 바로 아래 한 단계의 모든 브랜치에 응답합니다. 바꾼다면 `AGENT_BRANCH`와 workflow 조건도 바꾸세요 |
 | 리뷰 label | `openhands-review` | 위와 같습니다 |
-| Polling 간격 | 5분마다 | 비용을 줄이고 더 오래 기다릴 수 있을 때 (catalog 기본값은 15) |
+| Polling 간격 | 5분마다 | 비용을 줄이고 더 오래 기다릴 수 있을 때 (catalog 기본값은 15), 또는 더 빠른 처리를 원할 때 (Discava는 2분마다 폴링) |
 | 최대 수정 시도 | 루프당 5회 | 거의 없습니다. 두 `plan.ts` 파일의 `MAX_*_FIX_ATTEMPTS`입니다 |
 | Spec 폴더 번호 매기기 | timestamp | spec 작성자가 둘 이상이라면 절대 바꾸지 마세요 |
 

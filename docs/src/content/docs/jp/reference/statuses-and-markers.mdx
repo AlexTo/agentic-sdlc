@@ -50,8 +50,9 @@ Agent Review Status は、単独の行にある `^🔄 CHANGES REQUESTED\s*$` �
 
 | パターン | 誰が | 重要な理由 |
 | --- | --- | --- |
-| `openhands/issue-<n>` | Issue-to-PR automation | ワーカーが修正する唯一のブランチで、修正の workflow が応答する唯一のブランチ |
+| `openhands/issue-<n>` | Issue-to-PR automation | ワーカーが修正する唯一のブランチ |
 | `openhands/issue-<n>-2`、… | Issue-to-PR automation（ラベルを付け直した issue で） | 自動では修正されない |
 | `openhands/test-fix-<n>` | Issue tester automation（テスト issue `<n>` に対して） | テスト担当がテスト中に見つけた修正。自動では修正されない |
+| `openhands/` の直下 1 階層 | エージェントのブランチ | 修正の workflow が、失敗した実行やレビューにステータスとラベルで応答する |
 | `openhands/` で始まるすべて | エージェントのブランチ | マージするとチェーンが進む |
 | `spec/<name>`（ほかの任意の名前） | 人 | `spec-ready` がある場合にのみチェーンが進む |

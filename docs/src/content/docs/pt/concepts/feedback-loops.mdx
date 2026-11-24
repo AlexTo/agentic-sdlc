@@ -57,8 +57,10 @@ em paz.
 
 Cada script se recusa a agir a menos que tudo isto seja verdade:
 
-1. A branch é exatamente `openhands/issue-<n>`. Uma branch de segunda tentativa, como
-   `openhands/issue-308-2`, nunca é revisada pelo worker, então também não é respondida.
+1. A branch é de um agent: um segmento abaixo de `openhands/`, como `openhands/issue-308` ou
+   `openhands/test-fix-782`. O worker do Developer só revisa exatamente `openhands/issue-<n>`.
+   Em qualquer outra branch de agent, o status e os labels ainda marcam o PR como devolvido, para
+   que uma pessoa veja.
 2. O PR está aberto.
 3. A execução ou o review é do commit head **atual** do PR. Uma execução mais antiga está obsoleta.
 4. Esse commit ainda não foi mandado de volta. Rodar de novo os mesmos checks não pode gastar outra

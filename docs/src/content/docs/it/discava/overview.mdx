@@ -26,7 +26,7 @@ Questa sezione descrive cosa usa Discava, a novembre 2026, con i file dietro ogn
 | Agente Reviewer | Claude Code tramite ACP, Opus | Agent profile `reviewer` |
 | Agente Tester | Claude Code tramite ACP, Opus | Agent profile `tester` |
 | Nx + pnpm | Nx 23 | Monorepo, `nx affected` nella CI |
-| Playwright | | Test E2E sullo stack locale, sei shard nella CI. Anche l'agente Tester lo usa per pilotare i portali deployati |
+| Playwright | | Test E2E sullo stack locale, dodici shard nella CI. Anche l'agente Tester lo usa per pilotare i portali deployati |
 | Trivy, git-secrets, commitlint | | Scansione di sicurezza, controllo dei secret in pre-commit, formato dei messaggi di commit |
 
 ## Dalla lacuna al file
@@ -54,7 +54,8 @@ E il testo che ogni agente legge:
 | --- | --- |
 | Regole del progetto, verificate da ogni piano | `.specify/memory/constitution.md` (versione 1.2.1) |
 | Comandi, architettura, convenzioni | `AGENTS.md` |
-| Processo delle PR, stack locale, test | `CONTRIBUTING.md` |
+| Processo delle PR, stack locale, test | `DEVELOPMENT.md` |
+| Nessuna issue o pull request dall'esterno; idee e segnalazioni di bug vanno nelle Discussions | `CONTRIBUTING.md` |
 | Istruzioni su ogni issue di implementazione | `.github/ISSUE_TEMPLATE/implement-phase.md` |
 | La forma a mano di una issue di test | `.github/ISSUE_TEMPLATE/test-deployed-pr.md` |
 | Il prompt permanente di ogni ruolo degli agenti | In OpenHands, fuori dal repository. Vedi [I prompt degli agenti](../agent-prompts/) |
@@ -62,12 +63,13 @@ E il testo che ogni agente legge:
 
 ## I numeri
 
-Dal 14 novembre, quando il workflow è entrato in funzione, al 22 novembre 2026:
+Dal 14 novembre, quando il workflow è entrato in funzione, al 24 novembre 2026:
 
-- 26 spec di funzionalità scritte con Speckit, in `specs/`.
-- 5.387 passaggi delle automazioni, uno ogni cinque minuti: 2.438 polling issue-to-PR, 2.176
-  polling di review e 773 polling di test. 377 di questi hanno trovato lavoro e avviato un agente.
-- 176 PR degli agenti mergiate. 71 non hanno avuto bisogno di correzioni automatiche, 56 di un giro,
-  una ha esaurito un loop.
+- 29 spec di funzionalità scritte con Speckit, in `specs/`.
+- 9.869 passaggi delle automazioni, ogni cinque minuti all'inizio e ogni due dal 22 novembre: 3.932
+  polling issue-to-PR, 3.670 polling di review e 2.267 polling di test. 603 di questi hanno trovato
+  lavoro e avviato un agente.
+- 263 PR degli agenti mergiate. 95 non hanno avuto bisogno di correzioni automatiche, 81 di un giro,
+  due hanno esaurito un loop.
 
 Avanti: [Constitution e istruzioni](../constitution-and-guidance/).

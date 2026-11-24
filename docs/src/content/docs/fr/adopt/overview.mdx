@@ -43,9 +43,9 @@ Les numéros de manque renvoient à [La glue manquante](../../concepts/the-missi
 | Décision | Par défaut | À changer si |
 | --- | --- | --- |
 | Label déclencheur de l'implémentation | `openhands` | Vous utilisez déjà ce label |
-| Préfixe de branche | `openhands/issue` | Rarement. La glue attend exactement `openhands/issue-<n>`. Si vous le changez, changez aussi `AGENT_BRANCH` et les conditions des workflows |
+| Préfixe de branche | `openhands/issue` | Rarement. Le worker révise exactement `openhands/issue-<n>`, et la glue répond à toute branche d'un seul segment sous `openhands/`. Si vous le changez, changez aussi `AGENT_BRANCH` et les conditions des workflows |
 | Label de review | `openhands-review` | Comme ci-dessus |
-| Intervalle d'interrogation | toutes les 5 minutes | Vous voulez réduire le coût et pouvez attendre plus longtemps (la valeur par défaut du catalogue est 15) |
+| Intervalle d'interrogation | toutes les 5 minutes | Vous voulez réduire le coût et pouvez attendre plus longtemps (la valeur par défaut du catalogue est 15), ou un délai de réponse plus court (Discava interroge toutes les 2) |
 | Nombre max de tentatives de correction | 5 par boucle | Rarement. C'est `MAX_*_FIX_ATTEMPTS` dans deux fichiers `plan.ts` |
 | Numérotation des dossiers de spec | horodatage | Jamais, avec plus d'un auteur de specs |
 

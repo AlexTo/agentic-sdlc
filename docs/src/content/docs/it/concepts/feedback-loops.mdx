@@ -58,8 +58,10 @@ lascia stare la PR.
 
 Ogni script si rifiuta di agire a meno che valgano tutte queste condizioni:
 
-1. Il branch è esattamente `openhands/issue-<n>`. Un branch di secondo tentativo, come
-   `openhands/issue-308-2`, non viene mai rivisto dal worker, quindi non riceve nemmeno risposta.
+1. Il branch è di un agente: un solo segmento sotto `openhands/`, come `openhands/issue-308` o
+   `openhands/test-fix-782`. Il worker del Developer rivede solo esattamente `openhands/issue-<n>`.
+   Su qualsiasi altro branch di un agente, lo status e le label segnano comunque la PR come
+   rimandata indietro, così una persona se ne accorge.
 2. La PR è aperta.
 3. L'esecuzione o la review riguarda il commit di testa **attuale** della PR. Un'esecuzione più
    vecchia è superata.

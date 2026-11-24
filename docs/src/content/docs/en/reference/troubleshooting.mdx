@@ -21,7 +21,7 @@ sidebar:
 | Symptom | What's happening | What to do |
 | --- | --- | --- |
 | Labelled issue never picked up | Agent Canvas is down, the automation is disabled, or the token can't read the repository | Check that `agent-canvas` is running and the automation is enabled. Check the automation's last run log |
-| PR is red, `ci-fix-1` added, agent never revises | The worker only revises `openhands/issue-<n>` exactly, or the issue was closed | Check the branch name. Reopen the issue |
+| PR is red, `ci-fix-1` added, agent never revises | The worker only revises `openhands/issue-<n>` exactly (the fix-up workflows also label other `openhands/` branches), or the issue was closed | Check the branch name. Reopen the issue, or take the PR over |
 | No `ci-fix-*` label after a red run | Agent CI Status didn't run, or ignored it (see its notice) | Open the Agent CI Status run and read the notice, e.g. `the pull request has a newer commit than this run` |
 | Agent revises, then nothing reviews the new head | The agent didn't re-apply `openhands-review` | Re-apply it by hand |
 | Push rejected: `refusing to allow a Personal Access Token to create or update workflow` | The token lacks the `workflow` scope, and the branch touches `.github/workflows/` (often through a merge of `main`) | Add the scope. The next poll retries |

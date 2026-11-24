@@ -274,6 +274,13 @@ Quindi Discava tiene gli estranei fuori dalla conversazione, in due modi:
 | **Limite di interazione** | **Settings → Moderation options → Interaction limits** di GitHub è impostato su **Limit to repository collaborators**. Nessun altro può commentare, aprire una issue o aprire una pull request in tutto il repository |
 | **Issue degli agenti con il lock** | Agent Issues e Post-merge Verify aprono ogni issue senza la sua label, le mettono il lock (e, per una issue di test, anche alla pull request che testa e alle issue che quella chiude), e solo allora aggiungono la label. Se a qualcosa non si riesce a mettere il lock, la label non viene mai aggiunta e l'esecuzione fallisce. Il codice condiviso è `src/helpers/conversation-lock.ts` |
 
+Lo dice anche la policy. Il `CONTRIBUTING.md` di Discava afferma che non accetta issue o pull
+request dall'esterno, e spiega perché: gli agenti leggono entrambe e agiscono di conseguenza, quindi
+il testo di una issue diventa istruzioni per un agente. Idee, domande e segnalazioni di bug vanno
+nelle GitHub Discussions, che nessun agente legge, e un maintainer trasforma in spec quelle che vale
+la pena fare. La guida per sviluppatori che prima stava in `CONTRIBUTING.md` è passata a
+`DEVELOPMENT.md`.
+
 Con questo arrivano altre due regole:
 
 - **Dei marcatori ci si fida in base all'autore.** I workflow trovano le loro issue precedenti

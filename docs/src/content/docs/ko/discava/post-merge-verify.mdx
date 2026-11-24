@@ -257,6 +257,11 @@ Discava는 공개 저장소이므로, 누구나 그 issue와 pull request에 댓
 | **Interaction limit** | GitHub의 **Settings → Moderation options → Interaction limits**를 **Limit to repository collaborators**로 설정합니다. 그 밖의 누구도 저장소 어디에서든 댓글을 달거나, issue를 열거나, pull request를 열 수 없습니다 |
 | **잠긴 에이전트 issue** | Agent Issues와 Post-merge Verify는 각 issue를 label 없이 열고, 잠근 다음(테스트 issue라면 그것이 테스트하는 pull request와 그 pull request가 닫는 issue도 함께), 그제야 label을 붙입니다. 하나라도 잠글 수 없으면 label은 끝내 붙지 않고 실행이 실패합니다. 공유 코드는 `src/helpers/conversation-lock.ts`입니다 |
 
+정책도 그렇게 말합니다. Discava의 `CONTRIBUTING.md`는 외부 issue나 pull request를 받지 않는다는 것과 그 이유를
+밝힙니다. 에이전트가 둘 다 읽고 그에 따라 행동하므로, issue에 쓴 글이 에이전트에게 주는 지시가 되기 때문입니다.
+아이디어, 질문, 버그 보고는 어떤 에이전트도 읽지 않는 GitHub Discussions로 가고, 메인테이너가 할 만한 것을
+spec으로 만듭니다. 예전에 `CONTRIBUTING.md`에 있던 개발자 가이드는 `DEVELOPMENT.md`로 옮겨졌습니다.
+
 함께 따라오는 규칙이 두 가지 더 있습니다.
 
 - **마커는 작성자를 보고 신뢰합니다.** workflow는 숨겨진 마커로 자신이 이전에 연 issue를 찾습니다. 마커는

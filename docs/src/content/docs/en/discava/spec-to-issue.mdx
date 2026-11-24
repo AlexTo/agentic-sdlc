@@ -141,16 +141,19 @@ trigger because the last tick is usually a **(human)** task, in a PR that Agent 
 1. Finds each live spec with every task ticked, **(human)** ones included.
 2. Skips a spec with an open agent issue, and one that already had an archive PR. Closing that PR
    unmerged keeps the spec live.
-3. Opens a PR on branch `archive-spec/<folder>` that moves the folder to `specs/_archive/` and
-   rewrites the links to and from it.
+3. Pushes branch `archive-spec/<folder>`, which moves the folder to `specs/_archive/` and
+   rewrites the links to and from it, and opens its PR.
 
 Agent Issues skips `specs/_archive/`, so an archive PR never opens an issue. The `Tasks format`
 check reads archived `tasks.md` files too, and fails if one has an unticked task.
 
 <Aside type="caution">
-The workflow needs the repository setting "Allow GitHub Actions to create and approve pull
-requests". PRs opened with the workflow's token don't start PR Checks: close and reopen each one
-to run them.
+Discava keeps the repository setting "Allow GitHub Actions to create and approve pull requests"
+off, because it would also let a workflow approve a PR. So the workflow's token can push the
+branch but not open the PR. The run warns with a link that opens it, title and body filled in,
+and a maintainer submits it. A PR a person opens starts PR Checks, which one opened with the
+workflow's token wouldn't. Until someone submits it, each run pushes the branch again and repeats
+the warning.
 </Aside>
 
 Next: [Feedback loops](../feedback-loops/).

@@ -266,6 +266,12 @@ Por isso o Discava mantém os estranhos fora da conversa, de duas formas:
 | **Limite de interação** | O **Settings → Moderation options → Interaction limits** do GitHub está configurado como **Limit to repository collaborators**. Mais ninguém pode comentar, abrir uma issue ou abrir um pull request em qualquer lugar do repositório |
 | **Issues de agent trancadas** | O Agent Issues e o Post-merge Verify abrem cada issue sem o label, trancam a issue (e, no caso de uma issue de teste, o pull request que ela testa e as issues que ele fecha) e só então adicionam o label. Se algo não puder ser trancado, o label nunca é adicionado e a execução falha. O código compartilhado é `src/helpers/conversation-lock.ts` |
 
+A política também diz isso. O `CONTRIBUTING.md` do Discava declara que ele não aceita issues nem pull
+requests de fora, e por quê: os agents leem e agem sobre os dois, então o texto de uma issue vira
+instruções para um agent. Ideias, perguntas e relatos de bugs vão para o GitHub Discussions, que
+nenhum agent lê, e um mantenedor transforma as que valem a pena em specs. O guia de desenvolvimento
+que ficava no `CONTRIBUTING.md` foi para o `DEVELOPMENT.md`.
+
 Mais duas regras vêm junto:
 
 - **A confiança nos marcadores depende do autor.** Os workflows encontram suas issues anteriores por um marcador oculto.

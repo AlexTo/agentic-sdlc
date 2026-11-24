@@ -80,13 +80,22 @@ L'`AGENTS.md` alla radice di Discava è di circa 110 righe. Copre:
   `lib/` nei package di backend, e una funzione `*Writes` restituisce elementi di transazione mentre
   una con il nome di un verbo esegue il proprio I/O.
 
-I dettagli di un package stanno in un `AGENTS.md` annidato nella cartella di quel package: nove in
-tutto, da 5 a 28 righe ciascuno, per le API, il package del database, gli eventi, l'infrastruttura e
-così via. Un agente ne carica uno solo quando lavora in quella cartella. Quando il file alla radice
+I dettagli di un package stanno in un `AGENTS.md` annidato nella cartella di quel package: undici in
+tutto, da 7 a 69 righe ciascuno, per le API, il package del database, gli eventi, l'infrastruttura, i
+portali e così via. Un agente ne carica uno solo quando lavora in quella cartella. Quando il file alla radice
 era arrivato a un paragrafo per package, Discava ha spostato i dettagli più in basso, così ogni
 esecuzione non leggeva più di package che non stava toccando. Il file del package del database, per
 esempio, dice da quale helper passa ogni scrittura condivisa, e che cambiare chi scrive nella tabella
 significa rigenerare la mappa che legge il check `Invariant coverage`.
+
+Il più lungo è il file dei portali, `packages/websites/AGENTS.md`: le regole di UI per ogni
+schermata. Indica le due larghezze da verificare (375px e 1440px), gli stati (caricamento, vuoto,
+errore, contenuto lungo), e regole per layout, link, focus ed errori, come "a button whose action is
+running is a `PendingButton`, never `disabled={isPending}`: disabling the focused button sends focus
+to `<body>`". Discava ha eseguito una spec di audit e correzione per ogni portale. Il piano di
+ciascuna abbozza le regole che le sue correzioni insegnano come `contracts/ui-rules.md`, e la sua
+ultima user story le scrive in quel file e toglie tutto ciò che è detto due volte. Il prossimo agente
+che costruisce una schermata parte da lì invece di ripetere i risultati dell'audit.
 
 <Aside type="tip">
 L'`AGENTS.md` di Discava è cresciuto una riga alla volta, ogni volta che una review ha intercettato

@@ -50,7 +50,7 @@ github: GitHub {
 
 stage: 开发 stage {shape: cylinder}
 
-machine.canvas -> github: 每 5 分钟轮询一次
+machine.canvas -> github: 每 2 分钟轮询一次
 machine.dev -> github.prs: "推送、打开"
 machine.rev -> github.prs: 评审
 machine.tester -> stage: "点击、调用、读取"
@@ -123,7 +123,7 @@ pull request 改了什么，在已部署的栈上测试它，并把结果评论�
 
 ## 为什么用轮询而不是 webhook
 
-这些自动化采用轮询（在 Discava 中每 5 分钟一次，默认每 15 分钟一次），因此 Agent Canvas 可以运行在
+这些自动化采用轮询（在 Discava 中每 2 分钟一次，默认每 15 分钟一次），因此 Agent Canvas 可以运行在
 一台没有公网 URL、也没有 webhook secret 的笔记本或家用服务器上。代价是最多一个轮询间隔的延迟，与
 智能体工作所花的时间相比，这点延迟微不足道。
 

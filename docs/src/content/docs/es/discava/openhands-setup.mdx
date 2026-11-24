@@ -96,7 +96,7 @@ cada una le da a su agente está en [Los prompts de los agentes](../agent-prompt
 | Prefijo de rama | `openhands/issue` → ramas `openhands/issue-<n>` |
 | Modo de pull request | Ready for review |
 | Secreto del token de GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Programación | `*/5 * * * *`, Australia/Sydney |
+| Programación | `*/2 * * * *`, Australia/Sydney |
 | Perfil de agente | `developer` |
 
 Un turno de revisión le dice al agente que vuelva a poner después la label `openhands-review`,
@@ -113,7 +113,7 @@ para que se revise la nueva cabeza.
 | Revisiones nuevas por barrido | 2 |
 | Tono de la revisión | Concise |
 | Mantenedores | ninguno |
-| Programación | `*/5 * * * *`, Australia/Sydney |
+| Programación | `*/2 * * * *`, Australia/Sydney |
 | Perfil de agente | `reviewer` |
 
 Mientras los checks siguen ejecutándose, el Revisor publica un comentario "⏳ Review waiting on
@@ -136,7 +136,7 @@ archivo junto a él.
 | Tests nuevos por barrido | 2 |
 | Archivo de prompt | `prompt.md` |
 | Secreto del token de GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Programación | `*/5 * * * *`, Australia/Sydney |
+| Programación | `*/2 * * * *`, Australia/Sydney |
 | Perfil de agente | `tester` |
 
 En cada sondeo, el worker:

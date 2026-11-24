@@ -21,7 +21,7 @@ sidebar:
 | 症状 | 何が起きているか | どうするか |
 | --- | --- | --- |
 | ラベルを付けた issue に着手されない | Agent Canvas が停止している、automation が無効になっている、またはトークンがリポジトリを読めない | `agent-canvas` が動いていて automation が有効か確認する。automation の最後の実行ログを確認する |
-| PR が赤く、`ci-fix-1` が付いたが、エージェントが修正しない | ワーカーが修正するのは厳密に `openhands/issue-<n>` だけ。または issue がクローズされた | ブランチ名を確認する。issue を再オープンする |
+| PR が赤く、`ci-fix-1` が付いたが、エージェントが修正しない | ワーカーが修正するのは厳密に `openhands/issue-<n>` だけ (修正の workflow はほかの `openhands/` ブランチにもラベルを付ける)。または issue がクローズされた | ブランチ名を確認する。issue を再オープンするか、PR を引き取る |
 | 赤い実行の後に `ci-fix-*` ラベルがない | Agent CI Status が実行されなかった、または無視した（その notice を参照） | Agent CI Status の実行を開いて notice を読む。例: `the pull request has a newer commit than this run` |
 | エージェントが修正したが、新しい head を誰もレビューしない | エージェントが `openhands-review` を付け直さなかった | 手動で付け直す |
 | push が拒否された: `refusing to allow a Personal Access Token to create or update workflow` | トークンに `workflow` スコープがなく、ブランチが `.github/workflows/` に触れている（`main` のマージ経由が多い） | スコープを追加する。次のポーリングで再試行される |

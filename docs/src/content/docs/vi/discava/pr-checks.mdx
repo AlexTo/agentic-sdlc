@@ -16,8 +16,8 @@ CI Status biến thành một lượt fix-up, nên nó cũng là nguồn phản 
 | `Tasks format` | `validate-tasks`, chỉ khi một `tasks.md` hoặc bộ đọc của nó thay đổi | Một `tasks.md` mà workflow Agent Issues sẽ đọc sai (khoảng trống 5) |
 | `UI Screenshots` | `ui-screenshots` | Một thay đổi UI không có ảnh chụp màn hình mới (khoảng trống 6) |
 | `Invariant coverage` | `invariant-coverage`, chỉ khi code có thể ghi vào bảng chính thay đổi | Một writer mới của một bản ghi dùng chung mà không có thay đổi nào ở các invariant. Xem [Local stack](../local-stack/#invariant-sau-mỗi-test) |
-| `E2E tests (1/6)` … `(6/6)` | `pnpm nx affected --target e2e`, chia shard | Luồng người dùng hỏng, invariant bị phá, race condition |
-| `E2E tests` | Gom sáu shard thành một kết quả | Cho branch protection một tên ổn định, bất kể số shard |
+| `E2E tests (1/12)` … `(12/12)` | `pnpm nx affected --target e2e`, chia shard | Luồng người dùng hỏng, invariant bị phá, race condition |
+| `E2E tests` | Gom mười hai shard thành một kết quả | Cho branch protection một tên ổn định, bất kể số shard |
 | `E2E screenshots` | `screenshots-comment` | Liệt kê các ảnh trên PR, và trong job summary |
 
 `fail-fast: false` quan trọng với agent. Khi lint *và* một test cùng thất bại, agent nghe về cả hai
@@ -92,9 +92,19 @@ vòng sửa. Discava rút ngắn PR checks của mình theo bốn cách:
   của nó, mà input chỉ là các file nó test, được phát lại từ cache trên hầu hết các PR.
 - **Điều chỉnh mức song song.** `nx affected` chạy bốn task một lúc, không phải tám như trong
   `nx.json`: mỗi task Vitest tự khởi động worker riêng, và bốn nhanh hơn khoảng 12% trên runner bốn
-  nhân. E2E tăng từ bốn shard lên sáu, với các file được chia cho các shard theo thời gian chạy. Mỗi
-  shard tốn khoảng hai phút trước test đầu tiên, nên thêm shard không còn đáng khi test trong mỗi
-  shard chỉ mất cỡ đó.
+  nhân. E2E tăng từ bốn shard lên sáu, rồi tám, rồi mười hai, với các file được chia cho các shard
+  theo thời gian chạy. Mỗi shard tốn khoảng hai phút trước test đầu tiên, nên thêm shard không còn
+  đáng khi test trong mỗi shard chỉ mất cỡ đó.
+- **Các shard được chia theo thời gian chạy đã ghi lại, nên hãy giữ chúng cập nhật.** Các file được
+  chia nguyên file, theo thời gian trong `packages/e2e/shard-durations.json`. Đến ngày 24 tháng 11,
+  19 trong 74 file e2e chưa có trong danh sách và được tính như một file thông thường, trong đó có
+  một kịch bản 337 giây, nên hai shard chạy 12 phút test trong khi các shard còn lại chạy 6 đến 8
+  phút. [#1060](https://github.com/AlexTo/discava/pull/1060) đo thời gian mọi file từ một lần chạy
+  CI đầy đủ, tách file 337 giây làm hai (một file là mức tối thiểu của bất kỳ shard nào), và chuyển
+  sang mười hai shard: shard chậm nhất giờ chạy khoảng 5½ phút test.
+- **Lượt tải chậm nhất bắt đầu trước.** Image của OpenSearch là image lớn nhất mà local stack kéo
+  về, và search index là thứ cuối cùng mà phần setup e2e chờ. Mỗi shard bắt đầu kéo nó ở chế độ nền
+  ngay sau khi checkout, để nó tải về trong lúc cài dependency.
 
 `Tasks format` và `Invariant coverage` chỉ liên quan đến một số đường dẫn. Một action nhỏ
 `changed-paths` diff PR trước, và job bỏ qua việc cài dependency khi không có gì liên quan thay đổi.

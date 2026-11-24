@@ -142,16 +142,19 @@ disparador porque la última marca suele ser una tarea **(human)**, en un PR que
 1. Encuentra cada spec activa con todas sus tareas marcadas, incluidas las **(human)**.
 2. Omite una spec con una issue de agente abierta, y una que ya tuvo un PR de archivo. Cerrar ese PR
    sin fusionarlo mantiene la spec activa.
-3. Abre un PR en la rama `archive-spec/<folder>` que mueve la carpeta a `specs/_archive/` y reescribe
-   los enlaces hacia ella y desde ella.
+3. Hace push de la rama `archive-spec/<folder>`, que mueve la carpeta a `specs/_archive/` y
+   reescribe los enlaces hacia ella y desde ella, y abre su PR.
 
 Agent Issues omite `specs/_archive/`, así que un PR de archivo nunca abre una issue. El check
 `Tasks format` también lee los `tasks.md` archivados, y falla si alguno tiene una tarea sin marcar.
 
 <Aside type="caution">
-El workflow necesita el ajuste del repositorio "Allow GitHub Actions to create and approve pull
-requests". Los PR abiertos con el token del workflow no arrancan PR Checks: cierra y vuelve a abrir
-cada uno para ejecutarlos.
+Discava mantiene desactivado el ajuste del repositorio "Allow GitHub Actions to create and approve
+pull requests", porque también permitiría que un workflow aprobara un PR. Así que el token del
+workflow puede hacer push de la rama pero no abrir el PR. La ejecución avisa con un enlace que lo
+abre, con el título y el cuerpo ya rellenos, y un mantenedor lo envía. Un PR que abre una persona
+arranca PR Checks, algo que no haría uno abierto con el token del workflow. Hasta que alguien lo
+envía, cada ejecución vuelve a hacer push de la rama y repite el aviso.
 </Aside>
 
 Siguiente: [Bucles de feedback](../feedback-loops/).

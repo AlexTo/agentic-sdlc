@@ -26,7 +26,7 @@ This section describes what Discava runs, as of November 2026, with the files be
 | Reviewer agent | Claude Code over ACP, Opus | `reviewer` agent profile |
 | Tester agent | Claude Code over ACP, Opus | `tester` agent profile |
 | Nx + pnpm | Nx 23 | Monorepo, `nx affected` in CI |
-| Playwright | | E2E tests against the local stack, six shards in CI. The Tester agent also drives the deployed portals with it |
+| Playwright | | E2E tests against the local stack, twelve shards in CI. The Tester agent also drives the deployed portals with it |
 | Trivy, git-secrets, commitlint | | Security scan, pre-commit secret check, commit message format |
 
 ## Gap to file
@@ -54,7 +54,8 @@ And the prose every agent reads:
 | --- | --- |
 | Project rules, checked by every plan | `.specify/memory/constitution.md` (version 1.2.1) |
 | Commands, architecture, conventions | `AGENTS.md` |
-| PR process, local stack, testing | `CONTRIBUTING.md` |
+| PR process, local stack, testing | `DEVELOPMENT.md` |
+| No outside issues or pull requests; ideas and bug reports go to Discussions | `CONTRIBUTING.md` |
 | Instructions on every implementation issue | `.github/ISSUE_TEMPLATE/implement-phase.md` |
 | The by-hand form of a test issue | `.github/ISSUE_TEMPLATE/test-deployed-pr.md` |
 | Each agent role's standing prompt | In OpenHands, outside the repository. See [The agents' prompts](../agent-prompts/) |
@@ -62,11 +63,12 @@ And the prose every agent reads:
 
 ## By the numbers
 
-From 14 November, when the workflow went live, to 22 November 2026:
+From 14 November, when the workflow went live, to 24 November 2026:
 
-- 26 feature specs written with Speckit, under `specs/`.
-- 5,387 automation sweeps, one every five minutes: 2,438 issue-to-PR polls, 2,176 review polls and
-  773 test polls. 377 of them found work and started an agent.
-- 176 agent PRs merged. 71 needed no automatic fix, 56 needed one round, one exhausted a loop.
+- 29 feature specs written with Speckit, under `specs/`.
+- 9,869 automation sweeps, every five minutes at first and every two since 22 November: 3,932
+  issue-to-PR polls, 3,670 review polls and 2,267 test polls. 603 of them found work and started
+  an agent.
+- 263 agent PRs merged. 95 needed no automatic fix, 81 needed one round, two exhausted a loop.
 
 Next: [Constitution and guidance](../constitution-and-guidance/).

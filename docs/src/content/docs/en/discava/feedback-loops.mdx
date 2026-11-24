@@ -15,7 +15,7 @@ the OpenHands worker already acts on: a commit status named `software-factory/re
 ## Agent CI Status
 
 `.github/workflows/agent-ci.yml` runs on `workflow_run`, when **PR Checks** completes with
-`failure` or `timed_out` for a pull request on an `openhands/issue-` branch. It checks out the
+`failure` or `timed_out` for a pull request on an `openhands/` branch. It checks out the
 default branch and runs `agent-ci-status`. The steps both workflows share are in one reusable
 workflow, `agent-status.yml`. Each caller keeps its own trigger, condition, concurrency group and
 permissions.
@@ -25,8 +25,10 @@ even though PR Checks ran on the PR's code with a read-only token.
 
 The script (`src/agent-ci/`):
 
-1. Checks the branch name against `^openhands/issue-\d+$` **before** using it in any request. It
-   comes from the PR author.
+1. Checks the branch name against `^openhands/[A-Za-z0-9][A-Za-z0-9._-]*$` **before** using it in
+   any request. It comes from the PR author. Until 22 November it matched only
+   `openhands/issue-<n>`, so a fix PR the Tester opened on `openhands/test-fix-<n>` showed no sign
+   of its failing checks.
 2. Finds the open PR, its labels and current head, and the statuses on the run's commit.
 3. Lists the jobs that failed, such as `E2E tests (3/4)` and `Checks (lint)`.
 4. Calls `planCi()`, which returns `ignore`, `send-back` or `give-up`.

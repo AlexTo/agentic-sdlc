@@ -53,7 +53,7 @@ github: GitHub {
 
 stage: stage de développement {shape: cylinder}
 
-machine.canvas -> github: interroge toutes les 5 minutes
+machine.canvas -> github: interroge toutes les 2 minutes
 machine.dev -> github.prs: "push, ouverture"
 machine.rev -> github.prs: revue
 machine.tester -> stage: "clique, appelle, lit"
@@ -138,7 +138,7 @@ est la dernière pièce de la [glue manquante](../the-missing-glue/). Celui de D
 
 ## Pourquoi l'interrogation périodique plutôt que des webhooks
 
-Les automatisations interrogent GitHub périodiquement (toutes les 5 minutes dans Discava, toutes les
+Les automatisations interrogent GitHub périodiquement (toutes les 2 minutes dans Discava, toutes les
 15 par défaut), donc Agent Canvas peut tourner sur un portable ou un serveur domestique sans URL
 publique ni secret de webhook. Le coût est une latence d'au plus un intervalle d'interrogation, ce
 qui est peu à côté du temps que l'agent met à travailler.

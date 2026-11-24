@@ -18,9 +18,9 @@ opinionated GitHub Actions automation, with a working example you can run. It is
 used in practice to build [Discava](https://github.com/AlexTo/discava), a serverless learning
 management system on AWS.
 
-In the eight days after the workflow went live on Discava on 14 November 2026, twenty-six feature specs
-were written this way and 176 agent pull requests were merged to implement them, each one written,
-fixed and reviewed by agents. Over the same period, 270 commits landed on main. All of this with a
+In the ten days after the workflow went live on Discava on 14 November 2026, twenty-nine feature specs
+were written this way and 263 agent pull requests were merged to implement them, each one written,
+fixed and reviewed by agents. Over the same period, 384 commits landed on main. All of this with a
 single maintainer, a dad with a full-time job who works on Discava casually in his spare time. 😅
 
 ## 🐌 The problem: the prompt-wait-fix loop

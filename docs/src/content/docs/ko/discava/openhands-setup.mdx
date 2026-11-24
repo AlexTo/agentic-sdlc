@@ -92,7 +92,7 @@ Discava에서 에이전트가 클라우드 접근 권한을 가지고 일하는 
 | Branch prefix | `openhands/issue` → 브랜치 `openhands/issue-<n>` |
 | Pull request mode | Ready for review |
 | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Schedule | `*/5 * * * *`, Australia/Sydney |
+| Schedule | `*/2 * * * *`, Australia/Sydney |
 | Agent profile | `developer` |
 
 revise 턴은 에이전트에게 끝난 뒤 `openhands-review` label을 다시 붙이라고 지시하므로, 새 head가 리뷰됩니다.
@@ -108,7 +108,7 @@ revise 턴은 에이전트에게 끝난 뒤 `openhands-review` label을 다시 �
 | New reviews per scan | 2 |
 | Review tone | Concise |
 | Maintainers | 없음 |
-| Schedule | `*/5 * * * *`, Australia/Sydney |
+| Schedule | `*/2 * * * *`, Australia/Sydney |
 | Agent profile | `reviewer` |
 
 검사가 아직 실행 중이면 리뷰어는 "⏳ Review waiting on checks" 댓글을 남기고 이후 스캔에서 다시 시도합니다. 리뷰어의
@@ -130,7 +130,7 @@ revise 턴은 에이전트에게 끝난 뒤 `openhands-review` label을 다시 �
 | New tests per scan | 2 |
 | Prompt file | `prompt.md` |
 | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Schedule | `*/5 * * * *`, Australia/Sydney |
+| Schedule | `*/2 * * * *`, Australia/Sydney |
 | Agent profile | `tester` |
 
 폴링할 때마다 worker는 다음을 합니다.

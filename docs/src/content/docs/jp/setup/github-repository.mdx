@@ -35,7 +35,7 @@ fork はコードをコピーしますが、設定はコピーしません。`sc
    | Issues と Actions を有効化 | GitHub は fork でどちらも無効にするが、workflow は issue の上で動く |
    | 20 個のラベル | [リファレンス: ラベル](../../reference/labels/) のすべてのラベル |
    | `main` のブランチ保護 | pull request、1 件の承認、古い承認の取り消し、そして 7 つの必須チェック: `Checks (lint)`、`Checks (test)`、`Checks (build)`、`Tasks format`、`Invariant coverage`、`E2E tests`、`UI Screenshots` |
-   | Actions が pull request を開けるようにする | Archive Specs は、完了した spec を `specs/_archive/` に移す pull request を開く |
+   | workflow のトークンを読み取り専用にし、Actions が pull request を開いたり承認したりできないようにする | pull request を開ける workflow は、承認もできてしまう。Archive Specs は、完了した spec を `specs/_archive/` に移すブランチを push し、入力済みの pull request を開くリンクを警告に出すので、それを送信する |
    | やり取りをコラボレーターに限定（6 か月間） | 公開リポジトリの fork は公開され、エージェントは push できるトークンを持ったまま、作業対象のすべてのコメントを読む |
    | Actions からの GitHub Pages | CI の **Deploy Docs** ジョブがこのサイトを公開する |
    | エージェントのアカウントを書き込み権限で招待 | エージェントがブランチを push し、pull request を開けるようにする |

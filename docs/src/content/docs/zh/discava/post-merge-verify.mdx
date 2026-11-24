@@ -240,6 +240,11 @@ Discava 是一个公开仓库，所以任何人都可以在它的 issue 和 pull
 | **交互限制** | GitHub 的 **Settings → Moderation options → Interaction limits** 设置为 **Limit to repository collaborators**。其他任何人都无法在仓库中的任何地方评论、打开 issue 或打开 pull request |
 | **锁定的智能体 issue** | Agent Issues 和 Post-merge Verify 不带标签地打开每个 issue，锁定它（对于测试 issue，还会锁定它测试的 pull request 以及该 pull request 关闭的 issue），之后才加上标签。如果有任何一项无法锁定，标签永远不会被加上，运行会失败。共用的代码是 `src/helpers/conversation-lock.ts` |
 
+政策里也这样写明。Discava 的 `CONTRIBUTING.md` 声明它不接受外部的 issue 或 pull request，并说明了原因：
+智能体会阅读这两者并据此行动，所以 issue 中的文字会变成给智能体的指令。想法、问题和 bug 报告发到 GitHub
+Discussions，没有任何智能体会读它，由维护者把值得做的那些变成 spec。`CONTRIBUTING.md` 以前包含的开发者
+指南已移到 `DEVELOPMENT.md`。
+
 随之而来的还有两条规则：
 
 - **标记按作者决定是否可信。** 这些 workflow 通过隐藏标记找到它们之前的 issue。标记只有在由

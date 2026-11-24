@@ -77,13 +77,22 @@ Discava's root `AGENTS.md` is about 110 lines. It covers:
   in backend packages, and a `*Writes` function returns transaction items while a verb-named one
   runs its own I/O.
 
-The detail for one package lives in a nested `AGENTS.md` in that package's folder: nine of them,
-5 to 28 lines each, for the APIs, the database package, events, infrastructure and so on. An agent
+The detail for one package lives in a nested `AGENTS.md` in that package's folder: eleven of them,
+7 to 69 lines each, for the APIs, the database package, events, infrastructure, the portals and so on. An agent
 loads one only when it works in that folder. When the root file had grown to a paragraph per
 package, Discava moved the detail down, so every run no longer read about packages it wasn't
 touching. The database package's file, for example, says which helper each shared write goes
 through, and that changing who writes the table means regenerating the map the `Invariant coverage`
 check reads.
+
+The longest is the portals' file, `packages/websites/AGENTS.md`: the UI rules for every screen.
+It names the two widths to check (375px and 1440px), the states (loading, empty, error, long
+content), and rules for layout, links, focus and errors, such as "a button whose action is running
+is a `PendingButton`, never `disabled={isPending}`: disabling the focused button sends focus to
+`<body>`". Discava ran an audit-and-fix spec for each portal. Each one's plan drafts the rules its
+fixes teach as `contracts/ui-rules.md`, and its last user story writes them into that file and
+removes anything said twice. The next agent to build a screen starts from them instead of
+repeating the audit's findings.
 
 <Aside type="tip">
 Discava's `AGENTS.md` grew one line at a time, each time a review caught the same mistake twice.

@@ -95,7 +95,7 @@ agent của nó nằm ở [Prompt của các agent](../agent-prompts/).
 | Tiền tố nhánh | `openhands/issue` → nhánh `openhands/issue-<n>` |
 | Chế độ pull request | Ready for review |
 | Secret GitHub token | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Lịch | `*/5 * * * *`, Australia/Sydney |
+| Lịch | `*/2 * * * *`, Australia/Sydney |
 | Agent profile | `developer` |
 
 Một lượt revise bảo agent gắn lại label
@@ -112,7 +112,7 @@ Một lượt revise bảo agent gắn lại label
 | Review mới mỗi lần quét | 2 |
 | Giọng review | Concise |
 | Maintainer | không có |
-| Lịch | `*/5 * * * *`, Australia/Sydney |
+| Lịch | `*/2 * * * *`, Australia/Sydney |
 | Agent profile | `reviewer` |
 
 Trong khi các check vẫn đang chạy, Reviewer đăng một comment "⏳ Review waiting on checks" và thử lại
@@ -135,7 +135,7 @@ cạnh.
 | Test mới mỗi lần quét | 2 |
 | File prompt | `prompt.md` |
 | Secret GitHub token | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Lịch | `*/5 * * * *`, Australia/Sydney |
+| Lịch | `*/2 * * * *`, Australia/Sydney |
 | Agent profile | `tester` |
 
 Ở mỗi lần poll, worker:

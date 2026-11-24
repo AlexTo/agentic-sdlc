@@ -50,8 +50,9 @@ mentions the phrase in passing doesn't count.
 
 | Pattern | Who | Matters because |
 | --- | --- | --- |
-| `openhands/issue-<n>` | Issue-to-PR automation | The only branch the worker revises, and the only one the fix-up workflows answer |
+| `openhands/issue-<n>` | Issue-to-PR automation | The only branch the worker revises |
 | `openhands/issue-<n>-2`, … | Issue-to-PR automation, on a re-labelled issue | Never revised automatically |
 | `openhands/test-fix-<n>` | Issue tester automation, for test issue `<n>` | A fix the Tester found while testing. Never revised automatically |
+| one segment under `openhands/` | Agent branches | The fix-up workflows answer a failed run or review with the status and a label |
 | anything starting `openhands/` | Agent branches | Merging one advances the chain |
 | `spec/<name>` (any other name) | People | Only advances the chain with `spec-ready` |

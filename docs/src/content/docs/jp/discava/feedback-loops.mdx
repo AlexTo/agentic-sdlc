@@ -14,7 +14,7 @@ import { Aside } from '@astrojs/starlight/components';
 
 ## Agent CI Status
 
-`.github/workflows/agent-ci.yml` は `workflow_run` で実行されます。`openhands/issue-` ブランチの pull request に
+`.github/workflows/agent-ci.yml` は `workflow_run` で実行されます。`openhands/` ブランチの pull request に
 対して **PR Checks** が `failure` または `timed_out` で完了したときです。デフォルトブランチをチェックアウトし、
 `agent-ci-status` を実行します。2 つのワークフローに共通する手順は、1 つの再利用可能なワークフロー
 `agent-status.yml` にあります。呼び出し側はそれぞれ、独自のトリガー、条件、concurrency グループ、権限を持ちます。
@@ -24,8 +24,9 @@ import { Aside } from '@astrojs/starlight/components';
 
 スクリプト (`src/agent-ci/`):
 
-1. ブランチ名をリクエストで使う **前に** `^openhands/issue-\d+$` と照合します。ブランチ名は PR の作成者から
-   来るものだからです。
+1. ブランチ名をリクエストで使う **前に** `^openhands/[A-Za-z0-9][A-Za-z0-9._-]*$` と照合します。ブランチ名は
+   PR の作成者から来るものだからです。11 月 22 日までは `openhands/issue-<n>` にしか一致しなかったため、
+   テスト担当が `openhands/test-fix-<n>` で開いた修正 PR では、失敗したチェックが何も示されませんでした。
 2. open な PR、そのラベルと現在の head、そして実行のコミットに付いたステータスを探します。
 3. `E2E tests (3/4)` や `Checks (lint)` のような、失敗したジョブを列挙します。
 4. `planCi()` を呼び出します。これは `ignore`、`send-back`、`give-up` のいずれかを返します。

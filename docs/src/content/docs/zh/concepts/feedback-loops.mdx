@@ -55,8 +55,9 @@ worker -> pr: 修改同一个 PR
 
 每个脚本只有在以下条件全部成立时才会行动：
 
-1. 分支恰好是 `openhands/issue-<n>`。第二个尝试分支（例如 `openhands/issue-308-2`）永远不会被
-   worker 修改，所以也不会得到回应。
+1. 分支属于智能体：`openhands/` 下的一级，例如 `openhands/issue-308` 或
+   `openhands/test-fix-782`。开发智能体的 worker 只修订名称恰好为 `openhands/issue-<n>` 的分支。
+   在其他任何智能体分支上，状态和标签仍会把 PR 标记为已送回，这样有人能看到它。
 2. PR 处于打开状态。
 3. 这次运行或评审针对的是 PR **当前**的 head commit。较早的运行已经过时。
 4. 该 commit 还没有被送回过。重新运行相同的检查不能消耗另一次尝试。

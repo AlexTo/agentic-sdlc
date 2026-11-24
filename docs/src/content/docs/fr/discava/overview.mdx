@@ -27,7 +27,7 @@ pièce.
 | Agent Relecteur | Claude Code via ACP, Opus | Profil d'agent `reviewer` |
 | Agent Testeur | Claude Code via ACP, Opus | Profil d'agent `tester` |
 | Nx + pnpm | Nx 23 | Monorepo, `nx affected` en CI |
-| Playwright | | Tests E2E contre la stack locale, six shards en CI. L'agent Testeur pilote aussi les portails déployés avec |
+| Playwright | | Tests E2E contre la stack locale, douze shards en CI. L'agent Testeur pilote aussi les portails déployés avec |
 | Trivy, git-secrets, commitlint | | Analyse de sécurité, détection de secrets en pre-commit, format des messages de commit |
 
 ## Du manque au fichier
@@ -55,7 +55,8 @@ Et le texte que lit chaque agent :
 | --- | --- |
 | Règles du projet, vérifiées par chaque plan | `.specify/memory/constitution.md` (version 1.2.1) |
 | Commandes, architecture, conventions | `AGENTS.md` |
-| Processus de PR, stack locale, tests | `CONTRIBUTING.md` |
+| Processus de PR, stack locale, tests | `DEVELOPMENT.md` |
+| Pas d'issues ni de pull requests venant de l'extérieur ; les idées et les rapports de bug vont dans Discussions | `CONTRIBUTING.md` |
 | Instructions de chaque issue d'implémentation | `.github/ISSUE_TEMPLATE/implement-phase.md` |
 | La forme manuelle d'une issue de test | `.github/ISSUE_TEMPLATE/test-deployed-pr.md` |
 | Le prompt permanent de chaque rôle d'agent | Dans OpenHands, en dehors du dépôt. Voir [Les prompts des agents](../agent-prompts/) |
@@ -63,13 +64,13 @@ Et le texte que lit chaque agent :
 
 ## En chiffres
 
-Du 14 novembre, date de mise en service du workflow, au 22 novembre 2026 :
+Du 14 novembre, date de mise en service du workflow, au 24 novembre 2026 :
 
-- 26 specs de fonctionnalités écrites avec Speckit, sous `specs/`.
-- 5 387 passages d'automatisation, un toutes les cinq minutes : 2 438 interrogations issue-to-PR,
-  2 176 interrogations de revue et 773 interrogations de test. 377 d'entre eux ont trouvé du travail
-  et démarré un agent.
-- 176 PR d'agent mergées. 71 n'ont eu besoin d'aucune correction automatique, 56 d'un tour, une a
+- 29 specs de fonctionnalités écrites avec Speckit, sous `specs/`.
+- 9 869 passages d'automatisation, toutes les cinq minutes au début et toutes les deux minutes depuis
+  le 22 novembre : 3 932 interrogations issue-to-PR, 3 670 interrogations de revue et 2 267
+  interrogations de test. 603 d'entre eux ont trouvé du travail et démarré un agent.
+- 263 PR d'agent mergées. 95 n'ont eu besoin d'aucune correction automatique, 81 d'un tour, deux ont
   épuisé une boucle.
 
 Suite : [Constitution et consignes](../constitution-and-guidance/).

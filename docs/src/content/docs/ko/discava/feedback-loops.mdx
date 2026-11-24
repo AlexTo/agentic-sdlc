@@ -13,7 +13,7 @@ PR의 head에 붙는, `failure` 상태의 `software-factory/review`라는 commit
 
 ## Agent CI Status
 
-`.github/workflows/agent-ci.yml`은 `openhands/issue-` 브랜치의 pull request에 대해 **PR Checks**가 `failure` 또는
+`.github/workflows/agent-ci.yml`은 `openhands/` 브랜치의 pull request에 대해 **PR Checks**가 `failure` 또는
 `timed_out`으로 끝날 때 `workflow_run`으로 실행됩니다. 기본 브랜치를 checkout하고 `agent-ci-status`를 실행합니다.
 두 workflow가 공유하는 단계는 재사용 가능한 workflow 하나, `agent-status.yml`에 있습니다. 호출하는 각 workflow는
 자체 트리거, 조건, concurrency 그룹, 권한을 유지합니다.
@@ -23,8 +23,9 @@ PR의 head에 붙는, `failure` 상태의 `software-factory/review`라는 commit
 
 스크립트(`src/agent-ci/`)는 다음을 합니다.
 
-1. 브랜치 이름을 요청에 사용하기 **전에** `^openhands/issue-\d+$`와 대조해 검사합니다. 브랜치 이름은 PR 작성자에게서
-   옵니다.
+1. 브랜치 이름을 요청에 사용하기 **전에** `^openhands/[A-Za-z0-9][A-Za-z0-9._-]*$`와 대조해 검사합니다. 브랜치
+   이름은 PR 작성자에게서 옵니다. 11월 22일까지는 `openhands/issue-<n>`만 일치했기 때문에, 테스터가
+   `openhands/test-fix-<n>`에 연 수정 PR은 검사가 실패해도 아무 표시가 나타나지 않았습니다.
 2. 열린 PR, 그 label과 현재 head, 그리고 실행된 커밋의 상태를 찾습니다.
 3. `E2E tests (3/4)`, `Checks (lint)`처럼 실패한 job을 나열합니다.
 4. `planCi()`를 호출하며, 이는 `ignore`, `send-back`, `give-up` 중 하나를 반환합니다.

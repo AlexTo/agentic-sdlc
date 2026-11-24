@@ -42,9 +42,9 @@ Số khoảng trống tham chiếu đến [Phần glue còn thiếu](../../conce
 | Quyết định | Mặc định | Đổi nó nếu |
 | --- | --- | --- |
 | Label kích hoạt triển khai | `openhands` | Bạn đã dùng label đó |
-| Tiền tố nhánh | `openhands/issue` | Hiếm khi. Glue khớp chính xác `openhands/issue-<n>`. Nếu đổi, hãy đổi cả `AGENT_BRANCH` và các điều kiện workflow |
+| Tiền tố nhánh | `openhands/issue` | Hiếm khi. Worker sửa lại chính xác `openhands/issue-<n>`, còn glue phản hồi mọi nhánh nằm một cấp dưới `openhands/`. Nếu đổi, hãy đổi cả `AGENT_BRANCH` và các điều kiện workflow |
 | Label review | `openhands-review` | Như trên |
-| Chu kỳ poll | mỗi 5 phút | Bạn muốn chi phí thấp hơn và có thể chờ lâu hơn (mặc định của catalog là 15) |
+| Chu kỳ poll | mỗi 5 phút | Bạn muốn chi phí thấp hơn và có thể chờ lâu hơn (mặc định của catalog là 15), hoặc muốn phản hồi nhanh hơn (Discava poll mỗi 2 phút) |
 | Số lượt fix-up tối đa | 5 mỗi vòng | Hiếm khi. Đó là `MAX_*_FIX_ATTEMPTS` trong hai file `plan.ts` |
 | Đánh số thư mục spec | timestamp | Không bao giờ, khi có hơn một người viết spec |
 

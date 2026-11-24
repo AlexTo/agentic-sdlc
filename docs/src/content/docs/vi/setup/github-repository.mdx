@@ -35,7 +35,7 @@ CLI `gh`. Mỗi bước đặt cùng một trạng thái mỗi lần, nên chạ
    | Bật Issues và Actions | GitHub tắt cả hai trong bản fork, mà quy trình chạy trên issue |
    | 20 label | Mọi label trong [Tham khảo: label](../../reference/labels/) |
    | Branch protection trên `main` | Một pull request, một lượt duyệt, lượt duyệt cũ bị hủy, và bảy check bắt buộc: `Checks (lint)`, `Checks (test)`, `Checks (build)`, `Tasks format`, `Invariant coverage`, `E2E tests`, `UI Screenshots` |
-   | Actions được phép mở pull request | Archive Specs mở pull request chuyển một spec đã xong vào `specs/_archive/` |
+   | Token của workflow chỉ đọc, và Actions không được mở hay duyệt pull request | Một workflow có thể mở pull request thì cũng có thể duyệt một pull request. Archive Specs push nhánh chuyển một spec đã xong vào `specs/_archive/` và cảnh báo kèm một liên kết mở pull request của nó, đã điền sẵn, để bạn gửi |
    | Tương tác giới hạn cho collaborator, trong sáu tháng | Một bản fork của một repository công khai cũng công khai, và các agent đọc mọi comment trên những gì chúng làm việc trong khi đang giữ một token có thể push |
    | GitHub Pages từ Actions | Job **Deploy Docs** của CI publish trang web này |
    | Tài khoản của agent được mời với quyền ghi | Để các agent có thể push nhánh và mở pull request |

@@ -79,13 +79,23 @@ El `AGENTS.md` raíz de Discava tiene unas 110 líneas. Cubre:
   `helpers/` y nunca `lib/` en los paquetes de backend, y una función `*Writes` devuelve elementos
   de transacción mientras que una con nombre de verbo hace su propia E/S.
 
-El detalle de cada paquete vive en un `AGENTS.md` anidado en la carpeta de ese paquete: nueve en
-total, de 5 a 28 líneas cada uno, para las APIs, el paquete de base de datos, los eventos, la
-infraestructura y demás. Un agente solo carga uno cuando trabaja en esa carpeta. Cuando el archivo
+El detalle de cada paquete vive en un `AGENTS.md` anidado en la carpeta de ese paquete: once en
+total, de 7 a 69 líneas cada uno, para las APIs, el paquete de base de datos, los eventos, la
+infraestructura, los portales y demás. Un agente solo carga uno cuando trabaja en esa carpeta. Cuando el archivo
 raíz había crecido hasta tener un párrafo por paquete, Discava bajó el detalle, para que cada
 ejecución dejara de leer sobre paquetes que no tocaba. El archivo del paquete de base de datos, por
 ejemplo, dice por qué helper pasa cada escritura compartida, y que cambiar quién escribe en la tabla
 implica regenerar el mapa que lee el check `Invariant coverage`.
+
+El más largo es el de los portales, `packages/websites/AGENTS.md`: las reglas de UI para cada
+pantalla. Nombra los dos anchos que hay que comprobar (375px y 1440px), los estados (cargando,
+vacío, error, contenido largo) y reglas de maquetación, enlaces, foco y errores, como "a button
+whose action is running is a `PendingButton`, never `disabled={isPending}`: disabling the focused
+button sends focus to `<body>`". Discava ejecutó una spec de auditoría y corrección para cada
+portal. El plan de cada una redacta como `contracts/ui-rules.md` las reglas que enseñan sus
+correcciones, y su última historia de usuario las escribe en ese archivo y elimina lo que esté
+dicho dos veces. El siguiente agente que construye una pantalla parte de ellas en lugar de repetir
+los hallazgos de la auditoría.
 
 <Aside type="tip">
 El `AGENTS.md` de Discava creció línea a línea, cada vez que una revisión detectaba el mismo error

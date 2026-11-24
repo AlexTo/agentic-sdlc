@@ -34,13 +34,13 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    # agent-ci.yml
    if: >-
      github.event.workflow_run.event == 'pull_request' &&
-     startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
+     startsWith(github.event.workflow_run.head_branch, 'openhands/') &&
      (github.event.workflow_run.conclusion == 'failure' ||
      github.event.workflow_run.conclusion == 'timed_out')
 
    # agent-review.yml
    if: >-
-     startsWith(github.event.pull_request.head.ref, 'openhands/issue-') &&
+     startsWith(github.event.pull_request.head.ref, 'openhands/') &&
      github.event.pull_request.head.repo.full_name == github.repository &&
      contains(github.event.review.body, 'CHANGES REQUESTED')
    ```
@@ -63,8 +63,8 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    cancel each other.
 
 6. **Copy `archive-specs.yml`**, if you want finished specs moved out of the way. When a push to
-   `main` changes a live `specs/*/tasks.md`, it opens a PR on branch `archive-spec/<folder>` for
-   each spec with every task ticked, **(human)** ones included. The PR moves the folder to
+   `main` changes a live `specs/*/tasks.md`, it prepares a PR on branch `archive-spec/<folder>`
+   for each spec with every task ticked, **(human)** ones included. The PR moves the folder to
    `specs/_archive/` and rewrites the links to and from it. Agent Issues skips `specs/_archive/`,
    and `Tasks format` fails if an archived `tasks.md` has an unticked task.
 
@@ -72,9 +72,11 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    PR unmerged to keep the spec live.
 
    <Aside type="caution">
-   The workflow can't open its PRs unless Actions may create pull requests, which
-   `scripts/setup-repository.sh` turns on. PRs opened with the workflow's token don't start PR
-   Checks: close and reopen each one to run them.
+   Leave the repository setting "Allow GitHub Actions to create and approve pull requests" off,
+   as `scripts/setup-repository.sh` does: it would also let a workflow approve a PR. The
+   workflow then pushes the branch and its run warns with a link that opens the PR, title and
+   body filled in, for you to submit. A PR you open starts PR Checks by itself. Until someone
+   does, each run pushes the branch again and repeats the warning.
    </Aside>
 
 </Steps>

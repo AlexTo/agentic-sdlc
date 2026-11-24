@@ -52,7 +52,7 @@ github: GitHub {
 
 stage: stage de desenvolvimento {shape: cylinder}
 
-machine.canvas -> github: poll a cada 5 minutos
+machine.canvas -> github: poll a cada 2 minutos
 machine.dev -> github.prs: "push, abrir"
 machine.rev -> github.prs: review
 machine.tester -> stage: "clicar, chamar, ler"
@@ -134,7 +134,7 @@ a última peça da [cola que falta](../the-missing-glue/). O do Discava está em
 
 ## Por que polling, e não webhooks
 
-As automations fazem polling (a cada 5 minutos no Discava, a cada 15 por padrão), então o Agent Canvas pode rodar em
+As automations fazem polling (a cada 2 minutos no Discava, a cada 15 por padrão), então o Agent Canvas pode rodar em
 um notebook ou em um servidor doméstico sem URL pública e sem webhook secret. O custo é até um intervalo de
 poll de latência, o que é pouco perto do tempo que o agent leva para trabalhar.
 

@@ -25,7 +25,7 @@ CDK로 배포됩니다. 누구도 전부를 머릿속에 담아 둘 수 없을 �
 | 리뷰어 에이전트 | ACP를 통한 Claude Code, Opus | `reviewer` agent profile |
 | 테스터 에이전트 | ACP를 통한 Claude Code, Opus | `tester` agent profile |
 | Nx + pnpm | Nx 23 | 모노레포, CI에서 `nx affected` |
-| Playwright | | 로컬 스택을 대상으로 한 E2E 테스트, CI에서 샤드 여섯 개. 테스터 에이전트도 이것으로 배포된 포털을 조작합니다 |
+| Playwright | | 로컬 스택을 대상으로 한 E2E 테스트, CI에서 샤드 열두 개. 테스터 에이전트도 이것으로 배포된 포털을 조작합니다 |
 | Trivy, git-secrets, commitlint | | 보안 스캔, pre-commit secret 검사, 커밋 메시지 형식 |
 
 ## 빈틈과 파일
@@ -53,7 +53,8 @@ glue는 `packages/tooling/agent/`(`@discava/tooling-agent`)에 있습니다. 이
 | --- | --- |
 | 모든 plan이 검사하는 프로젝트 규칙 | `.specify/memory/constitution.md` (버전 1.2.1) |
 | 명령, 아키텍처, 관례 | `AGENTS.md` |
-| PR 프로세스, 로컬 스택, 테스트 | `CONTRIBUTING.md` |
+| PR 프로세스, 로컬 스택, 테스트 | `DEVELOPMENT.md` |
+| 외부 issue나 pull request는 받지 않음. 아이디어와 버그 보고는 Discussions로 | `CONTRIBUTING.md` |
 | 모든 구현 issue에 담기는 지시 사항 | `.github/ISSUE_TEMPLATE/implement-phase.md` |
 | 테스트 issue를 직접 열 때의 양식 | `.github/ISSUE_TEMPLATE/test-deployed-pr.md` |
 | 각 에이전트 역할의 상시 프롬프트 | 저장소 밖, OpenHands에 있습니다. [에이전트 프롬프트](../agent-prompts/) 참고 |
@@ -61,12 +62,12 @@ glue는 `packages/tooling/agent/`(`@discava/tooling-agent`)에 있습니다. 이
 
 ## 숫자로 보기
 
-워크플로가 가동된 11월 14일부터 2026년 11월 22일까지:
+워크플로가 가동된 11월 14일부터 2026년 11월 24일까지:
 
-- Speckit으로 작성한 기능 spec 26개, `specs/` 아래에 있습니다.
-- 5분마다 한 번씩, 5,387번의 automation 스윕: issue-to-PR 폴링 2,438번, 리뷰 폴링 2,176번, 테스트 폴링
-  773번. 그중 377번이 일을 찾아 에이전트를 시작했습니다.
-- merge된 에이전트 PR 176개. 71개는 자동 수정이 필요 없었고, 56개는 한 라운드가 필요했으며, 하나는 루프를
+- Speckit으로 작성한 기능 spec 29개, `specs/` 아래에 있습니다.
+- 처음에는 5분마다, 11월 22일부터는 2분마다 한 번씩, 9,869번의 automation 스윕: issue-to-PR 폴링 3,932번,
+  리뷰 폴링 3,670번, 테스트 폴링 2,267번. 그중 603번이 일을 찾아 에이전트를 시작했습니다.
+- merge된 에이전트 PR 263개. 95개는 자동 수정이 필요 없었고, 81개는 한 라운드가 필요했으며, 두 개는 루프를
   소진했습니다.
 
 다음: [constitution과 가이드](../constitution-and-guidance/).

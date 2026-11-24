@@ -35,7 +35,7 @@ A fork copies the code, not the settings. `scripts/setup-repository.sh` sets all
    | Issues and Actions on | GitHub turns both off in a fork, and the workflow runs on issues |
    | 20 labels | Every label in [Reference: labels](../../reference/labels/) |
    | Branch protection on `main` | A pull request, one approval, stale approvals dismissed, and seven required checks: `Checks (lint)`, `Checks (test)`, `Checks (build)`, `Tasks format`, `Invariant coverage`, `E2E tests`, `UI Screenshots` |
-   | Actions may open pull requests | Archive Specs opens the pull request that moves a finished spec to `specs/_archive/` |
+   | Workflow tokens read-only, and Actions may not open or approve pull requests | A workflow that could open a pull request could also approve one. Archive Specs pushes the branch that moves a finished spec to `specs/_archive/` and warns with a link that opens its pull request, filled in, for you to submit |
    | Interactions limited to collaborators, for six months | A fork of a public repository is public, and the agents read every comment on what they work on while holding a token that can push |
    | GitHub Pages from Actions | CI's **Deploy Docs** job publishes this site |
    | The agents' account invited with write access | So the agents can push branches and open pull requests |

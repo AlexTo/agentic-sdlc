@@ -37,7 +37,7 @@ Free text, legends and notes anywhere. Fenced code blocks are ignored.
 | User story phase | title starts `User Story` | At least one must exist |
 | Task | `^- \[([ xX])\] (T\d{3})\b` | In the first column, under a phase. IDs are unique, never renumbered |
 | Done | `[x]` or `[X]` | Ticked in place, never deleted |
-| Human task | `(human)` anywhere in the line, bold or not | Skipped by the agent, and not counted when deciding if a group is done |
+| Human task | `(human)` anywhere in the line, bold or not, or with a note after the word, such as `(human, before merge)` | Skipped by the agent, and not counted when deciding if a group is done |
 | Sub-headings | `### …` | Allowed, ignored |
 
 ## How phases become issues

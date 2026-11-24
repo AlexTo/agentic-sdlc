@@ -91,7 +91,7 @@ prompt 见[智能体的 prompt](../agent-prompts/)。
 | Branch prefix | `openhands/issue` → 分支 `openhands/issue-<n>` |
 | Pull request mode | Ready for review |
 | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Schedule | `*/5 * * * *`，Australia/Sydney |
+| Schedule | `*/2 * * * *`，Australia/Sydney |
 | Agent profile | `developer` |
 
 修改轮次会让智能体在之后重新加上 `openhands-review` 标签，以便新的 head 得到评审。
@@ -107,7 +107,7 @@ prompt 见[智能体的 prompt](../agent-prompts/)。
 | New reviews per scan | 2 |
 | Review tone | Concise |
 | Maintainers | 无 |
-| Schedule | `*/5 * * * *`，Australia/Sydney |
+| Schedule | `*/2 * * * *`，Australia/Sydney |
 | Agent profile | `reviewer` |
 
 当检查仍在运行时，评审智能体会发布一条 "⏳ Review waiting on checks" 评论，并在之后的扫描中再次尝试。它的
@@ -129,7 +129,7 @@ prompt 见[智能体的 prompt](../agent-prompts/)。
 | New tests per scan | 2 |
 | Prompt file | `prompt.md` |
 | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Schedule | `*/5 * * * *`，Australia/Sydney |
+| Schedule | `*/2 * * * *`，Australia/Sydney |
 | Agent profile | `tester` |
 
 每次轮询时，worker 会：

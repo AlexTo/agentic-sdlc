@@ -141,16 +141,19 @@ próprio porque a última marcação geralmente é de uma tarefa **(human)**, em
 1. Encontra cada spec ativa com todas as tarefas marcadas, incluindo as **(human)**.
 2. Pula uma spec com uma issue de agent aberta, e uma que já teve um PR de arquivamento. Fechar esse PR
    sem merge mantém a spec ativa.
-3. Abre um PR na branch `archive-spec/<folder>` que move a pasta para `specs/_archive/` e
-   reescreve os links para ela e a partir dela.
+3. Faz push da branch `archive-spec/<folder>`, que move a pasta para `specs/_archive/` e
+   reescreve os links para ela e a partir dela, e abre o PR dela.
 
 O Agent Issues ignora `specs/_archive/`, então um PR de arquivamento nunca abre uma issue. O check `Tasks format`
 também lê os arquivos `tasks.md` arquivados, e falha se algum tiver uma tarefa não marcada.
 
 <Aside type="caution">
-O workflow precisa da configuração do repositório "Allow GitHub Actions to create and approve pull
-requests". PRs abertos com o token do workflow não iniciam o PR Checks: feche e reabra cada um
-para rodá-los.
+O Discava mantém desligada a configuração do repositório "Allow GitHub Actions to create and approve
+pull requests", porque ela também deixaria um workflow aprovar um PR. Então o token do workflow
+consegue fazer push da branch, mas não abrir o PR. A execução avisa com um link que o abre, com título
+e descrição preenchidos, e um mantenedor o envia. Um PR aberto por uma pessoa inicia o PR Checks, o
+que um aberto com o token do workflow não faria. Até alguém enviá-lo, cada execução faz push da
+branch de novo e repete o aviso.
 </Aside>
 
 Próximo: [Feedback loops](../feedback-loops/).

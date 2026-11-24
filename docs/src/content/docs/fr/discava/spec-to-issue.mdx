@@ -144,17 +144,20 @@ une PR qu'Agent Issues ignore.
 1. Trouve chaque spec active dont toutes les tâches sont cochées, y compris les tâches **(human)**.
 2. Saute une spec qui a une issue d'agent ouverte, et une qui a déjà eu une PR d'archivage. Fermer
    cette PR sans la merger garde la spec active.
-3. Ouvre une PR sur la branche `archive-spec/<folder>` qui déplace le dossier vers `specs/_archive/`
-   et réécrit les liens vers lui et depuis lui.
+3. Pousse la branche `archive-spec/<folder>`, qui déplace le dossier vers `specs/_archive/` et
+   réécrit les liens vers lui et depuis lui, et ouvre sa PR.
 
 Agent Issues ignore `specs/_archive/`, donc une PR d'archivage n'ouvre jamais d'issue. Le check
 `Tasks format` lit aussi les fichiers `tasks.md` archivés, et échoue si l'un d'eux a une tâche non
 cochée.
 
 <Aside type="caution">
-Le workflow a besoin du paramètre de dépôt « Allow GitHub Actions to create and approve pull
-requests ». Les PR ouvertes avec le token du workflow ne déclenchent pas PR Checks : fermez et
-rouvrez chacune d'elles pour les lancer.
+Discava garde désactivé le paramètre de dépôt « Allow GitHub Actions to create and approve pull
+requests », car il permettrait aussi à un workflow d'approuver une PR. Le token du workflow peut donc
+pousser la branche mais pas ouvrir la PR. L'exécution affiche un avertissement avec un lien qui
+l'ouvre, titre et description pré-remplis, et un mainteneur la soumet. Une PR ouverte par une
+personne déclenche PR Checks, ce que ne ferait pas une PR ouverte avec le token du workflow. Tant que
+personne ne l'a soumise, chaque exécution pousse à nouveau la branche et répète l'avertissement.
 </Aside>
 
 Suite : [Boucles de retour](../feedback-loops/).

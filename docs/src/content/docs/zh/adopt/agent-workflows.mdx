@@ -29,13 +29,13 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    # agent-ci.yml
    if: >-
      github.event.workflow_run.event == 'pull_request' &&
-     startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
+     startsWith(github.event.workflow_run.head_branch, 'openhands/') &&
      (github.event.workflow_run.conclusion == 'failure' ||
      github.event.workflow_run.conclusion == 'timed_out')
 
    # agent-review.yml
    if: >-
-     startsWith(github.event.pull_request.head.ref, 'openhands/issue-') &&
+     startsWith(github.event.pull_request.head.ref, 'openhands/') &&
      github.event.pull_request.head.repo.full_name == github.repository &&
      contains(github.event.review.body, 'CHANGES REQUESTED')
    ```
@@ -48,12 +48,12 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 5. **保留并发组。** 每个组都按 PR 或按分支划分，并设置 `cancel-in-progress: false`。这样同一个 PR 的两个事件不会各自记一次尝试，不同 PR 的合并也永远不会互相取消。
 
-6. 如果你希望把已完成的 spec 移开，**复制 `archive-specs.yml`**。当推送到 `main` 的改动涉及某个活跃的 `specs/*/tasks.md` 时，它会为每个所有任务都已勾选（包括 **(human)** 任务）的 spec，在分支 `archive-spec/<folder>` 上开一个 PR。这个 PR 把文件夹移到 `specs/_archive/`，并改写指向它和从它指出的链接。Agent Issues 会跳过 `specs/_archive/`，而如果某个已归档的 `tasks.md` 中有未勾选的任务，`Tasks format` 会失败。
+6. 如果你希望把已完成的 spec 移开，**复制 `archive-specs.yml`**。当推送到 `main` 的改动涉及某个活跃的 `specs/*/tasks.md` 时，它会为每个所有任务都已勾选（包括 **(human)** 任务）的 spec，在分支 `archive-spec/<folder>` 上准备一个 PR。这个 PR 把文件夹移到 `specs/_archive/`，并改写指向它和从它指出的链接。Agent Issues 会跳过 `specs/_archive/`，而如果某个已归档的 `tasks.md` 中有未勾选的任务，`Tasks format` 会失败。
 
    它会跳过有未关闭的智能体 issue 的 spec，以及已经有过归档 PR 的 spec。如果想让 spec 保持活跃，不合并直接关闭那个 PR 即可。
 
    <Aside type="caution">
-   除非允许 Actions 创建 pull request，否则这个 workflow 无法开启它的 PR，而 `scripts/setup-repository.sh` 会打开这个设置。用 workflow 的 token 开启的 PR 不会启动 PR Checks：逐个关闭再重新打开即可运行它们。
+   像 `scripts/setup-repository.sh` 那样，保持仓库设置 "Allow GitHub Actions to create and approve pull requests" 关闭：它也会让 workflow 能够批准 PR。这样 workflow 会推送分支，它的运行会给出一条警告，附带一个链接，打开后 PR 的标题和正文都已填好，由你来提交。你开启的 PR 会自行启动 PR Checks。在有人提交之前，每次运行都会再次推送该分支并重复这条警告。
    </Aside>
 
 </Steps>

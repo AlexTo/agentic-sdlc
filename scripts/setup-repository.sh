@@ -123,9 +123,11 @@ run_json "{
   \"restrictions\": null
 }" gh api -X PUT "repos/$REPO/branches/main/protection" >/dev/null
 
-echo "- Actions may open pull requests"
+# Off: the same setting would let a workflow approve a pull request. Archive
+# Specs pushes its branch and warns with a link for a maintainer to open it.
+echo "- Workflow tokens read-only, and may not open or approve pull requests"
 run gh api -X PUT "repos/$REPO/actions/permissions/workflow" \
-  -f default_workflow_permissions=read -F can_approve_pull_request_reviews=true >/dev/null
+  -f default_workflow_permissions=read -F can_approve_pull_request_reviews=false >/dev/null
 
 echo "- Interactions limited to collaborators for six months"
 run gh api -X PUT "repos/$REPO/interaction-limits" \

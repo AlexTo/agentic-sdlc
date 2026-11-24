@@ -51,7 +51,7 @@ github: GitHub {
 
 stage: 開発ステージ {shape: cylinder}
 
-machine.canvas -> github: 5 分ごとにポーリング
+machine.canvas -> github: 2 分ごとにポーリング
 machine.dev -> github.prs: "push、open"
 machine.rev -> github.prs: review
 machine.tester -> stage: "クリック、呼び出し、読み取り"
@@ -121,7 +121,7 @@ issue-to-PR ワーカーが PR を修正するのは、失敗した `software-fa
 
 ## なぜ webhook ではなくポーリングなのか
 
-automation はポーリングします (Discava では 5 分ごと、デフォルトでは 15 分ごと)。そのため Agent Canvas は、公開 URL も webhook のシークレットもない
+automation はポーリングします (Discava では 2 分ごと、デフォルトでは 15 分ごと)。そのため Agent Canvas は、公開 URL も webhook のシークレットもない
 ノート PC や自宅サーバーで動かせます。代償は最大でポーリング間隔 1 回分の遅延ですが、エージェントが作業にかける時間に比べれば小さなものです。
 
 ## 実行が終わっても残るメモリ

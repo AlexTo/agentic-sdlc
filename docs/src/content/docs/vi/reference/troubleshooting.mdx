@@ -21,7 +21,7 @@ sidebar:
 | Triệu chứng | Chuyện gì đang xảy ra | Cần làm gì |
 | --- | --- | --- |
 | Issue có label không bao giờ được nhận | Agent Canvas đang tắt, automation bị vô hiệu, hoặc token không đọc được repository | Kiểm tra `agent-canvas` đang chạy và automation đã bật. Xem log lần chạy cuối của automation |
-| PR đỏ, đã thêm `ci-fix-1`, agent không bao giờ sửa lại | Worker chỉ sửa lại đúng `openhands/issue-<n>`, hoặc issue đã bị đóng | Kiểm tra tên nhánh. Mở lại issue |
+| PR đỏ, đã thêm `ci-fix-1`, agent không bao giờ sửa lại | Worker chỉ sửa lại đúng `openhands/issue-<n>` (các workflow fix-up cũng gắn label cho các nhánh `openhands/` khác), hoặc issue đã bị đóng | Kiểm tra tên nhánh. Mở lại issue, hoặc tự tiếp quản PR |
 | Không có label `ci-fix-*` sau một lần chạy đỏ | Agent CI Status không chạy, hoặc đã bỏ qua nó (xem notice) | Mở lần chạy Agent CI Status và đọc notice, ví dụ `the pull request has a newer commit than this run` |
 | Agent sửa lại, rồi không có gì review head mới | Agent không gắn lại `openhands-review` | Gắn lại thủ công |
 | Push bị từ chối: `refusing to allow a Personal Access Token to create or update workflow` | Token thiếu scope `workflow`, và nhánh chạm vào `.github/workflows/` (thường qua một lần merge `main`) | Thêm scope. Lần poll kế sẽ thử lại |

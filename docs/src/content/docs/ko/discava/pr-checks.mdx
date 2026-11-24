@@ -16,8 +16,8 @@ Status가 수정 시도로 바꾸므로, 에이전트의 주된 피드백 원천
 | `Tasks format` | `validate-tasks`, `tasks.md`나 그 reader가 바뀌었을 때만 | Agent Issues workflow가 잘못 읽을 `tasks.md` (빈틈 5) |
 | `UI Screenshots` | `ui-screenshots` | 새 스크린샷이 없는 UI 변경 (빈틈 6) |
 | `Invariant coverage` | `invariant-coverage`, 핵심 테이블에 쓸 수 있는 코드가 바뀌었을 때만 | invariant 변경 없이 생긴 공유 레코드의 새 writer. [로컬 스택](../local-stack/#모든-테스트-후의-invariant) 참고 |
-| `E2E tests (1/6)` … `(6/6)` | `pnpm nx affected --target e2e`, 샤드로 나눠서 | 깨진 사용자 흐름, 깨진 invariant, 경쟁 상태 |
-| `E2E tests` | 여섯 샤드를 하나의 결과로 모읍니다 | 샤드 수와 상관없이 branch protection에 안정적인 이름 하나를 제공합니다 |
+| `E2E tests (1/12)` … `(12/12)` | `pnpm nx affected --target e2e`, 샤드로 나눠서 | 깨진 사용자 흐름, 깨진 invariant, 경쟁 상태 |
+| `E2E tests` | 열두 샤드를 하나의 결과로 모읍니다 | 샤드 수와 상관없이 branch protection에 안정적인 이름 하나를 제공합니다 |
 | `E2E screenshots` | `screenshots-comment` | PR과 job summary에 이미지를 나열합니다 |
 
 `fail-fast: false`는 에이전트에게 중요합니다. lint *와* 테스트가 함께 실패하면, 에이전트는 시도마다 하나씩이 아니라
@@ -86,9 +86,18 @@ GitHub는 권한이 무엇이든 Actions 토큰이 잠긴 대화에 댓글을 �
 - **느린 테스트는 자기 target을 갖습니다.** 테스트 파일 하나가 build 갈래 5분 중 4분을 차지했습니다. 입력이 그
   파일이 테스트하는 파일들뿐인 별도의 target을 만들자, 대부분의 PR에서 cache로부터 재생됩니다.
 - **병렬성을 조정했습니다.** `nx affected`는 `nx.json`의 8개가 아니라 한 번에 4개의 task를 실행합니다. 각 Vitest
-  task가 자기 worker를 시작하므로, 4코어 러너에서는 4개가 약 12% 더 빨랐습니다. E2E는 샤드 네 개에서 여섯 개로
-  늘었고, 파일은 실행 시간에 따라 샤드에 분배됩니다. 샤드 하나는 첫 테스트 전에 약 2분이 들기 때문에, 각 샤드의
-  테스트가 그 정도 걸리게 되면 샤드를 더 늘려도 효과가 없습니다.
+  task가 자기 worker를 시작하므로, 4코어 러너에서는 4개가 약 12% 더 빨랐습니다. E2E는 샤드 네 개에서 여섯 개로,
+  다시 여덟 개, 열두 개로 늘었고, 파일은 실행 시간에 따라 샤드에 분배됩니다. 샤드 하나는 첫 테스트 전에 약 2분이
+  들기 때문에, 각 샤드의 테스트가 그 정도 걸리게 되면 샤드를 더 늘려도 효과가 없습니다.
+- **샤드는 기록된 실행 시간으로 나뉘므로, 최신으로 유지합니다.** 파일은 `packages/e2e/shard-durations.json`의
+  시간에 따라 통째로 분배됩니다. 11월 24일 무렵 e2e 파일 74개 중 19개가 목록에 없어 보통 파일로 계산되었고,
+  그중에는 337초짜리 시나리오도 있었습니다. 그래서 샤드 두 개는 테스트를 12분 동안 실행했고 나머지는 6~8분이었습니다.
+  [#1060](https://github.com/AlexTo/discava/pull/1060)은 CI 전체 실행 한 번으로 모든 파일의 시간을 재고, 337초짜리
+  파일을 둘로 나눈 뒤(파일 하나가 어떤 샤드든 그 아래로는 줄일 수 없는 하한입니다) 샤드 열두 개로 바꿨습니다. 이제
+  가장 느린 샤드도 테스트를 약 5분 30초 실행합니다.
+- **가장 느린 다운로드가 먼저 시작합니다.** OpenSearch 이미지는 로컬 스택이 받는 이미지 중 가장 크고, 검색 인덱스는
+  e2e 설정이 마지막으로 기다리는 것입니다. 각 샤드는 checkout 직후 백그라운드에서 이 이미지를 받기 시작하므로,
+  의존성이 설치되는 동안 다운로드됩니다.
 
 `Tasks format`과 `Invariant coverage`는 일부 경로에서만 의미가 있습니다. 작은 `changed-paths` action이 먼저 PR의
 diff를 확인하고, 관련된 것이 바뀌지 않았으면 job은 의존성 설치를 건너뜁니다.

@@ -25,7 +25,7 @@ React 门户、三个运行在 Lambda 上的 tRPC API、一张 DynamoDB 表、�
 | 评审智能体 | 通过 ACP 接入的 Claude Code，Opus | `reviewer` agent profile |
 | 测试智能体 | 通过 ACP 接入的 Claude Code，Opus | `tester` agent profile |
 | Nx + pnpm | Nx 23 | monorepo，CI 中使用 `nx affected` |
-| Playwright | | 针对本地栈的 E2E 测试，CI 中分为六个分片。测试智能体也用它来驱动已部署的门户 |
+| Playwright | | 针对本地栈的 E2E 测试，CI 中分为十二个分片。测试智能体也用它来驱动已部署的门户 |
 | Trivy、git-secrets、commitlint | | 安全扫描、pre-commit 密钥检查、commit 消息格式 |
 
 ## 缺口与文件
@@ -52,7 +52,8 @@ React 门户、三个运行在 Lambda 上的 tRPC API、一张 DynamoDB 表、�
 | --- | --- |
 | 项目规则，每份计划都会对照检查 | `.specify/memory/constitution.md`（版本 1.2.1） |
 | 命令、架构、约定 | `AGENTS.md` |
-| PR 流程、本地栈、测试 | `CONTRIBUTING.md` |
+| PR 流程、本地栈、测试 | `DEVELOPMENT.md` |
+| 不接受外部的 issue 或 pull request；想法和 bug 报告请发到 Discussions | `CONTRIBUTING.md` |
 | 每个实现 issue 上的指令 | `.github/ISSUE_TEMPLATE/implement-phase.md` |
 | 测试 issue 的手动填写表单 | `.github/ISSUE_TEMPLATE/test-deployed-pr.md` |
 | 每个智能体角色的常驻 prompt | 在 OpenHands 中，位于仓库之外。参见[智能体的 prompt](../agent-prompts/) |
@@ -60,11 +61,11 @@ React 门户、三个运行在 Lambda 上的 tRPC API、一张 DynamoDB 表、�
 
 ## 数据一览
 
-从 11 月 14 日工作流上线，到 2026 年 11 月 22 日：
+从 11 月 14 日工作流上线，到 2026 年 11 月 24 日：
 
-- 用 Speckit 写了 26 份功能 spec，位于 `specs/` 下。
-- 5,387 次自动化扫描，每五分钟一次：2,438 次 issue-to-PR 轮询、2,176 次评审轮询和 773 次测试轮询。其中
-  377 次发现了工作并启动了一个智能体。
-- 合并了 176 个智能体 PR。71 个不需要自动修复，56 个需要一轮，一个用尽了循环。
+- 用 Speckit 写了 29 份功能 spec，位于 `specs/` 下。
+- 9,869 次自动化扫描，起初每五分钟一次，从 11 月 22 日起每两分钟一次：3,932 次 issue-to-PR 轮询、
+  3,670 次评审轮询和 2,267 次测试轮询。其中 603 次发现了工作并启动了一个智能体。
+- 合并了 263 个智能体 PR。95 个不需要自动修复，81 个需要一轮，两个用尽了循环。
 
 下一步：[constitution 与指导](../constitution-and-guidance/)。

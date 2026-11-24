@@ -34,13 +34,13 @@ rossa o una review chiede modifiche, e archiviano una spec quando ogni task è s
    # agent-ci.yml
    if: >-
      github.event.workflow_run.event == 'pull_request' &&
-     startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
+     startsWith(github.event.workflow_run.head_branch, 'openhands/') &&
      (github.event.workflow_run.conclusion == 'failure' ||
      github.event.workflow_run.conclusion == 'timed_out')
 
    # agent-review.yml
    if: >-
-     startsWith(github.event.pull_request.head.ref, 'openhands/issue-') &&
+     startsWith(github.event.pull_request.head.ref, 'openhands/') &&
      github.event.pull_request.head.repo.full_name == github.repository &&
      contains(github.event.review.body, 'CHANGES REQUESTED')
    ```
@@ -64,8 +64,8 @@ rossa o una review chiede modifiche, e archiviano una spec quando ogni task è s
    si annullano mai a vicenda.
 
 6. **Copia `archive-specs.yml`**, se vuoi che le spec finite vengano tolte di mezzo. Quando un push su
-   `main` modifica un `specs/*/tasks.md` attivo, apre una PR sul branch `archive-spec/<folder>` per
-   ogni spec con tutti i task spuntati, inclusi quelli **(human)**. La PR sposta la cartella in
+   `main` modifica un `specs/*/tasks.md` attivo, prepara una PR sul branch `archive-spec/<folder>`
+   per ogni spec con tutti i task spuntati, inclusi quelli **(human)**. La PR sposta la cartella in
    `specs/_archive/` e riscrive i link da e verso di essa. Agent Issues salta `specs/_archive/`,
    e `Tasks format` fallisce se un `tasks.md` archiviato ha un task non spuntato.
 
@@ -73,9 +73,11 @@ rossa o una review chiede modifiche, e archiviano una spec quando ogni task è s
    PR senza unirla per mantenere attiva la spec.
 
    <Aside type="caution">
-   Il workflow non può aprire le sue PR a meno che Actions possa creare pull request, cosa che
-   `scripts/setup-repository.sh` attiva. Le PR aperte con il token del workflow non
-   avviano i PR Checks: chiudi e riapri ognuna per eseguirli.
+   Lascia disattivata l'impostazione del repository "Allow GitHub Actions to create and approve pull
+   requests", come fa `scripts/setup-repository.sh`: permetterebbe anche a un workflow di approvare
+   una PR. Il workflow allora fa push del branch e la sua esecuzione avvisa con un link che apre la
+   PR, con titolo e descrizione già compilati, perché tu la invii. Una PR aperta da te avvia i PR
+   Checks da sola. Finché nessuno lo fa, ogni esecuzione rifà il push del branch e ripete l'avviso.
    </Aside>
 
 </Steps>

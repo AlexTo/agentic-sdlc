@@ -21,7 +21,7 @@ sidebar:
 | 症状 | 发生了什么 | 怎么做 |
 | --- | --- | --- |
 | 已加标签的 issue 一直没被接手 | Agent Canvas 宕机、automation 被禁用，或 token 无法读取仓库 | 检查 `agent-canvas` 是否在运行、automation 是否已启用。查看 automation 最近一次运行的日志 |
-| PR 是红的，已加 `ci-fix-1`，智能体却从不修订 | worker 只修订名称恰好为 `openhands/issue-<n>` 的分支，或者 issue 已关闭 | 检查分支名。重新打开 issue |
+| PR 是红的，已加 `ci-fix-1`，智能体却从不修订 | worker 只修订名称恰好为 `openhands/issue-<n>` 的分支（修复 workflow 也会给其他 `openhands/` 分支加标签），或者 issue 已关闭 | 检查分支名。重新打开 issue，或者接手这个 PR |
 | 红色运行后没有 `ci-fix-*` 标签 | Agent CI Status 没有运行，或忽略了这次运行（见其 notice） | 打开 Agent CI Status 的运行并阅读 notice，例如 `the pull request has a newer commit than this run` |
 | 智能体修订后，没有任何东西评审新的 head | 智能体没有重新加上 `openhands-review` | 手动重新加上 |
 | push 被拒绝：`refusing to allow a Personal Access Token to create or update workflow` | token 缺少 `workflow` scope，而分支改动了 `.github/workflows/`（常常是因为合并了 `main`） | 添加该 scope。下一次轮询会重试 |

@@ -57,8 +57,10 @@ alone.
 
 Each script refuses to act unless all of these hold:
 
-1. The branch is exactly `openhands/issue-<n>`. A second attempt branch, such as
-   `openhands/issue-308-2`, is never revised by the worker, so it isn't answered either.
+1. The branch is an agent's: one segment under `openhands/`, such as `openhands/issue-308` or
+   `openhands/test-fix-782`. The Developer's worker only revises `openhands/issue-<n>` exactly.
+   On any other agent branch the status and labels still mark the PR as sent back, so a person
+   sees it.
 2. The PR is open.
 3. The run or review is for the PR's **current** head commit. An older run is stale.
 4. That commit hasn't already been sent back. A re-run of the same checks must not use another

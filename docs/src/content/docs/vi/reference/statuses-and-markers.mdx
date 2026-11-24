@@ -50,8 +50,9 @@ cụm từ này thoáng qua không được tính.
 
 | Pattern | Ai | Quan trọng vì |
 | --- | --- | --- |
-| `openhands/issue-<n>` | Automation issue-to-PR | Nhánh duy nhất mà worker sửa lại, và nhánh duy nhất các workflow fix-up phản hồi |
+| `openhands/issue-<n>` | Automation issue-to-PR | Nhánh duy nhất mà worker sửa lại |
 | `openhands/issue-<n>-2`, … | Automation issue-to-PR, trên một issue được gắn lại label | Không bao giờ được sửa lại tự động |
 | `openhands/test-fix-<n>` | Automation issue tester, cho issue test `<n>` | Một bản sửa Tester tìm ra khi đang test. Không bao giờ được sửa lại tự động |
+| một cấp dưới `openhands/` | Nhánh của agent | Các workflow fix-up phản hồi một lần chạy hoặc review thất bại bằng status và một label |
 | bất cứ thứ gì bắt đầu bằng `openhands/` | Nhánh của agent | Merge một nhánh như vậy đẩy chuỗi tiến lên |
 | `spec/<name>` (bất kỳ tên nào khác) | Con người | Chỉ đẩy chuỗi tiến lên khi có `spec-ready` |

@@ -37,9 +37,9 @@ import { Aside } from '@astrojs/starlight/components';
 | 决定 | 默认值 | 何时修改 |
 | --- | --- | --- |
 | 实现用的触发标签 | `openhands` | 你已经在用这个标签 |
-| 分支前缀 | `openhands/issue` | 很少需要。粘合层精确匹配 `openhands/issue-<n>`。如果你修改了它，也要修改 `AGENT_BRANCH` 和 workflow 的条件 |
+| 分支前缀 | `openhands/issue` | 很少需要。worker 只修订名称恰好为 `openhands/issue-<n>` 的分支，而粘合层会响应 `openhands/` 下一级的任何分支。如果你修改了它，也要修改 `AGENT_BRANCH` 和 workflow 的条件 |
 | 评审标签 | `openhands-review` | 同上 |
-| 轮询间隔 | 每 5 分钟 | 你希望降低成本，并且可以等更久（目录中的默认值是 15） |
+| 轮询间隔 | 每 5 分钟 | 你希望降低成本，并且可以等更久（目录中的默认值是 15），或者希望更快得到响应（Discava 每 2 分钟轮询一次） |
 | 最大修复次数 | 每个循环 5 次 | 很少需要。它是两个 `plan.ts` 文件中的 `MAX_*_FIX_ATTEMPTS` |
 | Spec 文件夹编号 | 时间戳 | 只要 spec 作者多于一人，就永远不要改 |
 

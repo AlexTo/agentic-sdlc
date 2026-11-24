@@ -50,8 +50,9 @@ menciona a frase de passagem não conta.
 
 | Padrão | Quem | Importa porque |
 | --- | --- | --- |
-| `openhands/issue-<n>` | Automação issue-to-PR | A única branch que o worker revisa, e a única a que os workflows de correção respondem |
+| `openhands/issue-<n>` | Automação issue-to-PR | A única branch que o worker revisa |
 | `openhands/issue-<n>-2`, … | Automação issue-to-PR, em uma issue que recebeu o label de novo | Nunca é revisada automaticamente |
 | `openhands/test-fix-<n>` | Automação issue tester, para a issue de teste `<n>` | Uma correção que o Testador encontrou ao testar. Nunca é revisada automaticamente |
+| um segmento abaixo de `openhands/` | Branches de agent | Os workflows de correção respondem a uma execução ou review com falha com o status e um label |
 | qualquer uma começando com `openhands/` | Branches de agent | O merge de uma delas avança a cadeia |
 | `spec/<name>` (qualquer outro nome) | Pessoas | Só avança a cadeia com `spec-ready` |

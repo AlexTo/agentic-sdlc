@@ -35,7 +35,7 @@ fork는 코드를 복사하지만 설정은 복사하지 않습니다. `scripts/
    | Issues와 Actions 켜기 | GitHub는 fork에서 둘 다 꺼 두는데, workflow는 issue 위에서 동작합니다 |
    | label 20개 | [레퍼런스: label](../../reference/labels/)의 모든 label |
    | `main`의 branch protection | pull request, 승인 1개, 오래된 승인 무효화, 그리고 필수 검사 일곱 개: `Checks (lint)`, `Checks (test)`, `Checks (build)`, `Tasks format`, `Invariant coverage`, `E2E tests`, `UI Screenshots` |
-   | Actions가 pull request를 열 수 있음 | Archive Specs가 완료된 spec을 `specs/_archive/`로 옮기는 pull request를 엽니다 |
+   | workflow 토큰은 읽기 전용이고, Actions는 pull request를 열거나 승인할 수 없음 | pull request를 열 수 있는 workflow는 승인도 할 수 있습니다. Archive Specs는 완료된 spec을 `specs/_archive/`로 옮기는 브랜치를 push하고, 내용이 채워진 pull request를 여는 링크와 함께 경고를 남기므로, 여러분이 제출하면 됩니다 |
    | 6개월 동안 상호작용을 collaborator로 제한 | 공개 저장소의 fork는 공개이고, 에이전트는 push할 수 있는 토큰을 가진 채로 자신이 작업하는 것의 모든 댓글을 읽습니다 |
    | Actions에서 GitHub Pages 게시 | CI의 **Deploy Docs** job이 이 사이트를 게시합니다 |
    | write 권한으로 에이전트 계정 초대 | 에이전트가 브랜치를 push하고 pull request를 열 수 있도록 |

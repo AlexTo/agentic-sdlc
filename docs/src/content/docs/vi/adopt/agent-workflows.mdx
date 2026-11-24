@@ -34,13 +34,13 @@ requested", và lưu trữ spec khi mọi task đã được đánh dấu.
    # agent-ci.yml
    if: >-
      github.event.workflow_run.event == 'pull_request' &&
-     startsWith(github.event.workflow_run.head_branch, 'openhands/issue-') &&
+     startsWith(github.event.workflow_run.head_branch, 'openhands/') &&
      (github.event.workflow_run.conclusion == 'failure' ||
      github.event.workflow_run.conclusion == 'timed_out')
 
    # agent-review.yml
    if: >-
-     startsWith(github.event.pull_request.head.ref, 'openhands/issue-') &&
+     startsWith(github.event.pull_request.head.ref, 'openhands/') &&
      github.event.pull_request.head.repo.full_name == github.repository &&
      contains(github.event.review.body, 'CHANGES REQUESTED')
    ```
@@ -63,7 +63,7 @@ requested", và lưu trữ spec khi mọi task đã được đánh dấu.
    không bao giờ hủy lẫn nhau.
 
 6. **Chép `archive-specs.yml`**, nếu bạn muốn các spec đã xong được dọn sang một bên. Khi một push
-   lên `main` thay đổi một `specs/*/tasks.md` đang hoạt động, nó mở một PR trên nhánh
+   lên `main` thay đổi một `specs/*/tasks.md` đang hoạt động, nó chuẩn bị một PR trên nhánh
    `archive-spec/<folder>` cho mỗi spec mà mọi task đã được đánh dấu, kể cả task **(human)**. PR đó
    chuyển thư mục vào `specs/_archive/` và sửa các liên kết đến và đi từ nó. Agent Issues bỏ qua
    `specs/_archive/`, và `Tasks format` thất bại nếu một `tasks.md` đã lưu trữ còn task chưa được
@@ -73,9 +73,11 @@ requested", và lưu trữ spec khi mọi task đã được đánh dấu.
    để giữ spec ở trạng thái đang hoạt động.
 
    <Aside type="caution">
-   Workflow không mở được PR trừ khi Actions được phép tạo pull request, điều mà
-   `scripts/setup-repository.sh` bật lên. PR mở bằng token của workflow không khởi động PR Checks:
-   đóng rồi mở lại từng PR để chạy chúng.
+   Hãy để cài đặt repository "Allow GitHub Actions to create and approve pull requests" ở trạng
+   thái tắt, như `scripts/setup-repository.sh` làm: nó cũng sẽ cho phép một workflow duyệt một PR.
+   Khi đó workflow push nhánh, và lần chạy của nó cảnh báo kèm một liên kết mở PR, với tiêu đề và
+   nội dung đã điền sẵn, để bạn gửi. Một PR do bạn mở tự khởi động PR Checks. Cho đến khi có người
+   mở, mỗi lần chạy lại push nhánh và lặp lại cảnh báo.
    </Aside>
 
 </Steps>

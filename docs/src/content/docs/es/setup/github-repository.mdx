@@ -35,7 +35,7 @@ Un fork copia el código, no los ajustes. `scripts/setup-repository.sh` los conf
    | Issues y Actions activados | GitHub desactiva ambos en un fork, y el workflow funciona sobre issues |
    | 20 labels | Todas las labels de [Referencia: labels](../../reference/labels/) |
    | Protección de rama en `main` | Un pull request, una aprobación, las aprobaciones obsoletas descartadas y siete checks obligatorios: `Checks (lint)`, `Checks (test)`, `Checks (build)`, `Tasks format`, `Invariant coverage`, `E2E tests`, `UI Screenshots` |
-   | Actions puede abrir pull requests | Archive Specs abre el pull request que mueve una spec terminada a `specs/_archive/` |
+   | Tokens de los workflows de solo lectura, y Actions no puede abrir ni aprobar pull requests | Un workflow que pudiera abrir un pull request también podría aprobar uno. Archive Specs hace push de la rama que mueve una spec terminada a `specs/_archive/` y avisa con un enlace que abre su pull request, ya relleno, para que lo envíes |
    | Interacciones limitadas a los colaboradores, durante seis meses | Un fork de un repositorio público es público, y los agentes leen cada comentario de aquello en lo que trabajan mientras tienen un token que puede hacer push |
    | GitHub Pages desde Actions | El job **Deploy Docs** de CI publica este sitio |
    | La cuenta de los agentes invitada con acceso de escritura | Para que los agentes puedan hacer push de ramas y abrir pull requests |

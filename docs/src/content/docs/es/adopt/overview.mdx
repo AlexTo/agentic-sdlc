@@ -42,9 +42,9 @@ Los números de hueco se refieren a [El pegamento que falta](../../concepts/the-
 | Decisión | Predeterminado | Cámbialo si |
 | --- | --- | --- |
 | Label que dispara la implementación | `openhands` | Ya usas esa label |
-| Prefijo de rama | `openhands/issue` | Rara vez. El pegamento busca exactamente `openhands/issue-<n>`. Si lo cambias, cambia también `AGENT_BRANCH` y las condiciones de los workflows |
+| Prefijo de rama | `openhands/issue` | Rara vez. El worker revisa exactamente `openhands/issue-<n>`, y el pegamento responde a cualquier rama de un segmento bajo `openhands/`. Si lo cambias, cambia también `AGENT_BRANCH` y las condiciones de los workflows |
 | Label de review | `openhands-review` | Igual que arriba |
-| Intervalo de consulta | cada 5 minutos | Quieres menos coste y puedes esperar más (el predeterminado del catálogo es 15) |
+| Intervalo de consulta | cada 5 minutos | Quieres menos coste y puedes esperar más (el predeterminado del catálogo es 15), o una respuesta más rápida (Discava sondea cada 2) |
 | Máximo de intentos de corrección | 5 por bucle | Rara vez. Es `MAX_*_FIX_ATTEMPTS` en dos archivos `plan.ts` |
 | Numeración de carpetas de spec | timestamp | Nunca, si hay más de un autor de specs |
 

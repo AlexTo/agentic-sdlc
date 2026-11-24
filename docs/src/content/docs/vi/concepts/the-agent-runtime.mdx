@@ -52,7 +52,7 @@ github: GitHub {
 
 stage: stage development {shape: cylinder}
 
-machine.canvas -> github: poll mỗi 5 phút
+machine.canvas -> github: poll mỗi 2 phút
 machine.dev -> github.prs: "push, mở"
 machine.rev -> github.prs: review
 machine.tester -> stage: "bấm, gọi, đọc"
@@ -132,7 +132,7 @@ là mảnh cuối của [phần glue còn thiếu](../the-missing-glue/). Workfl
 
 ## Vì sao poll, không phải webhook
 
-Các automation poll (mỗi 5 phút ở Discava, mỗi 15 phút theo mặc định), nên Agent Canvas có thể
+Các automation poll (mỗi 2 phút ở Discava, mỗi 15 phút theo mặc định), nên Agent Canvas có thể
 chạy trên laptop hoặc một server ở nhà mà không cần URL công khai hay webhook secret. Cái giá là độ
 trễ tối đa một chu kỳ poll, con số nhỏ so với thời gian agent cần để làm việc.
 

@@ -258,6 +258,11 @@ Discava は公開リポジトリなので、誰でもその issue と pull reque
 | **インタラクション制限** | GitHub の **Settings → Moderation options → Interaction limits** が **Limit to repository collaborators** に設定されている。それ以外の人は、リポジトリのどこでもコメントも、issue や pull request の作成もできない |
 | **ロックされたエージェントの issue** | Agent Issues と Post-merge Verify は、各 issue をラベルなしで開き、ロックし (テスト issue の場合は、それがテストする pull request と、その pull request が閉じる issue も)、それからはじめてラベルを付ける。ロックできないものがあれば、ラベルは付かず、実行は失敗する。共有のコードは `src/helpers/conversation-lock.ts` にある |
 
+ポリシーにもそう書かれています。Discava の `CONTRIBUTING.md` は、外部からの issue や pull request を受け付けないこと
+とその理由を述べています。エージェントはその両方を読んで動くので、issue の文章がエージェントへの指示になってしまうからです。
+アイデア、質問、バグ報告は、どのエージェントも読まない GitHub Discussions へ送られ、やる価値のあるものはメンテナーが
+spec にします。以前 `CONTRIBUTING.md` にあった開発者ガイドは `DEVELOPMENT.md` に移りました。
+
 これに伴うルールがあと 2 つあります。
 
 - **マーカーは作成者によって信頼されます。** ワークフローは、以前に開いた issue を隠しマーカーで見つけます。

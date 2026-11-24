@@ -28,7 +28,7 @@ fork 复制的是代码，而不是设置。`scripts/setup-repository.sh` 用 `g
    | 开启 Issues 和 Actions | GitHub 在 fork 中把两者都关闭了，而工作流运行在 issue 之上 |
    | 20 个标签 | [参考：标签](../../reference/labels/)中的每一个标签 |
    | `main` 上的分支保护 | 需要 pull request、1 个批准、推送新 commit 时撤销过时的批准，以及七项必需检查：`Checks (lint)`、`Checks (test)`、`Checks (build)`、`Tasks format`、`Invariant coverage`、`E2E tests`、`UI Screenshots` |
-   | 允许 Actions 开启 pull request | Archive Specs 会开启把已完成的 spec 移到 `specs/_archive/` 的 pull request |
+   | workflow token 只读，且不允许 Actions 开启或批准 pull request | 能开启 pull request 的 workflow 也能批准 pull request。Archive Specs 会推送把已完成的 spec 移到 `specs/_archive/` 的分支，并给出一条警告，附带一个链接，打开后它的 pull request 已填好，由你来提交 |
    | 互动限制为协作者，期限六个月 | 公开仓库的 fork 也是公开的，而智能体会阅读它们处理的内容上的每一条评论，同时持有一个可以推送的 token |
    | 从 Actions 发布 GitHub Pages | CI 的 **Deploy Docs** job 会发布本站点 |
    | 以写权限邀请智能体的账号 | 这样智能体才能推送分支并开启 pull request |

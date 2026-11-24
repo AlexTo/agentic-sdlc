@@ -50,8 +50,9 @@ mentionner l'expression en passant ne compte pas.
 
 | Motif | Qui | Importe parce que |
 | --- | --- | --- |
-| `openhands/issue-<n>` | Automatisation issue-to-PR | C'est la seule branche que le worker révise, et la seule à laquelle répondent les workflows de correction |
+| `openhands/issue-<n>` | Automatisation issue-to-PR | C'est la seule branche que le worker révise |
 | `openhands/issue-<n>-2`, … | Automatisation issue-to-PR, sur une issue dont le label a été remis | Jamais révisée automatiquement |
 | `openhands/test-fix-<n>` | Automatisation issue tester, pour l'issue de test `<n>` | Une correction que le Testeur a trouvée en testant. Jamais révisée automatiquement |
+| un seul segment sous `openhands/` | Branches d'agent | Les workflows de correction répondent à une exécution ou une revue en échec avec le statut et un label |
 | tout ce qui commence par `openhands/` | Branches d'agent | En merger une fait avancer la chaîne |
 | `spec/<name>` (tout autre nom) | Personnes | Ne fait avancer la chaîne qu'avec `spec-ready` |

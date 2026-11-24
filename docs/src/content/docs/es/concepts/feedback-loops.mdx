@@ -57,8 +57,10 @@ deja el PR en paz.
 
 Cada script se niega a actuar salvo que se cumpla todo esto:
 
-1. La rama es exactamente `openhands/issue-<n>`. Una rama de segundo intento, como
-   `openhands/issue-308-2`, nunca la revisa el worker, así que tampoco se responde.
+1. La rama es de un agente: un segmento bajo `openhands/`, como `openhands/issue-308` u
+   `openhands/test-fix-782`. El worker del Desarrollador solo revisa exactamente `openhands/issue-<n>`.
+   En cualquier otra rama de agente, el status y las labels siguen marcando el PR como devuelto, así
+   que una persona lo ve.
 2. El PR está abierto.
 3. La ejecución o la revisión corresponde al commit de cabeza **actual** del PR. Una ejecución más
    antigua está obsoleta.

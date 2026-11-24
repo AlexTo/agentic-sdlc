@@ -17,8 +17,8 @@ del agente.
 | `Tasks format` | `validate-tasks`, solo cuando cambió un `tasks.md` o su lector | Un `tasks.md` que el workflow Agent Issues leería mal (hueco 5) |
 | `UI Screenshots` | `ui-screenshots` | Un cambio de UI sin capturas nuevas (hueco 6) |
 | `Invariant coverage` | `invariant-coverage`, solo cuando cambió código que podría escribir en la tabla principal | Un nuevo escritor de un registro compartido sin cambios en las invariantes. Consulta [Stack local](../local-stack/#invariantes-después-de-cada-test) |
-| `E2E tests (1/6)` … `(6/6)` | `pnpm nx affected --target e2e`, en shards | Flujos de usuario rotos, invariantes rotas, condiciones de carrera |
-| `E2E tests` | Reúne los seis shards en un único resultado | Da a la protección de ramas un nombre estable, sea cual sea el número de shards |
+| `E2E tests (1/12)` … `(12/12)` | `pnpm nx affected --target e2e`, en shards | Flujos de usuario rotos, invariantes rotas, condiciones de carrera |
+| `E2E tests` | Reúne los doce shards en un único resultado | Da a la protección de ramas un nombre estable, sea cual sea el número de shards |
 | `E2E screenshots` | `screenshots-comment` | Lista las imágenes en el PR y en el resumen del job |
 
 `fail-fast: false` es importante para los agentes. Cuando fallan el lint *y* un test, el agente se
@@ -98,9 +98,22 @@ suma a cada ronda de corrección. Discava recortó sus PR checks de cuatro maner
   desde la caché en la mayoría de los PR.
 - **Paralelismo ajustado.** `nx affected` ejecuta cuatro tareas a la vez, no las ocho de `nx.json`:
   cada tarea de Vitest arranca sus propios workers, y cuatro resultó un 12% más rápido en un runner
-  de cuatro núcleos. El E2E pasó de cuatro shards a seis, con los archivos repartidos entre los
-  shards según su tiempo de ejecución. Un shard cuesta unos dos minutos antes de su primer test, así
-  que más shards dejan de compensar cuando los tests de cada uno tardan más o menos eso.
+  de cuatro núcleos. El E2E pasó de cuatro shards a seis, luego a ocho y luego a doce, con los
+  archivos repartidos entre los shards según su tiempo de ejecución. Un shard cuesta unos dos
+  minutos antes de su primer test, así que más shards dejan de compensar cuando los tests de cada
+  uno tardan más o menos eso.
+- **Los shards se reparten según los tiempos registrados, así que mantenlos al día.** Los archivos
+  se reparten enteros, según los tiempos de `packages/e2e/shard-durations.json`. A 24 de noviembre,
+  19 de los 74 archivos e2e no estaban en la lista y contaban como un archivo típico, entre ellos un
+  escenario de 337 segundos, así que dos shards ejecutaban 12 minutos de tests mientras el resto
+  ejecutaba de 6 a 8. [#1060](https://github.com/AlexTo/discava/pull/1060) cronometró cada archivo
+  a partir de una ejecución completa del CI, dividió en dos el archivo de 337 segundos (un archivo
+  es el mínimo de cualquier shard) y pasó a doce shards: el más lento ejecuta ahora unos 5½ minutos
+  de tests.
+- **La descarga más lenta empieza la primera.** La imagen de OpenSearch es la más grande que
+  descarga el stack local, y el índice de búsqueda es lo último que espera la preparación del e2e.
+  Cada shard empieza a descargarla en segundo plano justo después del checkout, así que se descarga
+  mientras se instalan las dependencias.
 
 `Tasks format` e `Invariant coverage` solo importan para algunas rutas. Una pequeña action
 `changed-paths` calcula primero el diff del PR, y el job se salta la instalación de dependencias

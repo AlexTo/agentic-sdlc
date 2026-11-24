@@ -133,15 +133,17 @@ DRY_RUN=true GITHUB_REPOSITORY=owner/repo GITHUB_EVENT_NAME=workflow_dispatch \
 1. 找出每个所有任务（包括 **(human)** 任务）都已勾选的活动 spec。
 2. 跳过有打开中的智能体 issue 的 spec，以及已经有过归档 PR 的 spec。不合并就关闭那个 PR，spec 就会
    保持活动状态。
-3. 在分支 `archive-spec/<folder>` 上打开一个 PR，把该文件夹移到 `specs/_archive/`，并重写指向它以及
-   从它指出的链接。
+3. 推送分支 `archive-spec/<folder>`，它把该文件夹移到 `specs/_archive/` 并重写指向它以及从它指出的
+   链接，然后打开它的 PR。
 
 Agent Issues 会跳过 `specs/_archive/`，因此归档 PR 永远不会打开 issue。`Tasks format` 检查也会读取已归档
 的 `tasks.md` 文件，如果其中有未勾选的任务就会失败。
 
 <Aside type="caution">
-该 workflow 需要开启仓库设置 "Allow GitHub Actions to create and approve pull
-requests"。用该 workflow 的 token 打开的 PR 不会启动 PR Checks：把每个 PR 关闭再重新打开即可运行它们。
+Discava 让仓库设置 "Allow GitHub Actions to create and approve pull requests" 保持关闭，因为它也会
+让 workflow 能够批准 PR。所以该 workflow 的 token 可以推送分支，但不能打开 PR。运行会给出一条警告，附带
+一个链接，打开后 PR 的标题和正文都已填好，由维护者提交。由人打开的 PR 会启动 PR Checks，而用该 workflow
+的 token 打开的 PR 不会。在有人提交之前，每次运行都会再次推送该分支并重复这条警告。
 </Aside>
 
 下一步：[反馈循环](../feedback-loops/)。

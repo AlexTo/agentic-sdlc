@@ -95,7 +95,7 @@ uma dá ao seu agent está em [Os prompts dos agents](../agent-prompts/).
 | Prefixo de branch | `openhands/issue` → branches `openhands/issue-<n>` |
 | Modo de pull request | Ready for review |
 | Secret do token do GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Agendamento | `*/5 * * * *`, Australia/Sydney |
+| Agendamento | `*/2 * * * *`, Australia/Sydney |
 | Agent profile | `developer` |
 
 Um turno de revisão diz ao agent para aplicar de novo o label `openhands-review` depois, para que o novo head
@@ -112,7 +112,7 @@ passe por review.
 | Novos reviews por varredura | 2 |
 | Tom do review | Concise |
 | Mantenedores | nenhum |
-| Agendamento | `*/5 * * * *`, Australia/Sydney |
+| Agendamento | `*/2 * * * *`, Australia/Sydney |
 | Agent profile | `reviewer` |
 
 Enquanto os checks ainda estão rodando, o Revisor publica um comentário "⏳ Review waiting on checks" e
@@ -135,7 +135,7 @@ dele.
 | Novos testes por varredura | 2 |
 | Arquivo de prompt | `prompt.md` |
 | Secret do token do GitHub | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Agendamento | `*/5 * * * *`, Australia/Sydney |
+| Agendamento | `*/2 * * * *`, Australia/Sydney |
 | Agent profile | `tester` |
 
 A cada poll, o worker:

@@ -77,13 +77,22 @@ O `AGENTS.md` na raiz do Discava tem cerca de 110 linhas. Ele cobre:
   nos pacotes de back end, e uma função `*Writes` retorna itens de transação enquanto uma com nome de verbo
   faz o próprio I/O.
 
-Os detalhes de um pacote ficam em um `AGENTS.md` aninhado na pasta desse pacote: nove deles,
-de 5 a 28 linhas cada, para as APIs, o pacote de banco de dados, eventos, infraestrutura e assim por diante. Um agent
+Os detalhes de um pacote ficam em um `AGENTS.md` aninhado na pasta desse pacote: onze deles,
+de 7 a 69 linhas cada, para as APIs, o pacote de banco de dados, eventos, infraestrutura, os portais e assim por diante. Um agent
 só carrega um quando trabalha naquela pasta. Quando o arquivo da raiz tinha crescido para um parágrafo por
 pacote, o Discava levou os detalhes para baixo, para que nenhuma execução lesse mais sobre pacotes em que não estava
 mexendo. O arquivo do pacote de banco de dados, por exemplo, diz por qual helper passa cada escrita compartilhada,
 e que mudar quem escreve na tabela significa gerar de novo o mapa que o check `Invariant coverage`
 lê.
+
+O mais longo é o arquivo dos portais, `packages/websites/AGENTS.md`: as regras de UI de cada tela.
+Ele nomeia as duas larguras a conferir (375px e 1440px), os estados (carregando, vazio, erro, conteúdo
+longo) e regras de layout, links, foco e erros, como "um botão cuja ação está rodando é um
+`PendingButton`, nunca `disabled={isPending}`: desabilitar o botão com foco manda o foco para
+`<body>`". O Discava rodou uma spec de auditoria e correção para cada portal. O plano de cada uma
+rascunha as regras que as correções ensinam como `contracts/ui-rules.md`, e a última user story
+dela as escreve nesse arquivo e tira o que foi dito duas vezes. O próximo agent a construir uma tela
+parte delas em vez de repetir os achados da auditoria.
 
 <Aside type="tip">
 O `AGENTS.md` do Discava cresceu uma linha de cada vez, sempre que um review pegou o mesmo erro duas vezes.

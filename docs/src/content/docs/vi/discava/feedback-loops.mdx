@@ -15,7 +15,7 @@ hiệu duy nhất mà worker OpenHands vốn đã hành động theo: một comm
 ## Agent CI Status
 
 `.github/workflows/agent-ci.yml` chạy khi có `workflow_run`, khi **PR Checks** hoàn tất với
-`failure` hoặc `timed_out` cho một pull request trên nhánh `openhands/issue-`. Nó checkout nhánh mặc
+`failure` hoặc `timed_out` cho một pull request trên nhánh `openhands/`. Nó checkout nhánh mặc
 định và chạy `agent-ci-status`. Các bước mà cả hai workflow dùng chung nằm trong một reusable
 workflow, `agent-status.yml`. Mỗi workflow gọi nó giữ trigger, điều kiện, nhóm concurrency và
 permission riêng.
@@ -25,8 +25,10 @@ ghi, dù PR Checks đã chạy trên code của PR với một token chỉ đọ
 
 Script (`src/agent-ci/`):
 
-1. Kiểm tra tên nhánh với `^openhands/issue-\d+$` **trước khi** dùng nó trong bất kỳ request nào. Nó
-   đến từ tác giả PR.
+1. Kiểm tra tên nhánh với `^openhands/[A-Za-z0-9][A-Za-z0-9._-]*$` **trước khi** dùng nó trong bất
+   kỳ request nào. Nó đến từ tác giả PR. Cho đến ngày 22 tháng 11, nó chỉ khớp
+   `openhands/issue-<n>`, nên một PR sửa lỗi mà Tester mở trên `openhands/test-fix-<n>` không hề cho
+   thấy các check thất bại của nó.
 2. Tìm PR đang mở, các label và head hiện tại của nó, và các status trên commit của lần chạy.
 3. Liệt kê các job thất bại, như `E2E tests (3/4)` và `Checks (lint)`.
 4. Gọi `planCi()`, trả về `ignore`, `send-back` hoặc `give-up`.

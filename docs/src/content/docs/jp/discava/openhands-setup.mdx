@@ -94,7 +94,7 @@ Discava 独自のものです。それぞれがポーリングで何をするか
 | Branch prefix | `openhands/issue` → ブランチ `openhands/issue-<n>` |
 | Pull request mode | Ready for review |
 | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Schedule | `*/5 * * * *`、Australia/Sydney |
+| Schedule | `*/2 * * * *`、Australia/Sydney |
 | Agent profile | `developer` |
 
 修正のターンでは、終わったあとに `openhands-review` ラベルを付け直すようエージェントに指示するので、
@@ -111,7 +111,7 @@ Discava 独自のものです。それぞれがポーリングで何をするか
 | New reviews per scan | 2 |
 | Review tone | Concise |
 | Maintainers | なし |
-| Schedule | `*/5 * * * *`、Australia/Sydney |
+| Schedule | `*/2 * * * *`、Australia/Sydney |
 | Agent profile | `reviewer` |
 
 チェックがまだ実行中のあいだ、レビュー担当は "⏳ Review waiting on checks" というコメントを投稿し、
@@ -133,7 +133,7 @@ Discava 独自のものです。それぞれがポーリングで何をするか
 | New tests per scan | 2 |
 | Prompt file | `prompt.md` |
 | GitHub token secret | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| Schedule | `*/5 * * * *`、Australia/Sydney |
+| Schedule | `*/2 * * * *`、Australia/Sydney |
 | Agent profile | `tester` |
 
 ポーリングのたびに、ワーカーは次のことを行います。
