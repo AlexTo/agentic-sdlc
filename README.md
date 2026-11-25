@@ -8,6 +8,15 @@
     <img alt="Nx" src="https://img.shields.io/badge/monorepo-Nx-143055?style=for-the-badge&logo=nx&logoColor=white">
     <img alt="License" src="https://img.shields.io/badge/license-MIT-64748b?style=for-the-badge">
   </p>
+  <p>
+    <a href="https://alexto.github.io/agentic-sdlc/"><img alt="Read the full documentation" src="https://img.shields.io/badge/%F0%9F%93%9A_Read_the_full_documentation-alexto.github.io%2Fagentic--sdlc-f59e0b?style=for-the-badge"></a>
+  </p>
+  <p>
+    <a href="https://alexto.github.io/agentic-sdlc/"><b>Documentation</b></a> ·
+    <a href="https://alexto.github.io/agentic-sdlc/en/setup/before-you-start/"><b>Set it up</b></a> ·
+    <a href="https://alexto.github.io/agentic-sdlc/en/guides/case-study/"><b>Case study</b></a> ·
+    <a href="https://github.com/AlexTo/discava"><b>Discava</b></a>
+  </p>
 </div>
 
 ---
