@@ -1,13 +1,13 @@
 ---
 title: 1. リポジトリを fork する
-description: このリポジトリを fork してクローンし、動作を確認します。
+description: このリポジトリを fork してクローンし、依存関係をインストールします。
 sidebar:
   order: 1
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**完了時の状態:** ローカルにクローンされ、チェックが通る自分の fork。
+**完了時の状態:** ローカルにクローンされ、セットアップスクリプトを実行できる状態の自分の fork。
 
 <Steps>
 
@@ -18,42 +18,39 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    cd agentic-sdlc
    ```
 
-2. **自分の fork を `gh` のデフォルトにします。** そうしないと、`gh` コマンドは自分のリポジトリではなく
-   元のリポジトリを対象にします。
+2. **自分の fork を `gh` のデフォルトにします。** そうしないと、`gh` コマンドも、それで開く pull request も、
+   自分のリポジトリではなく元のリポジトリを対象にします。
 
    ```bash
    gh repo set-default <you>/agentic-sdlc
    ```
 
-3. CI と同じ **チェックをローカルでインストールして実行します**:
+3. **依存関係をインストールします。**
 
    ```bash
    pnpm install
-   pnpm nx run-many --target lint --all
-   pnpm nx run-many --target test --all
-   pnpm nx run-many --target build --all
    ```
 
-   `pnpm install` は git フックもインストールします。すべてのコミットメッセージに Conventional Commits、
-   すべてのコミット前にシークレットスキャンと Biome、すべての push 前に invariant マップのチェックが行われます。
-   notes アプリを実行するには(Docker が必要): `pnpm dev` を実行し、ウェブサイトが表示する URL を開きます。
+   これは、最初の spec をコミットするときに出会う git フックもインストールします。すべてのコミットメッセージに
+   Conventional Commits、すべてのコミット前にシークレットスキャンと Biome が行われます。
 
 </Steps>
 
 ## 動作を確認する
 
-3 つの `nx run-many` コマンドが通り、Conventional Commit ではないメッセージのコミットは拒否されます。
-
 ```bash
-git commit --allow-empty -m "not conventional"
+gh repo set-default --view
 ```
 
-```text
-✖   subject may not be empty [subject-empty]
-✖   type may not be empty [type-empty]
-```
+が `<you>/agentic-sdlc` を表示します。
 
 GitHub は fork で Issues と Actions を無効にします。次のステップのスクリプトがそれらを有効に戻します。
+
+<Aside type="tip" title="任意: 動かしてみる">
+CI が実行するもの (lint、テスト、ビルド) を実行するには: `pnpm build`。notes アプリを実行するには
+(Docker が必要): `pnpm dev` を実行し、ウェブサイトが表示する URL を開きます。どちらもセットアップには
+必要ありません。CI がすべての pull request でチェックを実行します。
+</Aside>
 
 <Aside type="note">
 `CODECOV_TOKEN` シークレットがないと、CI のカバレッジのアップロードステップはエラーをログに出して続行します。

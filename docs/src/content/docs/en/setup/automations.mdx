@@ -11,8 +11,9 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 labelled `openhands`, revises PRs marked as failing, and reviews PRs labelled `openhands-review`.
 These are the Developer and Reviewer agents.
 
-Both automations come from the Agent Canvas **automation catalog**. You fill in a form, and the
-catalog packages a tested worker with your settings. You don't write or upload any code.
+Both automations come from the Agent Canvas **automation catalog**, under **Automations**. You
+fill in a form, and the catalog packages a tested worker with your settings. You don't write any
+code.
 
 <Steps>
 
@@ -46,29 +47,42 @@ catalog packages a tested worker with your settings. You don't write or upload a
    | Agent profile | `reviewer` |
    | Check frequency | `*/5 * * * *` |
 
-   Discava runs template version 1.11.2, with the patch below. **New reviews per scan** caps how
-   many review conversations one poll starts, so a backlog doesn't start ten agents at once.
+   Discava runs template version 1.11.2, with the patch in the next step. **New reviews per scan**
+   caps how many review conversations one poll starts, so a backlog doesn't start ten agents at once.
 
    **Maintainers** is optional. When set, an approved PR is handed to one of them as a requested
    reviewer, chosen by who has changed those files before. This happens only when the PR's issue
    carries `priority:medium` or `priority:high`. Discava leaves it empty.
 
-   <Aside type="caution" title="The code review template refuses an app's token">
-   Up to at least version 1.11.3, the worker asks `GET /user` which account it acts as, and
-   GitHub answers an installation token with `403 Resource not accessible by integration`. Every
-   scan then fails before it reviews. Discava patched its copy to ask GraphQL `viewer { login }`
-   instead: see [Troubleshooting](../../reference/troubleshooting/#reviews).
-   </Aside>
+3. **Patch the code review automation for your app.** As it ships, up to at least template
+   version 1.11.3, it asks GitHub `GET /user` which account it acts as, and GitHub refuses that
+   to an app's token (`403 Resource not accessible by integration`). Every review scan then fails.
+   Until OpenHands fixes it, let an agent make the fix Discava made. Start a conversation in
+   Agent Canvas and paste:
 
-3. **Run each automation once by hand** from its page in Agent Canvas, and read the run log.
+   ```text
+   The "GitHub code review" automation fails with HTTP 403: its GitHub token is a GitHub App
+   installation token, and GitHub refuses those on GET /user. Fix the automation's worker bundle:
+   wherever the code reads the token's login from GET /user (the login lookup in worker.py and
+   the token check in main.py), fall back on a 403 to the GraphQL query { viewer { login } }.
+   Upload the patched bundle through the automation API and point this automation at it, changing
+   nothing else. Then run the automation once and show me that the run completed.
+   ```
+
+   Repeat this if you later update the automation from the catalog.
+
+4. **Run each automation once by hand**, with **Run now** on its page in Agent Canvas, and read
+   the run log.
 
 </Steps>
 
 ## Check it worked
 
-A first run with nothing to do logs a sweep of the repository and ends `COMPLETED`. Then:
+A first run with nothing to do logs a sweep of the repository and ends `COMPLETED`. Then try
+one small change end to end:
 
-1. Create a test issue: "Add a line to README.md saying hello", and add the `openhands` label.
+1. In your fork, create an issue titled "Add a line to README.md saying hello", and add the
+   `openhands` label.
 2. Within one poll, a conversation for the issue appears in Agent Canvas.
 3. When the agent finishes, a PR appears on `openhands/issue-<n>`, titled `[#<n>] <issue
    title>`, with `openhands-review` added.
@@ -76,7 +90,7 @@ A first run with nothing to do logs a sweep of the repository and ends `COMPLETE
    "_This review was posted by an AI agent (OpenHands)._" and ends `✅ APPROVED` or
    `🔄 CHANGES REQUESTED`.
 
-Close the PR and delete the branch afterwards.
+Close the PR and the issue, and delete the branch, afterwards.
 
 What each automation does on a poll is on [The agent runtime](../../concepts/the-agent-runtime/).
 

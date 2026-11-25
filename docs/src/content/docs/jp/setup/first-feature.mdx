@@ -16,11 +16,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 <Steps>
 
-1. クローンのブランチで、コーディングエージェントと一緒に **spec を書きます**:
-
-   ```bash
-   git switch -c spec/note-tags
-   ```
+1. クローンの最新の `main` で、コーディングエージェントと一緒に **spec を書きます**:
 
    ```text
    /speckit-specify Users can add up to five tags to a note and filter the note list by tag. Tags are case-insensitive and unique per note.
@@ -30,16 +26,23 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    /speckit-analyze
    ```
 
-2. **spec PR を開き、`spec-ready` ラベルを付けてマージします。** ブランチを push します:
+   `/speckit-specify` は spec 用のブランチを作ってそこに切り替えます。名前は
+   `<timestamp>-note-tags` のようになります。`/speckit-clarify` が尋ねる質問に答えます。最後には
+   `specs/<timestamp>-note-tags/` の下に `spec.md`、`plan.md`、`tasks.md` ができています。
+
+2. **`spec-ready` ラベルを付けて spec PR を開き、マージします。**
 
    ```bash
    git add specs/ && git commit -m "docs(specs): add note tags spec"
-   git push -u origin spec/note-tags
+   git push -u origin HEAD
+   gh pr create --fill --label spec-ready
    ```
 
-   GitHub で pull request を開き、`spec-ready` ラベルを付け、チェックがグリーンになったらマージします。
-   PR を開いたのは自分なので、GitHub では承認できません。**Merge without waiting for
-   requirements to be met** にチェックを入れます。
+   `gh` は fork に pull request を開き、そのアドレスを表示します。(GitHub のウェブサイトは、fork の
+   pull request のベースとして元のリポジトリを提示しますが、それは望むものではありません。) そこで spec を
+   コードレビューと同じように読み、チェックがグリーンになったらマージします。PR を開いたのは自分なので、
+   GitHub では承認できません。**Merge without waiting for requirements to be met** に
+   チェックを入れます。
 
    ✅ PR で **Tasks format** が通ります。マージ後、**Agent Issues** が
    `feat(<feature>): … (with setup and foundations)` というタイトルの issue を開きます。`openhands` ラベルが付き、範囲は最初のフェーズのグループです。
@@ -47,7 +50,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 3. **エージェントを待ちます。** 何もする必要はありません。
 
    ✅ 次のポーリングで、その issue の会話が Agent Canvas で始まります。完了すると、
-   `openhands/issue-<n>` に `openhands-review` 付きのドラフト PR が作成され、`tasks.md` ではちょうどそのフェーズの分だけチェックが付いています。
+   `openhands/issue-<n>` に、自分の App が開いた `openhands-review` 付きの PR が作成され、`tasks.md` ではちょうどそのフェーズの分だけチェックが付いています。
 
 4. **ゲートを見守ります。**
 
@@ -57,14 +60,15 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    エージェントに差し戻されます。
 
 5. **レビューしてマージします。** PR の説明と、そこに挙げられた **(human)** タスク、そしてウェブサイトのフェーズでは
-   **E2E screenshots** コメントを読みます。**Ready for review** をクリックしてから、承認して
-   マージします。
+   **E2E screenshots** コメントを読みます。その後、承認してマージします。
 
    ✅ **Agent Issues** が再び実行され、次のフェーズの issue を開きます。手順 3 から 5 を繰り返します。
 
 6. **最後の PR をマージします。**
 
    ✅ Agent Issues が `No issue created: … no tasks left for the agent` とログに出します。機能は完成です。
+   その後 **Archive Specs** が、完了した spec を `specs/_archive/` に移すブランチを push し、その実行には
+   入力済みのその pull request を開くリンクが表示されるので、それを送信します。
 
 </Steps>
 

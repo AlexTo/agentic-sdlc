@@ -13,10 +13,10 @@ The spec says *what* and *why*, never *how*. It is the most important thing you 
 
 <Steps>
 
-1. Start from a branch.
+1. Start from an up-to-date `main`.
 
    ```bash
-   git switch -c spec/note-tags
+   git switch main && git pull
    ```
 
 2. Describe the feature to Speckit.
@@ -26,8 +26,9 @@ The spec says *what* and *why*, never *how*. It is the most important thing you 
    Tags are case-insensitive and unique per note.
    ```
 
-   Speckit creates `specs/<timestamp>-note-tags/spec.md` with user stories, functional
-   requirements and acceptance criteria.
+   Speckit makes a branch named `<timestamp>-note-tags`, switches to it, and creates
+   `specs/<timestamp>-note-tags/spec.md` with user stories, functional requirements and
+   acceptance criteria.
 
 3. Let the agent find the gaps.
 

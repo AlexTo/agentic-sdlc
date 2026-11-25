@@ -8,24 +8,24 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 
 Un [fork de este repositorio](../../guides/fork-this-repo/) tiene todo lo que la configuración de Discava guarda en
-el repositorio. Estos pasos añaden la parte que vive fuera de él: tu configuración de GitHub y una
-instalación de OpenHands apuntando a tu fork. Después escribes una spec para la app de notas y ves cómo
-pasa de PR de spec a PR de agentes fusionados.
+el repositorio. Estos pasos añaden la parte que vive fuera de él: tu configuración de GitHub, una GitHub App
+con la que actúan los agentes y una instalación de OpenHands apuntando a tu fork. Después escribes una spec
+para la app de notas y ves cómo pasa de PR de spec a PR de agentes fusionados.
 
 **Tiempo:** cerca de una hora, casi toda esperando la primera ejecución del agente.
 
 ## Lo que necesitas
 
+En macOS o Linux (en Windows, usa WSL):
+
 | Necesitas | Por qué |
 | --- | --- |
 | Una cuenta de GitHub | Para hacer el fork, escribir specs y hacer review |
-| Una GitHub App para los agentes | Los agentes actúan como ella, así que sus PR y comentarios son suyos y puedes aprobarlos. La de Discava es `alex-coding-agent` |
+| GitHub CLI (`gh`), con sesión iniciada | El script de configuración y los agentes lo usan |
 | Node.js 24 y pnpm | Para ejecutar el repositorio y Agent Canvas |
 | `uv` | Agent Canvas arranca su backend con `uvx` |
-| `openssl`, `curl` y `jq` | Para emitir los tokens de la app |
-| Docker | Solo para ejecutar la app de notas y sus tests e2e en local. CI los ejecuta para el agente |
-| GitHub CLI (`gh`), con sesión iniciada | La mayoría de los pasos lo usan |
-| Un agente de programación, instalado y con sesión iniciada | Escribe specs con Speckit y se ejecuta dentro de OpenHands. Discava usa Claude Code |
+| Un agente de programación, instalado y con sesión iniciada | Escribe specs con Speckit y hace el trabajo de los agentes dentro de OpenHands. Discava usa Claude Code |
+| Docker (opcional) | Solo para ejecutar la app de notas y sus tests e2e en tu máquina. CI los ejecuta para los agentes |
 
 <Aside type="note">
 Agent Canvas se ejecuta en tu propia máquina y consulta GitHub periódicamente, así que no necesita dirección pública ni
@@ -34,13 +34,13 @@ webhook. Los agentes solo trabajan mientras está en ejecución.
 
 ## Los pasos
 
-| # | Paso | Al terminar tendrás |
-| --- | --- | --- |
-| 1 | [Haz fork del repositorio](../fork/) | Tu propia copia, con Actions e Issues activados |
-| 2 | [Configura el repositorio](../github-repository/) | Un script: Issues y Actions activados, las labels, un `main` protegido, comentarios limitados a colaboradores y la GitHub App de los agentes nombrada |
-| 3 | [Instala OpenHands](../openhands/) | Agent Canvas en ejecución, el token de la app siempre al día y dos perfiles de agente |
-| 4 | [Crea las dos automatizaciones](../automations/) | Los agentes Desarrollador y Revisor implementando y haciendo review en tu fork |
-| 5 | [Ejecuta tu primera feature](../first-feature/) | Una spec para la app de notas, llevada hasta código fusionado por agentes |
+| # | Paso | Lo que haces | Al terminar tendrás |
+| --- | --- | --- | --- |
+| 1 | [Haz fork del repositorio](../fork/) | Tres comandos | Tu propia copia, clonada |
+| 2 | [Configura el repositorio](../github-repository/) | Crear una GitHub App desde un formulario ya relleno, ejecutar un script | La GitHub App de los agentes en tu fork, las labels, un `main` protegido, comentarios limitados a colaboradores |
+| 3 | [Instala OpenHands](../openhands/) | Dos comandos, dos perfiles en la interfaz web | Agent Canvas en ejecución como tu app, con un perfil `developer` y otro `reviewer` |
+| 4 | [Crea las dos automatizaciones](../automations/) | Dos formularios en la interfaz web, un prompt pegado | Los agentes Desarrollador y Revisor implementando y haciendo review en tu fork |
+| 5 | [Ejecuta tu primera feature](../first-feature/) | Escribir una spec, revisar pull requests | Una spec para la app de notas, llevada hasta código fusionado por agentes |
 
 ¿Prefieres la configuración en un repositorio existente? Consulta
 [Adóptalo en tu propio repositorio](../../adopt/overview/).

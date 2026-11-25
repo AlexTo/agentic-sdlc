@@ -5,6 +5,7 @@
   "packageManager": "pnpm@12.14.0",
   "scripts": {
     "dev": "nx run-many --target dev",
+    "agent-canvas": "node scripts/start-agent-canvas.mjs",
     "build": "nx run-many --target build",
     "lint": "nx run-many --target lint --configuration=fix",
     "test": "nx run-many --target test --all",

@@ -11,12 +11,16 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 <Steps>
 
-1. Sube la rama y después abre un pull request para ella en GitHub.
+1. Sube la rama que creó Speckit y abre un pull request para ella.
 
    ```bash
    git add specs/ && git commit -m "docs(specs): add note tags spec"
-   git push -u origin spec/note-tags
+   git push -u origin HEAD
+   gh pr create --fill
    ```
+
+   En un fork, `gh` lo abre en tu fork una vez que has ejecutado `gh repo set-default`. La web de
+   GitHub ofrece en su lugar el repositorio original como base.
 
 2. Revísalo como revisarías código. Lee primero `spec.md`, después `plan.md`, y luego echa un vistazo a `tasks.md`.
    Pregúntate:

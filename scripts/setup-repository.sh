@@ -8,11 +8,12 @@ set -euo pipefail
 #   ./scripts/setup-repository.sh [--dry-run] [owner/repo] [agent]
 #
 #   owner/repo  defaults to `gh repo set-default`, else the origin remote
-#   agent       who the agents post as. A GitHub App's bot login, such as
-#               `my-agent[bot]`, is saved as the AGENT_APP_LOGIN variable so
-#               the glue trusts the app's reviews (install the app on the
-#               repository yourself). A user account is invited with write
-#               access instead (accept the invitation while signed in as it)
+#   agent       who the agents act as: the name of your GitHub App, as in its
+#               URL (github.com/apps/<name>). Its bot login, `<name>[bot]`, is
+#               saved as the AGENT_APP_LOGIN variable so the glue trusts the
+#               app's reviews. Install the app on the repository yourself.
+#               A user account's name is invited with write access instead
+#               (accept the invitation while signed in as it)
 #   --dry-run   print the gh commands instead of running them
 #
 # Needs the gh CLI, signed in as an owner or admin of the repository.
@@ -34,7 +35,7 @@ for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=true ;;
     -h | --help)
-      sed -n '4,18p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '4,19p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) ARGS+=("$arg") ;;
@@ -143,6 +144,11 @@ else
   run gh api -X POST "repos/$REPO/pages" -f build_type=workflow >/dev/null
 fi
 
+# A GitHub App may be named with or without its `[bot]` suffix.
+if [[ -n "$BOT" && "$BOT" != *'[bot]' ]] &&
+  gh api "apps/$BOT" --silent 2>/dev/null; then
+  BOT="$BOT[bot]"
+fi
 if [[ "$BOT" == *'[bot]' ]]; then
   echo "- AGENT_APP_LOGIN set to $BOT"
   run gh variable set AGENT_APP_LOGIN --repo "$REPO" --body "$BOT"

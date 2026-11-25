@@ -8,24 +8,24 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 
 Un [fork di questo repository](../../guides/fork-this-repo/) contiene tutto ciò che la configurazione di Discava tiene
-nel repository. Questi passaggi aggiungono la parte che vive fuori: le impostazioni di GitHub e
-un'installazione di OpenHands puntata sul tuo fork. Poi scrivi una spec per l'app di note e la guardi
-passare dalla PR della spec alle PR degli agenti unite.
+nel repository. Questi passaggi aggiungono la parte che vive fuori: le impostazioni di GitHub, una
+GitHub App con cui agiscono gli agenti, e un'installazione di OpenHands puntata sul tuo fork. Poi
+scrivi una spec per l'app di note e la guardi passare dalla PR della spec alle PR degli agenti unite.
 
 **Tempo:** circa un'ora, quasi tutta in attesa della prima esecuzione dell'agente.
 
 ## Cosa ti serve
 
+Su macOS o Linux (su Windows, usa WSL):
+
 | Requisito | Perché |
 | --- | --- |
 | Un account GitHub | Per fare il fork, scrivere le spec e fare review |
-| Una GitHub App per gli agenti | Gli agenti agiscono come essa, così le loro PR e i loro commenti sono loro e puoi approvarli. Quella di Discava è `alex-coding-agent` |
+| GitHub CLI (`gh`), con accesso effettuato | La usano lo script di configurazione e gli agenti |
 | Node.js 24 e pnpm | Per eseguire il repository e Agent Canvas |
 | `uv` | Agent Canvas avvia il suo backend con `uvx` |
-| `openssl`, `curl` e `jq` | Per creare i token dell'app |
-| Docker | Solo per eseguire in locale l'app di note e i suoi test e2e. La CI li esegue per l'agente |
-| GitHub CLI (`gh`), con accesso effettuato | La usano quasi tutti i passaggi |
-| Un coding agent, installato e con accesso effettuato | Scrive le spec con Speckit, e gira dentro OpenHands. Discava usa Claude Code |
+| Un coding agent, installato e con accesso effettuato | Scrive le spec con Speckit, e fa il lavoro degli agenti dentro OpenHands. Discava usa Claude Code |
+| Docker (facoltativo) | Solo per eseguire sulla tua macchina l'app di note e i suoi test e2e. La CI li esegue per gli agenti |
 
 <Aside type="note">
 Agent Canvas gira sulla tua macchina e interroga GitHub, quindi non servono un indirizzo pubblico né un
@@ -34,13 +34,13 @@ webhook. Gli agenti lavorano solo mentre è in esecuzione.
 
 ## I passaggi
 
-| # | Passaggio | Alla fine avrai |
-| --- | --- | --- |
-| 1 | [Fai il fork del repository](../fork/) | La tua copia, con Actions e Issues attivi |
-| 2 | [Configura il repository](../github-repository/) | Un solo script: Issues e Actions attivi, le label, un `main` protetto, commenti limitati ai collaboratori, e la GitHub App degli agenti indicata |
-| 3 | [Installa OpenHands](../openhands/) | Agent Canvas in esecuzione, il token dell'app tenuto aggiornato, due profili agente |
-| 4 | [Crea le due automazioni](../automations/) | Gli agenti Developer e Reviewer che implementano e fanno review nel tuo fork |
-| 5 | [Esegui la tua prima feature](../first-feature/) | Una spec per l'app di note, portata dagli agenti fino al codice unito |
+| # | Passaggio | Cosa fai | Alla fine avrai |
+| --- | --- | --- | --- |
+| 1 | [Fai il fork del repository](../fork/) | Tre comandi | La tua copia, clonata |
+| 2 | [Configura il repository](../github-repository/) | Crei una GitHub App da un modulo già compilato, esegui un solo script | La GitHub App degli agenti sul tuo fork, le label, un `main` protetto, commenti limitati ai collaboratori |
+| 3 | [Installa OpenHands](../openhands/) | Due comandi, due profili nell'interfaccia web | Agent Canvas in esecuzione come la tua app, con un profilo `developer` e un profilo `reviewer` |
+| 4 | [Crea le due automazioni](../automations/) | Due moduli nell'interfaccia web, un prompt da incollare | Gli agenti Developer e Reviewer che implementano e fanno review nel tuo fork |
+| 5 | [Esegui la tua prima feature](../first-feature/) | Scrivi una spec, fai la review delle pull request | Una spec per l'app di note, portata dagli agenti fino al codice unito |
 
 Vuoi invece la configurazione in un repository esistente? Vedi
 [Adottalo nel tuo repository](../../adopt/overview/).

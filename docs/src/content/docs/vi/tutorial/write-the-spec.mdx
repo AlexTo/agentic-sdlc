@@ -13,10 +13,10 @@ Spec nói *cái gì* và *vì sao*, không bao giờ nói *thế nào*. Đó là
 
 <Steps>
 
-1. Bắt đầu từ một nhánh.
+1. Bắt đầu từ một `main` đã cập nhật.
 
    ```bash
-   git switch -c spec/note-tags
+   git switch main && git pull
    ```
 
 2. Mô tả tính năng cho Speckit.
@@ -26,8 +26,8 @@ Spec nói *cái gì* và *vì sao*, không bao giờ nói *thế nào*. Đó là
    Tags are case-insensitive and unique per note.
    ```
 
-   Speckit tạo `specs/<timestamp>-note-tags/spec.md` với user story, yêu cầu chức năng và tiêu
-   chí chấp nhận.
+   Speckit tạo một nhánh tên `<timestamp>-note-tags`, chuyển sang nó, và tạo
+   `specs/<timestamp>-note-tags/spec.md` với user story, yêu cầu chức năng và tiêu chí chấp nhận.
 
 3. Để agent tìm các lỗ hổng.
 

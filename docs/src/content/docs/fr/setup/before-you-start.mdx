@@ -8,24 +8,24 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 
 Un [fork de ce dépôt](../../guides/fork-this-repo/) contient tout ce que la configuration de Discava garde dans
-le dépôt. Ces étapes ajoutent la partie qui vit en dehors : vos réglages GitHub, et une
-installation d'OpenHands pointée vers votre fork. Ensuite, vous écrivez une spec pour l'application de notes et la regardez
-passer de la PR de spec aux PR d'agents mergées.
+le dépôt. Ces étapes ajoutent la partie qui vit en dehors : vos réglages GitHub, une GitHub App
+sous laquelle agissent les agents, et une installation d'OpenHands pointée vers votre fork. Ensuite, vous écrivez
+une spec pour l'application de notes et la regardez passer de la PR de spec aux PR d'agents mergées.
 
 **Durée :** environ une heure, passée surtout à attendre la première exécution de l'agent.
 
 ## Ce dont vous avez besoin
 
+Sous macOS ou Linux (sous Windows, utilisez WSL) :
+
 | Besoin | Pourquoi |
 | --- | --- |
 | Un compte GitHub | Pour forker, écrire les specs et relire |
-| Une GitHub App pour les agents | Les agents agissent sous elle, donc leurs PR et leurs commentaires sont les leurs et vous pouvez les approuver. Celle de Discava est `alex-coding-agent` |
+| GitHub CLI (`gh`), connecté | Le script de configuration et les agents l'utilisent |
 | Node.js 24 et pnpm | Pour faire tourner le dépôt et Agent Canvas |
 | `uv` | Agent Canvas démarre son backend avec `uvx` |
-| `openssl`, `curl` et `jq` | Pour émettre les tokens de l'app |
-| Docker | Seulement pour lancer l'application de notes et ses tests e2e en local. La CI les lance pour l'agent |
-| GitHub CLI (`gh`), connecté | La plupart des étapes l'utilisent |
-| Un agent de code, installé et connecté | Écrit les specs avec Speckit, et tourne dans OpenHands. Discava utilise Claude Code |
+| Un agent de code, installé et connecté | Il écrit les specs avec Speckit, et fait le travail des agents dans OpenHands. Discava utilise Claude Code |
+| Docker (facultatif) | Seulement pour lancer l'application de notes et ses tests e2e sur votre machine. La CI les lance pour les agents |
 
 <Aside type="note">
 Agent Canvas tourne sur votre propre machine et interroge GitHub, il n'a donc besoin ni d'adresse publique ni de
@@ -34,13 +34,13 @@ webhook. Les agents ne travaillent que tant qu'il tourne.
 
 ## Les étapes
 
-| # | Étape | Résultat |
-| --- | --- | --- |
-| 1 | [Forker le dépôt](../fork/) | Votre propre copie, avec Actions et Issues activés |
-| 2 | [Configurer le dépôt](../github-repository/) | Un seul script : Issues et Actions activés, les labels, une branche `main` protégée, les commentaires limités aux collaborateurs, et la GitHub App des agents désignée |
-| 3 | [Installer OpenHands](../openhands/) | Agent Canvas en marche, le token de l'app tenu à jour, deux profils d'agent |
-| 4 | [Créer les deux automatisations](../automations/) | Les agents Développeur et Relecteur qui implémentent et relisent dans votre fork |
-| 5 | [Lancer votre première fonctionnalité](../first-feature/) | Une spec pour l'application de notes, menée jusqu'au code mergé par les agents |
+| # | Étape | Ce que vous faites | Résultat |
+| --- | --- | --- | --- |
+| 1 | [Forker le dépôt](../fork/) | Trois commandes | Votre propre copie, clonée |
+| 2 | [Configurer le dépôt](../github-repository/) | Créer une GitHub App depuis un formulaire pré-rempli, lancer un seul script | La GitHub App des agents sur votre fork, les labels, une branche `main` protégée, les commentaires limités aux collaborateurs |
+| 3 | [Installer OpenHands](../openhands/) | Deux commandes, deux profils dans l'interface web | Agent Canvas en marche sous votre app, avec un profil `developer` et un profil `reviewer` |
+| 4 | [Créer les deux automatisations](../automations/) | Deux formulaires dans l'interface web, un prompt à coller | Les agents Développeur et Relecteur qui implémentent et relisent dans votre fork |
+| 5 | [Lancer votre première fonctionnalité](../first-feature/) | Écrire une spec, relire des pull requests | Une spec pour l'application de notes, menée jusqu'au code mergé par les agents |
 
 Vous préférez mettre la configuration en place dans un dépôt existant ? Voir
 [L'adopter dans votre propre dépôt](../../adopt/overview/).

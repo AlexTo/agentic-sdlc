@@ -11,12 +11,16 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 <Steps>
 
-1. ブランチを push し、GitHub でそのブランチの pull request を開きます。
+1. Speckit が作ったブランチを push し、そのブランチの pull request を開きます。
 
    ```bash
    git add specs/ && git commit -m "docs(specs): add note tags spec"
-   git push -u origin spec/note-tags
+   git push -u origin HEAD
+   gh pr create --fill
    ```
+
+   fork では、`gh repo set-default` を実行済みであれば、`gh` は自分の fork に pull request を開きます。
+   GitHub のウェブサイトは、代わりに元のリポジトリをベースとして提示します。
 
 2. コードと同じようにレビューします。まず `spec.md`、次に `plan.md` を読み、`tasks.md` にざっと目を通します。
    次のことを自問してください:

@@ -11,8 +11,8 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 issue を実装し、失敗とマークされた PR を修正し、`openhands-review` ラベルの付いた PR をレビューします。
 これらが開発担当エージェントとレビュー担当エージェントです。
 
-どちらの automation も Agent Canvas の **automation catalog** から追加します。フォームに入力すると、
-カタログがテスト済みのワーカーを設定付きでパッケージ化します。コードを書いたりアップロードしたりする必要はありません。
+どちらの automation も、Agent Canvas の **Automations** にある **automation catalog** から追加します。
+フォームに入力すると、カタログがテスト済みのワーカーを設定付きでパッケージ化します。コードを書く必要はありません。
 
 <Steps>
 
@@ -46,29 +46,42 @@ issue を実装し、失敗とマークされた PR を修正し、`openhands-re
    | Agent profile | `reviewer` |
    | Check frequency | `*/5 * * * *` |
 
-   Discava はテンプレートのバージョン 1.11.2 を、下記のパッチを当てて使っています。**New reviews per scan** は
+   Discava はテンプレートのバージョン 1.11.2 を、次の手順のパッチを当てて使っています。**New reviews per scan** は
    1 回のポーリングで開始するレビュー会話の数の上限で、溜まった作業があっても 10 個のエージェントが一度に起動しないようにします。
 
    **Maintainers** は任意です。設定すると、承認された PR は、そのファイルを過去に変更した人を基準に選ばれた
    メンテナーの 1 人に、レビュー依頼として渡されます。これは PR の issue に `priority:medium` または
    `priority:high` が付いている場合にのみ行われます。Discava では空のままにしています。
 
-   <Aside type="caution" title="コードレビューのテンプレートは App のトークンを拒否する">
-   少なくともバージョン 1.11.3 までは、ワーカーは自分がどのアカウントとして動くかを `GET /user` で尋ね、
-   GitHub はインストールトークンに `403 Resource not accessible by integration` と答えます。そのため、すべての
-   スキャンがレビューの前に失敗します。Discava は自分のコピーにパッチを当て、代わりに GraphQL の `viewer { login }` に
-   尋ねるようにしました。[トラブルシューティング](../../reference/troubleshooting/#レビュー)を参照してください。
-   </Aside>
+3. **コードレビューの automation に、自分の App 向けのパッチを当てます。** 少なくともテンプレートの
+   バージョン 1.11.3 までは、出荷時の状態では自分がどのアカウントとして動くかを GitHub に `GET /user` で尋ね、
+   GitHub は App のトークンにはそれを拒否します (`403 Resource not accessible by integration`)。そのため、
+   レビューのスキャンがすべて失敗します。OpenHands が修正するまでは、Discava が行った修正をエージェントに
+   任せます。Agent Canvas で会話を始め、次を貼り付けます:
 
-3. Agent Canvas の各 automation のページから **それぞれを一度手動で実行** し、実行ログを確認します。
+   ```text
+   The "GitHub code review" automation fails with HTTP 403: its GitHub token is a GitHub App
+   installation token, and GitHub refuses those on GET /user. Fix the automation's worker bundle:
+   wherever the code reads the token's login from GET /user (the login lookup in worker.py and
+   the token check in main.py), fall back on a 403 to the GraphQL query { viewer { login } }.
+   Upload the patched bundle through the automation API and point this automation at it, changing
+   nothing else. Then run the automation once and show me that the run completed.
+   ```
+
+   後でカタログから automation を更新した場合は、これを繰り返します。
+
+4. Agent Canvas の各 automation のページの **Run now** で **それぞれを一度手動で実行** し、
+   実行ログを確認します。
 
 </Steps>
 
 ## 動作を確認する
 
-やることがない状態での最初の実行では、リポジトリのスイープがログに記録され、`COMPLETED` で終わります。その後:
+やることがない状態での最初の実行では、リポジトリのスイープがログに記録され、`COMPLETED` で終わります。その後、
+小さな変更を 1 つ、最初から最後まで試します:
 
-1. テスト用の issue「Add a line to README.md saying hello」を作成し、`openhands` ラベルを付けます。
+1. fork で、「Add a line to README.md saying hello」というタイトルの issue を作成し、`openhands` ラベルを
+   付けます。
 2. 1 回のポーリング以内に、その issue の会話が Agent Canvas に表示されます。
 3. エージェントが完了すると、`openhands/issue-<n>` に PR が作成されます。タイトルは `[#<n>] <issue
    title>` で、`openhands-review` が付いています。
@@ -76,7 +89,7 @@ issue を実装し、失敗とマークされた PR を修正し、`openhands-re
    「_This review was posted by an AI agent (OpenHands)._」で始まり、`✅ APPROVED` または
    `🔄 CHANGES REQUESTED` で終わるレビューを投稿します。
 
-確認が終わったら PR を閉じ、ブランチを削除します。
+確認が終わったら PR と issue を閉じ、ブランチを削除します。
 
 各 automation がポーリングごとに何をするかは [エージェントのランタイム](../../concepts/the-agent-runtime/) にあります。
 

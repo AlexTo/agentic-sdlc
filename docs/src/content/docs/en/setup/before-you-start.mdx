@@ -8,24 +8,24 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 
 A [fork of this repository](../../guides/fork-this-repo/) has everything Discava's setup keeps in
-the repository. These steps add the part that lives outside it: your GitHub settings, and an
-OpenHands installation pointed at your fork. Then you write a spec for the notes app and watch it
-go from spec PR to merged agent PRs.
+the repository. These steps add the part that lives outside it: your GitHub settings, a GitHub App
+for the agents to act as, and an OpenHands installation pointed at your fork. Then you write a
+spec for the notes app and watch it go from spec PR to merged agent PRs.
 
 **Time:** about an hour, most of it waiting for the first agent run.
 
 ## What you need
 
+On macOS or Linux (on Windows, use WSL):
+
 | Need | Why |
 | --- | --- |
 | A GitHub account | To fork, write specs and review |
-| A GitHub App for the agents | The agents act as it, so their PRs and comments are theirs and you can approve them. Discava's is `alex-coding-agent` |
+| GitHub CLI (`gh`), signed in | The setup script and the agents use it |
 | Node.js 24 and pnpm | To run the repository and Agent Canvas |
 | `uv` | Agent Canvas starts its backend with `uvx` |
-| `openssl`, `curl` and `jq` | To mint the app's tokens |
-| Docker | Only to run the notes app and its e2e tests locally. CI runs them for the agent |
-| GitHub CLI (`gh`), signed in | Most steps use it |
-| A coding agent, installed and signed in | Writes specs with Speckit, and runs inside OpenHands. Discava uses Claude Code |
+| A coding agent, installed and signed in | It writes specs with Speckit, and does the agents' work inside OpenHands. Discava uses Claude Code |
+| Docker (optional) | Only to run the notes app and its e2e tests on your machine. CI runs them for the agents |
 
 <Aside type="note">
 Agent Canvas runs on your own machine and polls GitHub, so it needs no public address and no
@@ -34,13 +34,13 @@ webhook. The agents only work while it is running.
 
 ## The steps
 
-| # | Step | You'll end with |
-| --- | --- | --- |
-| 1 | [Fork the repository](../fork/) | Your own copy, with Actions and Issues on |
-| 2 | [Configure the repository](../github-repository/) | One script: Issues and Actions on, the labels, a protected `main`, comments limited to collaborators, and the agents' GitHub App named |
-| 3 | [Install OpenHands](../openhands/) | Agent Canvas running, the app's token kept fresh, two agent profiles |
-| 4 | [Create the two automations](../automations/) | The Developer and Reviewer agents implementing and reviewing in your fork |
-| 5 | [Run your first feature](../first-feature/) | A spec for the notes app, carried to merged code by agents |
+| # | Step | You do | You'll end with |
+| --- | --- | --- | --- |
+| 1 | [Fork the repository](../fork/) | Three commands | Your own copy, cloned |
+| 2 | [Configure the repository](../github-repository/) | Create a GitHub App from a filled-in form, run one script | The agents' GitHub App on your fork, the labels, a protected `main`, comments limited to collaborators |
+| 3 | [Install OpenHands](../openhands/) | Two commands, two profiles in the web UI | Agent Canvas running as your app, with a `developer` and a `reviewer` profile |
+| 4 | [Create the two automations](../automations/) | Two forms in the web UI, one pasted prompt | The Developer and Reviewer agents implementing and reviewing in your fork |
+| 5 | [Run your first feature](../first-feature/) | Write a spec, review pull requests | A spec for the notes app, carried to merged code by agents |
 
 Want the setup in an existing repository instead? See
 [Adopt it in your own repository](../../adopt/overview/).

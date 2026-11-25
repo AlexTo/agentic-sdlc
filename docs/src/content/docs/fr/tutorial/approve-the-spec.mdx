@@ -11,12 +11,16 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 <Steps>
 
-1. Poussez la branche, puis ouvrez une pull request pour elle sur GitHub.
+1. Poussez la branche créée par Speckit, et ouvrez une pull request pour elle.
 
    ```bash
    git add specs/ && git commit -m "docs(specs): add note tags spec"
-   git push -u origin spec/note-tags
+   git push -u origin HEAD
+   gh pr create --fill
    ```
+
+   Dans un fork, `gh` l'ouvre dans votre fork une fois que vous avez lancé `gh repo set-default`. Le
+   site web de GitHub propose à la place le dépôt d'origine comme base.
 
 2. Relisez-la comme vous le feriez pour du code. Lisez d'abord `spec.md`, puis `plan.md`, puis survolez `tasks.md`.
    Demandez-vous :

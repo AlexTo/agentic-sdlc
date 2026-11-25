@@ -13,10 +13,10 @@ La spec dit *quoi* et *pourquoi*, jamais *comment*. C'est la chose la plus impor
 
 <Steps>
 
-1. Partez d'une branche.
+1. Partez d'une branche `main` à jour.
 
    ```bash
-   git switch -c spec/note-tags
+   git switch main && git pull
    ```
 
 2. Décrivez la fonctionnalité à Speckit.
@@ -26,8 +26,9 @@ La spec dit *quoi* et *pourquoi*, jamais *comment*. C'est la chose la plus impor
    Tags are case-insensitive and unique per note.
    ```
 
-   Speckit crée `specs/<timestamp>-note-tags/spec.md` avec des user stories, des exigences
-   fonctionnelles et des critères d'acceptation.
+   Speckit crée une branche nommée `<timestamp>-note-tags`, bascule dessus, et crée
+   `specs/<timestamp>-note-tags/spec.md` avec des user stories, des exigences fonctionnelles et
+   des critères d'acceptation.
 
 3. Laissez l'agent trouver les manques.
 

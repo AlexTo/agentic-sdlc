@@ -11,12 +11,15 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 <Steps>
 
-1. 推送分支，然后在 GitHub 上为它开一个 pull request。
+1. 推送 Speckit 创建的分支，并为它开一个 pull request。
 
    ```bash
    git add specs/ && git commit -m "docs(specs): add note tags spec"
-   git push -u origin spec/note-tags
+   git push -u origin HEAD
+   gh pr create --fill
    ```
+
+   在 fork 中，只要你运行过 `gh repo set-default`，`gh` 就会把它开在你的 fork 里。GitHub 网站则会把原仓库作为 base。
 
 2. 像评审代码一样评审它。先读 `spec.md`，再读 `plan.md`，然后浏览 `tasks.md`。问问自己：
 

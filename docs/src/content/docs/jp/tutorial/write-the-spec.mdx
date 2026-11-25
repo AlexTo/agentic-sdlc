@@ -13,10 +13,10 @@ spec は *何を* と *なぜ* を述べ、*どのように* は決して述べ�
 
 <Steps>
 
-1. ブランチから始めます。
+1. 最新の `main` から始めます。
 
    ```bash
-   git switch -c spec/note-tags
+   git switch main && git pull
    ```
 
 2. Speckit に機能を説明します。
@@ -26,7 +26,8 @@ spec は *何を* と *なぜ* を述べ、*どのように* は決して述べ�
    Tags are case-insensitive and unique per note.
    ```
 
-   Speckit は、ユーザーストーリー、機能要件、受け入れ基準を含む `specs/<timestamp>-note-tags/spec.md` を作成します。
+   Speckit は `<timestamp>-note-tags` という名前のブランチを作ってそこに切り替え、ユーザーストーリー、機能要件、
+   受け入れ基準を含む `specs/<timestamp>-note-tags/spec.md` を作成します。
 
 3. エージェントに抜けを見つけさせます。
 

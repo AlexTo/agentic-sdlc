@@ -16,11 +16,7 @@ qualcosa di concreto da fare. Il [tutorial](../../tutorial/the-case/) tratta ogn
 
 <Steps>
 
-1. **Scrivi la spec** su un branch nel tuo clone, con il tuo coding agent:
-
-   ```bash
-   git switch -c spec/note-tags
-   ```
+1. **Scrivi la spec** con il tuo coding agent, nel tuo clone, su un `main` aggiornato:
 
    ```text
    /speckit-specify Users can add up to five tags to a note and filter the note list by tag. Tags are case-insensitive and unique per note.
@@ -30,15 +26,22 @@ qualcosa di concreto da fare. Il [tutorial](../../tutorial/the-case/) tratta ogn
    /speckit-analyze
    ```
 
-2. **Apri la PR della spec, mettile l'label `spec-ready`, uniscila.** Fai il push del branch:
+   `/speckit-specify` crea un branch per la spec e ci passa, con un nome come
+   `<timestamp>-note-tags`. Rispondi alle domande che fa `/speckit-clarify`. Alla fine hai
+   `spec.md`, `plan.md` e `tasks.md` in `specs/<timestamp>-note-tags/`.
+
+2. **Apri la PR della spec, con l'label `spec-ready`, e uniscila.**
 
    ```bash
    git add specs/ && git commit -m "docs(specs): add note tags spec"
-   git push -u origin spec/note-tags
+   git push -u origin HEAD
+   gh pr create --fill --label spec-ready
    ```
 
-   Su GitHub, apri la pull request, aggiungi l'label `spec-ready` e fai il merge quando i check sono
-   verdi. Hai aperto tu la PR, quindi GitHub non ti lascia approvarla: spunta **Merge without waiting for
+   `gh` apre la pull request nel tuo fork e ne stampa l'indirizzo. (Il sito di GitHub propone il
+   repository originale come base della pull request di un fork, che non è quello che vuoi.) Leggi
+   lì la spec come faresti una review del codice, poi fai il merge quando i check sono verdi. Hai
+   aperto tu la PR, quindi GitHub non ti lascia approvarla: spunta **Merge without waiting for
    requirements to be met**.
 
    ✅ **Tasks format** passa sulla PR. Dopo il merge, **Agent Issues** apre una issue con titolo
@@ -47,8 +50,8 @@ qualcosa di concreto da fare. Il [tutorial](../../tutorial/the-case/) tratta ogn
 3. **Aspetta l'agente.** Non fai nulla.
 
    ✅ Al poll successivo in Agent Canvas parte una conversazione per la issue. Quando finisce,
-   compare una PR in bozza su `openhands/issue-<n>` con `openhands-review`, e `tasks.md` spuntato
-   esattamente per quelle fasi.
+   compare una PR aperta dalla tua app su `openhands/issue-<n>` con `openhands-review`, e
+   `tasks.md` spuntato esattamente per quelle fasi.
 
 4. **Osserva i controlli.**
 
@@ -58,14 +61,15 @@ qualcosa di concreto da fare. Il [tutorial](../../tutorial/the-case/) tratta ogn
    l'agente, con `review-fix-1`.
 
 5. **Fai la review e il merge.** Leggi la descrizione della PR, gli eventuali task **(human)** che elenca e, per la
-   fase del sito, il commento **E2E screenshots**. Clicca **Ready for review**, poi approva e fai il
-   merge.
+   fase del sito, il commento **E2E screenshots**. Poi approva e fai il merge.
 
    ✅ **Agent Issues** gira di nuovo e apre la issue della fase successiva. I passaggi da 3 a 5 si ripetono.
 
 6. **Fai il merge dell'ultima PR.**
 
    ✅ Agent Issues registra `No issue created: … no tasks left for the agent`. La feature è fatta.
+   **Archive Specs** fa poi push di un branch che sposta la spec finita in `specs/_archive/`, e la
+   sua esecuzione mostra un link che apre quella pull request, già compilata, perché tu la invii.
 
 </Steps>
 

@@ -1,13 +1,13 @@
 ---
 title: 1. Fork the repository
-description: Fork this repository, clone it, and check it runs.
+description: Fork this repository, clone it, and install its dependencies.
 sidebar:
   order: 1
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**You'll end with:** your own fork, cloned locally, with its checks passing.
+**You'll end with:** your own fork, cloned locally, ready for the setup script.
 
 <Steps>
 
@@ -18,43 +18,39 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    cd agentic-sdlc
    ```
 
-2. **Make your fork the default for `gh`.** Otherwise `gh` commands target the original
-   repository, not yours.
+2. **Make your fork the default for `gh`.** Otherwise `gh` commands, and the pull requests you
+   open with it, target the original repository, not yours.
 
    ```bash
    gh repo set-default <you>/agentic-sdlc
    ```
 
-3. **Install and run the checks locally**, the same ones CI runs:
+3. **Install the dependencies.**
 
    ```bash
    pnpm install
-   pnpm nx run-many --target lint --all
-   pnpm nx run-many --target test --all
-   pnpm nx run-many --target build --all
    ```
 
-   `pnpm install` also installs the git hooks: Conventional Commits on every commit message, a
-   secret scan and Biome before every commit, and a check of the invariant map before every
-   push. To run the notes app (needs Docker): `pnpm dev`, then open the URL the website prints.
+   This also installs the git hooks you'll meet when you commit your first spec: Conventional
+   Commits on every commit message, and a secret scan and Biome before every commit.
 
 </Steps>
 
 ## Check it worked
 
-The three `nx run-many` commands pass, and a commit with a message that isn't a Conventional
-Commit is refused:
-
 ```bash
-git commit --allow-empty -m "not conventional"
+gh repo set-default --view
 ```
 
-```text
-✖   subject may not be empty [subject-empty]
-✖   type may not be empty [type-empty]
-```
+prints `<you>/agentic-sdlc`.
 
 GitHub turns Issues and Actions off in a fork. The script in the next step turns them back on.
+
+<Aside type="tip" title="Optional: see it run">
+To run what CI runs (lint, tests and build): `pnpm build`. To run the
+notes app (needs Docker): `pnpm dev`, then open the URL the website prints. Neither is needed for
+the setup: CI runs the checks on every pull request.
+</Aside>
 
 <Aside type="note">
 With no `CODECOV_TOKEN` secret, CI's coverage upload step logs an error and carries on. Add the

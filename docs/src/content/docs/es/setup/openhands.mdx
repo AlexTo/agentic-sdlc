@@ -1,119 +1,95 @@
 ---
 title: 3. Instala OpenHands
-description: Instala Agent Canvas con npm, ejecútalo como tu GitHub App, mantén al día el token de la app y crea los perfiles de agente del Desarrollador y del Revisor.
+description: Instala Agent Canvas, inícialo como tu GitHub App con un solo comando y crea los perfiles de agente del Desarrollador y del Revisor.
 sidebar:
   order: 3
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Al terminar tendrás:** OpenHands Agent Canvas ejecutándose en tu máquina como tu GitHub App, el token de
-la app siempre al día en un secret, y dos perfiles de agente: `developer` para el agente Desarrollador y
-`reviewer` para el agente Revisor.
+**Al terminar tendrás:** OpenHands Agent Canvas ejecutándose en tu máquina como tu GitHub App, y dos
+perfiles de agente: `developer` para el agente Desarrollador y `reviewer` para el agente Revisor.
 
 <Steps>
 
-1. **Averigua la identidad de commit de la app.** GitHub atribuye un commit a la app solo cuando el email
-   de su autor es la dirección noreply de la app, que lleva el ID de su usuario bot:
-
-   ```bash
-   gh api '/users/<app-name>[bot]' --jq .id
-   ```
-
-   La dirección es `<id>+<app-name>[bot]@users.noreply.github.com`.
-
-2. **Instala e inicia Agent Canvas** con esa identidad. Discava usa la versión 1.45.0:
+1. **Instala Agent Canvas.** Discava usa la versión 1.45.0:
 
    ```bash
    npm install -g @openhands/agent-canvas
-   export GIT_AUTHOR_NAME='<app-name>[bot]' GIT_COMMITTER_NAME='<app-name>[bot]'
-   export GIT_AUTHOR_EMAIL='<id>+<app-name>[bot]@users.noreply.github.com'
-   export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
-   agent-canvas
    ```
 
-   Abre [http://127.0.0.1:8000](http://127.0.0.1:8000). Déjalo en ejecución: las automatizaciones solo consultan
-   mientras Agent Canvas está activo.
-
-   Las variables se imponen al nombre `OpenHands` que las plantillas de automatización escriben en cada
-   checkout. El formulario **Git Settings** del propio Agent Canvas no admite la dirección: rechaza un email
-   con corchetes.
-
-3. **Mantén al día el token de la app.** Una app trabaja con installation tokens, que caducan al cabo de
-   una hora. `scripts/agent-app-token.sh` crea uno a partir de la clave privada de la app y lo guarda en
-   Agent Canvas como el secret `GITHUB_PERSONAL_ACCESS_TOKEN`, que leen las automatizaciones y sus
-   conversaciones. Pese al nombre, ahí sirve cualquier token. Dale los IDs y la clave del
-   [paso 2](../github-repository/):
+2. **Inícialo como tu app**, desde tu clon:
 
    ```bash
-   mkdir -p ~/.config/agent-app
-   cat > ~/.config/agent-app/env <<'EOF'
-   AGENT_APP_ID=<app-id>
-   AGENT_APP_INSTALLATION_ID=<installation-id>
-   AGENT_APP_KEY=$HOME/.ssh/<app-name>.pem
-   EOF
+   pnpm agent-canvas
    ```
 
-   Después, en una segunda terminal desde tu clon, ejecútalo cada 45 minutos mientras Agent Canvas esté
-   en marcha:
+   La primera vez, pide el **App ID** y la ruta del **archivo `.pem`** del
+   [paso 2](../github-repository/), y guarda ambos en `~/.config/agent-app/`, legibles solo por ti.
+   Después, cada vez:
 
-   ```bash
-   while true; do ./scripts/agent-app-token.sh; sleep 2700; done
-   ```
+   - inicia Agent Canvas con la app como autora de los commits de los agentes, así que GitHub los
+     muestra con la app;
+   - crea uno de los tokens de la app, que duran una hora, y lo guarda en Agent Canvas como el
+     secret `GITHUB_PERSONAL_ACCESS_TOKEN`, el que leen las automatizaciones. Pese al nombre, ahí
+     sirve cualquier token de GitHub;
+   - reemplaza el token cada 45 minutos mientras esté en marcha.
 
-   Cada ejecución muestra cuándo caduca el nuevo token y que el secret se actualizó. La clave se queda
-   fuera de Agent Canvas, así que un agente solo tiene en algún momento un token que desaparece antes de
-   una hora. En Linux, puede ejecutarlo un timer de usuario de systemd: consulta
-   [La configuración de OpenHands de Discava](../../discava/openhands-setup/#la-github-app).
+   Espera a la línea `Token stored in the GITHUB_PERSONAL_ACCESS_TOKEN secret`, y abre
+   [http://127.0.0.1:8000](http://127.0.0.1:8000). Si Agent Canvas pregunta qué agente usar,
+   elige Claude Code: encuentra la sesión que ya tienes iniciada, así que deja en blanco los campos
+   de API key.
 
-4. **Elige el agente.** Discava ejecuta Claude Code sobre ACP (el Agent Client Protocol), así que el
-   agente de programación que ya usas hace el trabajo. En la configuración del agente, pon:
+   Deja la terminal abierta, e inicia siempre Agent Canvas de esta forma: las automatizaciones solo
+   consultan mientras está activo, y el token solo se mantiene al día mientras este comando se ejecuta.
 
-   | Ajuste | Valor |
-   | --- | --- |
-   | Agent | ACP, servidor `claude-code` |
-   | Confirmation mode | desactivado (no hay nadie para confirmar) |
-   | Max iterations | 500 (espacio para una fase entera) |
+3. **Crea dos perfiles de agente**, uno por cada rol de agente. En Agent Canvas, abre **Settings → Agent**
+   y haz clic en **Add agent profile**, dos veces:
 
-   El agente de programación debe estar instalado y con sesión iniciada en esta máquina, con el mismo usuario.
-
-5. **Crea dos perfiles de agente**, uno por cada rol de agente:
-
-   | Perfil | Rol | Agente | Modelo |
+   | Nombre | Tipo de agente | Agente | Modelo |
    | --- | --- | --- | --- |
-   | `developer` | Desarrollador | ACP, `claude-code` | `sonnet` |
-   | `reviewer` | Revisor | ACP, `claude-code` | `opus` |
+   | `developer` | ACP (external subprocess) | `claude-code` | `sonnet` |
+   | `reviewer` | ACP (external subprocess) | `claude-code` | `opus` |
 
-   Cualquier agente y modelo sirve. Mantén el Revisor al menos tan potente como el Desarrollador: es el
-   último control antes de ti.
+   ACP es el Agent Client Protocol: el agente de programación que ya usas hace el trabajo, con tu
+   sesión iniciada en esta máquina. Cualquier agente y modelo sirve. Mantén el Revisor al menos tan
+   potente como el Desarrollador: es el último control antes de ti.
 
-   Discava tiene un tercer perfil, `tester`, para el agente Tester. Prueba los cambios fusionados en un
-   stage desplegado, que la app de notas no tiene, así que aquí no lo necesitas.
+   Deja todo lo demás como está. Agent Canvas ya se ejecuta sin supervisión (sin peticiones de
+   confirmación), con espacio para una fase entera en una conversación (500 iteraciones).
 
 </Steps>
 
 ## Comprueba que funciona
 
-En Agent Canvas, inicia una conversación con el perfil `developer` y dale el
-secret `GITHUB_PERSONAL_ACCESS_TOKEN`. Pídele:
+En Agent Canvas, **Settings → Secrets** lista `GITHUB_PERSONAL_ACCESS_TOKEN`. Inicia una conversación
+con el perfil `developer` y pídele:
 
 ```text
 Using the GITHUB_PERSONAL_ACCESS_TOKEN secret, run gh api graphql -f query='{ viewer { login } }', and list the open issues in <you>/agentic-sdlc.
 ```
 
-Informa de `<app-name>[bot]` y de una lista de issues vacía. (`gh auth status` y `GET /user` rechazan el
-token de una app, así que no sirven como prueba.)
+Informa de `<app-name>[bot]` y de una lista de issues vacía.
 
 <Aside type="caution" title="Mantén tu propio login de GitHub lejos de los agentes">
-No añadas un token en **Integrations** de Agent Canvas, y borra cualquier servidor de GitHub en **MCP
-Servers**: cualquiera de los dos guarda un token fijo, normalmente el tuyo, y un agente que lo use actúa
-como tú en lugar de como la app. Discava encontró uno que apuntaba a `api.githubcopilot.com` con el token
-de su propietario.
+No añadas un token de GitHub en **Integrations** de Agent Canvas, y borra cualquier servidor de GitHub
+que aparezca en **MCP Servers**: cualquiera de los dos guarda un token fijo, normalmente el tuyo, y un
+agente que lo use actúa como tú en lugar de como la app.
 </Aside>
 
 <Aside type="caution">
 El agente ejecuta comandos en esta máquina con tu usuario. No guardes credenciales de la nube en su
 entorno, y usa una máquina o VM separada cuando vayas más allá de probarlo.
 </Aside>
+
+<Aside type="tip" title="Ejecutar Agent Canvas como servicio">
+Cuando Agent Canvas se ejecute como servicio en lugar de en una terminal, haz que un timer ejecute
+`pnpm agent-canvas --once` cada 45 minutos: crea un token, lo guarda y termina. Discava lo hace en
+Linux con systemd: consulta
+[La configuración de OpenHands de Discava](../../discava/openhands-setup/#la-github-app).
+</Aside>
+
+Discava tiene un tercer perfil, `tester`, para el agente Tester. Prueba los cambios fusionados en un
+stage desplegado, que la app de notas no tiene, así que aquí no lo necesitas.
 
 Siguiente: [4. Crea las dos automatizaciones](../automations/).

@@ -17,11 +17,7 @@ thật để làm. [Tutorial](../../tutorial/the-case/) đi sâu hơn vào từn
 
 <Steps>
 
-1. **Viết spec** trên một nhánh trong bản clone của bạn, cùng coding agent:
-
-   ```bash
-   git switch -c spec/note-tags
-   ```
+1. **Viết spec** cùng coding agent, trong bản clone của bạn, trên một `main` đã cập nhật:
 
    ```text
    /speckit-specify Users can add up to five tags to a note and filter the note list by tag. Tags are case-insensitive and unique per note.
@@ -31,16 +27,22 @@ thật để làm. [Tutorial](../../tutorial/the-case/) đi sâu hơn vào từn
    /speckit-analyze
    ```
 
-2. **Mở spec PR, gắn label `spec-ready`, merge nó.** Push nhánh:
+   `/speckit-specify` tạo một nhánh cho spec và chuyển sang nó, có tên dạng
+   `<timestamp>-note-tags`. Trả lời các câu hỏi mà `/speckit-clarify` đặt ra. Cuối cùng bạn có
+   `spec.md`, `plan.md` và `tasks.md` trong `specs/<timestamp>-note-tags/`.
+
+2. **Mở spec PR, gắn label `spec-ready`, và merge nó.**
 
    ```bash
    git add specs/ && git commit -m "docs(specs): add note tags spec"
-   git push -u origin spec/note-tags
+   git push -u origin HEAD
+   gh pr create --fill --label spec-ready
    ```
 
-   Trên GitHub, mở pull request, thêm label `spec-ready`, và merge khi các check xanh. Bạn là người
-   mở PR, nên GitHub không cho bạn duyệt nó: hãy chọn **Merge without waiting for
-   requirements to be met**.
+   `gh` mở pull request trong bản fork của bạn và in ra địa chỉ của nó. (Website của GitHub đề xuất
+   repository gốc làm base cho pull request của một bản fork, và đó không phải điều bạn muốn.) Đọc
+   spec ở đó như bạn review code, rồi merge khi các check xanh. Bạn là người mở PR, nên GitHub không
+   cho bạn duyệt nó: hãy chọn **Merge without waiting for requirements to be met**.
 
    ✅ **Tasks format** pass trên PR. Sau khi merge, **Agent Issues** mở một issue có tiêu đề
    `feat(<feature>): … (with setup and foundations)`, với label `openhands`, có phạm vi là nhóm giai đoạn đầu tiên.
@@ -48,8 +50,8 @@ thật để làm. [Tutorial](../../tutorial/the-case/) đi sâu hơn vào từn
 3. **Chờ agent.** Bạn không làm gì cả.
 
    ✅ Ở lần poll kế, một cuộc hội thoại cho issue bắt đầu trong Agent Canvas. Khi nó xong, một
-   draft PR xuất hiện trên `openhands/issue-<n>` với `openhands-review`, và `tasks.md` được đánh dấu
-   cho đúng các giai đoạn đó.
+   PR do app của bạn mở xuất hiện trên `openhands/issue-<n>` với `openhands-review`, và `tasks.md`
+   được đánh dấu cho đúng các giai đoạn đó.
 
 4. **Theo dõi các cổng.**
 
@@ -59,14 +61,15 @@ thật để làm. [Tutorial](../../tutorial/the-case/) đi sâu hơn vào từn
    `review-fix-1`.
 
 5. **Review và merge.** Đọc mô tả PR, các task **(human)** nó liệt kê, và, với giai đoạn website,
-   comment **E2E screenshots**. Bấm **Ready for review**, rồi duyệt và
-   merge.
+   comment **E2E screenshots**. Sau đó duyệt và merge.
 
    ✅ **Agent Issues** chạy lại và mở issue của giai đoạn tiếp theo. Bước 3 đến 5 lặp lại.
 
 6. **Merge PR cuối cùng.**
 
    ✅ Agent Issues log `No issue created: … no tasks left for the agent`. Tính năng đã xong.
+   **Archive Specs** sau đó push một nhánh chuyển spec đã xong vào `specs/_archive/`, và lần chạy
+   của nó hiện một liên kết mở pull request đó, đã điền sẵn, để bạn gửi.
 
 </Steps>
 

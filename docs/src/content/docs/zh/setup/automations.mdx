@@ -9,7 +9,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 **完成后你将拥有：** OpenHands 每五分钟轮询一次你的 fork。它会实现带 `openhands` 标签的 issue，修订被标记为失败的 PR，并评审带 `openhands-review` 标签的 PR。这就是开发智能体和评审智能体。
 
-两个 automation 都来自 Agent Canvas 的 **automation catalog**。你只需填写一个表单，目录就会把一个经过测试的 worker 和你的设置打包好。你不需要编写或上传任何代码。
+两个 automation 都来自 Agent Canvas 的 **automation catalog**，位于 **Automations** 下。你只需填写一个表单，目录就会把一个经过测试的 worker 和你的设置打包好。你不需要编写任何代码。
 
 <Steps>
 
@@ -42,29 +42,38 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    | Agent profile | `reviewer` |
    | Check frequency | `*/5 * * * *` |
 
-   Discava 使用的模板版本是 1.11.2，并打了下文的补丁。**New reviews per scan** 限制一次轮询最多启动多少个评审对话，这样积压的工作不会一下子启动十个智能体。
+   Discava 使用的模板版本是 1.11.2，并打了下一步中的补丁。**New reviews per scan** 限制一次轮询最多启动多少个评审对话，这样积压的工作不会一下子启动十个智能体。
 
    **Maintainers** 是可选的。设置后，已批准的 PR 会交给其中一人作为被请求的评审者，人选依据谁以前改过这些文件来决定。只有当 PR 对应的 issue 带有 `priority:medium` 或 `priority:high` 时才会这样做。Discava 将其留空。
 
-   <Aside type="caution" title="代码评审模板会拒绝 app 的 token">
-   至少到 1.11.3 版本为止，worker 都通过 `GET /user` 查询自己以哪个账号行事，而 GitHub 对 installation token 的回答是 `403 Resource not accessible by integration`。于是每次扫描都在评审之前就失败了。Discava 给自己的副本打了补丁，改为查询 GraphQL `viewer { login }`：参见[故障排查](../../reference/troubleshooting/#评审)。
-   </Aside>
+3. **为你的 app 给代码评审 automation 打补丁。** 它发布时的样子（至少到模板版本 1.11.3 为止）会通过 `GET /user` 向 GitHub 查询自己以哪个账号行事，而 GitHub 会拒绝 app 的 token 这样做（`403 Resource not accessible by integration`）。于是每次评审扫描都会失败。在 OpenHands 修复之前，让一个智能体来做 Discava 做过的修复。在 Agent Canvas 中启动一个对话，然后粘贴：
 
-3. 在 Agent Canvas 中各个 automation 的页面上**手动运行一次**，并阅读运行日志。
+   ```text
+   The "GitHub code review" automation fails with HTTP 403: its GitHub token is a GitHub App
+   installation token, and GitHub refuses those on GET /user. Fix the automation's worker bundle:
+   wherever the code reads the token's login from GET /user (the login lookup in worker.py and
+   the token check in main.py), fall back on a 403 to the GraphQL query { viewer { login } }.
+   Upload the patched bundle through the automation API and point this automation at it, changing
+   nothing else. Then run the automation once and show me that the run completed.
+   ```
+
+   如果你之后从目录更新了这个 automation，就再做一遍。
+
+4. 在 Agent Canvas 中各个 automation 的页面上用 **Run now** **手动运行一次**，并阅读运行日志。
 
 </Steps>
 
 ## 检查是否成功
 
-在没有工作可做时，第一次运行会在日志中记录对仓库的一次扫描，并以 `COMPLETED` 结束。然后：
+在没有工作可做时，第一次运行会在日志中记录对仓库的一次扫描，并以 `COMPLETED` 结束。然后从头到尾试一个小改动：
 
-1. 创建一个测试 issue：“Add a line to README.md saying hello”，并加上 `openhands` 标签。
+1. 在你的 fork 中创建一个标题为 “Add a line to README.md saying hello” 的 issue，并加上 `openhands` 标签。
 2. 在一次轮询之内，Agent Canvas 中会出现该 issue 的对话。
 3. 智能体完成后，`openhands/issue-<n>` 上会出现一个 PR，标题为 `[#<n>] <issue
    title>`，并已加上 `openhands-review`。
 4. 等它的检查完成后，评审智能体会发布一条评审，开头是 “_This review was posted by an AI agent (OpenHands)._”，结尾是 `✅ APPROVED` 或 `🔄 CHANGES REQUESTED`。
 
-之后关闭该 PR 并删除分支。
+之后关闭该 PR 和该 issue，并删除分支。
 
 每个 automation 在一次轮询中做了什么，见[智能体运行时](../../concepts/the-agent-runtime/)。
 

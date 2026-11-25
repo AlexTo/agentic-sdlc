@@ -76,7 +76,7 @@ Agent Canvas, và một timer biến nó thành token:
 | --- | --- |
 | `~/.ssh/alex-coding-agent.pem` | Private key của app: secret dài hạn duy nhất |
 | `alex-coding-agent-token.timer` | Một systemd user timer chạy script tạo token mỗi 45 phút, và một lần một phút sau khi khởi động máy |
-| Script tạo token | [`scripts/agent-app-token.sh`](https://github.com/AlexTo/agentic-sdlc/blob/main/scripts/agent-app-token.sh) của template là một bản sao của nó. Ký một JSON Web Token bằng khóa, đổi nó lấy một installation token, ghi token đó vào một file chỉ chủ sở hữu đọc được, và đặt nó vào secret `GITHUB_PERSONAL_ACCESS_TOKEN` qua API của chính Agent Canvas |
+| Script tạo token | Ký một JSON Web Token bằng khóa, đổi nó lấy một installation token, ghi token đó vào một file chỉ chủ sở hữu đọc được, và đặt nó vào secret `GITHUB_PERSONAL_ACCESS_TOKEN` qua API của chính Agent Canvas. Trong template, `pnpm agent-canvas --once` làm việc tương tự |
 | Một drop-in cho `canvas.service` | Chạy script tạo token trước khi Agent Canvas khởi động, đặt `GIT_AUTHOR_*` và `GIT_COMMITTER_*` thành `alex-coding-agent[bot]` và địa chỉ noreply của nó, và cho Agent Canvas một `GIT_CONFIG_GLOBAL` riêng cùng một `gh` đọc file token |
 
 Vậy là các cuộc hội thoại tương tác dùng app qua git và `gh`, còn các automation dùng qua secret.

@@ -13,10 +13,10 @@ spec 说明*做什么*和*为什么*，从不说明*怎么做*。它是你写下
 
 <Steps>
 
-1. 从一个分支开始。
+1. 从最新的 `main` 开始。
 
    ```bash
-   git switch -c spec/note-tags
+   git switch main && git pull
    ```
 
 2. 向 Speckit 描述这个功能。
@@ -26,7 +26,7 @@ spec 说明*做什么*和*为什么*，从不说明*怎么做*。它是你写下
    Tags are case-insensitive and unique per note.
    ```
 
-   Speckit 会创建 `specs/<timestamp>-note-tags/spec.md`，其中包含用户故事、功能需求和验收标准。
+   Speckit 会创建一个名为 `<timestamp>-note-tags` 的分支，切换过去，并创建 `specs/<timestamp>-note-tags/spec.md`，其中包含用户故事、功能需求和验收标准。
 
 3. 让智能体找出遗漏之处。
 

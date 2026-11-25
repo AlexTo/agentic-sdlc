@@ -1,115 +1,93 @@
 ---
 title: 3. OpenHands をインストールする
-description: npm で Agent Canvas をインストールし、GitHub App として実行して、App のトークンを新しく保ち、開発担当とレビュー担当のエージェントプロファイルを作成します。
+description: Agent Canvas をインストールし、1 つのコマンドで GitHub App として起動して、開発担当とレビュー担当のエージェントプロファイルを作成します。
 sidebar:
   order: 3
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**完了時の状態:** 自分のマシンで GitHub App として動く OpenHands Agent Canvas、シークレットの中で新しく保たれる
-App のトークン、そして開発担当エージェント用の `developer` とレビュー担当エージェント用の `reviewer` の 2 つのエージェントプロファイル。
+**完了時の状態:** 自分のマシンで GitHub App として動く OpenHands Agent Canvas と、開発担当エージェント用の
+`developer` とレビュー担当エージェント用の `reviewer` の 2 つのエージェントプロファイル。
 
 <Steps>
 
-1. **App のコミット用 ID を調べます。** GitHub がコミットを App のものとするのは、作成者のメールアドレスが
-   App の noreply アドレスのときだけです。このアドレスには App の bot ユーザーの ID が含まれます:
-
-   ```bash
-   gh api '/users/<app-name>[bot]' --jq .id
-   ```
-
-   アドレスは `<id>+<app-name>[bot]@users.noreply.github.com` です。
-
-2. その ID を使って **Agent Canvas をインストールして起動します。** Discava はバージョン 1.45.0 を使っています:
+1. **Agent Canvas をインストールします。** Discava はバージョン 1.45.0 を使っています:
 
    ```bash
    npm install -g @openhands/agent-canvas
-   export GIT_AUTHOR_NAME='<app-name>[bot]' GIT_COMMITTER_NAME='<app-name>[bot]'
-   export GIT_AUTHOR_EMAIL='<id>+<app-name>[bot]@users.noreply.github.com'
-   export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
-   agent-canvas
    ```
 
-   [http://127.0.0.1:8000](http://127.0.0.1:8000) を開きます。起動したままにしてください。automation は
-   Agent Canvas が動いている間だけポーリングします。
-
-   これらの変数は、automation のテンプレートが各チェックアウトに書き込む `OpenHands` という名前より優先されます。
-   Agent Canvas 自身の **Git Settings** フォームにはこのアドレスを入れられません。角かっこを含むメールアドレスを
-   受け付けないためです。
-
-3. **App のトークンを新しく保ちます。** App はインストールトークンで動き、これは 1 時間で失効します。
-   `scripts/agent-app-token.sh` は App の秘密鍵からトークンを発行し、Agent Canvas のシークレット
-   `GITHUB_PERSONAL_ACCESS_TOKEN` に保存します。automation とその会話はこれを読みます。名前に反して、ここには
-   どんなトークンでも入れられます。[手順 2](../github-repository/) の ID と鍵を渡します:
+2. クローンから、**自分の App として起動します**:
 
    ```bash
-   mkdir -p ~/.config/agent-app
-   cat > ~/.config/agent-app/env <<'EOF'
-   AGENT_APP_ID=<app-id>
-   AGENT_APP_INSTALLATION_ID=<installation-id>
-   AGENT_APP_KEY=$HOME/.ssh/<app-name>.pem
-   EOF
+   pnpm agent-canvas
    ```
 
-   次に、クローンから 2 つ目のターミナルで、Agent Canvas が動いている間は 45 分ごとに実行します:
+   初回は、[手順 2](../github-repository/) の **App ID** と **`.pem` ファイル** のパスを尋ね、どちらも
+   自分だけが読める状態で `~/.config/agent-app/` に保存します。その後は毎回、次のことを行います。
 
-   ```bash
-   while true; do ./scripts/agent-app-token.sh; sleep 2700; done
-   ```
+   - App をエージェントのコミットの作成者として Agent Canvas を起動します。これで GitHub はコミットを
+     App の名前で表示します。
+   - 1 時間有効な App のトークンを 1 つ作り、Agent Canvas のシークレット `GITHUB_PERSONAL_ACCESS_TOKEN` に
+     保存します。automation が読むのはこのシークレットです。名前に反して、ここにはどんな GitHub の
+     トークンでも入れられます。
+   - 動いている間は、45 分ごとにトークンを置き換えます。
 
-   実行のたびに、新しいトークンの有効期限と、シークレットが更新されたことが表示されます。鍵は Agent Canvas の外に
-   あるので、エージェントが持つのは 1 時間以内に消えるトークンだけです。Linux では、代わりに systemd の
-   ユーザータイマーで実行することもできます。[Discava の OpenHands のセットアップ](../../discava/openhands-setup/#github-app)
-   を参照してください。
+   `Token stored in the GITHUB_PERSONAL_ACCESS_TOKEN secret` という行が出るのを待ってから、
+   [http://127.0.0.1:8000](http://127.0.0.1:8000) を開きます。Agent Canvas にどのエージェントを使うか
+   尋ねられたら、Claude Code を選びます。すでにあるログインを見つけるので、API キーの欄は空のままにします。
 
-4. **エージェントを選びます。** Discava は Claude Code を ACP(Agent Client Protocol)経由で動かしているので、
-   普段使っているコーディングエージェントが作業を行います。エージェントの設定で次のように設定します:
+   ターミナルは開いたままにし、Agent Canvas は必ずこの方法で起動してください。automation は Agent Canvas が
+   動いている間だけポーリングし、トークンはこのコマンドが動いている間だけ新しく保たれます。
 
-   | 設定 | 値 |
-   | --- | --- |
-   | Agent | ACP、サーバー `claude-code` |
-   | Confirmation mode | オフ(確認する人がいないため) |
-   | Max iterations | 500(1 つのフェーズ全体に足りる余裕) |
+3. エージェントの役割ごとに 1 つ、**2 つのエージェントプロファイルを作成します。** Agent Canvas で
+   **Settings → Agent** を開き、**Add agent profile** を 2 回クリックします:
 
-   コーディングエージェントは、このマシンに同じユーザーでインストールされ、サインインしている必要があります。
-
-5. エージェントの役割ごとに 1 つ、**2 つのエージェントプロファイルを作成します:**
-
-   | プロファイル | 役割 | Agent | Model |
+   | Name | Agent type | Agent | Model |
    | --- | --- | --- | --- |
-   | `developer` | 開発担当 | ACP、`claude-code` | `sonnet` |
-   | `reviewer` | レビュー担当 | ACP、`claude-code` | `opus` |
+   | `developer` | ACP (external subprocess) | `claude-code` | `sonnet` |
+   | `reviewer` | ACP (external subprocess) | `claude-code` | `opus` |
 
-   どのエージェントとモデルでも動きます。レビュー担当は少なくとも開発担当と同等の強さにしてください。
-   あなたの前の最後のチェックだからです。
+   ACP は Agent Client Protocol のことです。普段使っているコーディングエージェントが、このマシンであなたとして
+   サインインした状態で作業を行います。どのエージェントとモデルでも動きます。レビュー担当は少なくとも開発担当と
+   同等の強さにしてください。あなたの前の最後のチェックだからです。
 
-   Discava には 3 つ目のプロファイル `tester` があり、テスト担当エージェントが使います。テスト担当はマージされた変更を
-   デプロイされたステージでテストしますが、notes アプリにはそれがないので、ここでは不要です。
+   それ以外はそのままにします。Agent Canvas は最初から無人で動き (確認のプロンプトなし)、1 つの会話に
+   1 つのフェーズ全体が収まる余裕 (500 イテレーション) があります。
 
 </Steps>
 
 ## 動作を確認する
 
-Agent Canvas で `developer` プロファイルを使って会話を始め、
-`GITHUB_PERSONAL_ACCESS_TOKEN` シークレットを渡します。次のように依頼します:
+Agent Canvas の **Settings → Secrets** に `GITHUB_PERSONAL_ACCESS_TOKEN` が一覧されます。`developer`
+プロファイルを使って会話を始め、次のように依頼します:
 
 ```text
 Using the GITHUB_PERSONAL_ACCESS_TOKEN secret, run gh api graphql -f query='{ viewer { login } }', and list the open issues in <you>/agentic-sdlc.
 ```
 
-`<app-name>[bot]` と、空の issue 一覧が報告されます。(`gh auth status` と `GET /user` は App のトークンを
-拒否するので、テストにはなりません。)
+`<app-name>[bot]` と、空の issue 一覧が報告されます。
 
 <Aside type="caution" title="自分の GitHub ログインをエージェントから遠ざける">
-Agent Canvas の **Integrations** にトークンを追加せず、**MCP Servers** にある GitHub のサーバーは削除してください。
-どちらも固定のトークン (たいていはあなたのもの) を持ち、それを使うエージェントは App ではなくあなたとして動きます。
-Discava では、所有者のトークンで `api.githubcopilot.com` を指すものが見つかりました。
+Agent Canvas の **Integrations** に GitHub のトークンを追加せず、**MCP Servers** に一覧されている GitHub の
+サーバーは削除してください。どちらも固定のトークン (たいていはあなたのもの) を持ち、それを使うエージェントは
+App ではなくあなたとして動きます。
 </Aside>
 
 <Aside type="caution">
 エージェントはこのマシン上で、あなたのユーザーとしてコマンドを実行します。その環境にクラウドの認証情報を置かず、
 試用の範囲を超えたら別のマシンか VM を使ってください。
 </Aside>
+
+<Aside type="tip" title="Agent Canvas をサービスとして動かす">
+Agent Canvas をターミナルではなくサービスとして動かすようになったら、タイマーで
+`pnpm agent-canvas --once` を 45 分ごとに実行します。これはトークンを 1 つ作って保存し、終了します。
+Discava は Linux で systemd を使ってこうしています。
+[Discava の OpenHands のセットアップ](../../discava/openhands-setup/#github-app) を参照してください。
+</Aside>
+
+Discava には 3 つ目のプロファイル `tester` があり、テスト担当エージェントが使います。テスト担当はマージされた変更を
+デプロイされたステージでテストしますが、notes アプリにはそれがないので、ここでは不要です。
 
 次へ: [4. 2 つの automation を作成する](../automations/)。

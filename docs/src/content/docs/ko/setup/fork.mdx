@@ -1,13 +1,13 @@
 ---
 title: 1. 저장소 fork하기
-description: 이 저장소를 fork하고, clone하고, 실행되는지 확인합니다.
+description: 이 저장소를 fork하고, clone하고, 의존성을 설치합니다.
 sidebar:
   order: 1
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**결과:** 로컬에 clone되었으며 검사가 통과하는 나만의 fork.
+**결과:** 로컬에 clone되어 설정 스크립트를 실행할 준비가 된 나만의 fork.
 
 <Steps>
 
@@ -18,43 +18,39 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    cd agentic-sdlc
    ```
 
-2. **fork를 `gh`의 기본값으로 설정합니다.** 그렇지 않으면 `gh` 명령이 여러분의 저장소가 아니라
-   원본 저장소를 대상으로 합니다.
+2. **fork를 `gh`의 기본값으로 설정합니다.** 그렇지 않으면 `gh` 명령과 그것으로 여는 pull request가
+   여러분의 저장소가 아니라 원본 저장소를 대상으로 합니다.
 
    ```bash
    gh repo set-default <you>/agentic-sdlc
    ```
 
-3. **설치하고 로컬에서 검사를 실행합니다.** CI가 실행하는 것과 같은 검사입니다.
+3. **의존성을 설치합니다.**
 
    ```bash
    pnpm install
-   pnpm nx run-many --target lint --all
-   pnpm nx run-many --target test --all
-   pnpm nx run-many --target build --all
    ```
 
-   `pnpm install`은 git hook도 설치합니다: 모든 커밋 메시지에 Conventional Commits, 모든 커밋 전에
-   secret 스캔과 Biome, 모든 push 전에 invariant 맵 검사. 노트 앱을 실행하려면 (Docker 필요):
-   `pnpm dev`를 실행한 뒤 웹사이트가 출력하는 URL을 엽니다.
+   이 명령은 첫 spec을 커밋할 때 만나게 될 git hook도 설치합니다: 모든 커밋 메시지에 Conventional
+   Commits, 그리고 모든 커밋 전에 secret 스캔과 Biome.
 
 </Steps>
 
 ## 동작 확인
 
-세 개의 `nx run-many` 명령이 통과하고, Conventional Commit이 아닌 메시지로 한 커밋은
-거부됩니다.
-
 ```bash
-git commit --allow-empty -m "not conventional"
+gh repo set-default --view
 ```
 
-```text
-✖   subject may not be empty [subject-empty]
-✖   type may not be empty [type-empty]
-```
+위 명령이 `<you>/agentic-sdlc`를 출력합니다.
 
 GitHub는 fork에서 Issues와 Actions를 꺼 둡니다. 다음 단계의 스크립트가 다시 켭니다.
+
+<Aside type="tip" title="선택: 실행해 보기">
+CI가 실행하는 것(lint, 테스트, build)을 실행하려면: `pnpm build`. 노트 앱을 실행하려면 (Docker 필요):
+`pnpm dev`를 실행한 뒤 웹사이트가 출력하는 URL을 엽니다. 둘 다 설정에는 필요하지 않습니다. CI가 모든
+pull request에서 검사를 실행합니다.
+</Aside>
 
 <Aside type="note">
 `CODECOV_TOKEN` secret이 없으면 CI의 coverage 업로드 step이 에러를 로그에 남기고 계속 진행합니다.

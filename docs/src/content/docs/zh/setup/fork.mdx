@@ -1,13 +1,13 @@
 ---
 title: 1. Fork 仓库
-description: Fork 这个仓库，克隆它，并检查它能运行。
+description: Fork 这个仓库，克隆它，并安装它的依赖。
 sidebar:
   order: 1
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**完成后你将拥有：** 你自己的 fork，已克隆到本地，并且检查全部通过。
+**完成后你将拥有：** 你自己的 fork，已克隆到本地，可以运行设置脚本了。
 
 <Steps>
 
@@ -18,39 +18,35 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    cd agentic-sdlc
    ```
 
-2. **把你的 fork 设为 `gh` 的默认仓库。** 否则 `gh` 命令会作用于原仓库，而不是你的仓库。
+2. **把你的 fork 设为 `gh` 的默认仓库。** 否则 `gh` 命令，以及你用它开的 pull request，都会作用于原仓库，而不是你的仓库。
 
    ```bash
    gh repo set-default <you>/agentic-sdlc
    ```
 
-3. **在本地安装并运行检查**，与 CI 运行的检查相同：
+3. **安装依赖。**
 
    ```bash
    pnpm install
-   pnpm nx run-many --target lint --all
-   pnpm nx run-many --target test --all
-   pnpm nx run-many --target build --all
    ```
 
-   `pnpm install` 还会安装 git hooks：每条 commit 信息都要符合 Conventional Commits，每次提交前扫描 secret 并运行 Biome，每次推送前检查不变式映射。运行笔记应用（需要 Docker）：`pnpm dev`，然后打开网站打印出的 URL。
+   这还会安装 git hooks，你在提交第一份 spec 时会遇到它们：每条 commit 信息都要符合 Conventional Commits，每次提交前扫描 secret 并运行 Biome。
 
 </Steps>
 
 ## 检查是否成功
 
-三条 `nx run-many` 命令都通过，并且 commit 信息不符合 Conventional Commits 的提交会被拒绝：
-
 ```bash
-git commit --allow-empty -m "not conventional"
+gh repo set-default --view
 ```
 
-```text
-✖   subject may not be empty [subject-empty]
-✖   type may not be empty [type-empty]
-```
+会打印 `<you>/agentic-sdlc`。
 
 GitHub 在 fork 中关闭了 Issues 和 Actions。下一步中的脚本会把它们重新打开。
+
+<Aside type="tip" title="可选：看它运行起来">
+运行 CI 所运行的内容（lint、测试和构建）：`pnpm build`。运行笔记应用（需要 Docker）：`pnpm dev`，然后打开网站打印出的 URL。这两者都不是设置所必需的：CI 会在每个 pull request 上运行这些检查。
+</Aside>
 
 <Aside type="note">
 没有 `CODECOV_TOKEN` secret 时，CI 的覆盖率上传步骤会记录一个错误然后继续。如果你想让它安静下来，添加这个 secret，或者删除这一步。

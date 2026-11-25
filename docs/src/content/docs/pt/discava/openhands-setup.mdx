@@ -76,7 +76,7 @@ Canvas, e um timer a transforma em tokens:
 | --- | --- |
 | `~/.ssh/alex-coding-agent.pem` | A chave privada do app: o único secret de longa duração |
 | `alex-coding-agent-token.timer` | Um timer de usuário do systemd que roda o script de mint a cada 45 minutos, e uma vez um minuto depois do boot |
-| O script de mint | O [`scripts/agent-app-token.sh`](https://github.com/AlexTo/agentic-sdlc/blob/main/scripts/agent-app-token.sh) do template é uma cópia dele. Assina um JSON Web Token com a chave, troca por um installation token, grava esse token em um arquivo que só o dono pode ler, e o coloca no secret `GITHUB_PERSONAL_ACCESS_TOKEN` pela própria API do Agent Canvas |
+| O script de mint | Assina um JSON Web Token com a chave, troca por um installation token, grava esse token em um arquivo que só o dono pode ler, e o coloca no secret `GITHUB_PERSONAL_ACCESS_TOKEN` pela própria API do Agent Canvas. No template, `pnpm agent-canvas --once` faz o mesmo |
 | Um drop-in para o `canvas.service` | Roda o script de mint antes de o Agent Canvas iniciar, define `GIT_AUTHOR_*` e `GIT_COMMITTER_*` como `alex-coding-agent[bot]` e o endereço noreply dele, e dá ao Agent Canvas o seu próprio `GIT_CONFIG_GLOBAL` e um `gh` que leem o arquivo do token |
 
 Assim as conversas interativas usam o app por meio do git e do `gh`, e as automations por meio do

@@ -1,96 +1,73 @@
 ---
 title: 3. 安装 OpenHands
-description: 用 npm 安装 Agent Canvas，以你的 GitHub App 的身份运行它，让 app 的 token 保持有效，并创建开发智能体和评审智能体的 agent profile。
+description: 安装 Agent Canvas，用一条命令以你的 GitHub App 的身份启动它，并创建开发智能体和评审智能体的 agent profile。
 sidebar:
   order: 3
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**完成后你将拥有：** 以你的 GitHub App 身份在你的机器上运行的 OpenHands Agent Canvas、在 secret 中保持有效的 app token，以及两个 agent profile：用于开发智能体的 `developer` 和用于评审智能体的 `reviewer`。
+**完成后你将拥有：** 以你的 GitHub App 身份在你的机器上运行的 OpenHands Agent Canvas，以及两个 agent profile：用于开发智能体的 `developer` 和用于评审智能体的 `reviewer`。
 
 <Steps>
 
-1. **查出 app 的 commit 身份。** 只有当 commit 的作者邮箱是 app 的 noreply 地址时，GitHub 才会把 commit 记在 app 名下，这个地址包含 app 的 bot 用户的 ID：
-
-   ```bash
-   gh api '/users/<app-name>[bot]' --jq .id
-   ```
-
-   地址为 `<id>+<app-name>[bot]@users.noreply.github.com`。
-
-2. 以这个身份**安装并启动 Agent Canvas**。Discava 使用的版本是 1.45.0：
+1. **安装 Agent Canvas。** Discava 使用的版本是 1.45.0：
 
    ```bash
    npm install -g @openhands/agent-canvas
-   export GIT_AUTHOR_NAME='<app-name>[bot]' GIT_COMMITTER_NAME='<app-name>[bot]'
-   export GIT_AUTHOR_EMAIL='<id>+<app-name>[bot]@users.noreply.github.com'
-   export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
-   agent-canvas
    ```
 
-   打开 [http://127.0.0.1:8000](http://127.0.0.1:8000)。保持它运行：只有 Agent Canvas 在运行时，automation 才会轮询。
-
-   这些变量会覆盖 automation 模板写进每个 checkout 的 `OpenHands` 作者名。Agent Canvas 自带的 **Git Settings** 表单存不下这个地址：它会拒绝含方括号的邮箱。
-
-3. **让 app 的 token 保持有效。** app 通过 installation token 工作，这种 token 一小时后过期。`scripts/agent-app-token.sh` 用 app 的私钥生成一个 token，并把它作为 secret `GITHUB_PERSONAL_ACCESS_TOKEN` 存进 Agent Canvas，automation 及其对话都从这里读取。尽管名字如此，任何 token 都可以放在这里。把[第 2 步](../github-repository/)中的两个 ID 和私钥交给它：
+2. 在你的克隆中，**以你的 app 的身份启动它**：
 
    ```bash
-   mkdir -p ~/.config/agent-app
-   cat > ~/.config/agent-app/env <<'EOF'
-   AGENT_APP_ID=<app-id>
-   AGENT_APP_INSTALLATION_ID=<installation-id>
-   AGENT_APP_KEY=$HOME/.ssh/<app-name>.pem
-   EOF
+   pnpm agent-canvas
    ```
 
-   然后在你的克隆中打开第二个终端，只要 Agent Canvas 还在运行，就每 45 分钟运行一次：
+   第一次运行时，它会询问[第 2 步](../github-repository/)中的 **App ID** 和 **`.pem` 文件**的路径，并把两者保存在 `~/.config/agent-app/` 中，只有你能读取。之后每次运行，它都会：
 
-   ```bash
-   while true; do ./scripts/agent-app-token.sh; sleep 2700; done
-   ```
+   - 启动 Agent Canvas，并把 app 作为智能体 commit 的作者，这样 GitHub 会把这些 commit 显示在 app 名下；
+   - 生成一个 app 的 token（有效期一小时），并把它作为 secret `GITHUB_PERSONAL_ACCESS_TOKEN` 存进 Agent Canvas，automation 读取的就是这个 secret。尽管名字如此，任何 GitHub token 都可以放在这里；
+   - 只要它还在运行，就每 45 分钟替换一次 token。
 
-   每次运行都会打印新 token 的过期时间，并说明 secret 已更新。私钥留在 Agent Canvas 之外，所以智能体手里只会有一个一小时内就失效的 token。在 Linux 上，也可以改用 systemd 用户 timer 来运行它：参见 [Discava 的 OpenHands 配置](../../discava/openhands-setup/#github-app)。
+   等到出现 `Token stored in the GITHUB_PERSONAL_ACCESS_TOKEN secret` 这一行，然后打开 [http://127.0.0.1:8000](http://127.0.0.1:8000)。如果 Agent Canvas 询问要使用哪个智能体，选择 Claude Code：它会找到你已有的登录，所以所有 API key 字段都留空。
 
-4. **选择智能体。** Discava 通过 ACP（Agent Client Protocol）运行 Claude Code，因此由你已经在用的编码智能体来完成工作。在智能体设置中设置：
+   保持终端开着，并且始终用这种方式启动 Agent Canvas：只有它在运行时，automation 才会轮询；只有这条命令在运行时，token 才会保持有效。
 
-   | 设置 | 值 |
-   | --- | --- |
-   | Agent | ACP，server `claude-code` |
-   | Confirmation mode | 关闭（没有人在场确认） |
-   | Max iterations | 500（足够完成整个阶段） |
+3. **创建两个 agent profile**，每个智能体角色一个。在 Agent Canvas 中打开 **Settings → Agent**，点击 **Add agent profile**，共两次：
 
-   编码智能体必须以同一个用户身份安装在这台机器上并已登录。
-
-5. **创建两个 agent profile**，每个智能体角色一个：
-
-   | Profile | 角色 | Agent | Model |
+   | Name | Agent type | Agent | Model |
    | --- | --- | --- | --- |
-   | `developer` | 开发智能体 | ACP，`claude-code` | `sonnet` |
-   | `reviewer` | 评审智能体 | ACP，`claude-code` | `opus` |
+   | `developer` | ACP (external subprocess) | `claude-code` | `sonnet` |
+   | `reviewer` | ACP (external subprocess) | `claude-code` | `opus` |
 
-   任何智能体和模型都可以。让评审智能体至少和开发智能体一样强：它是到你手上之前的最后一道检查。
+   ACP 即 Agent Client Protocol：由你已经在用的编码智能体来完成工作，它在这台机器上以你的身份登录。任何智能体和模型都可以。让评审智能体至少和开发智能体一样强：它是到你手上之前的最后一道检查。
 
-   Discava 还有第三个 profile `tester`，用于测试智能体。它在已部署的 stage 上测试已合并的变更，而笔记应用没有这样的 stage，所以你在这里不需要它。
+   其余设置保持不变。Agent Canvas 本来就是无人值守运行的（没有确认提示），并且一个对话足以完成整个阶段（500 次迭代）。
 
 </Steps>
 
 ## 检查是否成功
 
-在 Agent Canvas 中，用 `developer` profile 启动一个对话，并把 `GITHUB_PERSONAL_ACCESS_TOKEN` secret 提供给它。问它：
+在 Agent Canvas 中，**Settings → Secrets** 列出了 `GITHUB_PERSONAL_ACCESS_TOKEN`。用 `developer` profile 启动一个对话，问它：
 
 ```text
 Using the GITHUB_PERSONAL_ACCESS_TOKEN secret, run gh api graphql -f query='{ viewer { login } }', and list the open issues in <you>/agentic-sdlc.
 ```
 
-它会报告 `<app-name>[bot]`，以及一个空的 issue 列表。（`gh auth status` 和 `GET /user` 会拒绝 app 的 token，所以不能用它们来测试。）
+它会报告 `<app-name>[bot]`，以及一个空的 issue 列表。
 
 <Aside type="caution" title="别让智能体用上你自己的 GitHub 登录">
-不要在 Agent Canvas 的 **Integrations** 下添加 token，并删除 **MCP Servers** 下的任何 GitHub server：它们都持有一个固定的 token，通常是你的，使用它的智能体会以你的身份而不是 app 的身份行事。Discava 就发现过一个指向 `api.githubcopilot.com`、带着其所有者 token 的 server。
+不要在 Agent Canvas 的 **Integrations** 下添加 GitHub token，并删除 **MCP Servers** 下列出的任何 GitHub server：它们都持有一个固定的 token，通常是你的，使用它的智能体会以你的身份而不是 app 的身份行事。
 </Aside>
 
 <Aside type="caution">
 智能体以你的用户身份在这台机器上运行命令。不要在它的环境中保留云凭证，一旦超出试用范围，请使用单独的机器或虚拟机。
 </Aside>
+
+<Aside type="tip" title="把 Agent Canvas 作为服务运行">
+一旦 Agent Canvas 作为服务运行，而不是在终端中运行，就让一个 timer 每 45 分钟运行一次 `pnpm agent-canvas --once`：它会生成一个 token，把它存好，然后退出。Discava 在 Linux 上用 systemd 来做这件事：参见 [Discava 的 OpenHands 配置](../../discava/openhands-setup/#github-app)。
+</Aside>
+
+Discava 还有第三个 profile `tester`，用于测试智能体。它在已部署的 stage 上测试已合并的变更，而笔记应用没有这样的 stage，所以你在这里不需要它。
 
 下一步：[4. 创建两个 automation](../automations/)。

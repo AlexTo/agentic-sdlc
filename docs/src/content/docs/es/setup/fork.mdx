@@ -1,13 +1,13 @@
 ---
 title: 1. Haz fork del repositorio
-description: Haz fork de este repositorio, clónalo y comprueba que funciona.
+description: Haz fork de este repositorio, clónalo e instala sus dependencias.
 sidebar:
   order: 1
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Al terminar tendrás:** tu propio fork, clonado en local y con sus checks pasando.
+**Al terminar tendrás:** tu propio fork, clonado en local y listo para el script de configuración.
 
 <Steps>
 
@@ -18,43 +18,39 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    cd agentic-sdlc
    ```
 
-2. **Haz que tu fork sea el predeterminado para `gh`.** Si no, los comandos de `gh` apuntan al repositorio
-   original, no al tuyo.
+2. **Haz que tu fork sea el predeterminado para `gh`.** Si no, los comandos de `gh`, y los pull requests
+   que abras con él, apuntan al repositorio original, no al tuyo.
 
    ```bash
    gh repo set-default <you>/agentic-sdlc
    ```
 
-3. **Instala y ejecuta los checks en local**, los mismos que ejecuta CI:
+3. **Instala las dependencias.**
 
    ```bash
    pnpm install
-   pnpm nx run-many --target lint --all
-   pnpm nx run-many --target test --all
-   pnpm nx run-many --target build --all
    ```
 
-   `pnpm install` también instala los git hooks: Conventional Commits en cada mensaje de commit, un
-   escaneo de secrets y Biome antes de cada commit, y una comprobación del mapa de invariantes antes de
-   cada push. Para ejecutar la app de notas (necesita Docker): `pnpm dev`, y abre la URL que imprime el sitio web.
+   Esto también instala los git hooks que te encontrarás al hacer commit de tu primera spec: Conventional
+   Commits en cada mensaje de commit, y un escaneo de secrets y Biome antes de cada commit.
 
 </Steps>
 
 ## Comprueba que funciona
 
-Los tres comandos `nx run-many` pasan, y un commit cuyo mensaje no es un Conventional Commit se
-rechaza:
-
 ```bash
-git commit --allow-empty -m "not conventional"
+gh repo set-default --view
 ```
 
-```text
-✖   subject may not be empty [subject-empty]
-✖   type may not be empty [type-empty]
-```
+imprime `<you>/agentic-sdlc`.
 
 GitHub desactiva Issues y Actions en un fork. El script del siguiente paso los vuelve a activar.
+
+<Aside type="tip" title="Opcional: verlo funcionar">
+Para ejecutar lo que ejecuta CI (lint, tests y build): `pnpm build`. Para ejecutar la
+app de notas (necesita Docker): `pnpm dev`, y abre la URL que imprime el sitio web. Ninguna de las dos cosas
+hace falta para la configuración: CI ejecuta los checks en cada pull request.
+</Aside>
 
 <Aside type="note">
 Sin el secret `CODECOV_TOKEN`, el paso de subida de cobertura de CI registra un error y continúa. Añade el

@@ -8,24 +8,25 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 
 Um [fork deste repositório](../../guides/fork-this-repo/) tem tudo o que o setup do Discava mantém
-no repositório. Estes passos adicionam a parte que fica fora dele: as configurações do GitHub e uma
-instalação do OpenHands apontada para o seu fork. Depois você escreve uma spec para o app de notas e
-acompanha o caminho dela, do PR de spec até os PRs dos agents mergeados.
+no repositório. Estes passos adicionam a parte que fica fora dele: as configurações do GitHub, um
+GitHub App com que os agents agem e uma instalação do OpenHands apontada para o seu fork. Depois
+você escreve uma spec para o app de notas e acompanha o caminho dela, do PR de spec até os PRs dos
+agents mergeados.
 
 **Tempo:** cerca de uma hora, a maior parte esperando a primeira execução do agent.
 
 ## O que você precisa
 
+No macOS ou no Linux (no Windows, use o WSL):
+
 | Item | Por quê |
 | --- | --- |
 | Uma conta no GitHub | Para fazer o fork, escrever specs e revisar |
-| Um GitHub App para os agents | Os agents agem como ele, então os PRs e comentários são deles e você pode aprová-los. O do Discava é `alex-coding-agent` |
+| GitHub CLI (`gh`), com login feito | O script de configuração e os agents usam ele |
 | Node.js 24 e pnpm | Para rodar o repositório e o Agent Canvas |
 | `uv` | O Agent Canvas inicia o backend com `uvx` |
-| `openssl`, `curl` e `jq` | Para gerar os tokens do app |
-| Docker | Só para rodar o app de notas e os testes e2e localmente. O CI roda eles para o agent |
-| GitHub CLI (`gh`), com login feito | A maioria dos passos usa ele |
-| Um coding agent, instalado e com login feito | Escreve specs com o Speckit e roda dentro do OpenHands. O Discava usa o Claude Code |
+| Um coding agent, instalado e com login feito | Ele escreve specs com o Speckit e faz o trabalho dos agents dentro do OpenHands. O Discava usa o Claude Code |
+| Docker (opcional) | Só para rodar o app de notas e os testes e2e na sua máquina. O CI roda eles para os agents |
 
 <Aside type="note">
 O Agent Canvas roda na sua própria máquina e consulta o GitHub periodicamente, então não precisa de
@@ -34,13 +35,13 @@ endereço público nem de webhook. Os agents só trabalham enquanto ele está ro
 
 ## Os passos
 
-| # | Passo | No final você terá |
-| --- | --- | --- |
-| 1 | [Faça um fork do repositório](../fork/) | Sua própria cópia, com Actions e Issues ativados |
-| 2 | [Configure o repositório](../github-repository/) | Um script: Issues e Actions ligados, os labels, uma `main` protegida, comentários limitados a colaboradores e o GitHub App dos agents informado |
-| 3 | [Instale o OpenHands](../openhands/) | O Agent Canvas rodando, o token do app mantido atualizado, dois perfis de agent |
-| 4 | [Crie as duas automações](../automations/) | Os agents Desenvolvedor e Revisor implementando e revisando no seu fork |
-| 5 | [Rode sua primeira feature](../first-feature/) | Uma spec para o app de notas, levada até código mergeado pelos agents |
+| # | Passo | O que você faz | No final você terá |
+| --- | --- | --- | --- |
+| 1 | [Faça um fork do repositório](../fork/) | Três comandos | Sua própria cópia, clonada |
+| 2 | [Configure o repositório](../github-repository/) | Cria um GitHub App a partir de um formulário já preenchido, roda um script | O GitHub App dos agents no seu fork, os labels, uma `main` protegida, comentários limitados a colaboradores |
+| 3 | [Instale o OpenHands](../openhands/) | Dois comandos, dois perfis na interface web | O Agent Canvas rodando como o seu app, com um perfil `developer` e um perfil `reviewer` |
+| 4 | [Crie as duas automações](../automations/) | Dois formulários na interface web, um prompt para colar | Os agents Desenvolvedor e Revisor implementando e revisando no seu fork |
+| 5 | [Rode sua primeira feature](../first-feature/) | Escreve uma spec, revisa pull requests | Uma spec para o app de notas, levada até código mergeado pelos agents |
 
 Quer o setup em um repositório existente? Veja
 [Adote no seu próprio repositório](../../adopt/overview/).

@@ -77,7 +77,7 @@ Canvas, et un timer la transforme en tokens :
 | --- | --- |
 | `~/.ssh/alex-coding-agent.pem` | La clé privée de l'app : le seul secret de longue durée |
 | `alex-coding-agent-token.timer` | Un timer utilisateur systemd qui lance le script d'émission toutes les 45 minutes, et une fois une minute après le démarrage |
-| Le script d'émission | Le [`scripts/agent-app-token.sh`](https://github.com/AlexTo/agentic-sdlc/blob/main/scripts/agent-app-token.sh) du template en est une copie. Il signe un JSON Web Token avec la clé, l'échange contre un installation token, écrit celui-ci dans un fichier que seul son propriétaire peut lire, et le place dans le secret `GITHUB_PERSONAL_ACCESS_TOKEN` via l'API d'Agent Canvas lui-même |
+| Le script d'émission | Signe un JSON Web Token avec la clé, l'échange contre un installation token, écrit celui-ci dans un fichier que seul son propriétaire peut lire, et le place dans le secret `GITHUB_PERSONAL_ACCESS_TOKEN` via l'API d'Agent Canvas lui-même. Dans le template, `pnpm agent-canvas --once` fait la même chose |
 | Un drop-in pour `canvas.service` | Lance le script d'émission avant le démarrage d'Agent Canvas, règle `GIT_AUTHOR_*` et `GIT_COMMITTER_*` sur `alex-coding-agent[bot]` et son adresse noreply, et donne à Agent Canvas son propre `GIT_CONFIG_GLOBAL` et un `gh` qui lisent le fichier du token |
 
 Les conversations interactives utilisent donc l'app via git et `gh`, et les automatisations via le

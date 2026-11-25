@@ -25,7 +25,7 @@ sidebar:
 | 红色运行后没有 `ci-fix-*` 标签 | Agent CI Status 没有运行，或忽略了这次运行（见其 notice） | 打开 Agent CI Status 的运行并阅读 notice，例如 `the pull request has a newer commit than this run` |
 | 智能体修订后，没有任何东西评审新的 head | 智能体没有重新加上 `openhands-review` | 手动重新加上 |
 | push 被拒绝：`refusing to allow a GitHub App to create or update workflow` | app 缺少 **Workflows** 写权限，而分支改动了 `.github/workflows/`（常常是因为合并了 `main`） | 在 app 的设置中授予该权限，并在安装上接受新权限。下一次轮询会重试。使用 personal access token 时，消息中写的是 token，token 需要 `workflow` scope |
-| 所有自动化都失败：`The GitHub credential GITHUB_PERSONAL_ACCESS_TOKEN is unavailable`，或 `401 Bad credentials` | secret 不存在，或者存的是超过一小时的 app token | 检查 `scripts/agent-app-token.sh` 是否仍每 45 分钟运行一次，以及它最近一次运行是否更新了 secret |
+| 所有自动化都失败：`The GitHub credential GITHUB_PERSONAL_ACCESS_TOKEN is unavailable`，或 `401 Bad credentials` | secret 不存在，或者存的是超过一小时的 app token | 用 `pnpm agent-canvas` 启动 Agent Canvas 并让它一直运行：它每 45 分钟替换一次 token，并在日志中记录它存入的每一个 token。把 Agent Canvas 作为服务运行？检查运行 `pnpm agent-canvas --once` 的 timer |
 | `ci-fix-exhausted` | 五次修复都没能收敛 | 阅读最后一次失败。通常是 spec 或计划有歧义。修正它，移除标签，重新运行 |
 
 ## 评审
@@ -34,7 +34,7 @@ sidebar:
 | --- | --- | --- |
 | “⏳ Review waiting on checks”，但没有评审 | head 上有检查尚未完成，或一直卡在排队中 | 找到挂起的检查。一个永远不会运行的必需检查会永远阻塞评审 |
 | 评审写着 `🔄 CHANGES REQUESTED`，却没有 `review-fix-*` 标签 | 评审缺少运行标记、既不是来自有写权限的账号也不是来自 `AGENT_APP_LOGIN` 指定的 app，或者 PR 已经有了新进展 | 阅读 Agent Review Status 的 notice。如果它说评审不是来自维护者或智能体的 app，就把仓库变量 `AGENT_APP_LOGIN` 设为 app 的 bot 登录名 |
-| 每次代码评审扫描都以 `HTTP Error 403: Forbidden` 失败 | `github-pr-reviewer` 模板通过 `GET /user` 查询自己是谁，而 GitHub 在这里拒绝 app 的 installation token（`Resource not accessible by integration`） | 给 bundle 打补丁：在 worker 从 `GET /user` 读取登录名的地方（`worker.py` 中的 `github_login`，`main.py` 中的 token 检查），遇到 403 时改用 GraphQL `{ viewer { login } }`，它会返回 `<app-name>[bot]`。用 automation API 上传打好补丁的 bundle（`POST /api/automation/v1/uploads`，然后带上它的 `tarball_path` 调用 `PATCH /api/automation/v1/<id>`） |
+| 每次代码评审扫描都以 `HTTP Error 403: Forbidden` 失败 | `github-pr-reviewer` 模板通过 `GET /user` 查询自己是谁，而 GitHub 在这里拒绝 app 的 installation token（`Resource not accessible by integration`） | 让一个智能体给这个自动化的 bundle 打补丁，使用[创建两个 automation，第 3 步](../../setup/automations/)中的 prompt。修复方法：在 worker 从 `GET /user` 读取登录名的地方（`worker.py` 中的 `github_login`，`main.py` 中的 token 检查），遇到 403 时改用 GraphQL `{ viewer { login } }`，它会返回 `<app-name>[bot]` |
 | 评审显示为 “Commented” 而不是 “Approved” | 评审智能体用的是开启该 PR 的同一个身份，而 GitHub 不允许自己批准自己 | 这是预期行为：开发智能体和评审智能体共用智能体的 GitHub App。粘合层读取的是结论那一行，而不是评审状态 |
 
 ## 检查

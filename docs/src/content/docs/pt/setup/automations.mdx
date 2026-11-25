@@ -11,8 +11,8 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 com o label `openhands`, revisa PRs marcados como falhando e faz review de PRs com o label
 `openhands-review`. Esses são os agents Desenvolvedor e Revisor.
 
-As duas automações vêm do **automation catalog** do Agent Canvas. Você preenche um formulário, e o
-catálogo empacota um worker testado com as suas configurações. Você não escreve nem faz upload de
+As duas automações vêm do **automation catalog** do Agent Canvas, em **Automations**. Você preenche
+um formulário, e o catálogo empacota um worker testado com as suas configurações. Você não escreve
 nenhum código.
 
 <Steps>
@@ -47,33 +47,43 @@ nenhum código.
    | Agent profile | `reviewer` |
    | Check frequency | `*/5 * * * *` |
 
-   O Discava roda a versão 1.11.2 do template, com o patch abaixo. **New reviews per scan** limita
-   quantas conversas de review um polling inicia, para que um backlog não inicie dez agents de uma
-   vez.
+   O Discava roda a versão 1.11.2 do template, com o patch do próximo passo. **New reviews per
+   scan** limita quantas conversas de review um polling inicia, para que um backlog não inicie dez
+   agents de uma vez.
 
    **Maintainers** é opcional. Quando definido, um PR aprovado é passado para um deles como revisor
    solicitado, escolhido por quem já alterou esses arquivos antes. Isso só acontece quando a issue
    do PR tem `priority:medium` ou `priority:high`. O Discava deixa vazio.
 
-   <Aside type="caution" title="O template de code review recusa o token de um app">
-   Até pelo menos a versão 1.11.3, o worker pergunta a `GET /user` como qual conta ele age, e o
-   GitHub responde a um installation token com `403 Resource not accessible by integration`. Toda
-   varredura então falha antes de fazer o review. O Discava fez um patch na cópia dele para
-   perguntar ao GraphQL `viewer { login }` no lugar: veja
-   [Solução de problemas](../../reference/troubleshooting/#reviews).
-   </Aside>
+3. **Faça o patch da automação de code review para o seu app.** Do jeito que ela vem, até pelo
+   menos a versão 1.11.3 do template, ela pergunta ao GitHub com `GET /user` como qual conta ela
+   age, e o GitHub recusa isso ao token de um app (`403 Resource not accessible by integration`).
+   Toda varredura de review então falha. Até o OpenHands corrigir isso, deixe um agent fazer a
+   correção que o Discava fez. Inicie uma conversa no Agent Canvas e cole:
 
-3. **Rode cada automação uma vez manualmente** pela página dela no Agent Canvas e leia o log da
-   execução.
+   ```text
+   The "GitHub code review" automation fails with HTTP 403: its GitHub token is a GitHub App
+   installation token, and GitHub refuses those on GET /user. Fix the automation's worker bundle:
+   wherever the code reads the token's login from GET /user (the login lookup in worker.py and
+   the token check in main.py), fall back on a 403 to the GraphQL query { viewer { login } }.
+   Upload the patched bundle through the automation API and point this automation at it, changing
+   nothing else. Then run the automation once and show me that the run completed.
+   ```
+
+   Repita isso se você atualizar a automação pelo catálogo depois.
+
+4. **Rode cada automação uma vez manualmente**, com **Run now** na página dela no Agent Canvas, e
+   leia o log da execução.
 
 </Steps>
 
 ## Confira se funcionou
 
 Uma primeira execução sem nada para fazer registra uma varredura do repositório e termina em
-`COMPLETED`. Depois:
+`COMPLETED`. Depois teste uma mudança pequena de ponta a ponta:
 
-1. Crie uma issue de teste: "Add a line to README.md saying hello", e adicione o label `openhands`.
+1. No seu fork, crie uma issue com o título "Add a line to README.md saying hello", e adicione o
+   label `openhands`.
 2. Dentro de um polling, uma conversa para a issue aparece no Agent Canvas.
 3. Quando o agent termina, um PR aparece em `openhands/issue-<n>`, com o título `[#<n>] <issue
    title>`, com `openhands-review` adicionado.
@@ -81,7 +91,7 @@ Uma primeira execução sem nada para fazer registra uma varredura do repositór
    "_This review was posted by an AI agent (OpenHands)._" e termina com `✅ APPROVED` ou
    `🔄 CHANGES REQUESTED`.
 
-Depois, feche o PR e apague a branch.
+Depois, feche o PR e a issue, e apague a branch.
 
 O que cada automação faz em um polling está em [O runtime do agent](../../concepts/the-agent-runtime/).
 

@@ -76,7 +76,7 @@ webhook はなく、contents、issues、pull requests への読み書きの権�
 | --- | --- |
 | `~/.ssh/alex-coding-agent.pem` | App の秘密鍵。唯一の長期間有効なシークレット |
 | `alex-coding-agent-token.timer` | 発行スクリプトを 45 分ごと、および起動後 1 分に 1 回実行する systemd のユーザータイマー |
-| 発行スクリプト | テンプレートの [`scripts/agent-app-token.sh`](https://github.com/AlexTo/agentic-sdlc/blob/main/scripts/agent-app-token.sh) はこのコピー。鍵で JSON Web Token に署名し、それをインストールトークンと交換して、所有者だけが読めるファイルに書き込み、Agent Canvas 自身の API を通じて `GITHUB_PERSONAL_ACCESS_TOKEN` シークレットに入れる |
+| 発行スクリプト | 鍵で JSON Web Token に署名し、それをインストールトークンと交換して、所有者だけが読めるファイルに書き込み、Agent Canvas 自身の API を通じて `GITHUB_PERSONAL_ACCESS_TOKEN` シークレットに入れる。テンプレートでは `pnpm agent-canvas --once` が同じことをする |
 | `canvas.service` のドロップイン | Agent Canvas の起動前に発行スクリプトを実行し、`GIT_AUTHOR_*` と `GIT_COMMITTER_*` を `alex-coding-agent[bot]` とその noreply アドレスに設定し、Agent Canvas に専用の `GIT_CONFIG_GLOBAL` と、トークンファイルを読む `gh` を与える |
 
 そのため、対話的な会話は git と `gh` を通じて、automation はシークレットを通じて App を使います。自分の

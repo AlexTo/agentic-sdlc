@@ -13,10 +13,10 @@ La spec dice *cosa* e *perché*, mai *come*. È la cosa più importante che scri
 
 <Steps>
 
-1. Parti da un branch.
+1. Parti da un `main` aggiornato.
 
    ```bash
-   git switch -c spec/note-tags
+   git switch main && git pull
    ```
 
 2. Descrivi la feature a Speckit.
@@ -26,8 +26,9 @@ La spec dice *cosa* e *perché*, mai *come*. È la cosa più importante che scri
    Tags are case-insensitive and unique per note.
    ```
 
-   Speckit crea `specs/<timestamp>-note-tags/spec.md` con user story, requisiti
-   funzionali e criteri di accettazione.
+   Speckit crea un branch chiamato `<timestamp>-note-tags`, ci passa, e crea
+   `specs/<timestamp>-note-tags/spec.md` con user story, requisiti funzionali e criteri di
+   accettazione.
 
 3. Lascia che l'agente trovi le lacune.
 

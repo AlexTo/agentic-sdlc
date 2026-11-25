@@ -22,7 +22,7 @@ per l'app di note, e questa attraversa il loop descritto in [Come funziona](../h
 - .husky/ Conventional Commits, scansione dei secret e Biome al commit, mappa degli invarianti al push
 - scripts/
   - setup-repository.sh label, branch protection e le altre impostazioni che un fork non copia
-  - agent-app-token.sh crea il token della GitHub App degli agenti e lo passa ad Agent Canvas
+  - start-agent-canvas.mjs avvia Agent Canvas come la GitHub App degli agenti e ne tiene aggiornato il token
 - .github/
   - ISSUE_TEMPLATE/
     - implement-phase.md le istruzioni che ogni issue di implementazione porta con sé
@@ -60,8 +60,8 @@ Solo ciò che non può stare in un repository:
 
 1. **Impostazioni di GitHub**: la GitHub App con cui agiscono gli agenti, e le impostazioni che un
    fork non copia, che `scripts/setup-repository.sh` imposta in un'unica esecuzione.
-2. **OpenHands**: Agent Canvas sulla tua macchina, `scripts/agent-app-token.sh` che tiene aggiornato
-   il token dell'app, e le automazioni puntate sul tuo fork.
+2. **OpenHands**: Agent Canvas sulla tua macchina, avviato come l'app con `pnpm agent-canvas`, e
+   le automazioni puntate sul tuo fork.
 
 ## Cosa resta disattivato finché non lo aggiungi
 

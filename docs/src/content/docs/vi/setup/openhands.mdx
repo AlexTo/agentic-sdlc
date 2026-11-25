@@ -1,119 +1,94 @@
 ---
 title: 3. Cài OpenHands
-description: Cài Agent Canvas bằng npm, chạy nó dưới danh nghĩa GitHub App của bạn, giữ token của app luôn mới và tạo các agent profile Developer và Reviewer.
+description: Cài Agent Canvas, khởi động nó dưới danh nghĩa GitHub App của bạn bằng một lệnh, và tạo các agent profile Developer và Reviewer.
 sidebar:
   order: 3
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Kết quả:** OpenHands Agent Canvas đang chạy trên máy bạn dưới danh nghĩa GitHub App của bạn, token
-của app luôn được làm mới trong một secret, và hai agent profile: `developer` cho agent Developer và
-`reviewer` cho agent Reviewer.
+**Kết quả:** OpenHands Agent Canvas đang chạy trên máy bạn dưới danh nghĩa GitHub App của bạn, và hai
+agent profile: `developer` cho agent Developer và `reviewer` cho agent Reviewer.
 
 <Steps>
 
-1. **Tìm danh tính commit của app.** GitHub chỉ ghi công một commit cho app khi email tác giả của
-   commit là địa chỉ noreply của app, vốn chứa ID của bot user của nó:
-
-   ```bash
-   gh api '/users/<app-name>[bot]' --jq .id
-   ```
-
-   Địa chỉ đó là `<id>+<app-name>[bot]@users.noreply.github.com`.
-
-2. **Cài và khởi động Agent Canvas** với danh tính đó. Discava chạy phiên bản 1.45.0:
+1. **Cài Agent Canvas.** Discava chạy phiên bản 1.45.0:
 
    ```bash
    npm install -g @openhands/agent-canvas
-   export GIT_AUTHOR_NAME='<app-name>[bot]' GIT_COMMITTER_NAME='<app-name>[bot]'
-   export GIT_AUTHOR_EMAIL='<id>+<app-name>[bot]@users.noreply.github.com'
-   export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
-   agent-canvas
    ```
 
-   Mở [http://127.0.0.1:8000](http://127.0.0.1:8000). Hãy để nó chạy: các automation chỉ poll
-   khi Agent Canvas đang hoạt động.
-
-   Các biến này được ưu tiên hơn tên `OpenHands` mà các template automation ghi vào mỗi checkout.
-   Form **Git Settings** của chính Agent Canvas không chứa được địa chỉ này: nó từ chối email có dấu
-   ngoặc vuông.
-
-3. **Giữ token của app luôn mới.** Một app làm việc qua installation token, loại token hết hạn sau
-   một giờ. `scripts/agent-app-token.sh` tạo một token từ private key của app và lưu nó trong Agent
-   Canvas dưới dạng secret `GITHUB_PERSONAL_ACCESS_TOKEN`, thứ mà các automation và các cuộc hội
-   thoại của chúng đọc. Dù tên như vậy, token loại nào đặt ở đó cũng được. Cung cấp cho nó các ID và
-   khóa từ [bước 2](../github-repository/):
+2. **Khởi động nó dưới danh nghĩa app của bạn**, từ bản clone của bạn:
 
    ```bash
-   mkdir -p ~/.config/agent-app
-   cat > ~/.config/agent-app/env <<'EOF'
-   AGENT_APP_ID=<app-id>
-   AGENT_APP_INSTALLATION_ID=<installation-id>
-   AGENT_APP_KEY=$HOME/.ssh/<app-name>.pem
-   EOF
+   pnpm agent-canvas
    ```
 
-   Sau đó, trong một terminal thứ hai từ bản clone của bạn, chạy nó mỗi 45 phút chừng nào Agent
-   Canvas còn chạy:
+   Lần đầu tiên, nó hỏi **App ID** và đường dẫn tới **file `.pem`** từ
+   [bước 2](../github-repository/), và giữ cả hai trong `~/.config/agent-app/`, chỉ mình bạn đọc
+   được. Sau đó, mỗi lần chạy, nó:
 
-   ```bash
-   while true; do ./scripts/agent-app-token.sh; sleep 2700; done
-   ```
+   - khởi động Agent Canvas với app là tác giả các commit của agent, nên GitHub hiện chúng dưới
+     app;
+   - tạo một token của app, loại token có hiệu lực một giờ, và lưu nó trong Agent Canvas dưới dạng
+     secret `GITHUB_PERSONAL_ACCESS_TOKEN`, thứ mà các automation đọc. Dù tên như vậy, GitHub token
+     loại nào đặt ở đó cũng được;
+   - thay token mỗi 45 phút chừng nào nó còn chạy.
 
-   Mỗi lần chạy in ra thời điểm token mới hết hạn và báo secret đã được cập nhật. Khóa nằm ngoài
-   Agent Canvas, nên agent chỉ bao giờ giữ một token sẽ mất hiệu lực trong vòng một giờ. Trên Linux,
-   một systemd user timer có thể chạy nó thay vào đó: xem
-   [Thiết lập OpenHands của Discava](../../discava/openhands-setup/#github-app).
+   Chờ dòng `Token stored in the GITHUB_PERSONAL_ACCESS_TOKEN secret`, rồi mở
+   [http://127.0.0.1:8000](http://127.0.0.1:8000). Nếu Agent Canvas hỏi dùng agent nào, hãy chọn
+   Claude Code: nó tìm thấy phiên đăng nhập bạn đã có, nên hãy để trống mọi trường API key.
 
-4. **Chọn agent.** Discava chạy Claude Code qua ACP (Agent Client Protocol), nên coding agent bạn
-   vốn dùng sẽ làm việc. Trong cài đặt agent, đặt:
+   Hãy để terminal mở, và luôn khởi động Agent Canvas theo cách này: các automation chỉ poll khi nó
+   đang hoạt động, và token chỉ luôn mới khi lệnh này còn chạy.
 
-   | Cài đặt | Giá trị |
-   | --- | --- |
-   | Agent | ACP, server `claude-code` |
-   | Confirmation mode | tắt (không có ai ở đó để xác nhận) |
-   | Max iterations | 500 (đủ chỗ cho cả một giai đoạn) |
+3. **Tạo hai agent profile**, mỗi vai trò agent một cái. Trong Agent Canvas, mở **Settings → Agent**
+   và bấm **Add agent profile**, hai lần:
 
-   Coding agent phải được cài và đăng nhập trên máy này, dưới cùng một user.
-
-5. **Tạo hai agent profile**, mỗi vai trò agent một cái:
-
-   | Profile | Vai trò | Agent | Model |
+   | Name | Agent type | Agent | Model |
    | --- | --- | --- | --- |
-   | `developer` | Developer | ACP, `claude-code` | `sonnet` |
-   | `reviewer` | Reviewer | ACP, `claude-code` | `opus` |
+   | `developer` | ACP (external subprocess) | `claude-code` | `sonnet` |
+   | `reviewer` | ACP (external subprocess) | `claude-code` | `opus` |
 
-   Agent và model nào cũng được. Hãy giữ Reviewer ít nhất mạnh bằng Developer: nó là bước
+   ACP là Agent Client Protocol: coding agent bạn vốn dùng sẽ làm việc, đăng nhập dưới tên bạn trên
+   máy này. Agent và model nào cũng được. Hãy giữ Reviewer ít nhất mạnh bằng Developer: nó là bước
    kiểm tra cuối trước bạn.
 
-   Discava có một profile thứ ba, `tester`, cho agent Tester. Nó test các thay đổi đã merge trên
-   một stage đã deploy, thứ mà ứng dụng ghi chú không có, nên bạn không cần nó ở đây.
+   Để nguyên mọi thứ khác. Agent Canvas vốn đã chạy không cần người trông (không có lời nhắc xác
+   nhận), với đủ chỗ cho cả một giai đoạn trong một cuộc hội thoại (500 iteration).
 
 </Steps>
 
 ## Kiểm tra kết quả
 
-Trong Agent Canvas, bắt đầu một cuộc hội thoại với profile `developer` và cấp cho nó secret
-`GITHUB_PERSONAL_ACCESS_TOKEN`. Hỏi nó:
+Trong Agent Canvas, **Settings → Secrets** liệt kê `GITHUB_PERSONAL_ACCESS_TOKEN`. Bắt đầu một cuộc
+hội thoại với profile `developer` và hỏi nó:
 
 ```text
 Using the GITHUB_PERSONAL_ACCESS_TOKEN secret, run gh api graphql -f query='{ viewer { login } }', and list the open issues in <you>/agentic-sdlc.
 ```
 
-Nó báo `<app-name>[bot]`, và một danh sách issue trống. (`gh auth status` và `GET /user` từ chối
-token của app, nên chúng không dùng để kiểm tra được.)
+Nó báo `<app-name>[bot]`, và một danh sách issue trống.
 
 <Aside type="caution" title="Giữ GitHub login của chính bạn tránh xa các agent">
-Đừng thêm token ở mục **Integrations** của Agent Canvas, và xóa mọi GitHub server ở mục **MCP
-Servers**: cả hai đều giữ một token cố định, thường là của bạn, và một agent dùng nó sẽ hành động
-dưới danh nghĩa bạn thay vì app. Discava đã tìm thấy một server trỏ tới `api.githubcopilot.com` với
-token của chủ sở hữu.
+Đừng thêm GitHub token ở mục **Integrations** của Agent Canvas, và xóa mọi GitHub server được liệt
+kê ở mục **MCP Servers**: cả hai đều giữ một token cố định, thường là của bạn, và một agent dùng nó
+sẽ hành động dưới danh nghĩa bạn thay vì app.
 </Aside>
 
 <Aside type="caution">
 Agent chạy lệnh trên máy này dưới user của bạn. Đừng giữ thông tin đăng nhập cloud trong môi trường
 của nó, và hãy dùng một máy riêng hoặc VM khi bạn vượt quá mức thử nghiệm.
 </Aside>
+
+<Aside type="tip" title="Chạy Agent Canvas như một service">
+Khi Agent Canvas chạy như một service thay vì trong một terminal, hãy cho một timer chạy
+`pnpm agent-canvas --once` mỗi 45 phút: nó tạo một token, lưu token đó rồi thoát. Discava làm việc
+này trên Linux bằng systemd: xem
+[Thiết lập OpenHands của Discava](../../discava/openhands-setup/#github-app).
+</Aside>
+
+Discava có một profile thứ ba, `tester`, cho agent Tester. Nó test các thay đổi đã merge trên một
+stage đã deploy, thứ mà ứng dụng ghi chú không có, nên bạn không cần nó ở đây.
 
 Tiếp theo: [4. Tạo hai automation](../automations/).

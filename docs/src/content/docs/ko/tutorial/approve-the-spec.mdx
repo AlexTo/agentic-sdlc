@@ -11,12 +11,16 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 <Steps>
 
-1. 브랜치를 push한 뒤 GitHub에서 해당 브랜치의 pull request를 엽니다.
+1. Speckit이 만든 브랜치를 push하고, 해당 브랜치의 pull request를 엽니다.
 
    ```bash
    git add specs/ && git commit -m "docs(specs): add note tags spec"
-   git push -u origin spec/note-tags
+   git push -u origin HEAD
+   gh pr create --fill
    ```
+
+   fork에서는 `gh repo set-default`를 실행해 두었다면 `gh`가 여러분의 fork에 pull request를 엽니다.
+   GitHub 웹사이트는 대신 원본 저장소를 base로 제시합니다.
 
 2. 코드를 리뷰하듯 리뷰합니다. `spec.md`를 먼저 읽고, 그다음 `plan.md`를 읽고, `tasks.md`는 훑어봅니다.
    스스로 물어보세요.

@@ -11,12 +11,16 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 <Steps>
 
-1. Push nhánh, rồi mở một pull request cho nó trên GitHub.
+1. Push nhánh mà Speckit đã tạo, và mở một pull request cho nó.
 
    ```bash
    git add specs/ && git commit -m "docs(specs): add note tags spec"
-   git push -u origin spec/note-tags
+   git push -u origin HEAD
+   gh pr create --fill
    ```
+
+   Trong một bản fork, `gh` mở nó trong bản fork của bạn khi bạn đã chạy `gh repo set-default`.
+   Website của GitHub thì đề xuất repository gốc làm base.
 
 2. Review nó như bạn review code. Đọc `spec.md` trước, rồi `plan.md`, rồi lướt qua `tasks.md`.
    Tự hỏi:

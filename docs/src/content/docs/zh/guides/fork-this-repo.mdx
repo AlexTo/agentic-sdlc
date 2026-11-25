@@ -21,7 +21,7 @@ spec，它就会走完[工作原理](../how-it-works/)中描述的循环。
 - .husky/ 提交时检查 Conventional Commits、扫描 secret 并运行 Biome，推送时检查不变式映射
 - scripts/
   - setup-repository.sh 标签、分支保护，以及 fork 不会复制的其他设置
-  - agent-app-token.sh 生成智能体的 GitHub App token 并交给 Agent Canvas
+  - start-agent-canvas.mjs 以智能体的 GitHub App 的身份启动 Agent Canvas，并让它的 token 保持有效
 - .github/
   - ISSUE_TEMPLATE/
     - implement-phase.md 每个实现 issue 都携带的指令
@@ -59,8 +59,8 @@ e2e 测试，智能体也从不需要云凭证。
 
 1. **GitHub 设置**：智能体所使用的 GitHub App，以及 fork 不会复制的那些设置，后者由
    `scripts/setup-repository.sh` 一次运行设好。
-2. **OpenHands**：在你的机器上运行 Agent Canvas、让 app 的 token 保持有效的
-   `scripts/agent-app-token.sh`，以及指向你的 fork 的各个自动化。
+2. **OpenHands**：在你的机器上运行、用 `pnpm agent-canvas` 以 app 的身份启动的 Agent Canvas，
+   以及指向你的 fork 的各个自动化。
 
 ## 在你添加之前处于关闭状态的部分
 

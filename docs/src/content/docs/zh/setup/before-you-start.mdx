@@ -7,22 +7,22 @@ sidebar:
 
 import { Aside } from '@astrojs/starlight/components';
 
-[这个仓库的 fork](../../guides/fork-this-repo/) 包含了 Discava 配置中保存在仓库里的所有内容。下面这些步骤补上仓库之外的部分：你的 GitHub 设置，以及一个指向你的 fork 的 OpenHands 安装。然后你为笔记应用编写一份 spec，看着它从 spec PR 走到已合并的智能体 PR。
+[这个仓库的 fork](../../guides/fork-this-repo/) 包含了 Discava 配置中保存在仓库里的所有内容。下面这些步骤补上仓库之外的部分：你的 GitHub 设置、一个供智能体以其身份行事的 GitHub App，以及一个指向你的 fork 的 OpenHands 安装。然后你为笔记应用编写一份 spec，看着它从 spec PR 走到已合并的智能体 PR。
 
 **耗时：** 大约一小时，大部分时间在等待第一次智能体运行。
 
 ## 你需要准备什么
 
+在 macOS 或 Linux 上（在 Windows 上请使用 WSL）：
+
 | 需要 | 原因 |
 | --- | --- |
 | 一个 GitHub 账号 | 用来 fork、编写 spec 和评审 |
-| 给智能体用的 GitHub App | 智能体以它的身份行事，这样智能体的 PR 和评论都归它们自己，你也能批准它们。Discava 的 app 是 `alex-coding-agent` |
+| GitHub CLI（`gh`），已登录 | 设置脚本和智能体都要用到 |
 | Node.js 24 和 pnpm | 用来运行仓库和 Agent Canvas |
 | `uv` | Agent Canvas 用 `uvx` 启动它的后端 |
-| `openssl`、`curl` 和 `jq` | 用来生成 app 的 token |
-| Docker | 仅用于在本地运行笔记应用及其 e2e 测试。CI 会为智能体运行它们 |
-| GitHub CLI（`gh`），已登录 | 大多数步骤都要用到 |
-| 一个编码智能体，已安装并登录 | 用 Speckit 编写 spec，并在 OpenHands 内部运行。Discava 使用 Claude Code |
+| 一个编码智能体，已安装并登录 | 它用 Speckit 编写 spec，并在 OpenHands 内部完成智能体的工作。Discava 使用 Claude Code |
+| Docker（可选） | 仅用于在你的机器上运行笔记应用及其 e2e 测试。CI 会为智能体运行它们 |
 
 <Aside type="note">
 Agent Canvas 运行在你自己的机器上，并轮询 GitHub，所以它不需要公网地址，也不需要 webhook。只有它在运行时，智能体才会工作。
@@ -30,13 +30,13 @@ Agent Canvas 运行在你自己的机器上，并轮询 GitHub，所以它不需
 
 ## 步骤
 
-| # | 步骤 | 完成后你将拥有 |
-| --- | --- | --- |
-| 1 | [Fork 仓库](../fork/) | 你自己的副本，已开启 Actions 和 Issues |
-| 2 | [配置仓库](../github-repository/) | 一个脚本：开启 Issues 和 Actions、创建标签、保护 `main`、把评论限制为协作者，并指定智能体的 GitHub App |
-| 3 | [安装 OpenHands](../openhands/) | 正在运行的 Agent Canvas、保持有效的 app token、两个 agent profile |
-| 4 | [创建两个 automation](../automations/) | 开发智能体和评审智能体在你的 fork 中实现和评审 |
-| 5 | [运行你的第一个功能](../first-feature/) | 一份笔记应用的 spec，由智能体一路推进到已合并的代码 |
+| # | 步骤 | 你要做的 | 完成后你将拥有 |
+| --- | --- | --- | --- |
+| 1 | [Fork 仓库](../fork/) | 三条命令 | 你自己的副本，已克隆 |
+| 2 | [配置仓库](../github-repository/) | 用一个已填好的表单创建 GitHub App，运行一个脚本 | 安装在你的 fork 上的智能体 GitHub App、标签、受保护的 `main`、仅限协作者的评论 |
+| 3 | [安装 OpenHands](../openhands/) | 两条命令，在 Web 界面中创建两个 profile | 以你的 app 身份运行的 Agent Canvas，带有一个 `developer` profile 和一个 `reviewer` profile |
+| 4 | [创建两个 automation](../automations/) | 在 Web 界面中填两个表单，粘贴一段 prompt | 开发智能体和评审智能体在你的 fork 中实现和评审 |
+| 5 | [运行你的第一个功能](../first-feature/) | 编写一份 spec，评审 pull request | 一份笔记应用的 spec，由智能体一路推进到已合并的代码 |
 
 想在已有的仓库中搭建这套配置？见[在你自己的仓库中采用](../../adopt/overview/)。
 

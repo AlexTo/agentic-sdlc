@@ -74,7 +74,7 @@ installation token 的有效期只有一小时，所以 app 的私钥留在机�
 | --- | --- |
 | `~/.ssh/alex-coding-agent.pem` | app 的私钥：唯一的长期 secret |
 | `alex-coding-agent-token.timer` | 一个 systemd 用户 timer，每 45 分钟运行一次生成脚本，开机后一分钟也运行一次 |
-| 生成脚本 | 模板中的 [`scripts/agent-app-token.sh`](https://github.com/AlexTo/agentic-sdlc/blob/main/scripts/agent-app-token.sh) 是它的副本。用私钥签一个 JSON Web Token，换取一个 installation token，把它写进一个只有所有者能读的文件，再通过 Agent Canvas 自己的 API 放进 `GITHUB_PERSONAL_ACCESS_TOKEN` secret |
+| 生成脚本 | 用私钥签一个 JSON Web Token，换取一个 installation token，把它写进一个只有所有者能读的文件，再通过 Agent Canvas 自己的 API 放进 `GITHUB_PERSONAL_ACCESS_TOKEN` secret。在模板中，`pnpm agent-canvas --once` 做的是同样的事 |
 | `canvas.service` 的一个 drop-in | 在 Agent Canvas 启动前运行生成脚本，把 `GIT_AUTHOR_*` 和 `GIT_COMMITTER_*` 设为 `alex-coding-agent[bot]` 及其 noreply 地址，并给 Agent Canvas 一份自己的 `GIT_CONFIG_GLOBAL` 和一个读取 token 文件的 `gh` |
 
 因此，交互式会话通过 git 和 `gh` 使用 app，自动化则通过 secret 使用它。你自己的终端仍然用你自己的登录。

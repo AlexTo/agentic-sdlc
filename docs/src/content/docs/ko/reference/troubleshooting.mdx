@@ -25,7 +25,7 @@ sidebar:
 | 빨간 실행 후 `ci-fix-*` label이 없음 | Agent CI Status가 실행되지 않았거나, 실행을 무시했습니다 (notice 참고) | Agent CI Status 실행을 열고 notice를 읽습니다. 예: `the pull request has a newer commit than this run` |
 | 에이전트가 수정했는데 새 head를 아무도 리뷰하지 않음 | 에이전트가 `openhands-review`를 다시 붙이지 않았습니다 | 수동으로 다시 붙입니다 |
 | push 거부: `refusing to allow a GitHub App to create or update workflow` | 앱에 **Workflows** write 권한이 없고, 브랜치가 `.github/workflows/`를 건드립니다 (흔히 `main`의 merge를 통해) | 앱 설정에서 권한을 주고, installation에서 새 권한을 수락합니다. 다음 폴링에서 다시 시도합니다. personal access token이라면 메시지에 그것이 나오며, 토큰에 `workflow` scope가 필요합니다 |
-| 모든 automation 실패: `The GitHub credential GITHUB_PERSONAL_ACCESS_TOKEN is unavailable` 또는 `401 Bad credentials` | secret이 없거나, 한 시간이 넘은 앱 토큰이 들어 있습니다 | `scripts/agent-app-token.sh`가 여전히 45분마다 실행되는지, 마지막 실행이 secret을 업데이트했는지 확인합니다 |
+| 모든 automation 실패: `The GitHub credential GITHUB_PERSONAL_ACCESS_TOKEN is unavailable` 또는 `401 Bad credentials` | secret이 없거나, 한 시간이 넘은 앱 토큰이 들어 있습니다 | `pnpm agent-canvas`로 Agent Canvas를 시작하고 계속 실행해 둡니다. 45분마다 토큰을 교체하고, 저장할 때마다 로그를 남깁니다. Agent Canvas를 서비스로 실행하고 있다면 `pnpm agent-canvas --once`를 실행하는 타이머를 확인합니다 |
 | `ci-fix-exhausted` | 다섯 번의 수정으로 수렴하지 않았습니다 | 마지막 실패를 읽습니다. 보통 spec이나 plan이 모호합니다. 고치고, label을 제거하고, 다시 실행합니다 |
 
 ## 리뷰
@@ -34,7 +34,7 @@ sidebar:
 | --- | --- | --- |
 | "⏳ Review waiting on checks"만 있고 리뷰가 없음 | head의 검사가 끝나지 않았거나, queue에서 멈춰 있습니다 | 대기 중인 검사를 찾습니다. 절대 실행되지 않는 필수 검사는 리뷰를 영원히 막습니다 |
 | 리뷰가 `🔄 CHANGES REQUESTED`인데 `review-fix-*` label이 없음 | 리뷰에 run 마커가 없거나, write 권한이 있는 계정이나 `AGENT_APP_LOGIN`에 지정된 앱의 리뷰가 아니거나, PR이 이미 진행되었습니다 | Agent Review Status notice를 읽습니다. 리뷰가 메인테이너나 에이전트의 앱에서 온 것이 아니라고 하면, repository 변수 `AGENT_APP_LOGIN`을 앱의 bot 로그인으로 설정합니다 |
-| 모든 code review 스캔이 `HTTP Error 403: Forbidden`으로 실패 | `github-pr-reviewer` 템플릿이 `GET /user`로 자신이 누구인지 묻는데, GitHub는 그곳에서 앱의 installation token을 거부합니다 (`Resource not accessible by integration`) | 번들을 패치합니다. worker가 `GET /user`에서 로그인을 읽는 곳(`worker.py`의 `github_login`, `main.py`의 토큰 검사)에서, 403이면 `<app-name>[bot]`을 반환하는 GraphQL `{ viewer { login } }`로 대체합니다. 패치한 번들은 automation API로 업로드합니다(`POST /api/automation/v1/uploads`, 그다음 그 `tarball_path`와 함께 `PATCH /api/automation/v1/<id>`) |
+| 모든 code review 스캔이 `HTTP Error 403: Forbidden`으로 실패 | `github-pr-reviewer` 템플릿이 `GET /user`로 자신이 누구인지 묻는데, GitHub는 그곳에서 앱의 installation token을 거부합니다 (`Resource not accessible by integration`) | [두 개의 automation 만들기, 3단계](../../setup/automations/)의 prompt로 에이전트가 automation의 번들을 패치하게 합니다. 수정 내용: worker가 `GET /user`에서 로그인을 읽는 곳(`worker.py`의 `github_login`, `main.py`의 토큰 검사)에서, 403이면 `<app-name>[bot]`을 반환하는 GraphQL `{ viewer { login } }`로 대체합니다 |
 | 리뷰가 "Approved"가 아니라 "Commented"로 표시됨 | 리뷰어가 PR을 연 것과 같은 신원으로 게시하는데, GitHub는 자기 승인을 허용하지 않습니다 | 예상된 동작입니다. 개발자와 리뷰어는 에이전트의 GitHub App을 공유합니다. glue는 리뷰 상태가 아니라 판정 줄을 읽습니다 |
 
 ## Check

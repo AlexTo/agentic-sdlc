@@ -13,11 +13,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 <Steps>
 
-1. 在你的克隆中新建一个分支，用你的编码智能体**编写 spec**：
-
-   ```bash
-   git switch -c spec/note-tags
-   ```
+1. 在你的克隆中，在最新的 `main` 上，用你的编码智能体**编写 spec**：
 
    ```text
    /speckit-specify Users can add up to five tags to a note and filter the note list by tag. Tags are case-insensitive and unique per note.
@@ -27,32 +23,35 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    /speckit-analyze
    ```
 
-2. **开启 spec PR，加上 `spec-ready` 标签，然后合并。** 推送分支：
+   `/speckit-specify` 会为 spec 创建一个分支并切换过去，分支名类似 `<timestamp>-note-tags`。回答 `/speckit-clarify` 提出的问题。最后你会在 `specs/<timestamp>-note-tags/` 下得到 `spec.md`、`plan.md` 和 `tasks.md`。
+
+2. **开启带 `spec-ready` 标签的 spec PR，然后合并。**
 
    ```bash
    git add specs/ && git commit -m "docs(specs): add note tags spec"
-   git push -u origin spec/note-tags
+   git push -u origin HEAD
+   gh pr create --fill --label spec-ready
    ```
 
-   在 GitHub 上开启 pull request，加上 `spec-ready` 标签，等检查变绿后合并。PR 是你开的，所以 GitHub 不允许你批准它：勾选 **Merge without waiting for requirements to be met**。
+   `gh` 会在你的 fork 中开启 pull request，并打印它的地址。（GitHub 网站会把原仓库作为 fork 的 pull request 的 base，而这不是你想要的。）在那里像评审代码一样阅读 spec，等检查变绿后合并。PR 是你开的，所以 GitHub 不允许你批准它：勾选 **Merge without waiting for requirements to be met**。
 
    ✅ **Tasks format** 在 PR 上通过。合并后，**Agent Issues** 会开一个标题为 `feat(<feature>): … (with setup and foundations)` 的 issue，带有 `openhands` 标签，范围是第一组阶段。
 
 3. **等待智能体。** 你什么都不用做。
 
-   ✅ 下一次轮询时，Agent Canvas 中会为该 issue 启动一个对话。完成后，`openhands/issue-<n>` 上会出现一个带 `openhands-review` 的草稿 PR，`tasks.md` 中恰好勾选了这些阶段的任务。
+   ✅ 下一次轮询时，Agent Canvas 中会为该 issue 启动一个对话。完成后，`openhands/issue-<n>` 上会出现一个由你的 app 开启、带 `openhands-review` 的 PR，`tasks.md` 中恰好勾选了这些阶段的任务。
 
 4. **观察各道关卡。**
 
    ✅ PR Checks 开始运行。如果有一项失败，**Agent CI Status** 会加上 `ci-fix-1`，开发智能体会在下一次轮询时修订同一个 PR。所有检查都完成后，评审智能体会评审该 head，并以 `✅ APPROVED` 或 `🔄 CHANGES REQUESTED` 结尾。要求修改同样会把智能体打回去，并带上 `review-fix-1`。
 
-5. **评审并合并。** 阅读 PR 描述、其中列出的 **(human)** 任务，以及网站阶段的 **E2E screenshots** 评论。点击 **Ready for review**，然后批准并合并。
+5. **评审并合并。** 阅读 PR 描述、其中列出的 **(human)** 任务，以及网站阶段的 **E2E screenshots** 评论。然后批准并合并。
 
    ✅ **Agent Issues** 再次运行，开出下一阶段的 issue。第 3 到第 5 步重复进行。
 
 6. **合并最后一个 PR。**
 
-   ✅ Agent Issues 记录 `No issue created: … no tasks left for the agent`。功能完成。
+   ✅ Agent Issues 记录 `No issue created: … no tasks left for the agent`。功能完成。随后 **Archive Specs** 会推送一个把已完成的 spec 移到 `specs/_archive/` 的分支，它的运行记录中会显示一个链接，打开后该 pull request 已填好，由你来提交。
 
 </Steps>
 

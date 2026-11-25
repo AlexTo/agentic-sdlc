@@ -1,13 +1,13 @@
 ---
 title: 1. Fork repository
-description: Fork repository này, clone nó, và kiểm tra nó chạy được.
+description: Fork repository này, clone nó, và cài các dependency của nó.
 sidebar:
   order: 1
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Kết quả:** bản fork của riêng bạn, đã clone về máy, với các check đều pass.
+**Kết quả:** bản fork của riêng bạn, đã clone về máy, sẵn sàng cho script thiết lập.
 
 <Steps>
 
@@ -18,43 +18,39 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    cd agentic-sdlc
    ```
 
-2. **Đặt bản fork làm mặc định cho `gh`.** Nếu không, các lệnh `gh` sẽ nhắm vào repository gốc,
-   không phải của bạn.
+2. **Đặt bản fork làm mặc định cho `gh`.** Nếu không, các lệnh `gh`, và các pull request bạn mở
+   bằng nó, sẽ nhắm vào repository gốc, không phải của bạn.
 
    ```bash
    gh repo set-default <you>/agentic-sdlc
    ```
 
-3. **Cài đặt và chạy các check ở local**, đúng những check mà CI chạy:
+3. **Cài các dependency.**
 
    ```bash
    pnpm install
-   pnpm nx run-many --target lint --all
-   pnpm nx run-many --target test --all
-   pnpm nx run-many --target build --all
    ```
 
-   `pnpm install` cũng cài các git hook: Conventional Commits trên mọi commit message, quét secret
-   và Biome trước mọi commit, và kiểm tra bản đồ invariant trước mọi push. Để chạy ứng dụng ghi chú
-   (cần Docker): `pnpm dev`, rồi mở URL mà website in ra.
+   Lệnh này cũng cài các git hook mà bạn sẽ gặp khi commit spec đầu tiên: Conventional Commits trên
+   mọi commit message, và quét secret cùng Biome trước mọi commit.
 
 </Steps>
 
 ## Kiểm tra kết quả
 
-Ba lệnh `nx run-many` đều pass, và một commit có message không phải Conventional Commit bị từ
-chối:
-
 ```bash
-git commit --allow-empty -m "not conventional"
+gh repo set-default --view
 ```
 
-```text
-✖   subject may not be empty [subject-empty]
-✖   type may not be empty [type-empty]
-```
+in ra `<you>/agentic-sdlc`.
 
 GitHub tắt Issues và Actions trong bản fork. Script ở bước tiếp theo bật chúng lại.
+
+<Aside type="tip" title="Tùy chọn: xem nó chạy">
+Để chạy những gì CI chạy (lint, test và build): `pnpm build`. Để chạy ứng dụng ghi chú (cần
+Docker): `pnpm dev`, rồi mở URL mà website in ra. Cả hai đều không cần cho việc thiết lập: CI chạy
+các check trên mọi pull request.
+</Aside>
 
 <Aside type="note">
 Không có secret `CODECOV_TOKEN`, bước upload coverage của CI log một lỗi rồi tiếp tục. Thêm secret,

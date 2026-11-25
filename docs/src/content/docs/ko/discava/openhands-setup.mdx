@@ -74,7 +74,7 @@ installation token은 한 시간 동안 유효하므로, 앱의 private key는 A
 | --- | --- |
 | `~/.ssh/alex-coding-agent.pem` | 앱의 private key: 유일하게 오래 유지되는 secret |
 | `alex-coding-agent-token.timer` | 발급 스크립트를 45분마다, 그리고 부팅 1분 후에 한 번 실행하는 systemd 사용자 타이머 |
-| 발급 스크립트 | 템플릿의 [`scripts/agent-app-token.sh`](https://github.com/AlexTo/agentic-sdlc/blob/main/scripts/agent-app-token.sh)가 그 사본입니다. key로 JSON Web Token에 서명하고, 이를 installation token으로 교환해 소유자만 읽을 수 있는 파일에 쓰고, Agent Canvas 자체 API를 통해 `GITHUB_PERSONAL_ACCESS_TOKEN` secret에 넣습니다 |
+| 발급 스크립트 | key로 JSON Web Token에 서명하고, 이를 installation token으로 교환해 소유자만 읽을 수 있는 파일에 쓰고, Agent Canvas 자체 API를 통해 `GITHUB_PERSONAL_ACCESS_TOKEN` secret에 넣습니다. 템플릿에서는 `pnpm agent-canvas --once`가 같은 일을 합니다 |
 | `canvas.service`용 drop-in | Agent Canvas가 시작되기 전에 발급 스크립트를 실행하고, `GIT_AUTHOR_*`와 `GIT_COMMITTER_*`를 `alex-coding-agent[bot]`과 그 noreply 주소로 설정하며, Agent Canvas에 자체 `GIT_CONFIG_GLOBAL`과 토큰 파일을 읽는 `gh`를 줍니다 |
 
 그래서 대화형 대화는 git과 `gh`를 통해, automation은 secret을 통해 앱을 사용합니다. 여러분의 터미널은 여러분의

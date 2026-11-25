@@ -11,8 +11,9 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 portant le label `openhands`, révise les PR marquées en échec et relit les PR portant le label `openhands-review`.
 Ce sont les agents Développeur et Relecteur.
 
-Les deux automatisations viennent du **catalogue d'automatisations** d'Agent Canvas. Vous remplissez un formulaire, et le
-catalogue empaquette un worker testé avec vos réglages. Vous n'écrivez ni ne téléversez aucun code.
+Les deux automatisations viennent du **catalogue d'automatisations** d'Agent Canvas, sous **Automations**. Vous
+remplissez un formulaire, et le catalogue empaquette un worker testé avec vos réglages. Vous n'écrivez aucun
+code.
 
 <Steps>
 
@@ -46,7 +47,7 @@ catalogue empaquette un worker testé avec vos réglages. Vous n'écrivez ni ne 
    | Agent profile | `reviewer` |
    | Check frequency | `*/5 * * * *` |
 
-   Discava utilise la version 1.11.2 du template, avec le patch ci-dessous. **New reviews per scan**
+   Discava utilise la version 1.11.2 du template, avec le patch de l'étape suivante. **New reviews per scan**
    limite le nombre de conversations de review qu'un passage démarre, pour qu'un arriéré ne lance pas
    dix agents d'un coup.
 
@@ -54,22 +55,35 @@ catalogue empaquette un worker testé avec vos réglages. Vous n'écrivez ni ne 
    reviewer demandé, choisi selon qui a déjà modifié ces fichiers. Cela ne se produit que si l'issue de la PR
    porte `priority:medium` ou `priority:high`. Discava le laisse vide.
 
-   <Aside type="caution" title="Le template de code review refuse le token d'une app">
-   Jusqu'à au moins la version 1.11.3, le worker demande à `GET /user` sous quel compte il agit, et
-   GitHub répond à un installation token par `403 Resource not accessible by integration`. Chaque
-   passage échoue alors avant de relire. Discava a patché sa copie pour interroger GraphQL
-   `viewer { login }` à la place : voir [Dépannage](../../reference/troubleshooting/#reviews).
-   </Aside>
+3. **Patchez l'automatisation de code review pour votre app.** Telle qu'elle est livrée, jusqu'à au
+   moins la version 1.11.3 du template, elle demande à GitHub par `GET /user` sous quel compte elle agit,
+   et GitHub le refuse au token d'une app (`403 Resource not accessible by integration`). Chaque passage
+   de review échoue alors. En attendant qu'OpenHands le corrige, laissez un agent faire la correction
+   qu'a faite Discava. Démarrez une conversation dans Agent Canvas et collez :
 
-3. **Lancez chaque automatisation une fois à la main** depuis sa page dans Agent Canvas, et lisez le journal d'exécution.
+   ```text
+   The "GitHub code review" automation fails with HTTP 403: its GitHub token is a GitHub App
+   installation token, and GitHub refuses those on GET /user. Fix the automation's worker bundle:
+   wherever the code reads the token's login from GET /user (the login lookup in worker.py and
+   the token check in main.py), fall back on a 403 to the GraphQL query { viewer { login } }.
+   Upload the patched bundle through the automation API and point this automation at it, changing
+   nothing else. Then run the automation once and show me that the run completed.
+   ```
+
+   Recommencez si vous mettez plus tard l'automatisation à jour depuis le catalogue.
+
+4. **Lancez chaque automatisation une fois à la main**, avec **Run now** sur sa page dans Agent Canvas,
+   et lisez le journal d'exécution.
 
 </Steps>
 
 ## Vérifier que ça marche
 
-Un premier passage sans rien à faire journalise un balayage du dépôt et se termine par `COMPLETED`. Ensuite :
+Un premier passage sans rien à faire journalise un balayage du dépôt et se termine par `COMPLETED`. Essayez ensuite
+un petit changement de bout en bout :
 
-1. Créez une issue de test : « Add a line to README.md saying hello », et ajoutez le label `openhands`.
+1. Dans votre fork, créez une issue intitulée « Add a line to README.md saying hello », et ajoutez le
+   label `openhands`.
 2. En un passage, une conversation pour l'issue apparaît dans Agent Canvas.
 3. Quand l'agent a fini, une PR apparaît sur `openhands/issue-<n>`, intitulée `[#<n>] <issue
    title>`, avec `openhands-review` ajouté.
@@ -77,7 +91,7 @@ Un premier passage sans rien à faire journalise un balayage du dépôt et se te
    « _This review was posted by an AI agent (OpenHands)._ » et se termine par `✅ APPROVED` ou
    `🔄 CHANGES REQUESTED`.
 
-Fermez ensuite la PR et supprimez la branche.
+Fermez ensuite la PR et l'issue, et supprimez la branche.
 
 Ce que fait chaque automatisation à chaque passage est décrit dans [Le runtime de l'agent](../../concepts/the-agent-runtime/).
 

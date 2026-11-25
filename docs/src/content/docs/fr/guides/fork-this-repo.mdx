@@ -23,7 +23,7 @@ autour d'une petite application de notes.
 - .husky/ Conventional Commits, scan de secrets et Biome au commit, carte des invariants au push
 - scripts/
   - setup-repository.sh labels, protection de branche et les autres paramètres qu'un fork ne copie pas
-  - agent-app-token.sh émet le token de la GitHub App des agents et le transmet à Agent Canvas
+  - start-agent-canvas.mjs démarre Agent Canvas sous la GitHub App des agents et garde son token à jour
 - .github/
   - ISSUE_TEMPLATE/
     - implement-phase.md les instructions que porte chaque issue d'implémentation
@@ -61,8 +61,8 @@ Seulement ce qui ne peut pas vivre dans un dépôt :
 
 1. **Les paramètres GitHub** : la GitHub App sous laquelle agissent les agents, et les paramètres qu'un
    fork ne copie pas, que `scripts/setup-repository.sh` règle en une seule exécution.
-2. **OpenHands** : Agent Canvas sur votre machine, `scripts/agent-app-token.sh` qui garde le token de
-   l'app à jour, et les automatisations pointées sur votre fork.
+2. **OpenHands** : Agent Canvas sur votre machine, démarré sous l'app avec `pnpm agent-canvas`, et
+   les automatisations pointées sur votre fork.
 
 ## Ce qui reste désactivé tant que vous ne l'ajoutez pas
 

@@ -11,8 +11,9 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 `openhands`, sửa lại các PR bị đánh dấu thất bại, và review các PR có label `openhands-review`.
 Đây là các agent Developer và Reviewer.
 
-Cả hai automation đến từ **automation catalog** của Agent Canvas. Bạn điền một form, và catalog
-đóng gói một worker đã được test với các cài đặt của bạn. Bạn không phải viết hay upload code nào.
+Cả hai automation đến từ **automation catalog** của Agent Canvas, trong mục **Automations**. Bạn
+điền một form, và catalog đóng gói một worker đã được test với các cài đặt của bạn. Bạn không phải
+viết code nào.
 
 <Steps>
 
@@ -46,31 +47,43 @@ Cả hai automation đến từ **automation catalog** của Agent Canvas. Bạn
    | Agent profile | `reviewer` |
    | Check frequency | `*/5 * * * *` |
 
-   Discava chạy template phiên bản 1.11.2, với bản vá bên dưới. **New reviews per scan** giới hạn số
-   cuộc hội thoại review mà một lần poll khởi động, để một đống việc tồn đọng không khởi động mười
-   agent cùng lúc.
+   Discava chạy template phiên bản 1.11.2, với bản vá ở bước tiếp theo. **New reviews per scan**
+   giới hạn số cuộc hội thoại review mà một lần poll khởi động, để một đống việc tồn đọng không khởi
+   động mười agent cùng lúc.
 
    **Maintainers** là tùy chọn. Khi được đặt, một PR đã duyệt được giao cho một trong số họ làm
    requested reviewer, chọn theo người đã từng thay đổi các file đó. Điều này chỉ xảy ra khi issue
    của PR mang `priority:medium` hoặc `priority:high`. Discava để trống.
 
-   <Aside type="caution" title="Template code review từ chối token của app">
-   Cho đến ít nhất phiên bản 1.11.3, worker hỏi `GET /user` xem nó đang hoạt động dưới tài khoản nào,
-   và GitHub trả lời một installation token bằng `403 Resource not accessible by integration`. Khi
-   đó mọi lần quét đều thất bại trước khi kịp review. Discava đã vá bản của mình để hỏi GraphQL
-   `viewer { login }` thay vào đó: xem [Xử lý sự cố](../../reference/troubleshooting/#review).
-   </Aside>
+3. **Vá automation code review cho app của bạn.** Ở dạng được phát hành, cho đến ít nhất template
+   phiên bản 1.11.3, nó hỏi GitHub qua `GET /user` xem nó đang hoạt động dưới tài khoản nào, và
+   GitHub từ chối điều đó với token của một app (`403 Resource not accessible by integration`). Khi
+   đó mọi lần quét review đều thất bại. Cho đến khi OpenHands sửa lỗi này, hãy để một agent thực
+   hiện bản vá mà Discava đã làm. Bắt đầu một cuộc hội thoại trong Agent Canvas và dán:
 
-3. **Chạy mỗi automation một lần thủ công** từ trang của nó trong Agent Canvas, và đọc log lần chạy.
+   ```text
+   The "GitHub code review" automation fails with HTTP 403: its GitHub token is a GitHub App
+   installation token, and GitHub refuses those on GET /user. Fix the automation's worker bundle:
+   wherever the code reads the token's login from GET /user (the login lookup in worker.py and
+   the token check in main.py), fall back on a 403 to the GraphQL query { viewer { login } }.
+   Upload the patched bundle through the automation API and point this automation at it, changing
+   nothing else. Then run the automation once and show me that the run completed.
+   ```
+
+   Lặp lại việc này nếu sau này bạn cập nhật automation từ catalog.
+
+4. **Chạy mỗi automation một lần thủ công**, bằng **Run now** trên trang của nó trong Agent Canvas,
+   và đọc log lần chạy.
 
 </Steps>
 
 ## Kiểm tra kết quả
 
 Một lần chạy đầu không có gì để làm sẽ log một lượt quét repository và kết thúc bằng `COMPLETED`.
-Sau đó:
+Sau đó thử một thay đổi nhỏ từ đầu đến cuối:
 
-1. Tạo một issue thử: "Add a line to README.md saying hello", và thêm label `openhands`.
+1. Trong bản fork của bạn, tạo một issue có tiêu đề "Add a line to README.md saying hello", và thêm
+   label `openhands`.
 2. Trong vòng một lần poll, một cuộc hội thoại cho issue xuất hiện trong Agent Canvas.
 3. Khi agent xong, một PR xuất hiện trên `openhands/issue-<n>`, với tiêu đề `[#<n>] <issue
    title>`, và đã được thêm `openhands-review`.
@@ -78,7 +91,7 @@ Sau đó:
    "_This review was posted by an AI agent (OpenHands)._" và kết thúc bằng `✅ APPROVED` hoặc
    `🔄 CHANGES REQUESTED`.
 
-Sau đó đóng PR và xóa nhánh.
+Sau đó đóng PR và issue, và xóa nhánh.
 
 Mỗi automation làm gì ở một lần poll được mô tả ở [Runtime của agent](../../concepts/the-agent-runtime/).
 

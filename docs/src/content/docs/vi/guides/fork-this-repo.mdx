@@ -22,7 +22,7 @@ spec cho ứng dụng ghi chú, và spec đó đi qua vòng lặp được mô t
 - .husky/ Conventional Commits, quét secret và Biome khi commit, bản đồ invariant khi push
 - scripts/
   - setup-repository.sh các label, branch protection và những thiết lập khác mà fork không sao chép
-  - agent-app-token.sh tạo token GitHub App của các agent và giao nó cho Agent Canvas
+  - start-agent-canvas.mjs khởi động Agent Canvas dưới danh nghĩa GitHub App của các agent và giữ token của nó luôn mới
 - .github/
   - ISSUE_TEMPLATE/
     - implement-phase.md hướng dẫn mà mọi issue triển khai đều mang theo
@@ -60,8 +60,8 @@ Chỉ những thứ không thể nằm trong repository:
 
 1. **Thiết lập GitHub**: GitHub App mà các agent hoạt động dưới danh nghĩa của nó, và các thiết lập
    mà fork không sao chép, được `scripts/setup-repository.sh` đặt trong một lần chạy.
-2. **OpenHands**: Agent Canvas trên máy bạn, `scripts/agent-app-token.sh` giữ token của app luôn mới,
-   và các automation trỏ vào bản fork của bạn.
+2. **OpenHands**: Agent Canvas trên máy bạn, được khởi động dưới danh nghĩa app bằng
+   `pnpm agent-canvas`, và các automation trỏ vào bản fork của bạn.
 
 ## Những gì tắt cho đến khi bạn thêm vào
 
