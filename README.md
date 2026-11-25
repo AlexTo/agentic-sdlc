@@ -17,6 +17,18 @@
     <a href="https://alexto.github.io/agentic-sdlc/en/guides/case-study/"><b>Case study</b></a> ·
     <a href="https://github.com/AlexTo/discava"><b>Discava</b></a>
   </p>
+  <p>
+    🌐 Read it in your language:
+    <a href="https://alexto.github.io/agentic-sdlc/en/">English</a> ·
+    <a href="https://alexto.github.io/agentic-sdlc/jp/">日本語</a> ·
+    <a href="https://alexto.github.io/agentic-sdlc/ko/">한국어</a> ·
+    <a href="https://alexto.github.io/agentic-sdlc/es/">Español</a> ·
+    <a href="https://alexto.github.io/agentic-sdlc/pt/">Português</a> ·
+    <a href="https://alexto.github.io/agentic-sdlc/fr/">Français</a> ·
+    <a href="https://alexto.github.io/agentic-sdlc/it/">Italiano</a> ·
+    <a href="https://alexto.github.io/agentic-sdlc/zh/">中文</a> ·
+    <a href="https://alexto.github.io/agentic-sdlc/vi/">Tiếng Việt</a>
+  </p>
 </div>
 
 ---
