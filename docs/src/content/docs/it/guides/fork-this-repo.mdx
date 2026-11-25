@@ -20,7 +20,9 @@ per l'app di note, e questa attraversa il loop descritto in [Come funziona](../h
 - AGENTS.md ciò che ogni agente legge per primo, scritto per l'app di note
 - .specify/ template, script e constitution di Speckit
 - .husky/ Conventional Commits, scansione dei secret e Biome al commit, mappa degli invarianti al push
-- scripts/setup-repository.sh label, branch protection e le altre impostazioni che un fork non copia
+- scripts/
+  - setup-repository.sh label, branch protection e le altre impostazioni che un fork non copia
+  - agent-app-token.sh crea il token della GitHub App degli agenti e lo passa ad Agent Canvas
 - .github/
   - ISSUE_TEMPLATE/
     - implement-phase.md le istruzioni che ogni issue di implementazione porta con sé
@@ -56,10 +58,10 @@ può eseguirne i test e2e e l'agente non ha mai bisogno di credenziali cloud.
 
 Solo ciò che non può stare in un repository:
 
-1. **Impostazioni di GitHub**: un fork non le copia, quindi `scripts/setup-repository.sh` le imposta
-   in un'unica esecuzione.
-2. **OpenHands**: Agent Canvas sulla tua macchina, un token GitHub e le automazioni puntate sul tuo
-   fork.
+1. **Impostazioni di GitHub**: la GitHub App con cui agiscono gli agenti, e le impostazioni che un
+   fork non copia, che `scripts/setup-repository.sh` imposta in un'unica esecuzione.
+2. **OpenHands**: Agent Canvas sulla tua macchina, `scripts/agent-app-token.sh` che tiene aggiornato
+   il token dell'app, e le automazioni puntate sul tuo fork.
 
 ## Cosa resta disattivato finché non lo aggiungi
 

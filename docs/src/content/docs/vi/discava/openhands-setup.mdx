@@ -12,7 +12,7 @@ OpenHands trên cloud và không có webhook. Mọi thứ là poll ra ngoài t�
 
 ## Agent Canvas
 
-Agent Canvas 1.41.0, cài từ npm (`@openhands/agent-canvas`) và chạy như một user service. Trạng
+Agent Canvas 1.45.0, cài từ npm (`@openhands/agent-canvas`) và chạy như một user service. Trạng
 thái của nó nằm trong `~/.openhands/`: cài đặt, agent profile, secret và database SQLite của các
 automation.
 
@@ -48,18 +48,50 @@ Lưu trong Agent Canvas (**Settings → Secrets**), theo tên:
 
 | Tên | Dùng cho |
 | --- | --- |
-| `GITHUB_PERSONAL_ACCESS_TOKEN` | Các automation đọc GitHub bằng nó. Các cuộc hội thoại nhận nó để clone, push, mở PR, review và comment |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | Installation token hiện tại của GitHub App, dù tên là vậy. Các automation đọc GitHub bằng nó. Các cuộc hội thoại nhận nó để clone, push, mở PR, review và comment |
 | `OPENHANDS_AUTOMATION_API_KEY` | Key riêng của backend automation |
 | `DISCAVA_STUDENT_USERNAME`, `DISCAVA_STUDENT_PASSWORD` | Student của Tester trên `discava-development` |
 | `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | Instructor của Tester |
 | `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | Admin của Tester |
 
-GitHub token là một classic personal access token trên `discava-bot`, một tài khoản máy chỉ các
-automation dùng. Tài khoản này là collaborator có quyền ghi, và token có các scope `repo` và
-`workflow`.
-
 Sáu secret `DISCAVA_*` là các người dùng test Cognito trên stage development, mỗi vai trò trong ứng
 dụng một người. Tester đăng nhập vào các cổng bằng chúng và lấy API token bằng chúng.
+
+## GitHub App
+
+Các agent hoạt động dưới danh nghĩa `alex-coding-agent`, một GitHub App chỉ được cài trên
+`AlexTo/discava`, nên mọi thứ chúng mở, push và nói đều hiện dưới tên `alex-coding-agent[bot]`. App
+không có webhook, và có quyền đọc và ghi với contents, issues và pull requests.
+
+Cho đến ngày 25 tháng 11 năm 2026, chúng làm việc dưới `discava-bot`, một tài khoản máy với một
+classic personal access token. GitHub gắn cờ tài khoản đó, khiến toàn bộ 210 issue và pull request
+của nó bị ẩn với mọi người, kể cả trong danh sách của chính nó. 44 issue đang mở và 11 pull request
+đang mở được mở lại dưới tên app (#1129–#1183), và các bản gốc được đóng kèm liên kết tới từng bản
+sao. Công việc đã merge của nó vẫn nằm trong `main`, với tác giả là `discava-bot`.
+
+Một installation token chỉ có hiệu lực một giờ, nên private key của app nằm lại trên máy, bên ngoài
+Agent Canvas, và một timer biến nó thành token:
+
+| Thành phần | Việc nó làm |
+| --- | --- |
+| `~/.ssh/alex-coding-agent.pem` | Private key của app: secret dài hạn duy nhất |
+| `alex-coding-agent-token.timer` | Một systemd user timer chạy script tạo token mỗi 45 phút, và một lần một phút sau khi khởi động máy |
+| Script tạo token | [`scripts/agent-app-token.sh`](https://github.com/AlexTo/agentic-sdlc/blob/main/scripts/agent-app-token.sh) của template là một bản sao của nó. Ký một JSON Web Token bằng khóa, đổi nó lấy một installation token, ghi token đó vào một file chỉ chủ sở hữu đọc được, và đặt nó vào secret `GITHUB_PERSONAL_ACCESS_TOKEN` qua API của chính Agent Canvas |
+| Một drop-in cho `canvas.service` | Chạy script tạo token trước khi Agent Canvas khởi động, đặt `GIT_AUTHOR_*` và `GIT_COMMITTER_*` thành `alex-coding-agent[bot]` và địa chỉ noreply của nó, và cho Agent Canvas một `GIT_CONFIG_GLOBAL` riêng cùng một `gh` đọc file token |
+
+Vậy là các cuộc hội thoại tương tác dùng app qua git và `gh`, còn các automation dùng qua secret.
+Terminal của chính bạn vẫn giữ login của bạn. Các biến môi trường của drop-in là thứ ghi công commit
+cho app: các template automation ghi `OpenHands` làm tác giả vào mỗi checkout, và form **Git
+Settings** của Agent Canvas từ chối email có dấu ngoặc vuông, nên Discava cũng ghi tay tên và địa chỉ
+của bot vào `~/.openhands/settings.json`.
+
+Hai thứ còn sót lại hành động dưới danh nghĩa maintainer, không phải bot, và đã được gỡ bỏ: một
+GitHub MCP server (`api.githubcopilot.com`) với token của maintainer, và các personal access token
+cũ.
+
+Glue tính các review của app qua biến repository `AGENT_APP_LOGIN` (`alex-coding-agent[bot]`):
+GitHub không gán cho app quan hệ nào với repository, nên thiếu biến này thì verdict của Reviewer sẽ
+không còn gửi Developer quay lại nữa ([#1184](https://github.com/AlexTo/discava/pull/1184)).
 
 ## Tester có gì trên máy
 
@@ -105,7 +137,7 @@ Một lượt revise bảo agent gắn lại label
 
 | Trường | Giá trị |
 | --- | --- |
-| Template | `github-pr-reviewer` 1.11.2 |
+| Template | `github-pr-reviewer` 1.11.2, đã vá cho token của app (bên dưới) |
 | Repository | `alexto/discava` |
 | Label kích hoạt | `openhands-review` |
 | Requested reviewer | `all-hands-bot` (không dùng trên thực tế: label làm việc này) |
@@ -114,6 +146,12 @@ Một lượt revise bảo agent gắn lại label
 | Maintainer | không có |
 | Lịch | `*/2 * * * *`, Australia/Sydney |
 | Agent profile | `reviewer` |
+
+Template hỏi `GET /user` xem nó đang hoạt động dưới tài khoản nào, và GitHub từ chối installation
+token ở đó với `403 Resource not accessible by integration`, nên sau khi chuyển sang app, mọi lần
+quét đều thất bại trước khi kịp review. Bản của Discava hỏi GraphQL `viewer { login }` khi `/user`
+từ chối, trong phần tra login của worker và trong phần kiểm tra token, và được upload lại thay cho
+bundle của catalog. Bản 1.11.3 của catalog vẫn còn lỗi này.
 
 Trong khi các check vẫn đang chạy, Reviewer đăng một comment "⏳ Review waiting on checks" và thử lại
 ở một lần quét sau. Các review của nó bắt đầu bằng "_This review was posted by an AI agent
@@ -151,11 +189,11 @@ cạnh.
 Các issue nó poll được mở bởi [Post-merge Verify](../post-merge-verify/). Các comment của Tester kết
 thúc bằng "_This comment was posted by an AI agent (OpenHands)._".
 
-<Aside title="Một tài khoản cho các agent">
-Ở Discava, Developer, Reviewer và Tester đều đăng dưới tên `discava-bot`, còn maintainer dùng tài
-khoản của mình. Nhờ vậy maintainer có thể duyệt PR của agent bình thường, và dễ thấy comment nào do
-agent viết. Reviewer và Developer vẫn dùng chung một tài khoản, và GitHub không cho một tài khoản
-duyệt PR của chính nó, nên verdict của Reviewer được đăng dưới dạng review `COMMENTED`. Glue đọc dòng
+<Aside title="Một danh tính cho các agent">
+Ở Discava, Developer, Reviewer và Tester đều hoạt động dưới tên `alex-coding-agent[bot]`, còn
+maintainer dùng tài khoản của mình. Nhờ vậy maintainer có thể duyệt PR của agent bình thường, và dễ
+thấy comment nào do agent viết. Reviewer và Developer vẫn dùng chung danh tính đó, và GitHub không
+cho ai duyệt PR của chính mình, nên verdict của Reviewer được đăng dưới dạng review `COMMENTED`. Glue đọc dòng
 verdict chứ không đọc trạng thái review, nên điều này không ảnh hưởng gì.
 </Aside>
 

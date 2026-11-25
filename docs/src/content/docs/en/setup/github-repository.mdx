@@ -1,31 +1,62 @@
 ---
 title: 2. Configure the repository
-description: Run one script for the settings a fork doesn't copy, then accept the agents' invitation.
+description: Create the GitHub App the agents act as, then run one script for the settings a fork doesn't copy.
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**You'll end with:** Issues and Actions on, every label the workflow uses, a `main` branch that
-only takes pull requests with green checks and an approval, comments limited to collaborators, and
-the agents' own account as a collaborator.
+**You'll end with:** a GitHub App the agents act as, installed on your fork; Issues and Actions on,
+every label the workflow uses, a `main` branch that only takes pull requests with green checks and
+an approval, and comments limited to collaborators.
 
 A fork copies the code, not the settings. `scripts/setup-repository.sh` sets all of them with the
 `gh` CLI. Each step sets the same state every time, so it is safe to run again.
 
 <Steps>
 
-1. **Create the agents' account.** The agents work under their own GitHub account, a machine
-   account that nothing else uses. Discava's is `discava-bot`. Create one. Its token is the one
-   you create in [step 3](../openhands/), and its pull requests and comments show under it, so you
-   approve them like anyone else's.
+1. **Create the agents' GitHub App.** The agents act as an app that nothing else uses, so their
+   pull requests and comments show under it, and you approve them like anyone else's. Discava's is
+   `alex-coding-agent`, which posts as `alex-coding-agent[bot]`.
 
-2. **Run the script** from your clone, signed in to `gh` as the fork's owner, with the agents'
-   account:
+   Under **Settings → Developer settings → GitHub Apps → New GitHub App**, give it a name and a
+   homepage URL (your fork's will do), and untick **Webhook → Active**: Agent Canvas polls, so
+   nothing needs to reach your machine. Under **Repository permissions**, set:
+
+   | Permission | Access | Why |
+   | --- | --- | --- |
+   | Contents | Read and write | Clone and push the agents' branches |
+   | Issues | Read and write | Read issues, comment, label |
+   | Pull requests | Read and write | Open, review and comment on pull requests |
+   | Workflows | Read and write | GitHub refuses a whole push that touches `.github/workflows/`, which a merge of `main` can do, without it. The agents never edit workflows |
+   | Checks, Commit statuses, Actions | Read-only | The Reviewer waits for checks to finish before it reviews |
+   | Metadata | Read-only | Required by GitHub |
+
+   Then, on the app's page:
+
+   - Note its **App ID**.
+   - **Generate a private key** and keep the `.pem` outside the repository, for example in
+     `~/.ssh/`, readable only by you. It is the one long-lived secret: the agents only ever see
+     hour-long tokens made from it.
+   - **Install App** on your account, for **Only select repositories**: your fork. Note the number
+     at the end of the installation's settings URL (`…/installations/<id>`), the installation ID.
+
+   You need both IDs and the key in [step 3](../openhands/).
+
+   <Aside type="tip" title="Why an app, and not a second account">
+   Discava's agents first worked as `discava-bot`, a machine account with a personal access token.
+   In November 2026 GitHub flagged it, which hid all 210 of its issues and pull requests from
+   everyone. An app's tokens expire after an hour and reach only the repositories it is installed
+   on. A second account with a classic token (the `repo` and `workflow` scopes) still works: name
+   that account to the script below, and it is invited as a collaborator instead.
+   </Aside>
+
+2. **Run the script** from your clone, signed in to `gh` as the fork's owner, with the app's bot
+   login, its name followed by `[bot]` (quote it, or the shell reads the brackets as a pattern):
 
    ```bash
-   ./scripts/setup-repository.sh <you>/agentic-sdlc <agents-account>
+   ./scripts/setup-repository.sh <you>/agentic-sdlc '<app-name>[bot]'
    ```
 
    Add `--dry-run` first if you want to see each `gh` command before it runs. The script:
@@ -38,14 +69,12 @@ A fork copies the code, not the settings. `scripts/setup-repository.sh` sets all
    | Workflow tokens read-only, and Actions may not open or approve pull requests | A workflow that could open a pull request could also approve one. Archive Specs pushes the branch that moves a finished spec to `specs/_archive/` and warns with a link that opens its pull request, filled in, for you to submit |
    | Interactions limited to collaborators, for six months | A fork of a public repository is public, and the agents read every comment on what they work on while holding a token that can push |
    | GitHub Pages from Actions | CI's **Deploy Docs** job publishes this site |
-   | The agents' account invited with write access | So the agents can push branches and open pull requests |
+   | The repository variable `AGENT_APP_LOGIN`, set to the app's bot login | GitHub gives an app's reviews no association with the repository, so the glue sends the agent back on a Reviewer verdict only from people with write access and from the app this names |
 
    The protection leaves bypass allowed, so you, as the owner, can merge a pull request you
    opened yourself, such as a spec PR, which GitHub won't let you approve.
 
-3. **Accept the invitation** while signed in as the agents' account.
-
-4. **Check Actions is on.** If your fork's **Actions** tab still shows **I understand my
+3. **Check Actions is on.** If your fork's **Actions** tab still shows **I understand my
    workflows, go ahead and enable them**, click it. GitHub sometimes asks for that click even
    after the API has turned Actions on.
 
@@ -67,7 +96,7 @@ posted as `failure`, and requiring it would block every PR.
 
 The fork's **Issues → Labels** page lists the 20 labels, **Settings → Branches** shows the rule on
 `main` with seven required checks, and **Settings → Moderation options → Interaction limits** shows
-the collaborators-only limit with its end date. **Settings → Collaborators** lists the agents'
-account with the **Write** role.
+the collaborators-only limit with its end date. **Settings → Secrets and variables → Actions →
+Variables** shows `AGENT_APP_LOGIN`, and **Settings → GitHub Apps** lists your app.
 
 Next: [3. Install OpenHands](../openhands/).

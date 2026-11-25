@@ -53,7 +53,7 @@ nhánh agent trong cùng repository và nội dung review chứa `CHANGES REQUES
 
 | Kiểm tra | Vì sao |
 | --- | --- |
-| Author association là `OWNER`, `MEMBER` hoặc `COLLABORATOR` | Chỉ người có quyền ghi mới kích hoạt được |
+| Author association là `OWNER`, `MEMBER` hoặc `COLLABORATOR`, hoặc tác giả là app có tên trong `AGENT_APP_LOGIN` | Chỉ người có quyền ghi, hoặc chính GitHub App của các agent, mới kích hoạt được. GitHub gán cho app quan hệ `NONE`, nên biến này chỉ định app, và chỉ một login kết thúc bằng `[bot]` mới được tính |
 | Nội dung có `<!-- openhands-review-run: … -->` | Đó là review của agent Reviewer, không phải một người trích dẫn nó |
 | Nội dung có một dòng đúng bằng `🔄 CHANGES REQUESTED` | Là verdict, không phải một lần nhắc đến nó |
 

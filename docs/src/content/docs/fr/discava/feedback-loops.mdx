@@ -55,7 +55,7 @@ Il récupère explicitement la branche par défaut, et exécute `agent-review-st
 
 | Vérification | Pourquoi |
 | --- | --- |
-| L'association de l'auteur est `OWNER`, `MEMBER` ou `COLLABORATOR` | Seule une personne avec un accès en écriture peut la déclencher |
+| L'association de l'auteur est `OWNER`, `MEMBER` ou `COLLABORATOR`, ou l'auteur est l'app nommée dans `AGENT_APP_LOGIN` | Seule une personne avec un accès en écriture, ou la GitHub App des agents elle-même, peut la déclencher. GitHub donne à une app l'association `NONE`, donc la variable la nomme, et seul un login qui se termine par `[bot]` compte |
 | Le corps contient `<!-- openhands-review-run: … -->` | C'est la revue de l'agent Relecteur, pas une personne qui la cite |
 | Le corps contient une ligne qui est exactement `🔄 CHANGES REQUESTED` | Le verdict, pas une simple mention de celui-ci |
 

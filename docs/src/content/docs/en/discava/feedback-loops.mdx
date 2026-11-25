@@ -53,7 +53,7 @@ out the default branch explicitly, and runs `agent-review-status`.
 
 | Check | Why |
 | --- | --- |
-| The author association is `OWNER`, `MEMBER` or `COLLABORATOR` | Only someone with write access can trigger it |
+| The author association is `OWNER`, `MEMBER` or `COLLABORATOR`, or the author is the app named in `AGENT_APP_LOGIN` | Only someone with write access, or the agents' own GitHub App, can trigger it. GitHub gives an app the association `NONE`, so the variable names it, and only a login ending in `[bot]` counts |
 | The body has `<!-- openhands-review-run: … -->` | It is the Reviewer agent's review, not a person quoting it |
 | The body has a line that is exactly `🔄 CHANGES REQUESTED` | The verdict, not a mention of it |
 

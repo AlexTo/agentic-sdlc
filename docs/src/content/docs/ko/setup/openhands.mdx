@@ -1,36 +1,65 @@
 ---
 title: 3. OpenHands 설치하기
-description: npm으로 Agent Canvas를 설치하고 실행한 뒤, GitHub 토큰을 추가하고 개발자 에이전트와 리뷰어 에이전트의 agent profile을 만듭니다.
+description: npm으로 Agent Canvas를 설치하고 여러분의 GitHub App으로 실행한 뒤, 앱의 토큰을 새로 유지하고 개발자 에이전트와 리뷰어 에이전트의 agent profile을 만듭니다.
 sidebar:
   order: 3
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**결과:** 여러분의 컴퓨터에서 실행 중인 OpenHands Agent Canvas, secret으로 저장된 GitHub 토큰,
-그리고 두 개의 agent profile: 개발자 에이전트용 `developer`와 리뷰어 에이전트용 `reviewer`.
+**결과:** 여러분의 컴퓨터에서 여러분의 GitHub App으로 실행 중인 OpenHands Agent Canvas, secret 안에서 새로
+유지되는 앱의 토큰, 그리고 두 개의 agent profile: 개발자 에이전트용 `developer`와 리뷰어 에이전트용 `reviewer`.
 
 <Steps>
 
-1. **Agent Canvas를 설치하고 시작합니다.** Discava는 버전 1.41.0을 사용합니다.
+1. **앱의 커밋 ID를 찾습니다.** GitHub는 작성자 이메일이 앱의 noreply 주소일 때만 커밋을 앱의 것으로
+   인정하며, 이 주소에는 앱의 bot 사용자 ID가 들어 있습니다.
+
+   ```bash
+   gh api '/users/<app-name>[bot]' --jq .id
+   ```
+
+   주소는 `<id>+<app-name>[bot]@users.noreply.github.com`입니다.
+
+2. 그 ID로 **Agent Canvas를 설치하고 시작합니다.** Discava는 버전 1.45.0을 사용합니다.
 
    ```bash
    npm install -g @openhands/agent-canvas
+   export GIT_AUTHOR_NAME='<app-name>[bot]' GIT_COMMITTER_NAME='<app-name>[bot]'
+   export GIT_AUTHOR_EMAIL='<id>+<app-name>[bot]@users.noreply.github.com'
+   export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
    agent-canvas
    ```
 
    [http://127.0.0.1:8000](http://127.0.0.1:8000)을 엽니다. 계속 실행해 두세요. automation은
    Agent Canvas가 실행 중일 때만 폴링합니다.
 
-2. [2단계](../github-repository/)의 에이전트 계정으로 로그인한 상태에서 **GitHub 토큰을 만듭니다**.
-   `repo`와 `workflow` scope가 있는 classic personal access token입니다. fine-grained 토큰은 자기
-   계정이나 organization이 소유한 저장소에만 접근할 수 있어서 여러분의 fork에는 쓸 수 없습니다.
+   이 변수들은 automation 템플릿이 각 checkout에 쓰는 `OpenHands`라는 이름보다 우선합니다. Agent Canvas 자체의
+   **Git Settings** 양식은 이 주소를 담을 수 없습니다. 대괄호가 들어간 이메일을 거부하기 때문입니다.
 
-   에이전트는 workflow를 수정하지 않지만, 브랜치가 `.github/workflows/`를 건드릴 때마다
-   (예를 들어 `main`을 merge하면서) GitHub는 `workflow` scope가 없는 토큰의 push 전체를 거부합니다.
+3. **앱의 토큰을 새로 유지합니다.** 앱은 installation token으로 동작하며, 이 토큰은 한 시간 뒤 만료됩니다.
+   `scripts/agent-app-token.sh`는 앱의 private key로 토큰을 발급해 Agent Canvas에 secret
+   `GITHUB_PERSONAL_ACCESS_TOKEN`으로 저장하고, automation과 그 대화가 이를 읽습니다. 이름과 달리 어떤 토큰이든
+   그곳에 넣을 수 있습니다. [2단계](../github-repository/)의 ID와 key를 넘겨주세요.
 
-3. Agent Canvas의 **Settings → Secrets**에서 **토큰을 secret으로 저장**합니다. 이름은
-   `GITHUB_PERSONAL_ACCESS_TOKEN`입니다.
+   ```bash
+   mkdir -p ~/.config/agent-app
+   cat > ~/.config/agent-app/env <<'EOF'
+   AGENT_APP_ID=<app-id>
+   AGENT_APP_INSTALLATION_ID=<installation-id>
+   AGENT_APP_KEY=$HOME/.ssh/<app-name>.pem
+   EOF
+   ```
+
+   그런 다음, clone한 저장소의 두 번째 터미널에서 Agent Canvas가 실행되는 동안 45분마다 실행합니다.
+
+   ```bash
+   while true; do ./scripts/agent-app-token.sh; sleep 2700; done
+   ```
+
+   실행할 때마다 새 토큰이 언제 만료되는지와 secret이 업데이트되었다는 것을 출력합니다. key는 Agent Canvas 밖에
+   있으므로, 에이전트는 한 시간 안에 사라지는 토큰만 갖게 됩니다. Linux에서는 systemd 사용자 타이머로 대신 실행할 수
+   있습니다. [Discava의 OpenHands 설정](../../discava/openhands-setup/#github-app)을 참고하세요.
 
 4. **에이전트를 선택합니다.** Discava는 Claude Code를 ACP (Agent Client Protocol)로 실행하므로,
    이미 사용하는 코딩 에이전트가 작업을 합니다. agent 설정에서 다음과 같이 설정합니다.
@@ -64,10 +93,17 @@ Agent Canvas에서 `developer` profile로 대화를 시작하고
 `GITHUB_PERSONAL_ACCESS_TOKEN` secret을 줍니다. 그리고 이렇게 요청합니다.
 
 ```text
-Run gh auth status using the GITHUB_PERSONAL_ACCESS_TOKEN secret, and list the open issues in <you>/agentic-sdlc.
+Using the GITHUB_PERSONAL_ACCESS_TOKEN secret, run gh api graphql -f query='{ viewer { login } }', and list the open issues in <you>/agentic-sdlc.
 ```
 
-에이전트의 계정과 빈 issue 목록을 보고합니다.
+`<app-name>[bot]`과 빈 issue 목록을 보고합니다. (`gh auth status`와 `GET /user`는 앱의 토큰을 거부하므로
+테스트가 되지 않습니다.)
+
+<Aside type="caution" title="여러분의 GitHub 로그인을 에이전트에게서 떼어 두세요">
+Agent Canvas의 **Integrations**에 토큰을 추가하지 말고, **MCP Servers**에 있는 GitHub 서버는 삭제하세요. 둘 다
+고정된 토큰(대개 여러분의 것)을 담고 있어서, 이를 쓰는 에이전트는 앱이 아니라 여러분으로 동작합니다. Discava에서는
+소유자의 토큰으로 `api.githubcopilot.com`을 가리키는 서버가 발견되었습니다.
+</Aside>
 
 <Aside type="caution">
 에이전트는 이 컴퓨터에서 여러분의 사용자로 명령을 실행합니다. 그 환경에 cloud 자격 증명을 두지 말고,

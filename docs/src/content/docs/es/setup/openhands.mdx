@@ -1,39 +1,70 @@
 ---
 title: 3. Instala OpenHands
-description: Instala Agent Canvas con npm, ejecútalo, añade el token de GitHub y crea los perfiles de agente del Desarrollador y del Revisor.
+description: Instala Agent Canvas con npm, ejecútalo como tu GitHub App, mantén al día el token de la app y crea los perfiles de agente del Desarrollador y del Revisor.
 sidebar:
   order: 3
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Al terminar tendrás:** OpenHands Agent Canvas ejecutándose en tu máquina, un token de GitHub guardado como
-secret y dos perfiles de agente: `developer` para el agente Desarrollador y `reviewer` para el agente
-Revisor.
+**Al terminar tendrás:** OpenHands Agent Canvas ejecutándose en tu máquina como tu GitHub App, el token de
+la app siempre al día en un secret, y dos perfiles de agente: `developer` para el agente Desarrollador y
+`reviewer` para el agente Revisor.
 
 <Steps>
 
-1. **Instala e inicia Agent Canvas.** Discava usa la versión 1.41.0:
+1. **Averigua la identidad de commit de la app.** GitHub atribuye un commit a la app solo cuando el email
+   de su autor es la dirección noreply de la app, que lleva el ID de su usuario bot:
+
+   ```bash
+   gh api '/users/<app-name>[bot]' --jq .id
+   ```
+
+   La dirección es `<id>+<app-name>[bot]@users.noreply.github.com`.
+
+2. **Instala e inicia Agent Canvas** con esa identidad. Discava usa la versión 1.45.0:
 
    ```bash
    npm install -g @openhands/agent-canvas
+   export GIT_AUTHOR_NAME='<app-name>[bot]' GIT_COMMITTER_NAME='<app-name>[bot]'
+   export GIT_AUTHOR_EMAIL='<id>+<app-name>[bot]@users.noreply.github.com'
+   export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
    agent-canvas
    ```
 
    Abre [http://127.0.0.1:8000](http://127.0.0.1:8000). Déjalo en ejecución: las automatizaciones solo consultan
    mientras Agent Canvas está activo.
 
-2. **Crea un token de GitHub** con la sesión iniciada en la cuenta de los agentes del
-   [paso 2](../github-repository/): un personal access token clásico con los scopes `repo` y
-   `workflow`. Un token fine-grained solo llega a los repositorios de su propia cuenta u
-   organización, así que no puede llegar a tu fork.
+   Las variables se imponen al nombre `OpenHands` que las plantillas de automatización escriben en cada
+   checkout. El formulario **Git Settings** del propio Agent Canvas no admite la dirección: rechaza un email
+   con corchetes.
 
-   El agente nunca edita workflows, pero GitHub rechaza un push entero de un token sin el scope
-   `workflow` siempre que la rama toque `.github/workflows/`, por ejemplo a través de un merge de
-   `main`.
+3. **Mantén al día el token de la app.** Una app trabaja con installation tokens, que caducan al cabo de
+   una hora. `scripts/agent-app-token.sh` crea uno a partir de la clave privada de la app y lo guarda en
+   Agent Canvas como el secret `GITHUB_PERSONAL_ACCESS_TOKEN`, que leen las automatizaciones y sus
+   conversaciones. Pese al nombre, ahí sirve cualquier token. Dale los IDs y la clave del
+   [paso 2](../github-repository/):
 
-3. **Guarda el token como secret** con el nombre `GITHUB_PERSONAL_ACCESS_TOKEN` en Agent Canvas, en
-   **Settings → Secrets**.
+   ```bash
+   mkdir -p ~/.config/agent-app
+   cat > ~/.config/agent-app/env <<'EOF'
+   AGENT_APP_ID=<app-id>
+   AGENT_APP_INSTALLATION_ID=<installation-id>
+   AGENT_APP_KEY=$HOME/.ssh/<app-name>.pem
+   EOF
+   ```
+
+   Después, en una segunda terminal desde tu clon, ejecútalo cada 45 minutos mientras Agent Canvas esté
+   en marcha:
+
+   ```bash
+   while true; do ./scripts/agent-app-token.sh; sleep 2700; done
+   ```
+
+   Cada ejecución muestra cuándo caduca el nuevo token y que el secret se actualizó. La clave se queda
+   fuera de Agent Canvas, así que un agente solo tiene en algún momento un token que desaparece antes de
+   una hora. En Linux, puede ejecutarlo un timer de usuario de systemd: consulta
+   [La configuración de OpenHands de Discava](../../discava/openhands-setup/#la-github-app).
 
 4. **Elige el agente.** Discava ejecuta Claude Code sobre ACP (el Agent Client Protocol), así que el
    agente de programación que ya usas hace el trabajo. En la configuración del agente, pon:
@@ -67,10 +98,18 @@ En Agent Canvas, inicia una conversación con el perfil `developer` y dale el
 secret `GITHUB_PERSONAL_ACCESS_TOKEN`. Pídele:
 
 ```text
-Run gh auth status using the GITHUB_PERSONAL_ACCESS_TOKEN secret, and list the open issues in <you>/agentic-sdlc.
+Using the GITHUB_PERSONAL_ACCESS_TOKEN secret, run gh api graphql -f query='{ viewer { login } }', and list the open issues in <you>/agentic-sdlc.
 ```
 
-Informa de la cuenta de los agentes y de una lista de issues vacía.
+Informa de `<app-name>[bot]` y de una lista de issues vacía. (`gh auth status` y `GET /user` rechazan el
+token de una app, así que no sirven como prueba.)
+
+<Aside type="caution" title="Mantén tu propio login de GitHub lejos de los agentes">
+No añadas un token en **Integrations** de Agent Canvas, y borra cualquier servidor de GitHub en **MCP
+Servers**: cualquiera de los dos guarda un token fijo, normalmente el tuyo, y un agente que lo use actúa
+como tú en lugar de como la app. Discava encontró uno que apuntaba a `api.githubcopilot.com` con el token
+de su propietario.
+</Aside>
 
 <Aside type="caution">
 El agente ejecuta comandos en esta máquina con tu usuario. No guardes credenciales de la nube en su

@@ -49,7 +49,7 @@ PR의 head에 붙는, `failure` 상태의 `software-factory/review`라는 commit
 
 | 검사 | 이유 |
 | --- | --- |
-| author association이 `OWNER`, `MEMBER`, `COLLABORATOR` 중 하나 | 쓰기 권한이 있는 사람만 트리거할 수 있습니다 |
+| author association이 `OWNER`, `MEMBER`, `COLLABORATOR` 중 하나이거나, 작성자가 `AGENT_APP_LOGIN`에 지정된 앱 | 쓰기 권한이 있는 사람이나 에이전트 자신의 GitHub App만 트리거할 수 있습니다. GitHub는 앱에 association `NONE`을 주므로 변수로 앱을 지정하며, `[bot]`으로 끝나는 로그인만 인정됩니다 |
 | 본문에 `<!-- openhands-review-run: … -->`가 있음 | 이를 인용한 사람이 아니라 리뷰어 에이전트의 리뷰입니다 |
 | 본문에 정확히 `🔄 CHANGES REQUESTED`인 줄이 있음 | 판정을 언급한 것이 아니라 판정 그 자체입니다 |
 

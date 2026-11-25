@@ -199,6 +199,7 @@ the complete pipeline, so you can see the workflow end to end rather than read a
 | The rules behind the automation (unit-tested) | `packages/tooling/agent/src/` |
 | Commit hooks (Conventional Commits, secrets, Biome) | `.husky/`, `commitlint.config.js`, `lint-staged.config.js` |
 | GitHub settings a fork doesn't copy | `scripts/setup-repository.sh` |
+| The agents' GitHub App token, kept fresh in Agent Canvas | `scripts/agent-app-token.sh` |
 | Example app | `packages/notes-*`, `packages/e2e` |
 
 ## 📚 Learn more

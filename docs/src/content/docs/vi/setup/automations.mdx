@@ -38,7 +38,7 @@ Cả hai automation đến từ **automation catalog** của Agent Canvas. Bạn
    | --- | --- |
    | Repositories | `<you>/agentic-sdlc` |
    | Trigger label | `openhands-review` |
-   | Requested reviewer | login GitHub của agent |
+   | Requested reviewer | `all-hands-bot` (không dùng: label làm việc này) |
    | New reviews per scan | `2` |
    | Review tone | Concise |
    | Maintainers | để trống, hoặc hai login trở lên (xem bên dưới) |
@@ -46,12 +46,20 @@ Cả hai automation đến từ **automation catalog** của Agent Canvas. Bạn
    | Agent profile | `reviewer` |
    | Check frequency | `*/5 * * * *` |
 
-   Discava chạy template phiên bản 1.11.2. **New reviews per scan** giới hạn số cuộc hội thoại
-   review mà một lần poll khởi động, để một đống việc tồn đọng không khởi động mười agent cùng lúc.
+   Discava chạy template phiên bản 1.11.2, với bản vá bên dưới. **New reviews per scan** giới hạn số
+   cuộc hội thoại review mà một lần poll khởi động, để một đống việc tồn đọng không khởi động mười
+   agent cùng lúc.
 
    **Maintainers** là tùy chọn. Khi được đặt, một PR đã duyệt được giao cho một trong số họ làm
    requested reviewer, chọn theo người đã từng thay đổi các file đó. Điều này chỉ xảy ra khi issue
    của PR mang `priority:medium` hoặc `priority:high`. Discava để trống.
+
+   <Aside type="caution" title="Template code review từ chối token của app">
+   Cho đến ít nhất phiên bản 1.11.3, worker hỏi `GET /user` xem nó đang hoạt động dưới tài khoản nào,
+   và GitHub trả lời một installation token bằng `403 Resource not accessible by integration`. Khi
+   đó mọi lần quét đều thất bại trước khi kịp review. Discava đã vá bản của mình để hỏi GraphQL
+   `viewer { login }` thay vào đó: xem [Xử lý sự cố](../../reference/troubleshooting/#review).
+   </Aside>
 
 3. **Chạy mỗi automation một lần thủ công** từ trang của nó trong Agent Canvas, và đọc log lần chạy.
 

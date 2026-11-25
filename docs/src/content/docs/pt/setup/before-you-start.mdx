@@ -19,9 +19,10 @@ acompanha o caminho dela, do PR de spec até os PRs dos agents mergeados.
 | Item | Por quê |
 | --- | --- |
 | Uma conta no GitHub | Para fazer o fork, escrever specs e revisar |
-| Uma segunda conta no GitHub para os agents | Ela é dona do token que os agents usam, então os PRs e comentários são deles e você pode aprová-los. A do Discava é `discava-bot` |
+| Um GitHub App para os agents | Os agents agem como ele, então os PRs e comentários são deles e você pode aprová-los. O do Discava é `alex-coding-agent` |
 | Node.js 24 e pnpm | Para rodar o repositório e o Agent Canvas |
 | `uv` | O Agent Canvas inicia o backend com `uvx` |
+| `openssl`, `curl` e `jq` | Para gerar os tokens do app |
 | Docker | Só para rodar o app de notas e os testes e2e localmente. O CI roda eles para o agent |
 | GitHub CLI (`gh`), com login feito | A maioria dos passos usa ele |
 | Um coding agent, instalado e com login feito | Escreve specs com o Speckit e roda dentro do OpenHands. O Discava usa o Claude Code |
@@ -36,8 +37,8 @@ endereço público nem de webhook. Os agents só trabalham enquanto ele está ro
 | # | Passo | No final você terá |
 | --- | --- | --- |
 | 1 | [Faça um fork do repositório](../fork/) | Sua própria cópia, com Actions e Issues ativados |
-| 2 | [Configure o repositório](../github-repository/) | Um script: Issues e Actions ligados, os labels, uma `main` protegida, comentários limitados a colaboradores e a conta dos agents como colaboradora |
-| 3 | [Instale o OpenHands](../openhands/) | O Agent Canvas rodando, um token do GitHub, dois perfis de agent |
+| 2 | [Configure o repositório](../github-repository/) | Um script: Issues e Actions ligados, os labels, uma `main` protegida, comentários limitados a colaboradores e o GitHub App dos agents informado |
+| 3 | [Instale o OpenHands](../openhands/) | O Agent Canvas rodando, o token do app mantido atualizado, dois perfis de agent |
 | 4 | [Crie as duas automações](../automations/) | Os agents Desenvolvedor e Revisor implementando e revisando no seu fork |
 | 5 | [Rode sua primeira feature](../first-feature/) | Uma spec para o app de notas, levada até código mergeado pelos agents |
 

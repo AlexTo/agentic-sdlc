@@ -19,7 +19,9 @@ the notes app, and it goes through the loop described in [How it works](../how-i
 - AGENTS.md what every agent reads first, written for the notes app
 - .specify/ Speckit templates, scripts and the constitution
 - .husky/ Conventional Commits, secret scan and Biome on commit, invariant map on push
-- scripts/setup-repository.sh labels, branch protection and the other settings a fork doesn't copy
+- scripts/
+  - setup-repository.sh labels, branch protection and the other settings a fork doesn't copy
+  - agent-app-token.sh mints the agents' GitHub App token and hands it to Agent Canvas
 - .github/
   - ISSUE_TEMPLATE/
     - implement-phase.md the instructions every implementation issue carries
@@ -55,10 +57,10 @@ its e2e tests and the agent never needs cloud credentials.
 
 Only what can't live in a repository:
 
-1. **GitHub settings**: a fork doesn't copy them, so `scripts/setup-repository.sh` sets them in
-   one run.
-2. **OpenHands**: Agent Canvas on your machine, a GitHub token, and the automations pointed at
-   your fork.
+1. **GitHub settings**: the GitHub App the agents act as, and the settings a fork doesn't copy,
+   which `scripts/setup-repository.sh` sets in one run.
+2. **OpenHands**: Agent Canvas on your machine, `scripts/agent-app-token.sh` keeping the app's
+   token fresh, and the automations pointed at your fork.
 
 ## What's off until you add it
 

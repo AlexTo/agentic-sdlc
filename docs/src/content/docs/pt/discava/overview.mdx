@@ -18,9 +18,10 @@ Esta seção descreve o que o Discava usa, em novembro de 2026, com os arquivos 
 | Ferramenta | Versão | Papel |
 | --- | --- | --- |
 | Speckit (`specify-cli`) | 1.3.2 | Geração de spec, plano e tarefas, com a extensão `git` |
-| OpenHands Agent Canvas | 1.41.0 | Runtime do agent e as três automations, como um serviço de usuário em uma máquina Linux |
+| OpenHands Agent Canvas | 1.45.0 | Runtime do agent e as três automations, como um serviço de usuário em uma máquina Linux |
+| GitHub App `alex-coding-agent` | | A identidade com que os agents agem no GitHub, com tokens que duram uma hora |
 | Automation `github-issue-to-pr` | 1.2.4 | Desenvolvedor: implementa issues com label, revisa PRs com falha |
-| Automation `github-pr-reviewer` | 1.11.2 | Revisor: faz o review de PRs quando os checks terminam |
+| Automation `github-pr-reviewer` | 1.11.2, com patch | Revisor: faz o review de PRs quando os checks terminam |
 | Automation `github-issue-tester` | escrita à mão | Testador: testa PRs mergeados no stage de desenvolvimento com deploy |
 | Agent Desenvolvedor | Claude Code via ACP, Sonnet | Agent profile `developer` |
 | Agent Revisor | Claude Code via ACP, Opus | Agent profile `reviewer` |

@@ -17,6 +17,12 @@ requested", và lưu trữ spec khi mọi task đã được đánh dấu.
    status dùng chung. Đổi scope `@agentic-sdlc/` trong chúng. Kích hoạt và permission của chúng được
    liệt kê trong [Tham khảo: workflow](../../reference/workflows/).
 
+   Nếu agent của bạn hoạt động dưới danh nghĩa một GitHub App, hãy đặt biến repository
+   `AGENT_APP_LOGIN` bằng bot login của nó, chẳng hạn `my-agent[bot]`. `agent-status.yml` truyền nó
+   cho `agent-review-status`. GitHub gán cho review của một app quan hệ `NONE`, nên thiếu biến này thì
+   verdict của Reviewer không bao giờ gửi agent quay lại. Agent hoạt động dưới một tài khoản có quyền
+   ghi thì không cần gì.
+
 2. **Kiểm tra các điều kiện `if:` khớp với quyết định của bạn.** Nếu bạn đã đổi tiền tố nhánh hoặc
    label, hãy đổi chúng ở đây nữa:
 

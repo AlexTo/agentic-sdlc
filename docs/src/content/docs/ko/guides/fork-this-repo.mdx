@@ -19,7 +19,9 @@ workflow, 단위 테스트를 갖춘 glue가 작은 노트 앱을 감싸고 있�
 - AGENTS.md 모든 에이전트가 가장 먼저 읽는 파일, 노트 앱에 맞춰 작성됨
 - .specify/ Speckit 템플릿, 스크립트, constitution
 - .husky/ 커밋 시 Conventional Commits, secret 스캔, Biome, push 시 invariant 맵
-- scripts/setup-repository.sh label, branch protection, 그리고 fork가 복사하지 않는 그 밖의 설정
+- scripts/
+  - setup-repository.sh label, branch protection, 그리고 fork가 복사하지 않는 그 밖의 설정
+  - agent-app-token.sh 에이전트의 GitHub App 토큰을 발급해 Agent Canvas에 넘김
 - .github/
   - ISSUE_TEMPLATE/
     - implement-phase.md 모든 구현 issue에 담기는 지시 사항
@@ -55,10 +57,10 @@ workflow, 단위 테스트를 갖춘 glue가 작은 노트 앱을 감싸고 있�
 
 저장소에 담을 수 없는 것만 추가하면 됩니다.
 
-1. **GitHub 설정**: fork는 이것들을 복사하지 않으므로, `scripts/setup-repository.sh`가 한 번의
-   실행으로 설정합니다.
-2. **OpenHands**: 여러분 컴퓨터의 Agent Canvas, GitHub 토큰, 그리고 fork를 가리키는
-   automation.
+1. **GitHub 설정**: 에이전트가 동작하는 GitHub App, 그리고 fork가 복사하지 않는 설정.
+   설정은 `scripts/setup-repository.sh`가 한 번의 실행으로 적용합니다.
+2. **OpenHands**: 여러분 컴퓨터의 Agent Canvas, 앱의 토큰을 새로 유지하는 `scripts/agent-app-token.sh`,
+   그리고 fork를 가리키는 automation.
 
 ## 추가하기 전까지 꺼져 있는 것
 

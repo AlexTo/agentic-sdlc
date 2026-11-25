@@ -17,9 +17,10 @@ React 门户、三个运行在 Lambda 上的 tRPC API、一张 DynamoDB 表、�
 | 工具 | 版本 | 角色 |
 | --- | --- | --- |
 | Speckit（`specify-cli`） | 1.3.2 | 生成 spec、计划和任务，带有它的 `git` 扩展 |
-| OpenHands Agent Canvas | 1.41.0 | 智能体运行时和三个自动化，作为一台 Linux 机器上的用户服务运行 |
+| OpenHands Agent Canvas | 1.45.0 | 智能体运行时和三个自动化，作为一台 Linux 机器上的用户服务运行 |
+| GitHub App `alex-coding-agent` | | 智能体在 GitHub 上所用的身份，token 有效期一小时 |
 | `github-issue-to-pr` 自动化 | 1.2.4 | 开发智能体：实现带标签的 issue，修改失败的 PR |
-| `github-pr-reviewer` 自动化 | 1.11.2 | 评审智能体：在检查结束后评审 PR |
+| `github-pr-reviewer` 自动化 | 1.11.2，已打补丁 | 评审智能体：在检查结束后评审 PR |
 | `github-issue-tester` 自动化 | 手写 | 测试智能体：在已部署的开发 stage 上测试已合并的 PR |
 | 开发智能体 | 通过 ACP 接入的 Claude Code，Sonnet | `developer` agent profile |
 | 评审智能体 | 通过 ACP 接入的 Claude Code，Opus | `reviewer` agent profile |

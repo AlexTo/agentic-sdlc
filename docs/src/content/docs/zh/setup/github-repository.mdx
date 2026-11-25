@@ -1,24 +1,47 @@
 ---
 title: 2. 配置仓库
-description: 运行一个脚本，完成 fork 不会复制的设置，然后接受智能体账号的邀请。
+description: 创建智能体所使用的 GitHub App，然后运行一个脚本，完成 fork 不会复制的设置。
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**完成后你将拥有：** 已开启的 Issues 和 Actions、工作流用到的所有标签、一个只接受检查全绿且已获批准的 pull request 的 `main` 分支、仅限协作者的评论，以及作为协作者加入的智能体专用账号。
+**完成后你将拥有：** 一个智能体以其身份行事、已安装在你的 fork 上的 GitHub App；已开启的 Issues 和 Actions、工作流用到的所有标签、一个只接受检查全绿且已获批准的 pull request 的 `main` 分支，以及仅限协作者的评论。
 
 fork 复制的是代码，而不是设置。`scripts/setup-repository.sh` 用 `gh` CLI 设好所有这些设置。每一步每次都会设置成同样的状态，所以可以放心重复运行。
 
 <Steps>
 
-1. **创建智能体的账号。** 智能体在它们自己的 GitHub 账号下工作，这是一个不做其他用途的机器账号。Discava 的账号是 `discava-bot`。创建一个这样的账号。你在[第 3 步](../openhands/)中创建的就是它的 token，它的 pull request 和评论都会显示在这个账号名下，所以你能像批准其他人的一样批准它们。
+1. **创建智能体的 GitHub App。** 智能体以一个不做其他用途的 app 的身份行事，所以它们的 pull request 和评论都显示在这个 app 名下，你能像批准其他人的一样批准它们。Discava 的 app 是 `alex-coding-agent`，以 `alex-coding-agent[bot]` 的名义发布内容。
 
-2. 在你的克隆中，以 fork 所有者的身份登录 `gh`，带上智能体的账号**运行脚本**：
+   在 **Settings → Developer settings → GitHub Apps → New GitHub App** 下，给它起个名字，填一个 homepage URL（用你的 fork 的就行），并取消勾选 **Webhook → Active**：Agent Canvas 采用轮询，所以不需要有任何东西连到你的机器。在 **Repository permissions** 下设置：
+
+   | 权限 | 访问级别 | 原因 |
+   | --- | --- | --- |
+   | Contents | Read and write | 克隆并推送智能体的分支 |
+   | Issues | Read and write | 读取 issue、评论、打标签 |
+   | Pull requests | Read and write | 开启、评审和评论 pull request |
+   | Workflows | Read and write | 没有它，GitHub 会拒绝整个触及 `.github/workflows/` 的推送，而合并 `main` 就可能触及。智能体从不编辑 workflow |
+   | Checks, Commit statuses, Actions | Read-only | 评审智能体会等检查完成后再评审 |
+   | Metadata | Read-only | GitHub 要求 |
+
+   然后，在 app 的页面上：
+
+   - 记下它的 **App ID**。
+   - **Generate a private key**，把 `.pem` 放在仓库之外，例如 `~/.ssh/`，只有你能读取。它是唯一的长期 secret：智能体只会见到由它生成的、有效期一小时的 token。
+   - 在你的账号上 **Install App**，选择 **Only select repositories**：你的 fork。记下该安装的设置页 URL 末尾的数字（`…/installations/<id>`），即 installation ID。
+
+   在[第 3 步](../openhands/)中你需要这两个 ID 和私钥。
+
+   <Aside type="tip" title="为什么用 app，而不是第二个账号">
+   Discava 的智能体最初以 `discava-bot` 的身份工作，这是一个使用 personal access token 的机器账号。2026 年 11 月，GitHub 标记了它，导致它的全部 210 个 issue 和 pull request 对所有人隐藏。app 的 token 一小时后过期，并且只能访问安装了它的仓库。使用 classic token（`repo` 和 `workflow` scope）的第二个账号仍然可行：把那个账号传给下面的脚本，它就会改为被邀请为协作者。
+   </Aside>
+
+2. 在你的克隆中，以 fork 所有者的身份登录 `gh`，带上 app 的 bot 登录名（即它的名字后接 `[bot]`；要加引号，否则 shell 会把方括号当作匹配模式）**运行脚本**：
 
    ```bash
-   ./scripts/setup-repository.sh <you>/agentic-sdlc <agents-account>
+   ./scripts/setup-repository.sh <you>/agentic-sdlc '<app-name>[bot]'
    ```
 
    如果你想在每条 `gh` 命令运行之前先看到它，先加上 `--dry-run` 运行一次。这个脚本会设置：
@@ -31,13 +54,11 @@ fork 复制的是代码，而不是设置。`scripts/setup-repository.sh` 用 `g
    | workflow token 只读，且不允许 Actions 开启或批准 pull request | 能开启 pull request 的 workflow 也能批准 pull request。Archive Specs 会推送把已完成的 spec 移到 `specs/_archive/` 的分支，并给出一条警告，附带一个链接，打开后它的 pull request 已填好，由你来提交 |
    | 互动限制为协作者，期限六个月 | 公开仓库的 fork 也是公开的，而智能体会阅读它们处理的内容上的每一条评论，同时持有一个可以推送的 token |
    | 从 Actions 发布 GitHub Pages | CI 的 **Deploy Docs** job 会发布本站点 |
-   | 以写权限邀请智能体的账号 | 这样智能体才能推送分支并开启 pull request |
+   | 仓库变量 `AGENT_APP_LOGIN`，设为 app 的 bot 登录名 | GitHub 不会给 app 的评审赋予与仓库的任何关联，所以粘合层只在评审智能体的结论来自有写权限的人或这个变量指定的 app 时，才把智能体送回去修改 |
 
    这个保护规则允许绕过，所以你作为所有者能合并你自己开的 pull request，例如 spec PR，GitHub 不允许你批准这类 PR。
 
-3. 以智能体的账号登录，**接受邀请**。
-
-4. **确认 Actions 已开启。** 如果你的 fork 的 **Actions** 标签页仍然显示 **I understand my
+3. **确认 Actions 已开启。** 如果你的 fork 的 **Actions** 标签页仍然显示 **I understand my
    workflows, go ahead and enable them**，点击它。即使 API 已经开启了 Actions，GitHub 有时仍会要求点这一下。
 
 </Steps>
@@ -52,6 +73,6 @@ fork 复制的是代码，而不是设置。`scripts/setup-repository.sh` 用 `g
 
 ## 检查是否成功
 
-fork 的 **Issues → Labels** 页面列出了 20 个标签，**Settings → Branches** 显示 `main` 上的规则，带有七项必需检查，**Settings → Moderation options → Interaction limits** 显示仅限协作者的限制及其截止日期。**Settings → Collaborators** 列出智能体的账号，角色为 **Write**。
+fork 的 **Issues → Labels** 页面列出了 20 个标签，**Settings → Branches** 显示 `main` 上的规则，带有七项必需检查，**Settings → Moderation options → Interaction limits** 显示仅限协作者的限制及其截止日期。**Settings → Secrets and variables → Actions → Variables** 显示 `AGENT_APP_LOGIN`，**Settings → GitHub Apps** 列出你的 app。
 
 下一步：[3. 安装 OpenHands](../openhands/)。

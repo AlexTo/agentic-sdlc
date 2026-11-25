@@ -38,7 +38,7 @@ catalogue empaquette un worker testé avec vos réglages. Vous n'écrivez ni ne 
    | --- | --- |
    | Repositories | `<you>/agentic-sdlc` |
    | Trigger label | `openhands-review` |
-   | Requested reviewer | le login GitHub des agents |
+   | Requested reviewer | `all-hands-bot` (inutilisé : c'est le label qui fait le travail) |
    | New reviews per scan | `2` |
    | Review tone | Concise |
    | Maintainers | vide, ou deux logins ou plus (voir ci-dessous) |
@@ -46,12 +46,20 @@ catalogue empaquette un worker testé avec vos réglages. Vous n'écrivez ni ne 
    | Agent profile | `reviewer` |
    | Check frequency | `*/5 * * * *` |
 
-   Discava utilise la version 1.11.2 du template. **New reviews per scan** limite le nombre de
-   conversations de review qu'un passage démarre, pour qu'un arriéré ne lance pas dix agents d'un coup.
+   Discava utilise la version 1.11.2 du template, avec le patch ci-dessous. **New reviews per scan**
+   limite le nombre de conversations de review qu'un passage démarre, pour qu'un arriéré ne lance pas
+   dix agents d'un coup.
 
    **Maintainers** est facultatif. S'il est renseigné, une PR approuvée est confiée à l'un d'eux comme
    reviewer demandé, choisi selon qui a déjà modifié ces fichiers. Cela ne se produit que si l'issue de la PR
    porte `priority:medium` ou `priority:high`. Discava le laisse vide.
+
+   <Aside type="caution" title="Le template de code review refuse le token d'une app">
+   Jusqu'à au moins la version 1.11.3, le worker demande à `GET /user` sous quel compte il agit, et
+   GitHub répond à un installation token par `403 Resource not accessible by integration`. Chaque
+   passage échoue alors avant de relire. Discava a patché sa copie pour interroger GraphQL
+   `viewer { login }` à la place : voir [Dépannage](../../reference/troubleshooting/#reviews).
+   </Aside>
 
 3. **Lancez chaque automatisation une fois à la main** depuis sa page dans Agent Canvas, et lisez le journal d'exécution.
 

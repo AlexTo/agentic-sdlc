@@ -12,7 +12,7 @@ Discava 的智能体运行在一台 Linux 工作站上，由 OpenHands Agent Can
 
 ## Agent Canvas
 
-Agent Canvas 1.41.0，从 npm（`@openhands/agent-canvas`）安装，并作为用户服务运行。它的状态保存在
+Agent Canvas 1.45.0，从 npm（`@openhands/agent-canvas`）安装，并作为用户服务运行。它的状态保存在
 `~/.openhands/` 中：设置、agent profile、secret 以及自动化的 SQLite 数据库。
 
 ## 会话设置
@@ -47,17 +47,47 @@ Agent Canvas 1.41.0，从 npm（`@openhands/agent-canvas`）安装，并作为�
 
 | 名称 | 用途 |
 | --- | --- |
-| `GITHUB_PERSONAL_ACCESS_TOKEN` | 自动化用它读取 GitHub。会话拿到它来克隆、推送、打开 PR、评审和评论 |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | 尽管名字如此，它是 GitHub App 当前的 installation token。自动化用它读取 GitHub。会话拿到它来克隆、推送、打开 PR、评审和评论 |
 | `OPENHANDS_AUTOMATION_API_KEY` | 自动化后端自己的密钥 |
 | `DISCAVA_STUDENT_USERNAME`、`DISCAVA_STUDENT_PASSWORD` | 测试智能体在 `discava-development` 上的学生用户 |
 | `DISCAVA_INSTRUCTOR_USERNAME`、`DISCAVA_INSTRUCTOR_PASSWORD` | 测试智能体的讲师用户 |
 | `DISCAVA_ADMIN_USERNAME`、`DISCAVA_ADMIN_PASSWORD` | 测试智能体的管理员用户 |
 
-GitHub token 是 `discava-bot` 上的一个 classic personal access token。`discava-bot` 是只供自动化使用的
-机器账号，是拥有写权限的协作者，token 具有 `repo` 和 `workflow` scope。
-
 六个 `DISCAVA_*` secret 是开发 stage 上的 Cognito 测试用户，应用中的每个角色一个。测试智能体用它们登录
 各个门户，并用它们获取 API token。
+
+## GitHub App
+
+智能体以 `alex-coding-agent` 的身份行事，这是一个只安装在 `AlexTo/discava` 上的 GitHub App，所以它们
+开启、推送和发表的一切都显示为 `alex-coding-agent[bot]`。它没有 webhook，对 contents、issues 和 pull
+requests 拥有读写权限。
+
+在 2026 年 11 月 25 日之前，它们以 `discava-bot` 的身份工作，这是一个使用 classic personal access token
+的机器账号。GitHub 标记了这个账号，导致它的全部 210 个 issue 和 pull request 对所有人隐藏，连它自己的
+列表里也看不到。44 个开放的 issue 和 11 个开放的 pull request 以 app 的身份重新开启（#1129–#1183），
+原来的那些则在关闭时附上了指向各自副本的链接。它已合并的工作仍在 `main` 中，作者是 `discava-bot`。
+
+installation token 的有效期只有一小时，所以 app 的私钥留在机器上、Agent Canvas 之外，由一个 timer 把它
+换成 token：
+
+| 组成部分 | 作用 |
+| --- | --- |
+| `~/.ssh/alex-coding-agent.pem` | app 的私钥：唯一的长期 secret |
+| `alex-coding-agent-token.timer` | 一个 systemd 用户 timer，每 45 分钟运行一次生成脚本，开机后一分钟也运行一次 |
+| 生成脚本 | 模板中的 [`scripts/agent-app-token.sh`](https://github.com/AlexTo/agentic-sdlc/blob/main/scripts/agent-app-token.sh) 是它的副本。用私钥签一个 JSON Web Token，换取一个 installation token，把它写进一个只有所有者能读的文件，再通过 Agent Canvas 自己的 API 放进 `GITHUB_PERSONAL_ACCESS_TOKEN` secret |
+| `canvas.service` 的一个 drop-in | 在 Agent Canvas 启动前运行生成脚本，把 `GIT_AUTHOR_*` 和 `GIT_COMMITTER_*` 设为 `alex-coding-agent[bot]` 及其 noreply 地址，并给 Agent Canvas 一份自己的 `GIT_CONFIG_GLOBAL` 和一个读取 token 文件的 `gh` |
+
+因此，交互式会话通过 git 和 `gh` 使用 app，自动化则通过 secret 使用它。你自己的终端仍然用你自己的登录。
+是 drop-in 的环境变量让 commit 记在 app 名下：自动化模板会在每个 checkout 中把作者写成 `OpenHands`，而
+Agent Canvas 的 **Git Settings** 表单拒绝含方括号的邮箱，所以 Discava 也手动把 bot 的名字和地址写进了
+`~/.openhands/settings.json`。
+
+有两处遗留以维护者而不是 bot 的身份行事，已被移除：一个带着维护者 token 的 GitHub MCP server
+（`api.githubcopilot.com`），以及旧的 personal access token。
+
+粘合层通过仓库变量 `AGENT_APP_LOGIN`（`alex-coding-agent[bot]`）来认定 app 的评审：GitHub 不会给 app
+任何与仓库的关联，所以没有它，评审智能体的结论就不会再把开发智能体送回去修改
+（[#1184](https://github.com/AlexTo/discava/pull/1184)）。
 
 ## 测试智能体在机器上拥有什么
 
@@ -100,7 +130,7 @@ prompt 见[智能体的 prompt](../agent-prompts/)。
 
 | 字段 | 值 |
 | --- | --- |
-| Template | `github-pr-reviewer` 1.11.2 |
+| Template | `github-pr-reviewer` 1.11.2，已为 app 的 token 打补丁（见下文） |
 | Repository | `alexto/discava` |
 | Trigger label | `openhands-review` |
 | Requested reviewer | `all-hands-bot`（实际上未使用：由标签完成这项工作） |
@@ -109,6 +139,11 @@ prompt 见[智能体的 prompt](../agent-prompts/)。
 | Maintainers | 无 |
 | Schedule | `*/2 * * * *`，Australia/Sydney |
 | Agent profile | `reviewer` |
+
+模板通过 `GET /user` 查询自己以哪个账号行事，而 GitHub 对 installation token 会以
+`403 Resource not accessible by integration` 拒绝这个请求，所以换成 app 之后，每次扫描都在评审之前就失败了。
+Discava 的副本在 `/user` 拒绝时改为查询 GraphQL `viewer { login }`，在 worker 查找登录名和检查 token 的地方
+都是如此，并重新上传以替换目录中的 bundle。目录中的 1.11.3 仍然有这个问题。
 
 当检查仍在运行时，评审智能体会发布一条 "⏳ Review waiting on checks" 评论，并在之后的扫描中再次尝试。它的
 评审以 "_This review was posted by an AI agent (OpenHands)._" 开头，并带有一个隐藏的
@@ -145,10 +180,10 @@ prompt 见[智能体的 prompt](../agent-prompts/)。
 它轮询的 issue 由 [Post-merge Verify](../post-merge-verify/) 打开。测试智能体的评论以
 "_This comment was posted by an AI agent (OpenHands)._" 结尾。
 
-<Aside title="智能体共用一个账号">
-在 Discava 中，开发智能体、评审智能体和测试智能体都以 `discava-bot` 的身份发帖，维护者使用自己的账号。
-因此维护者可以正常批准智能体的 PR，也能看出哪些评论来自智能体。评审智能体和开发智能体仍共用一个账号，而
-GitHub 不允许一个账号批准自己的 PR，因此评审智能体的结论以 `COMMENTED` 评审的形式发布。粘合层读取的是
+<Aside title="智能体共用一个身份">
+在 Discava 中，开发智能体、评审智能体和测试智能体都以 `alex-coding-agent[bot]` 的身份行事，维护者使用自己
+的账号。因此维护者可以正常批准智能体的 PR，也能看出哪些评论来自智能体。评审智能体和开发智能体仍共用这个
+身份，而 GitHub 不允许任何人批准自己的 PR，因此评审智能体的结论以 `COMMENTED` 评审的形式发布。粘合层读取的是
 结论那一行，而不是评审状态，所以这没有影响。
 </Aside>
 

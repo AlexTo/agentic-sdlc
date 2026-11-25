@@ -34,7 +34,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    | --- | --- |
    | Repositories | `<you>/agentic-sdlc` |
    | Trigger label | `openhands-review` |
-   | Requested reviewer | 智能体的 GitHub 登录名 |
+   | Requested reviewer | `all-hands-bot`（未使用：由标签完成这项工作） |
    | New reviews per scan | `2` |
    | Review tone | Concise |
    | Maintainers | 留空，或填写两个及以上的登录名（见下文） |
@@ -42,9 +42,13 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    | Agent profile | `reviewer` |
    | Check frequency | `*/5 * * * *` |
 
-   Discava 使用的模板版本是 1.11.2。**New reviews per scan** 限制一次轮询最多启动多少个评审对话，这样积压的工作不会一下子启动十个智能体。
+   Discava 使用的模板版本是 1.11.2，并打了下文的补丁。**New reviews per scan** 限制一次轮询最多启动多少个评审对话，这样积压的工作不会一下子启动十个智能体。
 
    **Maintainers** 是可选的。设置后，已批准的 PR 会交给其中一人作为被请求的评审者，人选依据谁以前改过这些文件来决定。只有当 PR 对应的 issue 带有 `priority:medium` 或 `priority:high` 时才会这样做。Discava 将其留空。
+
+   <Aside type="caution" title="代码评审模板会拒绝 app 的 token">
+   至少到 1.11.3 版本为止，worker 都通过 `GET /user` 查询自己以哪个账号行事，而 GitHub 对 installation token 的回答是 `403 Resource not accessible by integration`。于是每次扫描都在评审之前就失败了。Discava 给自己的副本打了补丁，改为查询 GraphQL `viewer { login }`：参见[故障排查](../../reference/troubleshooting/#评审)。
+   </Aside>
 
 3. 在 Agent Canvas 中各个 automation 的页面上**手动运行一次**，并阅读运行日志。
 

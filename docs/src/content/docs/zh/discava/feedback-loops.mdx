@@ -48,7 +48,7 @@ token 在 PR 的代码上运行的。
 
 | 检查 | 原因 |
 | --- | --- |
-| 作者关联为 `OWNER`、`MEMBER` 或 `COLLABORATOR` | 只有具有写权限的人才能触发它 |
+| 作者关联为 `OWNER`、`MEMBER` 或 `COLLABORATOR`，或者作者是 `AGENT_APP_LOGIN` 指定的 app | 只有具有写权限的人，或智能体自己的 GitHub App，才能触发它。GitHub 给 app 的关联是 `NONE`，所以由这个变量指定它，并且只有以 `[bot]` 结尾的登录名才算数 |
 | 正文中有 `<!-- openhands-review-run: … -->` | 这是评审智能体的评审，而不是某个人在引用它 |
 | 正文中有一行恰好是 `🔄 CHANGES REQUESTED` | 这是结论，而不是对它的提及 |
 

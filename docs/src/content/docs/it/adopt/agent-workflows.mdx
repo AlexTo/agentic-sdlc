@@ -17,6 +17,12 @@ rossa o una review chiede modifiche, e archiviano una spec quando ogni task è s
    workflow di status. Cambia lo scope `@agentic-sdlc/` al loro interno. I loro trigger e permessi sono
    elencati in [Riferimento: workflow](../../reference/workflows/).
 
+   Se i tuoi agenti agiscono come una GitHub App, imposta la variabile di repository
+   `AGENT_APP_LOGIN` al login del suo bot, per esempio `my-agent[bot]`. `agent-status.yml` la passa
+   a `agent-review-status`. GitHub dà alle review di un'app l'association `NONE`, quindi senza di
+   essa i verdetti del Reviewer non rimandano mai indietro l'agente. Agli agenti che agiscono come
+   un account con accesso in scrittura non serve nulla.
+
 2. **Verifica che le condizioni `if:` corrispondano alle tue decisioni.** Se hai cambiato il prefisso dei branch o le
    label, cambiali anche qui:
 

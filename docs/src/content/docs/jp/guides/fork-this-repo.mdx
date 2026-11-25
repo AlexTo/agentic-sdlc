@@ -19,7 +19,9 @@ import { FileTree, LinkCard } from '@astrojs/starlight/components';
 - AGENTS.md すべてのエージェントが最初に読むもの。ノートアプリ向けに書かれています
 - .specify/ Speckit のテンプレート、スクリプト、constitution
 - .husky/ コミット時に Conventional Commits、シークレットスキャン、Biome。push 時に invariant マップ
-- scripts/setup-repository.sh ラベル、ブランチ保護など、fork ではコピーされない設定
+- scripts/
+  - setup-repository.sh ラベル、ブランチ保護など、fork ではコピーされない設定
+  - agent-app-token.sh エージェントの GitHub App のトークンを発行し、Agent Canvas に渡す
 - .github/
   - ISSUE_TEMPLATE/
     - implement-phase.md すべての実装 issue に含まれる指示
@@ -55,8 +57,10 @@ e2e テストを実行でき、エージェントがクラウドの認証情報�
 
 リポジトリに置けないものだけです。
 
-1. **GitHub の設定**: fork ではこれらはコピーされないので、`scripts/setup-repository.sh` が 1 回の実行で設定します。
-2. **OpenHands**: 自分のマシン上の Agent Canvas、GitHub トークン、そして fork に向けた automation。
+1. **GitHub の設定**: エージェントが動くための GitHub App と、fork ではコピーされない設定。後者は
+   `scripts/setup-repository.sh` が 1 回の実行で設定します。
+2. **OpenHands**: 自分のマシン上の Agent Canvas、App のトークンを新しく保つ `scripts/agent-app-token.sh`、
+   そして fork に向けた automation。
 
 ## 追加するまでオフのもの
 

@@ -17,6 +17,12 @@ rojo o hay una review de "changes requested", y archivan una spec cuando todas s
    workflows de status. Cambia en ellos el scope `@agentic-sdlc/`. Sus disparadores y permisos están
    listados en [Referencia: workflows](../../reference/workflows/).
 
+   Si tus agentes actúan como una GitHub App, pon en la variable de repositorio `AGENT_APP_LOGIN` el
+   login de su bot, como `my-agent[bot]`. `agent-status.yml` se la pasa a `agent-review-status`. GitHub
+   da a las reviews de una app la asociación `NONE`, así que sin ella los veredictos del Revisor nunca
+   devuelven el trabajo al agente. Los agentes que actúan como una cuenta con acceso de escritura no
+   necesitan nada.
+
 2. **Comprueba que las condiciones `if:` encajan con tus decisiones.** Si cambiaste el prefijo de rama o las
    labels, cámbialos aquí también:
 

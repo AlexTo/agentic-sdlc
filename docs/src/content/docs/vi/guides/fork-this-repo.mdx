@@ -20,7 +20,9 @@ spec cho ứng dụng ghi chú, và spec đó đi qua vòng lặp được mô t
 - AGENTS.md thứ mọi agent đọc đầu tiên, viết cho ứng dụng ghi chú
 - .specify/ template, script của Speckit và constitution
 - .husky/ Conventional Commits, quét secret và Biome khi commit, bản đồ invariant khi push
-- scripts/setup-repository.sh các label, branch protection và những thiết lập khác mà fork không sao chép
+- scripts/
+  - setup-repository.sh các label, branch protection và những thiết lập khác mà fork không sao chép
+  - agent-app-token.sh tạo token GitHub App của các agent và giao nó cho Agent Canvas
 - .github/
   - ISSUE_TEMPLATE/
     - implement-phase.md hướng dẫn mà mọi issue triển khai đều mang theo
@@ -56,10 +58,10 @@ thể chạy e2e test của nó và agent không bao giờ cần thông tin đă
 
 Chỉ những thứ không thể nằm trong repository:
 
-1. **Thiết lập GitHub**: fork không sao chép chúng, nên `scripts/setup-repository.sh` đặt chúng
-   trong một lần chạy.
-2. **OpenHands**: Agent Canvas trên máy bạn, một GitHub token, và các automation trỏ vào bản fork
-   của bạn.
+1. **Thiết lập GitHub**: GitHub App mà các agent hoạt động dưới danh nghĩa của nó, và các thiết lập
+   mà fork không sao chép, được `scripts/setup-repository.sh` đặt trong một lần chạy.
+2. **OpenHands**: Agent Canvas trên máy bạn, `scripts/agent-app-token.sh` giữ token của app luôn mới,
+   và các automation trỏ vào bản fork của bạn.
 
 ## Những gì tắt cho đến khi bạn thêm vào
 

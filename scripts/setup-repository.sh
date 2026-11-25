@@ -5,12 +5,15 @@ set -euo pipefail
 # doesn't copy, and everything the docs' "Configure the repository" step lists.
 # Safe to run again: each step sets the same state.
 #
-#   ./scripts/setup-repository.sh [--dry-run] [owner/repo] [agents-account]
+#   ./scripts/setup-repository.sh [--dry-run] [owner/repo] [agent]
 #
-#   owner/repo      defaults to `gh repo set-default`, else the origin remote
-#   agents-account  the agents' own GitHub account, invited with write access
-#                   (accept the invitation while signed in as it)
-#   --dry-run       print the gh commands instead of running them
+#   owner/repo  defaults to `gh repo set-default`, else the origin remote
+#   agent       who the agents post as. A GitHub App's bot login, such as
+#               `my-agent[bot]`, is saved as the AGENT_APP_LOGIN variable so
+#               the glue trusts the app's reviews (install the app on the
+#               repository yourself). A user account is invited with write
+#               access instead (accept the invitation while signed in as it)
+#   --dry-run   print the gh commands instead of running them
 #
 # Needs the gh CLI, signed in as an owner or admin of the repository.
 #
@@ -19,11 +22,11 @@ set -euo pipefail
 # - creates or updates every label the workflows and agents use
 # - protects main: a pull request with one approval, stale approvals
 #   dismissed, and the PR checks required
-# - lets Actions open pull requests (Archive Specs needs it)
+# - keeps Actions from opening or approving pull requests
 # - limits interactions to collaborators for six months, so a stranger's
 #   comment can't reach the agents. It expires: run this again before then
 # - serves the docs site from GitHub Actions on GitHub Pages
-# - invites the agents' account, if you name one
+# - names the agents' GitHub App, or invites their account, if you give one
 
 DRY_RUN=false
 ARGS=()
@@ -31,7 +34,7 @@ for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=true ;;
     -h | --help)
-      sed -n '4,15p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '4,18p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) ARGS+=("$arg") ;;
@@ -140,7 +143,11 @@ else
   run gh api -X POST "repos/$REPO/pages" -f build_type=workflow >/dev/null
 fi
 
-if [[ -n "$BOT" ]]; then
+if [[ "$BOT" == *'[bot]' ]]; then
+  echo "- AGENT_APP_LOGIN set to $BOT"
+  run gh variable set AGENT_APP_LOGIN --repo "$REPO" --body "$BOT"
+  echo "  Install the app on $REPO if you haven't: an app needs no invitation."
+elif [[ -n "$BOT" ]]; then
   echo "- $BOT invited with write access"
   run gh api -X PUT "repos/$REPO/collaborators/$BOT" -f permission=push >/dev/null
   echo "  Accept the invitation while signed in as $BOT."

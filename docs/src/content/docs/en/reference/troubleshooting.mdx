@@ -24,7 +24,8 @@ sidebar:
 | PR is red, `ci-fix-1` added, agent never revises | The worker only revises `openhands/issue-<n>` exactly (the fix-up workflows also label other `openhands/` branches), or the issue was closed | Check the branch name. Reopen the issue, or take the PR over |
 | No `ci-fix-*` label after a red run | Agent CI Status didn't run, or ignored it (see its notice) | Open the Agent CI Status run and read the notice, e.g. `the pull request has a newer commit than this run` |
 | Agent revises, then nothing reviews the new head | The agent didn't re-apply `openhands-review` | Re-apply it by hand |
-| Push rejected: `refusing to allow a Personal Access Token to create or update workflow` | The token lacks the `workflow` scope, and the branch touches `.github/workflows/` (often through a merge of `main`) | Add the scope. The next poll retries |
+| Push rejected: `refusing to allow a GitHub App to create or update workflow` | The app lacks the **Workflows** write permission, and the branch touches `.github/workflows/` (often through a merge of `main`) | Grant it in the app's settings, and accept the new permission on the installation. The next poll retries. With a personal access token the message names one, and the token needs the `workflow` scope |
+| Every automation fails: `The GitHub credential GITHUB_PERSONAL_ACCESS_TOKEN is unavailable`, or `401 Bad credentials` | The secret is missing, or holds an app token more than an hour old | Check that `scripts/agent-app-token.sh` still runs every 45 minutes and that its last run updated the secret |
 | `ci-fix-exhausted` | Five fix-ups didn't converge | Read the last failure. Usually the spec or plan is ambiguous. Fix it, remove the labels, re-run |
 
 ## Reviews
@@ -32,8 +33,9 @@ sidebar:
 | Symptom | What's happening | What to do |
 | --- | --- | --- |
 | "⏳ Review waiting on checks" and no review | A check on the head hasn't finished, or is stuck queued | Find the pending check. A required check that never runs blocks the review forever |
-| Review says `🔄 CHANGES REQUESTED`, no `review-fix-*` label | The review lacks the run marker, isn't from an account with write access, or the PR moved on | Read the Agent Review Status notice |
-| Reviews show as "Commented", not "Approved" | The Reviewer posts as the same account that opened the PR, and GitHub doesn't allow self-approval | Expected: the Developer and the Reviewer share the agents' account. The glue reads the verdict line, not the review state |
+| Review says `🔄 CHANGES REQUESTED`, no `review-fix-*` label | The review lacks the run marker, isn't from an account with write access or the app named in `AGENT_APP_LOGIN`, or the PR moved on | Read the Agent Review Status notice. If it says the review is not from a maintainer or the agent's app, set the repository variable `AGENT_APP_LOGIN` to the app's bot login |
+| Every code review scan fails with `HTTP Error 403: Forbidden` | The `github-pr-reviewer` template asks `GET /user` who it is, and GitHub refuses an app's installation token there (`Resource not accessible by integration`) | Patch the bundle: where the worker reads its login from `GET /user` (`github_login` in `worker.py`, the token check in `main.py`), fall back on a 403 to GraphQL `{ viewer { login } }`, which returns `<app-name>[bot]`. Upload the patched bundle with the automation API (`POST /api/automation/v1/uploads`, then `PATCH /api/automation/v1/<id>` with its `tarball_path`) |
+| Reviews show as "Commented", not "Approved" | The Reviewer posts as the same identity that opened the PR, and GitHub doesn't allow self-approval | Expected: the Developer and the Reviewer share the agents' GitHub App. The glue reads the verdict line, not the review state |
 
 ## Checks
 

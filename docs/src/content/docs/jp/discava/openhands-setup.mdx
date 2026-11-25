@@ -12,7 +12,7 @@ OpenHands のクラウドデプロイも webhook もありません。すべて 
 
 ## Agent Canvas
 
-Agent Canvas 1.41.0 を npm (`@openhands/agent-canvas`) からインストールし、ユーザーサービスとして動かしています。
+Agent Canvas 1.45.0 を npm (`@openhands/agent-canvas`) からインストールし、ユーザーサービスとして動かしています。
 状態は `~/.openhands/` にあります。設定、エージェントプロファイル、シークレット、そして automation の SQLite
 データベースです。
 
@@ -48,18 +48,49 @@ Agent Canvas (**Settings → Secrets**) に、名前ごとに保存されてい�
 
 | 名前 | 用途 |
 | --- | --- |
-| `GITHUB_PERSONAL_ACCESS_TOKEN` | automation はこれで GitHub を読む。会話はこれを受け取って clone、push、PR の作成、レビュー、コメントを行う |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | 名前に反して、GitHub App の現在のインストールトークン。automation はこれで GitHub を読む。会話はこれを受け取って clone、push、PR の作成、レビュー、コメントを行う |
 | `OPENHANDS_AUTOMATION_API_KEY` | automation バックエンド自身のキー |
 | `DISCAVA_STUDENT_USERNAME`, `DISCAVA_STUDENT_PASSWORD` | `discava-development` 上の、テスト担当の受講者 |
 | `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | テスト担当の講師 |
 | `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | テスト担当の管理者 |
 
-GitHub トークンは、automation だけが使うマシンアカウント `discava-bot` の classic の personal access token
-です。このアカウントは書き込み権限を持つコラボレーターで、トークンは `repo` と `workflow` のスコープを
-持っています。
-
 6 つの `DISCAVA_*` シークレットは、開発ステージ上の Cognito のテストユーザーで、アプリのロールごとに 1 人です。
 テスト担当はこれらでポータルにサインインし、API トークンを取得します。
+
+## GitHub App
+
+エージェントは `AlexTo/discava` だけにインストールされた GitHub App `alex-coding-agent` として動くので、
+エージェントが開くもの、push するもの、発言するものはすべて `alex-coding-agent[bot]` として表示されます。
+webhook はなく、contents、issues、pull requests への読み書きの権限を持っています。
+
+2026 年 11 月 25 日までは、classic の personal access token を持つマシンアカウント `discava-bot` として
+動いていました。GitHub がこのアカウントにフラグを立て、その 210 件の issue と pull request が、アカウント自身の
+一覧も含めて全員から見えなくなりました。開いていた 44 件の issue と 11 件の pull request は App として開き直し
+(#1129–#1183)、元のものはそれぞれのコピーへのリンクを付けて閉じました。マージ済みの作業は今も `main` にあり、
+作成者は `discava-bot` のままです。
+
+インストールトークンの有効期間は 1 時間なので、App の秘密鍵は Agent Canvas の外、マシン上に置き、
+タイマーがそれをトークンに変えます。
+
+| 部品 | 役割 |
+| --- | --- |
+| `~/.ssh/alex-coding-agent.pem` | App の秘密鍵。唯一の長期間有効なシークレット |
+| `alex-coding-agent-token.timer` | 発行スクリプトを 45 分ごと、および起動後 1 分に 1 回実行する systemd のユーザータイマー |
+| 発行スクリプト | テンプレートの [`scripts/agent-app-token.sh`](https://github.com/AlexTo/agentic-sdlc/blob/main/scripts/agent-app-token.sh) はこのコピー。鍵で JSON Web Token に署名し、それをインストールトークンと交換して、所有者だけが読めるファイルに書き込み、Agent Canvas 自身の API を通じて `GITHUB_PERSONAL_ACCESS_TOKEN` シークレットに入れる |
+| `canvas.service` のドロップイン | Agent Canvas の起動前に発行スクリプトを実行し、`GIT_AUTHOR_*` と `GIT_COMMITTER_*` を `alex-coding-agent[bot]` とその noreply アドレスに設定し、Agent Canvas に専用の `GIT_CONFIG_GLOBAL` と、トークンファイルを読む `gh` を与える |
+
+そのため、対話的な会話は git と `gh` を通じて、automation はシークレットを通じて App を使います。自分の
+ターミナルは自分のログインのままです。コミットを App のものにするのはドロップインの環境変数です。automation の
+テンプレートは各チェックアウトに作成者として `OpenHands` を書き込み、Agent Canvas の **Git Settings** フォームは
+角かっこを含むメールアドレスを受け付けないので、Discava は bot の名前とアドレスを `~/.openhands/settings.json` にも
+手で書き込みました。
+
+ボットではなくメンテナーとして動いていた残り物が 2 つあり、削除しました。メンテナーのトークンを持つ GitHub MCP
+サーバー (`api.githubcopilot.com`) と、古い personal access token です。
+
+glue は App のレビューをリポジトリ変数 `AGENT_APP_LOGIN` (`alex-coding-agent[bot]`) で数えます。GitHub は
+App にリポジトリとの関係 (association) を与えないので、これがないとレビュー担当の判定で開発担当が差し戻されなく
+なります ([#1184](https://github.com/AlexTo/discava/pull/1184))。
 
 ## テスト担当がマシン上で使うもの
 
@@ -104,7 +135,7 @@ Discava 独自のものです。それぞれがポーリングで何をするか
 
 | フィールド | 値 |
 | --- | --- |
-| Template | `github-pr-reviewer` 1.11.2 |
+| Template | `github-pr-reviewer` 1.11.2、App のトークン向けにパッチ済み (下記) |
 | Repository | `alexto/discava` |
 | Trigger label | `openhands-review` |
 | Requested reviewer | `all-hands-bot` (実際には使われない。ラベルが役目を果たす) |
@@ -113,6 +144,12 @@ Discava 独自のものです。それぞれがポーリングで何をするか
 | Maintainers | なし |
 | Schedule | `*/2 * * * *`、Australia/Sydney |
 | Agent profile | `reviewer` |
+
+このテンプレートは自分がどのアカウントとして動くかを `GET /user` で尋ねますが、GitHub はインストールトークンに対して
+これを `403 Resource not accessible by integration` で拒否します。そのため App に切り替えた後、すべてのスキャンが
+レビューの前に失敗しました。Discava のコピーは、ワーカーのログイン確認とトークンチェックの両方で、`/user` が拒否
+したときに GraphQL の `viewer { login }` に尋ねるようにし、カタログのバンドルの代わりにアップロードし直しました。
+カタログの 1.11.3 にもまだこの問題があります。
 
 チェックがまだ実行中のあいだ、レビュー担当は "⏳ Review waiting on checks" というコメントを投稿し、
 後のスキャンで再試行します。レビューは "_This review was posted by an AI agent
@@ -149,10 +186,10 @@ Discava 独自のものです。それぞれがポーリングで何をするか
 ポーリングの対象になる issue は [Post-merge Verify](../post-merge-verify/) が開きます。テスト担当の
 コメントは "_This comment was posted by an AI agent (OpenHands)._" で終わります。
 
-<Aside title="エージェント用に 1 つのアカウント">
-Discava では、開発担当、レビュー担当、テスト担当がすべて `discava-bot` として投稿し、メンテナーは自分の
+<Aside title="エージェント用に 1 つのアイデンティティ">
+Discava では、開発担当、レビュー担当、テスト担当がすべて `alex-coding-agent[bot]` として動き、メンテナーは自分の
 アカウントを使います。そのため、メンテナーはエージェントの PR を通常どおり承認でき、どのコメントがエージェントから
-来たのかもわかります。レビュー担当と開発担当は今もアカウントを共有しており、GitHub ではアカウントが自分の PR を
+来たのかもわかります。レビュー担当と開発担当は今もそのアイデンティティを共有しており、GitHub では誰も自分の PR を
 承認できないため、レビュー担当の判定は `COMMENTED` レビューとして投稿されます。glue はレビューの状態ではなく
 判定の行を読むので、問題にはなりません。
 </Aside>

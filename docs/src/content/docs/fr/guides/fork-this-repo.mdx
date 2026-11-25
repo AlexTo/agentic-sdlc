@@ -21,7 +21,9 @@ autour d'une petite application de notes.
 - AGENTS.md ce que chaque agent lit en premier, écrit pour l'application de notes
 - .specify/ templates et scripts Speckit, et la constitution
 - .husky/ Conventional Commits, scan de secrets et Biome au commit, carte des invariants au push
-- scripts/setup-repository.sh labels, protection de branche et les autres paramètres qu'un fork ne copie pas
+- scripts/
+  - setup-repository.sh labels, protection de branche et les autres paramètres qu'un fork ne copie pas
+  - agent-app-token.sh émet le token de la GitHub App des agents et le transmet à Agent Canvas
 - .github/
   - ISSUE_TEMPLATE/
     - implement-phase.md les instructions que porte chaque issue d'implémentation
@@ -57,10 +59,10 @@ donc la CI peut exécuter ses tests e2e et l'agent n'a jamais besoin d'identifia
 
 Seulement ce qui ne peut pas vivre dans un dépôt :
 
-1. **Les paramètres GitHub** : un fork ne les copie pas, donc `scripts/setup-repository.sh` les règle en
-   une seule exécution.
-2. **OpenHands** : Agent Canvas sur votre machine, un token GitHub, et les automatisations
-   pointées sur votre fork.
+1. **Les paramètres GitHub** : la GitHub App sous laquelle agissent les agents, et les paramètres qu'un
+   fork ne copie pas, que `scripts/setup-repository.sh` règle en une seule exécution.
+2. **OpenHands** : Agent Canvas sur votre machine, `scripts/agent-app-token.sh` qui garde le token de
+   l'app à jour, et les automatisations pointées sur votre fork.
 
 ## Ce qui reste désactivé tant que vous ne l'ajoutez pas
 

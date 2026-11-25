@@ -18,9 +18,10 @@ This section describes what Discava runs, as of November 2026, with the files be
 | Tool | Version | Role |
 | --- | --- | --- |
 | Speckit (`specify-cli`) | 1.3.2 | Spec, plan and task generation, with its `git` extension |
-| OpenHands Agent Canvas | 1.41.0 | Agent runtime and the three automations, as a user service on one Linux machine |
+| OpenHands Agent Canvas | 1.45.0 | Agent runtime and the three automations, as a user service on one Linux machine |
+| GitHub App `alex-coding-agent` | | What the agents act as on GitHub, with tokens that last an hour |
 | `github-issue-to-pr` automation | 1.2.4 | Developer: implements labelled issues, revises failing PRs |
-| `github-pr-reviewer` automation | 1.11.2 | Reviewer: reviews PRs once checks finish |
+| `github-pr-reviewer` automation | 1.11.2, patched | Reviewer: reviews PRs once checks finish |
 | `github-issue-tester` automation | written by hand | Tester: tests merged PRs on the deployed development stage |
 | Developer agent | Claude Code over ACP, Sonnet | `developer` agent profile |
 | Reviewer agent | Claude Code over ACP, Opus | `reviewer` agent profile |

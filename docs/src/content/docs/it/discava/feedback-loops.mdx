@@ -54,7 +54,7 @@ esplicitamente il checkout del branch di default, ed esegue `agent-review-status
 
 | Controllo | Perché |
 | --- | --- |
-| L'author association è `OWNER`, `MEMBER` o `COLLABORATOR` | Solo chi ha accesso in scrittura può attivarlo |
+| L'author association è `OWNER`, `MEMBER` o `COLLABORATOR`, oppure l'autore è l'app indicata in `AGENT_APP_LOGIN` | Solo chi ha accesso in scrittura, o la GitHub App degli agenti stessi, può attivarlo. GitHub dà a un'app l'association `NONE`, quindi la variabile la nomina, e conta solo un login che finisce con `[bot]` |
 | Il corpo contiene `<!-- openhands-review-run: … -->` | È la review dell'agente Reviewer, non una persona che la cita |
 | Il corpo ha una riga che è esattamente `🔄 CHANGES REQUESTED` | Il verdetto, non una sua menzione |
 

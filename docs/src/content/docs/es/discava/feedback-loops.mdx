@@ -56,7 +56,7 @@ es una rama de agente en el mismo repositorio y el cuerpo de la revisión contie
 
 | Comprobación | Por qué |
 | --- | --- |
-| La asociación del autor es `OWNER`, `MEMBER` o `COLLABORATOR` | Solo alguien con acceso de escritura puede dispararlo |
+| La asociación del autor es `OWNER`, `MEMBER` o `COLLABORATOR`, o el autor es la app nombrada en `AGENT_APP_LOGIN` | Solo alguien con acceso de escritura, o la propia GitHub App de los agentes, puede dispararlo. GitHub da a una app la asociación `NONE`, así que la variable la nombra, y solo cuenta un login que termine en `[bot]` |
 | El cuerpo tiene `<!-- openhands-review-run: … -->` | Es la revisión del agente Revisor, no una persona que la cita |
 | El cuerpo tiene una línea que es exactamente `🔄 CHANGES REQUESTED` | El veredicto, no una mención de él |
 

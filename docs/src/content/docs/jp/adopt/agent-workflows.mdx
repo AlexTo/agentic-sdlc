@@ -17,6 +17,11 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    `agent-status.yml` です。その中の `@agentic-sdlc/` スコープを変更します。トリガーと権限は
    [リファレンス: workflow](../../reference/workflows/) に一覧があります。
 
+   エージェントが GitHub App として動く場合は、リポジトリ変数 `AGENT_APP_LOGIN` をその bot の
+   ログイン (`my-agent[bot]` など) に設定します。`agent-status.yml` がそれを `agent-review-status` に渡します。
+   GitHub は App のレビューに association `NONE` を与えるので、これがないとレビュー担当の判定でエージェントが
+   差し戻されることはありません。書き込み権限を持つアカウントとして動くエージェントでは何も必要ありません。
+
 2. **`if:` の条件が自分の決定と合っているか確認します。** ブランチのプレフィックスやラベルを変えた場合は、
    ここも変更します。
 

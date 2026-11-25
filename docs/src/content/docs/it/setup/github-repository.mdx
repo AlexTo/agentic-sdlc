@@ -1,31 +1,65 @@
 ---
 title: 2. Configura il repository
-description: Esegui un solo script per le impostazioni che un fork non copia, poi accetta l'invito degli agenti.
+description: Crea la GitHub App con cui agiscono gli agenti, poi esegui un solo script per le impostazioni che un fork non copia.
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Alla fine avrai:** Issues e Actions attivi, tutte le label che usa il workflow, un branch `main` che
-accetta solo pull request con i check verdi e un'approvazione, i commenti limitati ai collaboratori,
-e l'account tutto loro degli agenti come collaboratore.
+**Alla fine avrai:** una GitHub App con cui agiscono gli agenti, installata sul tuo fork; Issues e
+Actions attivi, tutte le label che usa il workflow, un branch `main` che accetta solo pull request con
+i check verdi e un'approvazione, e i commenti limitati ai collaboratori.
 
 Un fork copia il codice, non le impostazioni. `scripts/setup-repository.sh` le imposta tutte con la
 CLI `gh`. Ogni passaggio imposta ogni volta lo stesso stato, quindi puoi rieseguirlo senza rischi.
 
 <Steps>
 
-1. **Crea l'account degli agenti.** Gli agenti lavorano con un account GitHub tutto loro, un account
-   macchina che nient'altro usa. Quello di Discava è `discava-bot`. Creane uno. Il suo token è quello
-   che crei al [passaggio 3](../openhands/), e le sue pull request e i suoi commenti compaiono sotto di
-   esso, quindi li approvi come quelli di chiunque altro.
+1. **Crea la GitHub App degli agenti.** Gli agenti agiscono come un'app che nient'altro usa, così le
+   loro pull request e i loro commenti compaiono sotto di essa, e li approvi come quelli di chiunque
+   altro. Quella di Discava è `alex-coding-agent`, che pubblica come `alex-coding-agent[bot]`.
+
+   In **Settings → Developer settings → GitHub Apps → New GitHub App**, dalle un nome e un URL di
+   homepage (va bene quello del tuo fork), e togli la spunta a **Webhook → Active**: Agent Canvas fa
+   polling, quindi niente deve raggiungere la tua macchina. In **Repository permissions**, imposta:
+
+   | Permesso | Accesso | Perché |
+   | --- | --- | --- |
+   | Contents | Read and write | Clonare e fare push dei branch degli agenti |
+   | Issues | Read and write | Leggere le issue, commentare, applicare label |
+   | Pull requests | Read and write | Aprire, revisionare e commentare le pull request |
+   | Workflows | Read and write | Senza di esso GitHub rifiuta un intero push che tocca `.github/workflows/`, cosa che un merge di `main` può fare. Gli agenti non modificano mai i workflow |
+   | Checks, Commit statuses, Actions | Read-only | Il Reviewer aspetta che i check finiscano prima di fare la review |
+   | Metadata | Read-only | Richiesto da GitHub |
+
+   Poi, nella pagina dell'app:
+
+   - Annota il suo **App ID**.
+   - **Generate a private key** e tieni il `.pem` fuori dal repository, per esempio in `~/.ssh/`,
+     leggibile solo da te. È l'unico secret a lunga durata: gli agenti vedono sempre e solo token
+     di un'ora creati da esso.
+   - **Install App** sul tuo account, con **Only select repositories**: il tuo fork. Annota il
+     numero alla fine dell'URL delle impostazioni dell'installazione (`…/installations/<id>`),
+     l'installation ID.
+
+   Ti servono entrambi gli ID e la chiave al [passaggio 3](../openhands/).
+
+   <Aside type="tip" title="Perché un'app, e non un secondo account">
+   Gli agenti di Discava all'inizio lavoravano come `discava-bot`, un account macchina con un
+   personal access token. A novembre 2026 GitHub lo ha segnalato, e questo ha nascosto a tutti tutte
+   le sue 210 issue e pull request. I token di un'app scadono dopo un'ora e raggiungono solo i
+   repository su cui è installata. Un secondo account con un token classico (gli scope `repo` e
+   `workflow`) funziona ancora: passa quell'account allo script qui sotto, e viene invitato come
+   collaboratore al posto dell'app.
+   </Aside>
 
 2. **Esegui lo script** dal tuo clone, con l'accesso a `gh` effettuato come proprietario del fork, e
-   con l'account degli agenti:
+   con il login del bot dell'app, il suo nome seguito da `[bot]` (mettilo tra apici, altrimenti la
+   shell legge le parentesi quadre come un pattern):
 
    ```bash
-   ./scripts/setup-repository.sh <you>/agentic-sdlc <agents-account>
+   ./scripts/setup-repository.sh <you>/agentic-sdlc '<app-name>[bot]'
    ```
 
    Aggiungi prima `--dry-run` se vuoi vedere ogni comando `gh` prima che venga eseguito. Lo script:
@@ -38,14 +72,12 @@ CLI `gh`. Ogni passaggio imposta ogni volta lo stesso stato, quindi puoi riesegu
    | Token dei workflow in sola lettura, e Actions non può aprire né approvare pull request | Un workflow che potesse aprire una pull request potrebbe anche approvarne una. Archive Specs fa push del branch che sposta una spec finita in `specs/_archive/` e avvisa con un link che apre la sua pull request, già compilata, perché tu la invii |
    | Interazioni limitate ai collaboratori, per sei mesi | Il fork di un repository pubblico è pubblico, e gli agenti leggono ogni commento su ciò su cui lavorano mentre hanno in mano un token che può fare push |
    | GitHub Pages da Actions | Il job **Deploy Docs** della CI pubblica questo sito |
-   | L'account degli agenti invitato con accesso in scrittura | Così gli agenti possono fare push dei branch e aprire pull request |
+   | La variabile di repository `AGENT_APP_LOGIN`, impostata al login del bot dell'app | GitHub non dà alle review di un'app alcuna association con il repository, quindi il collante rimanda indietro l'agente su un verdetto del Reviewer solo se viene da persone con accesso in scrittura o dall'app che questa nomina |
 
    La protezione lascia consentito l'aggiramento, così tu, come proprietario, puoi fare il merge di
    una pull request che hai aperto tu, come una PR della spec, che GitHub non ti lascia approvare.
 
-3. **Accetta l'invito** con l'accesso effettuato come account degli agenti.
-
-4. **Verifica che Actions sia attivo.** Se la scheda **Actions** del tuo fork mostra ancora **I
+3. **Verifica che Actions sia attivo.** Se la scheda **Actions** del tuo fork mostra ancora **I
    understand my workflows, go ahead and enable them**, cliccalo. A volte GitHub chiede quel clic
    anche dopo che l'API ha attivato Actions.
 
@@ -67,7 +99,7 @@ sempre e solo come `failure`, e renderlo obbligatorio bloccherebbe ogni PR.
 
 La pagina **Issues → Labels** del fork elenca le 20 label, **Settings → Branches** mostra la regola su
 `main` con sette check obbligatori, e **Settings → Moderation options → Interaction limits** mostra il
-limite ai soli collaboratori con la sua data di fine. **Settings → Collaborators** elenca l'account
-degli agenti con il ruolo **Write**.
+limite ai soli collaboratori con la sua data di fine. **Settings → Secrets and variables → Actions →
+Variables** mostra `AGENT_APP_LOGIN`, e **Settings → GitHub Apps** elenca la tua app.
 
 Avanti: [3. Installa OpenHands](../openhands/).

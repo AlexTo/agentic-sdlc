@@ -38,7 +38,7 @@ catalog packages a tested worker with your settings. You don't write or upload a
    | --- | --- |
    | Repositories | `<you>/agentic-sdlc` |
    | Trigger label | `openhands-review` |
-   | Requested reviewer | the agents' GitHub login |
+   | Requested reviewer | `all-hands-bot` (unused: the label does the work) |
    | New reviews per scan | `2` |
    | Review tone | Concise |
    | Maintainers | empty, or two or more logins (see below) |
@@ -46,12 +46,19 @@ catalog packages a tested worker with your settings. You don't write or upload a
    | Agent profile | `reviewer` |
    | Check frequency | `*/5 * * * *` |
 
-   Discava runs template version 1.11.2. **New reviews per scan** caps how many review
-   conversations one poll starts, so a backlog doesn't start ten agents at once.
+   Discava runs template version 1.11.2, with the patch below. **New reviews per scan** caps how
+   many review conversations one poll starts, so a backlog doesn't start ten agents at once.
 
    **Maintainers** is optional. When set, an approved PR is handed to one of them as a requested
    reviewer, chosen by who has changed those files before. This happens only when the PR's issue
    carries `priority:medium` or `priority:high`. Discava leaves it empty.
+
+   <Aside type="caution" title="The code review template refuses an app's token">
+   Up to at least version 1.11.3, the worker asks `GET /user` which account it acts as, and
+   GitHub answers an installation token with `403 Resource not accessible by integration`. Every
+   scan then fails before it reviews. Discava patched its copy to ask GraphQL `viewer { login }`
+   instead: see [Troubleshooting](../../reference/troubleshooting/#reviews).
+   </Aside>
 
 3. **Run each automation once by hand** from its page in Agent Canvas, and read the run log.
 

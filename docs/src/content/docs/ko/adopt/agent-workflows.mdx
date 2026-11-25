@@ -17,6 +17,11 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    `agent-status.yml`. 그 안의 `@agentic-sdlc/` scope를 바꾸세요. trigger와 권한은
    [레퍼런스: workflow](../../reference/workflows/)에 나와 있습니다.
 
+   에이전트가 GitHub App으로 동작한다면 repository 변수 `AGENT_APP_LOGIN`을 그 bot 로그인(예:
+   `my-agent[bot]`)으로 설정하세요. `agent-status.yml`이 이를 `agent-review-status`에 넘깁니다. GitHub는 앱의
+   리뷰에 association `NONE`을 주므로, 이것이 없으면 리뷰어의 판정이 에이전트를 되돌려 보내지 못합니다. 쓰기 권한이
+   있는 계정으로 동작하는 에이전트에는 아무것도 필요 없습니다.
+
 2. **`if:` 조건이 여러분의 결정과 맞는지 확인**합니다. 브랜치 prefix나 label을 바꿨다면
    여기서도 바꾸세요.
 

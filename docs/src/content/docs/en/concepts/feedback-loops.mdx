@@ -66,7 +66,8 @@ Each script refuses to act unless all of these hold:
 4. That commit hasn't already been sent back. A re-run of the same checks must not use another
    attempt.
 5. For reviews: the review carries the Reviewer's hidden run marker and comes from an account with
-   write access, so a person quoting the verdict doesn't trigger it.
+   write access or from the agents' own GitHub App, so a person quoting the verdict doesn't
+   trigger it.
 6. Fewer than five attempts have been used.
 
 The label goes on **before** the status is posted. If posting the status then fails, the next

@@ -19,9 +19,10 @@ spec PR からマージされたエージェントの PR になるまでを見�
 | 必要なもの | 理由 |
 | --- | --- |
 | GitHub アカウント | fork し、spec を書き、レビューするため |
-| エージェント用の 2 つ目の GitHub アカウント | エージェントが使うトークンの所有者になります。これでエージェントの PR とコメントはエージェント自身のものになり、あなたがそれを承認できます。Discava では `discava-bot` です |
+| エージェント用の GitHub App | エージェントはこの App として動きます。これでエージェントの PR とコメントはエージェント自身のものになり、あなたがそれを承認できます。Discava では `alex-coding-agent` です |
 | Node.js 24 と pnpm | リポジトリと Agent Canvas を実行するため |
 | `uv` | Agent Canvas は `uvx` でバックエンドを起動します |
+| `openssl`、`curl`、`jq` | App のトークンを発行するため |
 | Docker | notes アプリとその e2e テストをローカルで実行する場合のみ。エージェント向けには CI が実行します |
 | サインイン済みの GitHub CLI (`gh`) | ほとんどの手順で使います |
 | インストール済みでサインイン済みのコーディングエージェント | Speckit で spec を書き、OpenHands の中で動きます。Discava は Claude Code を使っています |
@@ -36,8 +37,8 @@ Agent Canvas は自分のマシン上で動き、GitHub をポーリングする
 | # | 手順 | 完了時の状態 |
 | --- | --- | --- |
 | 1 | [リポジトリを fork する](../fork/) | Actions と Issues が有効になった自分のコピー |
-| 2 | [リポジトリを設定する](../github-repository/) | 1 つのスクリプト: Issues と Actions の有効化、ラベル、保護された `main`、コラボレーターに限定したコメント、コラボレーターとして追加されたエージェントのアカウント |
-| 3 | [OpenHands をインストールする](../openhands/) | 動作中の Agent Canvas、GitHub トークン、2 つのエージェントプロファイル |
+| 2 | [リポジトリを設定する](../github-repository/) | 1 つのスクリプト: Issues と Actions の有効化、ラベル、保護された `main`、コラボレーターに限定したコメント、エージェントの GitHub App の指定 |
+| 3 | [OpenHands をインストールする](../openhands/) | 動作中の Agent Canvas、新しく保たれる App のトークン、2 つのエージェントプロファイル |
 | 4 | [2 つの automation を作成する](../automations/) | fork で実装とレビューを行う開発担当エージェントとレビュー担当エージェント |
 | 5 | [最初の機能を実行する](../first-feature/) | エージェントによってマージ済みのコードまで運ばれた notes アプリの spec |
 

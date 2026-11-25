@@ -16,9 +16,10 @@ import { Aside } from '@astrojs/starlight/components';
 | 需要 | 原因 |
 | --- | --- |
 | 一个 GitHub 账号 | 用来 fork、编写 spec 和评审 |
-| 给智能体用的第二个 GitHub 账号 | 它持有智能体使用的 token，这样智能体的 PR 和评论都归它们自己，你也能批准它们。Discava 的账号是 `discava-bot` |
+| 给智能体用的 GitHub App | 智能体以它的身份行事，这样智能体的 PR 和评论都归它们自己，你也能批准它们。Discava 的 app 是 `alex-coding-agent` |
 | Node.js 24 和 pnpm | 用来运行仓库和 Agent Canvas |
 | `uv` | Agent Canvas 用 `uvx` 启动它的后端 |
+| `openssl`、`curl` 和 `jq` | 用来生成 app 的 token |
 | Docker | 仅用于在本地运行笔记应用及其 e2e 测试。CI 会为智能体运行它们 |
 | GitHub CLI（`gh`），已登录 | 大多数步骤都要用到 |
 | 一个编码智能体，已安装并登录 | 用 Speckit 编写 spec，并在 OpenHands 内部运行。Discava 使用 Claude Code |
@@ -32,8 +33,8 @@ Agent Canvas 运行在你自己的机器上，并轮询 GitHub，所以它不需
 | # | 步骤 | 完成后你将拥有 |
 | --- | --- | --- |
 | 1 | [Fork 仓库](../fork/) | 你自己的副本，已开启 Actions 和 Issues |
-| 2 | [配置仓库](../github-repository/) | 一个脚本：开启 Issues 和 Actions、创建标签、保护 `main`、把评论限制为协作者，并把智能体账号加为协作者 |
-| 3 | [安装 OpenHands](../openhands/) | 正在运行的 Agent Canvas、一个 GitHub token、两个 agent profile |
+| 2 | [配置仓库](../github-repository/) | 一个脚本：开启 Issues 和 Actions、创建标签、保护 `main`、把评论限制为协作者，并指定智能体的 GitHub App |
+| 3 | [安装 OpenHands](../openhands/) | 正在运行的 Agent Canvas、保持有效的 app token、两个 agent profile |
 | 4 | [创建两个 automation](../automations/) | 开发智能体和评审智能体在你的 fork 中实现和评审 |
 | 5 | [运行你的第一个功能](../first-feature/) | 一份笔记应用的 spec，由智能体一路推进到已合并的代码 |
 

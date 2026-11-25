@@ -17,6 +17,11 @@ import { Steps, Aside } from '@astrojs/starlight/components';
    workflows share. Change the `@agentic-sdlc/` scope in them. Their triggers and permissions are
    listed in [Reference: workflows](../../reference/workflows/).
 
+   If your agents act as a GitHub App, set the repository variable `AGENT_APP_LOGIN` to its bot
+   login, such as `my-agent[bot]`. `agent-status.yml` passes it to `agent-review-status`. GitHub
+   gives an app's reviews the association `NONE`, so without it the Reviewer's verdicts never send
+   the agent back. Agents that act as an account with write access need nothing.
+
 2. **Check the `if:` conditions match your decisions.** If you changed the branch prefix or the
    labels, change them here too:
 

@@ -1,31 +1,64 @@
 ---
 title: 2. Cấu hình repository
-description: Chạy một script cho các thiết lập mà bản fork không sao chép, rồi chấp nhận lời mời của tài khoản agent.
+description: Tạo GitHub App mà agent hoạt động dưới danh nghĩa của nó, rồi chạy một script cho các thiết lập mà bản fork không sao chép.
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**Kết quả:** Issues và Actions được bật, mọi label mà quy trình dùng, một nhánh `main` chỉ nhận pull
-request có check xanh và một lượt duyệt, comment được giới hạn cho các collaborator, và tài khoản
-riêng của agent là một collaborator.
+**Kết quả:** một GitHub App mà agent hoạt động dưới danh nghĩa của nó, được cài trên bản fork của
+bạn; Issues và Actions được bật, mọi label mà quy trình dùng, một nhánh `main` chỉ nhận pull request
+có check xanh và một lượt duyệt, và comment được giới hạn cho các collaborator.
 
 Bản fork sao chép code, không sao chép thiết lập. `scripts/setup-repository.sh` đặt tất cả chúng bằng
 CLI `gh`. Mỗi bước đặt cùng một trạng thái mỗi lần, nên chạy lại cũng an toàn.
 
 <Steps>
 
-1. **Tạo tài khoản của agent.** Agent làm việc dưới tài khoản GitHub riêng của chúng, một tài khoản
-   máy không dùng cho việc gì khác. Tài khoản của Discava là `discava-bot`. Hãy tạo một tài khoản.
-   Token của nó là token bạn tạo ở [bước 3](../openhands/), và PR cùng comment của agent hiện dưới
-   tài khoản đó, nên bạn duyệt chúng như của bất kỳ ai khác.
+1. **Tạo GitHub App của agent.** Agent hoạt động dưới danh nghĩa một app không dùng cho việc gì
+   khác, nên pull request và comment của chúng hiện dưới app đó, và bạn duyệt chúng như của bất kỳ ai
+   khác. App của Discava là `alex-coding-agent`, đăng bài dưới tên `alex-coding-agent[bot]`.
 
-2. **Chạy script** từ bản clone của bạn, đăng nhập `gh` bằng chủ sở hữu bản fork, với tài khoản của
-   agent:
+   Trong **Settings → Developer settings → GitHub Apps → New GitHub App**, đặt cho nó một tên và một
+   homepage URL (URL bản fork của bạn là được), và bỏ chọn **Webhook → Active**: Agent Canvas tự
+   poll, nên không có gì cần kết nối tới máy của bạn. Trong **Repository permissions**, đặt:
+
+   | Quyền | Mức truy cập | Vì sao |
+   | --- | --- | --- |
+   | Contents | Read and write | Clone và push các nhánh của agent |
+   | Issues | Read and write | Đọc issue, comment, gắn label |
+   | Pull requests | Read and write | Mở, review và comment trên pull request |
+   | Workflows | Read and write | Thiếu quyền này, GitHub từ chối cả một lần push chạm tới `.github/workflows/`, điều mà một lần merge `main` có thể gây ra. Agent không bao giờ sửa workflow |
+   | Checks, Commit statuses, Actions | Read-only | Agent Reviewer chờ các check chạy xong rồi mới review |
+   | Metadata | Read-only | GitHub bắt buộc |
+
+   Sau đó, trên trang của app:
+
+   - Ghi lại **App ID** của nó.
+   - **Generate a private key** và giữ file `.pem` bên ngoài repository, ví dụ trong `~/.ssh/`, chỉ
+     mình bạn đọc được. Đó là secret dài hạn duy nhất: agent chỉ bao giờ thấy các token một giờ
+     được tạo từ nó.
+   - **Install App** trên tài khoản của bạn, với **Only select repositories**: bản fork của bạn. Ghi
+     lại con số ở cuối URL trang thiết lập của installation (`…/installations/<id>`), đó là
+     installation ID.
+
+   Bạn cần cả hai ID và khóa ở [bước 3](../openhands/).
+
+   <Aside type="tip" title="Vì sao dùng app, không dùng tài khoản thứ hai">
+   Agent của Discava ban đầu làm việc dưới `discava-bot`, một tài khoản máy với một personal access
+   token. Tháng 11 năm 2026, GitHub gắn cờ tài khoản đó, khiến toàn bộ 210 issue và pull request của
+   nó bị ẩn với mọi người. Token của một app hết hạn sau một giờ và chỉ chạm tới các repository mà app
+   được cài vào. Một tài khoản thứ hai với classic token (scope `repo` và `workflow`) vẫn dùng được:
+   truyền tên tài khoản đó cho script bên dưới, và nó sẽ được mời làm collaborator thay vào đó.
+   </Aside>
+
+2. **Chạy script** từ bản clone của bạn, đăng nhập `gh` bằng chủ sở hữu bản fork, với bot login của
+   app, tức tên của nó kèm `[bot]` ở cuối (hãy đặt trong dấu nháy, nếu không shell sẽ hiểu dấu ngoặc
+   vuông là một pattern):
 
    ```bash
-   ./scripts/setup-repository.sh <you>/agentic-sdlc <agents-account>
+   ./scripts/setup-repository.sh <you>/agentic-sdlc '<app-name>[bot]'
    ```
 
    Thêm `--dry-run` trước nếu bạn muốn xem từng lệnh `gh` trước khi nó chạy. Script này đặt:
@@ -38,14 +71,12 @@ CLI `gh`. Mỗi bước đặt cùng một trạng thái mỗi lần, nên chạ
    | Token của workflow chỉ đọc, và Actions không được mở hay duyệt pull request | Một workflow có thể mở pull request thì cũng có thể duyệt một pull request. Archive Specs push nhánh chuyển một spec đã xong vào `specs/_archive/` và cảnh báo kèm một liên kết mở pull request của nó, đã điền sẵn, để bạn gửi |
    | Tương tác giới hạn cho collaborator, trong sáu tháng | Một bản fork của một repository công khai cũng công khai, và các agent đọc mọi comment trên những gì chúng làm việc trong khi đang giữ một token có thể push |
    | GitHub Pages từ Actions | Job **Deploy Docs** của CI publish trang web này |
-   | Tài khoản của agent được mời với quyền ghi | Để các agent có thể push nhánh và mở pull request |
+   | Biến repository `AGENT_APP_LOGIN`, đặt bằng bot login của app | GitHub không gán cho review của một app quan hệ nào với repository, nên glue chỉ gửi agent quay lại khi có verdict của Reviewer từ người có quyền ghi và từ app mà biến này chỉ định |
 
    Branch protection vẫn cho phép bypass, để bạn, với tư cách chủ sở hữu, merge được một pull request
    do chính bạn mở, chẳng hạn spec PR, vốn là PR mà GitHub không cho bạn duyệt.
 
-3. **Chấp nhận lời mời** trong khi đăng nhập bằng tài khoản của agent.
-
-4. **Kiểm tra Actions đã bật.** Nếu tab **Actions** của bản fork vẫn hiện **I understand my
+3. **Kiểm tra Actions đã bật.** Nếu tab **Actions** của bản fork vẫn hiện **I understand my
    workflows, go ahead and enable them**, hãy bấm nó. Đôi khi GitHub vẫn đòi cú bấm đó ngay cả sau khi
    API đã bật Actions.
 
@@ -67,7 +98,7 @@ ngày đó, và chạy lại script trước khi đến hạn. Nếu sau này b�
 
 Trang **Issues → Labels** của bản fork liệt kê 20 label, **Settings → Branches** hiện rule trên
 `main` với bảy check bắt buộc, và **Settings → Moderation options → Interaction limits** hiện giới
-hạn chỉ collaborator cùng ngày kết thúc của nó. **Settings → Collaborators** liệt kê tài khoản của
-agent với vai trò **Write**.
+hạn chỉ collaborator cùng ngày kết thúc của nó. **Settings → Secrets and variables → Actions →
+Variables** hiện `AGENT_APP_LOGIN`, và **Settings → GitHub Apps** liệt kê app của bạn.
 
 Tiếp theo: [3. Cài OpenHands](../openhands/).

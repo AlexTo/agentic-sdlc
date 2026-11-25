@@ -50,7 +50,7 @@ import { Aside } from '@astrojs/starlight/components';
 
 | チェック | 理由 |
 | --- | --- |
-| author association が `OWNER`、`MEMBER`、`COLLABORATOR` のいずれか | 書き込み権限を持つ人だけがトリガーできる |
+| author association が `OWNER`、`MEMBER`、`COLLABORATOR` のいずれか、または作成者が `AGENT_APP_LOGIN` で指定された App | 書き込み権限を持つ人か、エージェント自身の GitHub App だけがトリガーできる。GitHub は App に association `NONE` を与えるので、変数でそれを指定する。`[bot]` で終わるログインだけが対象になる |
 | 本文に `<!-- openhands-review-run: … -->` がある | 人がそれを引用したのではなく、レビュー担当エージェントのレビューである |
 | 本文にちょうど `🔄 CHANGES REQUESTED` である行がある | 判定そのものであって、判定への言及ではない |
 

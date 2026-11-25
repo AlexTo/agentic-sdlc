@@ -12,7 +12,7 @@ deployment of OpenHands and no webhook. Everything is outbound polling to GitHub
 
 ## Agent Canvas
 
-Agent Canvas 1.41.0, installed from npm (`@openhands/agent-canvas`) and run as a user service.
+Agent Canvas 1.45.0, installed from npm (`@openhands/agent-canvas`) and run as a user service.
 Its state lives in `~/.openhands/`: settings, agent profiles, secrets and the automations' SQLite
 database.
 
@@ -48,18 +48,50 @@ Stored in Agent Canvas (**Settings → Secrets**), by name:
 
 | Name | Used for |
 | --- | --- |
-| `GITHUB_PERSONAL_ACCESS_TOKEN` | The automations read GitHub with it. Conversations get it to clone, push, open PRs, review and comment |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | The GitHub App's current installation token, despite the name. The automations read GitHub with it. Conversations get it to clone, push, open PRs, review and comment |
 | `OPENHANDS_AUTOMATION_API_KEY` | The automation backend's own key |
 | `DISCAVA_STUDENT_USERNAME`, `DISCAVA_STUDENT_PASSWORD` | The Tester's student on `discava-development` |
 | `DISCAVA_INSTRUCTOR_USERNAME`, `DISCAVA_INSTRUCTOR_PASSWORD` | The Tester's instructor |
 | `DISCAVA_ADMIN_USERNAME`, `DISCAVA_ADMIN_PASSWORD` | The Tester's admin |
 
-The GitHub token is a classic personal access token on `discava-bot`, a machine account that only
-the automations use. It is a collaborator with write access, and the token has the `repo` and
-`workflow` scopes.
-
 The six `DISCAVA_*` secrets are Cognito test users on the development stage, one per role in the
 app. The Tester signs in to the portals with them and gets API tokens with them.
+
+## The GitHub App
+
+The agents act as `alex-coding-agent`, a GitHub App installed on `AlexTo/discava` only, so
+everything they open, push and say shows as `alex-coding-agent[bot]`. It has no webhook, and
+read and write access to contents, issues and pull requests.
+
+Until 25 November 2026 they worked as `discava-bot`, a machine account with a classic personal
+access token. GitHub flagged the account, which hid all 210 of its issues and pull requests from
+everyone, its own listings included. The 44 open issues and 11 open pull requests were opened again
+as the app (#1129–#1183), and the originals closed with a link to each copy. Its merged work is
+still in `main`, authored by `discava-bot`.
+
+An installation token lasts an hour, so the app's private key stays on the machine, outside
+Agent Canvas, and a timer turns it into tokens:
+
+| Piece | What it does |
+| --- | --- |
+| `~/.ssh/alex-coding-agent.pem` | The app's private key: the one long-lived secret |
+| `alex-coding-agent-token.timer` | A systemd user timer that runs the mint script every 45 minutes, and once a minute after boot |
+| The mint script | The template's [`scripts/agent-app-token.sh`](https://github.com/AlexTo/agentic-sdlc/blob/main/scripts/agent-app-token.sh) is a copy of it. Signs a JSON Web Token with the key, trades it for an installation token, writes that to a file only its owner can read, and puts it in the `GITHUB_PERSONAL_ACCESS_TOKEN` secret through Agent Canvas's own API |
+| A drop-in for `canvas.service` | Runs the mint script before Agent Canvas starts, sets `GIT_AUTHOR_*` and `GIT_COMMITTER_*` to `alex-coding-agent[bot]` and its noreply address, and gives Agent Canvas its own `GIT_CONFIG_GLOBAL` and a `gh` that read the token file |
+
+So interactive conversations use the app through git and `gh`, and the automations through the
+secret. Your own terminal keeps your own login. The drop-in's environment variables are what
+credit commits to the app: the automation templates write `OpenHands` as the author into each
+checkout, and Agent Canvas's **Git Settings** form refuses an email with brackets in it, so
+Discava wrote the bot's name and address into `~/.openhands/settings.json` by hand as well.
+
+Two leftovers acted as the maintainer, not the bot, and were removed: a GitHub MCP server
+(`api.githubcopilot.com`) with the maintainer's token, and the old personal access tokens.
+
+The glue counts the app's reviews through the repository variable `AGENT_APP_LOGIN`
+(`alex-coding-agent[bot]`): GitHub gives an app no association with the repository, so without
+it the Reviewer's verdicts would no longer send the Developer back
+([#1184](https://github.com/AlexTo/discava/pull/1184)).
 
 ## What the Tester has on the machine
 
@@ -105,7 +137,7 @@ is reviewed.
 
 | Field | Value |
 | --- | --- |
-| Template | `github-pr-reviewer` 1.11.2 |
+| Template | `github-pr-reviewer` 1.11.2, patched for the app's token (below) |
 | Repository | `alexto/discava` |
 | Trigger label | `openhands-review` |
 | Requested reviewer | `all-hands-bot` (not used in practice: the label does the work) |
@@ -114,6 +146,12 @@ is reviewed.
 | Maintainers | none |
 | Schedule | `*/2 * * * *`, Australia/Sydney |
 | Agent profile | `reviewer` |
+
+The template asks `GET /user` which account it acts as, which GitHub refuses an installation token
+with `403 Resource not accessible by integration`, so after the switch to the app every scan
+failed before it reviewed. Discava's copy asks GraphQL `viewer { login }` when `/user` refuses, in
+the worker's login lookup and in its token check, and was uploaded again in place of the catalog's
+bundle. The catalog's 1.11.3 still has the problem.
 
 While checks are still running, the Reviewer posts a "⏳ Review waiting on checks" comment and
 tries again on a later scan. Its reviews start with "_This review was posted by an AI agent
@@ -151,12 +189,12 @@ On each poll, the worker:
 The issues it polls for are opened by [Post-merge Verify](../post-merge-verify/). The Tester's
 comments end with "_This comment was posted by an AI agent (OpenHands)._".
 
-<Aside title="One account for the agents">
-In Discava the Developer, the Reviewer and the Tester all post as `discava-bot`, and the maintainer
-uses their own account. So the maintainer can approve an agent's PR normally, and it's clear which
-comments came from an agent. The Reviewer and the Developer still share an account, and GitHub
-doesn't let an account approve its own PR, so the Reviewer's verdict is posted as a `COMMENTED`
-review. The glue reads the verdict line, not the review state, so this doesn't matter.
+<Aside title="One identity for the agents">
+In Discava the Developer, the Reviewer and the Tester all act as `alex-coding-agent[bot]`, and the
+maintainer uses their own account. So the maintainer can approve an agent's PR normally, and it's
+clear which comments came from an agent. The Reviewer and the Developer still share that identity,
+and GitHub doesn't let anyone approve their own PR, so the Reviewer's verdict is posted as a
+`COMMENTED` review. The glue reads the verdict line, not the review state, so this doesn't matter.
 </Aside>
 
 Next: [The agents' prompts](../agent-prompts/).

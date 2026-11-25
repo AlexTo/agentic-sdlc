@@ -18,6 +18,12 @@ estão marcadas.
    workflows de status compartilham. Troque o scope `@agentic-sdlc/` neles. Os gatilhos e as
    permissões deles estão listados em [Referência: workflows](../../reference/workflows/).
 
+   Se os seus agents agem como um GitHub App, defina a variável de repositório `AGENT_APP_LOGIN`
+   com o login de bot dele, como `my-agent[bot]`. O `agent-status.yml` a passa para o
+   `agent-review-status`. O GitHub dá aos reviews de um app a associação `NONE`, então sem ela os
+   vereditos do Revisor nunca mandam o agent de volta. Agents que agem como uma conta com acesso de
+   escrita não precisam de nada.
+
 2. **Confira se as condições `if:` batem com as suas decisões.** Se você mudou o prefixo de branch
    ou os labels, mude aqui também:
 

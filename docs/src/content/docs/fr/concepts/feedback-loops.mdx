@@ -68,7 +68,8 @@ Chaque script refuse d'agir à moins que toutes ces conditions soient réunies :
 4. Ce commit n'a pas déjà été renvoyé. Une réexécution des mêmes checks ne doit pas consommer une
    autre tentative.
 5. Pour les revues : la revue porte le marqueur d'exécution caché du Relecteur et vient d'un compte
-   avec accès en écriture, pour qu'une personne qui cite le verdict ne la déclenche pas.
+   avec accès en écriture ou de la GitHub App des agents elle-même, pour qu'une personne qui cite le
+   verdict ne la déclenche pas.
 6. Moins de cinq tentatives ont été utilisées.
 
 Le label est posé **avant** la publication du statut. Si la publication du statut échoue ensuite,

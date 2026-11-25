@@ -13,6 +13,8 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 1. 从这个仓库的 `.github/workflows/` **复制四个 workflow**：`agent-issues.yml`、`agent-ci.yml`、`agent-review.yml`，以及 `agent-status.yml`，后者包含两个 status workflow 共用的步骤。修改其中的 `@agentic-sdlc/` scope。它们的触发条件和权限列在[参考：workflow](../../reference/workflows/) 中。
 
+   如果你的智能体以 GitHub App 的身份行事，把仓库变量 `AGENT_APP_LOGIN` 设为它的 bot 登录名，例如 `my-agent[bot]`。`agent-status.yml` 会把它传给 `agent-review-status`。GitHub 给 app 的评审的关联是 `NONE`，所以没有它，评审智能体的结论永远不会把智能体送回去修改。以有写权限的账号行事的智能体则什么都不需要。
+
 2. **检查 `if:` 条件与你的决定一致。** 如果你改了分支前缀或标签，这里也要改：
 
    ```yaml

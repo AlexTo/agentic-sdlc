@@ -53,7 +53,7 @@ O `planReview()` adiciona três verificações próprias antes de mandar o agent
 
 | Verificação | Por quê |
 | --- | --- |
-| A associação do autor é `OWNER`, `MEMBER` ou `COLLABORATOR` | Só alguém com acesso de escrita pode dispará-lo |
+| A associação do autor é `OWNER`, `MEMBER` ou `COLLABORATOR`, ou o autor é o app nomeado em `AGENT_APP_LOGIN` | Só alguém com acesso de escrita, ou o próprio GitHub App dos agents, pode dispará-lo. O GitHub dá a um app a associação `NONE`, então a variável o nomeia, e só conta um login que termina em `[bot]` |
 | O corpo tem `<!-- openhands-review-run: … -->` | É o review do agent Revisor, não uma pessoa citando-o |
 | O corpo tem uma linha que é exatamente `🔄 CHANGES REQUESTED` | O veredito, não uma menção a ele |
 

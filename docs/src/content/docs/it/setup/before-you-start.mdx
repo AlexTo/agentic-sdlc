@@ -19,9 +19,10 @@ passare dalla PR della spec alle PR degli agenti unite.
 | Requisito | Perché |
 | --- | --- |
 | Un account GitHub | Per fare il fork, scrivere le spec e fare review |
-| Un secondo account GitHub per gli agenti | Possiede il token usato dagli agenti, così le loro PR e i loro commenti sono loro e puoi approvarli. Quello di Discava è `discava-bot` |
+| Una GitHub App per gli agenti | Gli agenti agiscono come essa, così le loro PR e i loro commenti sono loro e puoi approvarli. Quella di Discava è `alex-coding-agent` |
 | Node.js 24 e pnpm | Per eseguire il repository e Agent Canvas |
 | `uv` | Agent Canvas avvia il suo backend con `uvx` |
+| `openssl`, `curl` e `jq` | Per creare i token dell'app |
 | Docker | Solo per eseguire in locale l'app di note e i suoi test e2e. La CI li esegue per l'agente |
 | GitHub CLI (`gh`), con accesso effettuato | La usano quasi tutti i passaggi |
 | Un coding agent, installato e con accesso effettuato | Scrive le spec con Speckit, e gira dentro OpenHands. Discava usa Claude Code |
@@ -36,8 +37,8 @@ webhook. Gli agenti lavorano solo mentre è in esecuzione.
 | # | Passaggio | Alla fine avrai |
 | --- | --- | --- |
 | 1 | [Fai il fork del repository](../fork/) | La tua copia, con Actions e Issues attivi |
-| 2 | [Configura il repository](../github-repository/) | Un solo script: Issues e Actions attivi, le label, un `main` protetto, commenti limitati ai collaboratori, e l'account degli agenti come collaboratore |
-| 3 | [Installa OpenHands](../openhands/) | Agent Canvas in esecuzione, un token GitHub, due profili agente |
+| 2 | [Configura il repository](../github-repository/) | Un solo script: Issues e Actions attivi, le label, un `main` protetto, commenti limitati ai collaboratori, e la GitHub App degli agenti indicata |
+| 3 | [Installa OpenHands](../openhands/) | Agent Canvas in esecuzione, il token dell'app tenuto aggiornato, due profili agente |
 | 4 | [Crea le due automazioni](../automations/) | Gli agenti Developer e Reviewer che implementano e fanno review nel tuo fork |
 | 5 | [Esegui la tua prima feature](../first-feature/) | Una spec per l'app di note, portata dagli agenti fino al codice unito |
 

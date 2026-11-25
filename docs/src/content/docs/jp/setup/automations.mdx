@@ -38,7 +38,7 @@ issue を実装し、失敗とマークされた PR を修正し、`openhands-re
    | --- | --- |
    | Repositories | `<you>/agentic-sdlc` |
    | Trigger label | `openhands-review` |
-   | Requested reviewer | エージェントの GitHub ログイン |
+   | Requested reviewer | `all-hands-bot` (使われない。ラベルが役目を果たす) |
    | New reviews per scan | `2` |
    | Review tone | Concise |
    | Maintainers | 空、または 2 つ以上のログイン(下記参照) |
@@ -46,12 +46,19 @@ issue を実装し、失敗とマークされた PR を修正し、`openhands-re
    | Agent profile | `reviewer` |
    | Check frequency | `*/5 * * * *` |
 
-   Discava はテンプレートのバージョン 1.11.2 を使っています。**New reviews per scan** は 1 回のポーリングで
-   開始するレビュー会話の数の上限で、溜まった作業があっても 10 個のエージェントが一度に起動しないようにします。
+   Discava はテンプレートのバージョン 1.11.2 を、下記のパッチを当てて使っています。**New reviews per scan** は
+   1 回のポーリングで開始するレビュー会話の数の上限で、溜まった作業があっても 10 個のエージェントが一度に起動しないようにします。
 
    **Maintainers** は任意です。設定すると、承認された PR は、そのファイルを過去に変更した人を基準に選ばれた
    メンテナーの 1 人に、レビュー依頼として渡されます。これは PR の issue に `priority:medium` または
    `priority:high` が付いている場合にのみ行われます。Discava では空のままにしています。
+
+   <Aside type="caution" title="コードレビューのテンプレートは App のトークンを拒否する">
+   少なくともバージョン 1.11.3 までは、ワーカーは自分がどのアカウントとして動くかを `GET /user` で尋ね、
+   GitHub はインストールトークンに `403 Resource not accessible by integration` と答えます。そのため、すべての
+   スキャンがレビューの前に失敗します。Discava は自分のコピーにパッチを当て、代わりに GraphQL の `viewer { login }` に
+   尋ねるようにしました。[トラブルシューティング](../../reference/troubleshooting/#レビュー)を参照してください。
+   </Aside>
 
 3. Agent Canvas の各 automation のページから **それぞれを一度手動で実行** し、実行ログを確認します。
 

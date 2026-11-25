@@ -1,31 +1,63 @@
 ---
 title: 2. リポジトリを設定する
-description: fork ではコピーされない設定のためにスクリプトを 1 つ実行し、エージェントの招待を承認します。
+description: エージェントが動くための GitHub App を作成し、fork ではコピーされない設定のためにスクリプトを 1 つ実行します。
 sidebar:
   order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-**完了時の状態:** 有効になった Issues と Actions、workflow が使うすべてのラベル、チェックがグリーンで承認済みの
-pull request だけを受け付ける `main` ブランチ、コラボレーターに限定されたコメント、そしてコラボレーターとして追加された
-エージェント専用のアカウント。
+**完了時の状態:** fork にインストールされた、エージェントが動くための GitHub App。有効になった Issues と Actions、
+workflow が使うすべてのラベル、チェックがグリーンで承認済みの pull request だけを受け付ける `main` ブランチ、
+そしてコラボレーターに限定されたコメント。
 
 fork はコードをコピーしますが、設定はコピーしません。`scripts/setup-repository.sh` が `gh` CLI でそれらをすべて設定します。
 各ステップは毎回同じ状態を設定するので、再実行しても安全です。
 
 <Steps>
 
-1. **エージェントのアカウントを作成します。** エージェントは、ほかの用途には使わないマシンアカウントである
-   専用の GitHub アカウントで作業します。Discava では `discava-bot` です。アカウントを 1 つ作成してください。
-   [手順 3](../openhands/) で作成するのはこのアカウントのトークンで、エージェントの pull request とコメントは
-   このアカウントの名前で表示されるので、ほかの人のものと同じように承認できます。
+1. **エージェントの GitHub App を作成します。** エージェントはほかの用途には使わない App として動くので、
+   エージェントの pull request とコメントはその App の名前で表示され、ほかの人のものと同じように承認できます。
+   Discava では `alex-coding-agent` で、`alex-coding-agent[bot]` として投稿します。
 
-2. fork のオーナーとして `gh` にサインインした状態で、エージェントのアカウントを指定して、クローンから
+   **Settings → Developer settings → GitHub Apps → New GitHub App** で、名前とホームページの URL (fork の
+   URL で十分です) を入力し、**Webhook → Active** のチェックを外します。Agent Canvas はポーリングするので、
+   自分のマシンに何かが届く必要はありません。**Repository permissions** で次のように設定します。
+
+   | 権限 | アクセス | 理由 |
+   | --- | --- | --- |
+   | Contents | Read and write | エージェントのブランチを clone し、push する |
+   | Issues | Read and write | issue を読み、コメントし、ラベルを付ける |
+   | Pull requests | Read and write | pull request を開き、レビューし、コメントする |
+   | Workflows | Read and write | これがないと、GitHub は `.github/workflows/` に触れる push 全体を拒否する。`main` のマージでそうなることがある。エージェントが workflow を編集することはない |
+   | Checks, Commit statuses, Actions | Read-only | レビュー担当はチェックが終わるのを待ってからレビューする |
+   | Metadata | Read-only | GitHub が必須としている |
+
+   次に、App のページで次のことを行います。
+
+   - **App ID** を控えます。
+   - **Generate a private key** で鍵を生成し、`.pem` はリポジトリの外、たとえば `~/.ssh/` に、自分だけが
+     読める状態で保管します。これが唯一の長期間有効なシークレットです。エージェントが目にするのは、ここから
+     作られる 1 時間有効のトークンだけです。
+   - **Install App** で自分のアカウントにインストールし、**Only select repositories** で fork を選びます。
+     インストールの設定 URL の末尾にある番号 (`…/installations/<id>`)、つまりインストール ID を控えます。
+
+   [手順 3](../openhands/) で、両方の ID と鍵が必要になります。
+
+   <Aside type="tip" title="なぜ 2 つ目のアカウントではなく App なのか">
+   Discava のエージェントは当初、personal access token を持つマシンアカウント `discava-bot` として動いていました。
+   2026 年 11 月に GitHub がこのアカウントにフラグを立て、その 210 件の issue と pull request がすべて全員から
+   見えなくなりました。App のトークンは 1 時間で失効し、インストールされたリポジトリにしか届きません。classic の
+   トークン (`repo` と `workflow` のスコープ) を持つ 2 つ目のアカウントも引き続き使えます。下のスクリプトにその
+   アカウントを指定すると、代わりにコラボレーターとして招待されます。
+   </Aside>
+
+2. fork のオーナーとして `gh` にサインインした状態で、App の bot ログイン (名前の後に `[bot]` を付けたもの。
+   引用符で囲まないと、シェルが角かっこをパターンとして解釈します) を指定して、クローンから
    **スクリプトを実行します**。
 
    ```bash
-   ./scripts/setup-repository.sh <you>/agentic-sdlc <agents-account>
+   ./scripts/setup-repository.sh <you>/agentic-sdlc '<app-name>[bot]'
    ```
 
    実行前に各 `gh` コマンドを確認したい場合は、先に `--dry-run` を付けてください。スクリプトが設定するものは次のとおりです。
@@ -38,14 +70,12 @@ fork はコードをコピーしますが、設定はコピーしません。`sc
    | workflow のトークンを読み取り専用にし、Actions が pull request を開いたり承認したりできないようにする | pull request を開ける workflow は、承認もできてしまう。Archive Specs は、完了した spec を `specs/_archive/` に移すブランチを push し、入力済みの pull request を開くリンクを警告に出すので、それを送信する |
    | やり取りをコラボレーターに限定（6 か月間） | 公開リポジトリの fork は公開され、エージェントは push できるトークンを持ったまま、作業対象のすべてのコメントを読む |
    | Actions からの GitHub Pages | CI の **Deploy Docs** ジョブがこのサイトを公開する |
-   | エージェントのアカウントを書き込み権限で招待 | エージェントがブランチを push し、pull request を開けるようにする |
+   | リポジトリ変数 `AGENT_APP_LOGIN` を App の bot ログインに設定 | GitHub は App のレビューにリポジトリとの関係 (association) を与えないので、glue がレビュー担当の判定でエージェントを差し戻すのは、書き込み権限を持つ人と、この変数で指定された App からの判定だけ |
 
    保護ではバイパスを許可したままにしてあるので、オーナーであるあなたは、spec PR のように自分で開いた
    pull request をマージできます。そうした PR は GitHub では自分で承認できません。
 
-3. エージェントのアカウントでサインインした状態で **招待を承認します**。
-
-4. **Actions が有効か確認します。** fork の **Actions** タブにまだ **I understand my
+3. **Actions が有効か確認します。** fork の **Actions** タブにまだ **I understand my
    workflows, go ahead and enable them** が表示されている場合は、クリックしてください。API で Actions を
    有効にした後でも、GitHub がこのクリックを求めることがあります。
 
@@ -66,7 +96,7 @@ fork はコードをコピーしますが、設定はコピーしません。`sc
 
 fork の **Issues → Labels** ページに 20 個のラベルが一覧され、**Settings → Branches** に
 7 つの必須チェックを持つ `main` のルールが表示され、**Settings → Moderation options → Interaction limits** に
-終了日付きのコラボレーターのみの制限が表示されます。**Settings → Collaborators** には、
-エージェントのアカウントが **Write** ロールで一覧されます。
+終了日付きのコラボレーターのみの制限が表示されます。**Settings → Secrets and variables → Actions →
+Variables** には `AGENT_APP_LOGIN` が表示され、**Settings → GitHub Apps** には自分の App が一覧されます。
 
 次へ: [3. OpenHands をインストールする](../openhands/)。
