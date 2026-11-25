@@ -17,39 +17,39 @@ onlyBuiltDependencies:
   - sharp
 catalogMode: strict
 catalog:
-  '@aws/nx-plugin': 1.3.8
-  astro-d2: 0.14.0
-  nx: 23.3.1
-  '@nx/js': 23.3.1
-  '@nx/workspace': 23.3.1
-  typescript: ~6.0.3
-  '@biomejs/biome': 2.6.6
-  '@aws/nx-plugin-mcp': ^1.3.8
+  '@aws/nx-plugin': 1.6.0
+  astro-d2: 0.14.1
+  nx: 24.0.6
+  '@nx/js': 24.0.6
+  '@nx/workspace': 24.0.6
+  typescript: ~7.0.2
+  '@biomejs/biome': 2.6.8
+  '@aws/nx-plugin-mcp': ^1.6.0
   husky: 9.1.7
-  astro: 7.4.7
+  astro: 7.4.13
   cookie: 2.0.2
-  '@astrojs/starlight': 0.42.10
+  '@astrojs/starlight': 0.43.1
   '@types/node': 26.6.6
-  vite: 8.3.6
-  vitest: 5.1.0
-  '@vitest/coverage-v8': 5.1.0
-  jsdom: 29.1.1
-  '@nx/vitest': 23.3.1
-  '@aws-sdk/client-dynamodb': 3.1164.0
+  vite: 8.3.8
+  vitest: 5.1.1
+  '@vitest/coverage-v8': 5.1.1
+  jsdom: 31.0.1
+  '@nx/vitest': 24.0.6
+  '@aws-sdk/client-dynamodb': 3.1172.0
   tsx: 4.23.15
   electrodb: 3.9.3
   '@aws-lambda-powertools/parameters': 2.36.0
-  '@aws-sdk/client-appconfigdata': 3.1164.0
+  '@aws-sdk/client-appconfigdata': 3.1172.0
   '@types/aws-lambda': 8.10.164
   aws-xray-sdk-core: 3.12.0
   zod: 4.6.7
   '@aws-lambda-powertools/logger': 2.36.0
   '@aws-lambda-powertools/metrics': 2.36.0
   '@aws-lambda-powertools/tracer': 2.36.0
-  '@trpc/server': 11.25.0
-  '@trpc/client': 11.25.0
+  '@trpc/server': 11.29.5
+  '@trpc/client': 11.29.5
   aws4fetch: 1.0.20
-  '@aws-sdk/credential-providers': 3.1164.0
+  '@aws-sdk/credential-providers': 3.1172.0
   '@middy/core': 7.9.2
   '@aws-lambda-powertools/parser': 2.36.0
   cors: 2.8.6
@@ -58,25 +58,25 @@ catalog:
   react-dom: 19.3.1
   class-variance-authority: 0.7.1
   cn: 0.5.2
-  lucide-react: 1.70.0
+  lucide-react: 1.76.0
   tw-animate-css: 1.4.0
   radix-ui: 1.8.1
   constructs: 10.8.1
-  aws-cdk-lib: 2.275.0
+  aws-cdk-lib: 2.277.0
   tailwindcss: 4.3.5
   '@tanstack/react-router': 1.170.46
-  '@nx/react': 23.3.1
-  '@vitest/ui': 5.1.0
+  '@nx/react': 24.0.6
+  '@vitest/ui': 5.1.1
   '@tailwindcss/vite': 4.3.5
   '@tanstack/router-plugin': 1.169.0
   '@tanstack/router-generator': 1.168.0
   '@tanstack/virtual-file-routes': 1.162.0
   '@tanstack/router-utils': 1.163.0
-  '@trpc/tanstack-react-query': 11.25.0
-  '@tanstack/react-query': 5.107.1
-  '@tanstack/react-query-devtools': 5.107.1
+  '@trpc/tanstack-react-query': 11.29.5
+  '@tanstack/react-query': 5.108.0
+  '@tanstack/react-query-devtools': 5.108.0
   '@smithy/types': 4.20.0
-  '@playwright/test': 1.64.1
+  '@playwright/test': 1.65.1
   '@commitlint/config-conventional': ^21.2.4
   commitizen: 4.3.2
   commitlint: ^21.2.4
