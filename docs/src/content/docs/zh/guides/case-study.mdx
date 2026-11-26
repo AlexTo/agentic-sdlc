@@ -1,6 +1,6 @@
 ---
 title: "案例研究：一个 pull request 的全程"
-description: 跟随一个真实的 Discava pull request，从 spec 合并到部署后测试通过，以及每个智能体在途中发现了什么。
+description: 跟随一个真实的 Discava pull request，从 issue 到部署后的测试，经过四轮修复，以及每个智能体在途中发现了什么。
 sidebar:
   order: 3
   label: 案例研究
@@ -8,167 +8,179 @@ sidebar:
 
 import { Aside } from '@astrojs/starlight/components';
 
-[工作原理](../how-it-works/)描述了这个循环。本页展示它在 [Discava](https://github.com/AlexTo/discava) 的一个真实 pull request 上完整跑一遍的过程：学生查看自己上传的作业的成绩和反馈的页面。
+[工作原理](../how-it-works/)描述了这个循环。本页展示它在 [Discava](https://github.com/AlexTo/discava) 的一个真实 pull request 上完整跑一遍的过程：学生为已购买的课程申请退款后看到的内容。
 
-每段引文、每个数字和链接都来自 GitHub。时间均为悉尼时间（AEDT，UTC+11），日期都是 2026 年 11 月 21 日。
+每段引文、每个数字和链接都来自 GitHub。时间均为悉尼时间（AEDT，UTC+11），日期是 2026 年 11 月 25 日和 26 日。
 
 ## 整个过程
 
 | 时间 | 谁 | 发生了什么 |
 | --- | --- | --- |
-| 06:40 | 🧑&nbsp;一个人 | 合并带有 `spec-ready` 标签的 spec PR [#662](https://github.com/AlexTo/discava/pull/662) |
-| 08:43 | ⚙️&nbsp;自动化 | 为阶段 4 打开 issue [#681](https://github.com/AlexTo/discava/issues/681)，此时阶段 3 的 PR 刚合并一分钟 |
-| 08:50 | 🤖&nbsp;开发智能体 | 七分钟后打开 PR [#683](https://github.com/AlexTo/discava/pull/683) |
-| 08:51 | ⚙️&nbsp;CI | 一项检查失败：[**UI Screenshots**](https://github.com/AlexTo/discava/actions/runs/44823849814/job/136591295471) |
-| 09:06 | 🤖&nbsp;开发智能体 | 推送[修复](https://github.com/AlexTo/discava/pull/683/commits/3b2e04d2eb8aaf9b230b26e001989f30167dc43c)（`ci-fix-1`） |
-| 09:22 | 🤖&nbsp;评审智能体 | [`🔄 CHANGES REQUESTED`](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000171162)：一个阻塞性缺陷 |
-| 09:26 | 🤖&nbsp;开发智能体 | 推送[修复](https://github.com/AlexTo/discava/pull/683/commits/0bdf55d485d5a5df692d1e8a41ec601499977c03)（`review-fix-1`） |
-| 09:41 | 🤖&nbsp;评审智能体 | [`✅ APPROVED`](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000351532) |
-| 09:44 | 🧑&nbsp;一个人 | [批准](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000379398)并合并 |
-| 10:09 | ⚙️&nbsp;自动化 | 到开发 stage 的[部署](https://github.com/AlexTo/discava/actions/runs/44833259729)完成，一分钟后测试 issue [#712](https://github.com/AlexTo/discava/issues/712) 打开 |
-| 12:15 | 🤖&nbsp;测试智能体 | [报告](https://github.com/AlexTo/discava/issues/712#issuecomment-7054937096) 32 项检查全部通过，并关闭 issue |
+| 22:37 | ⚙️&nbsp;自动化 | Issue [#1166](https://github.com/AlexTo/discava/issues/1166) 处于打开状态：待处理的退款会一直轮询下去，退款失败也没有处理 |
+| 23:55 | 🤖&nbsp;开发智能体 | 打开 PR [#1195](https://github.com/AlexTo/discava/pull/1195) |
+| 00:07 | ⚙️&nbsp;CI | [**UI Screenshots** 失败](https://github.com/AlexTo/discava/actions/runs/45619342535/job/139224403383)，接着是 **codecov/patch** |
+| 00:55 | 🤖&nbsp;开发智能体 | [推送修复](https://github.com/AlexTo/discava/pull/1195#issuecomment-7164484931)（`ci-fix-1`） |
+| 01:29 | ⚙️&nbsp;CI | [**Checks (build)** 失败](https://github.com/AlexTo/discava/actions/runs/45628507436/job/139255050292)，失败的测试与这个 PR 无关 |
+| 01:42 | 🤖&nbsp;开发智能体 | [做出解释，并重新运行](https://github.com/AlexTo/discava/pull/1195#issuecomment-7165688653)（`ci-fix-2`） |
+| 06:22 | 🤖&nbsp;评审智能体 | [`🔄 CHANGES REQUESTED`](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6063632214)：两个阻塞性问题 |
+| 06:30 | 🤖&nbsp;开发智能体 | [推送修复](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172386579)（`review-fix-1`） |
+| 06:38 | ⚙️&nbsp;CI | [**E2E tests (11/12)** 失败](https://github.com/AlexTo/discava/actions/runs/45685812586/job/139458011986)，失败的是新场景 |
+| 06:43 | 🤖&nbsp;开发智能体 | [推送修复](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172674824)（`ci-fix-3`） |
+| 11:13 | 🤖&nbsp;评审智能体 | [`✅ APPROVED`](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066801083) |
+| 11:33 | 🧑&nbsp;一个人 | [批准](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066944326)并合并 |
+| 12:28 | ⚙️&nbsp;自动化 | 到开发 stage 的[部署](https://github.com/AlexTo/discava/actions/runs/45734764281)完成，一分钟后测试 issue [#1240](https://github.com/AlexTo/discava/issues/1240) 打开 |
+| 13:03 | 🤖&nbsp;测试智能体 | [报告](https://github.com/AlexTo/discava/issues/1240#issuecomment-7180418815) 22 项检查：界面正常，但在 stage 上退款失败仍然没有处理。它让 issue 保持打开 |
 
-从 pull request 打开到合并：54 分钟，两次修复，人只动了两次手。
+从 pull request 打开到合并：四轮修复，三轮来自 CI，一轮来自评审，人只动了一次手。之后测试智能体发现了两个问题，前面这些环节都不可能看到。
 
-## 1. 一个人合并 spec
+## 1. Issue
 
-这个功能是给上传类作业评分：讲师把学生的作业连同分数和反馈一起返回，或者要求重新提交，学生则能看到结果。
+学生申请退款后，在 Stripe 处理期间会看到 "Refund requested"，课程页面每 2 秒检查一次退款是否完成。[#1166](https://github.com/AlexTo/discava/issues/1166) 说明了这里的问题：
 
-spec PR [#662](https://github.com/AlexTo/discava/pull/662) 只包含 spec 文件夹：spec、计划、一份数据模型、三份契约和 `tasks.md`，共 **8 个阶段、34 个任务**。没有产品代码。它的描述列出了智能体在编写 spec 时提出的五个问题，以及维护者的回答。其中一个：已经返回的成绩还能改吗？能，但要保留历史，并通知学生。
+> While a student's refund is pending, the course page refetches `course.myEnrolment` and
+> `payment.myOrder` every 2 s, and never stops. If the refund fails at Stripe or its event never
+> arrives, the order stays `paid` with a refund requested, the page keeps polling for as long as
+> it is open, and the student isn't told anything has gone wrong.
 
-维护者读完之后，加上 `spec-ready`，在 06:40 合并。这是两道人工关卡中的第一道。两分钟后，自动化为阶段 1 到 3 打开了 issue。
+它的验收标准只有两行：轮询在达到上限后停止；在 Stripe 替身中模拟的退款失败会结束待处理状态，并给出清楚的提示。
 
-## 2. 开发智能体接手阶段 4
+这个 issue 不是来自 spec。评审智能体在评审那个让学生能申请退款的 PR 时提出了它，作为超出该 PR 范围的问题，于是它成了一个单独的 issue。（#1166 是一个副本：智能体以前用的机器账号被 GitHub 标记，它打开过的所有内容都被隐藏了，那些还开着的 issue 由智能体现在使用的 GitHub App [重新打开](../../discava/openhands-setup/#github-app)。）
 
-阶段 1 到 3（数据、规则和讲师的 API）以 [#667](https://github.com/AlexTo/discava/pull/667) 提交，在 08:42 合并。08:43，**Agent Issues** workflow 再次读取 `tasks.md`，为下一个还有未勾选任务的阶段打开了 [#681](https://github.com/AlexTo/discava/issues/681)：
+## 2. 开发智能体打开 PR
 
-> Tasks `T016` to `T017` of `tasks.md`: every task under Phase 4: User Story 2 - Student sees the
-> grade and feedback (student portal) (P1). Do not start tasks outside these phases.
+开发智能体领取了这个 issue，在 `openhands/issue-1166` 上打开了 [#1195](https://github.com/AlexTo/discava/pull/1195)。这次改动涉及四个包：课程页面上的 2 分钟上限和 "Check again" 按钮，处理 Stripe 退款失败事件的 webhook handler，订单上的 `refundFailedAt` 字段以及一条"失败必须发生在申请之后"的不变量，还有课程页面上的 "Your refund failed"。描述的结尾写明了它运行了什么、没运行什么：
 
-两个任务：一个组件，显示一轮反馈和一个折叠起来的早先各轮反馈列表；以及作业页面针对提交可能处于的每种状态所做的改动。
+> Unit tests cover the helper, the webhook, the invariant and the UI (poll limit, check again,
+> failure message). [...] I did not run the e2e tests or try the stand-in control in a browser.
 
-开发智能体在下一次轮询时领取了这个 issue。issue 打开七分钟后，它在 `openhands/issue-681` 上提交了 [#683](https://github.com/AlexTo/discava/pull/683)：先写测试，两个任务都在 `tasks.md` 中勾选，描述里写明了它运行了什么、没运行什么。
+## 3. CI 把它退回，三次
 
-## 3. CI 把它退回
+**`ci-fix-1`：没有截图，还有没测试的代码行。** 这个 PR 改变了学生看到的内容，却没有截图，所以 [**UI Screenshots** 失败了](https://github.com/AlexTo/discava/actions/runs/45619342535/job/139224403383)。**codecov/patch** 也失败了：新的代码行没有测试。**Agent CI Status** 加上了 `ci-fix-1`，把开发智能体送了回去。它的[回复](https://github.com/AlexTo/discava/pull/1195#issuecomment-7164484931)显示，它在修复途中发现了自己第一次尝试中的一个问题：
 
-描述里还有这样一句：
+> **UI Screenshots:** added a `learner-refund` e2e scenario for a failed refund, with
+> `screenshot(student, 'refund-failed')`. For this the Stripe stand-in has a new
+> `fail-next-refund` control. [...] This replaces the `refund-fail` control from the first push,
+> which the scenario could not use, because the stand-in completed the refund before it could
+> fail.
 
-> No e2e screenshots here: the e2e scenario for this flow is a later phase's task.
+**`ci-fix-2`：不是它造成的失败。** 下一次运行在 **Checks (build)** 中失败，失败的是基础设施包里的一个 CDK synth 测试。智能体读了日志，[没有为此改任何代码](https://github.com/AlexTo/discava/pull/1195#issuecomment-7165688653)：
 
-这是智能体自己做的判断，对任务列表来说也算一种合理的理解。但仓库有一条规则：改动了用户所见内容的变更，必须附带相应的截图，这样评审的人不用运行应用就能看到界面。这条规则是一项检查，而检查不听理由。lint、单元测试、构建和全部六个 e2e 分片都通过了。[**UI Screenshots** 失败了](https://github.com/AlexTo/discava/actions/runs/44823849814/job/136591295471)。
+> the one failure was `@discava/infra` `instructor-api-stack.test.ts` [...], which hit its 30s
+> timeout while the sibling CDK synth tests in that file took 22–31s. This PR doesn't touch infra
+> or anything the stack synthesises [...], so I made no code change for it. The push below
+> re-runs the build.
 
-**Agent CI Status** 加上了 `ci-fix-1`，把开发智能体送回同一个 PR。它带着修复给出的[回复](https://github.com/AlexTo/discava/pull/683#issuecomment-7051758312)：
+它补上了 codecov 仍然报告的那一行部分覆盖，这次推送重新运行了构建，结果通过。一个靠修改自己不理解的代码来"修复"失败的智能体，比一个说明失败不是自己造成的、并解释原因的智能体更糟。
 
-> The only finding was the failing `UI Screenshots` check (the PR added no `screenshot(` call). I
-> added an e2e scenario in `assignment.e2e.ts` where a student sees the resubmission request
-> beside the open form, then the returned grade and feedback. It takes a screenshot of each and
-> drives the instructor side through the API. I did not run it locally, so PR CI is its first run.
+**`ci-fix-3`：它自己的新测试写错了。** 评审之后（见下一节），智能体为 2 分钟上限添加了一个 e2e 场景，结果在 [**E2E tests (11/12)**](https://github.com/AlexTo/discava/actions/runs/45685812586/job/139458011986) 中失败。五分钟后，它给出了[原因](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172674824)：
 
-下一次运行全绿，CI 把两张新截图发布在 [**E2E screenshots** 评论](https://github.com/AlexTo/discava/pull/683#issuecomment-7051642662)中。
+> the new `a pending refund stops polling and offers to check again` scenario failed with a
+> Playwright strict-mode violation, not a product bug. `getByText('Still being processed')` also
+> matched the alert's description ("Your refund is still being processed…"), so it resolved to two
+> elements. The page did reach the timed-out state. I now match the title with `{ exact: true }`.
 
-## 4. 评审智能体发现一个真正的缺陷
+智能体没有在本地运行任何 e2e 场景；每次它都这样说明。PR CI 是这些场景第一次运行的地方，[E2E screenshots 评论](https://github.com/AlexTo/discava/pull/1195#issuecomment-7163204279)列出了这次运行截取的两个界面：`learner-refund/01-refund-failed.png` 和 `learner-refund/01-refund-still-being-processed.png`。
 
-所有检查都结束后，评审智能体对照 spec 阅读了 diff。一切都是绿的，代码却仍然是错的。摘自它的[评审](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000171162)：
+## 4. 评审智能体发现 CI 发现不了的问题
 
-> **Blocking: after a resubmission, the resubmission request's feedback disappears for the
-> student.** The component always takes the newest round out of the "Earlier feedback" list. It
-> only displays that round when the status is `resubmission_requested` or `returned`. Once the
-> student uploads again, the status goes back to `submitted`, and the request round is hidden.
-> This breaks FR-009, SC-007 and User Story 2's independent test [...] The new e2e step never
-> checks the page in `submitted` after the resubmit, and no unit test covers `submitted` with a
-> non-empty `feedback`, so nothing catches it.
+head 上的所有检查都结束后，评审智能体对照 issue 阅读了 diff。它认为支付相关的代码是对的，自己重新运行了 361 个相关测试，但仍然[阻止了合并](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6063632214)：
+
+> 1. **The branch carries another open PR's change.** Commit `e7cb9bc9`, "fix(student-portal):
+>    surface completions and progress load errors on start route", is the change from open PR
+>    #1188, not part of #1166. [...] Merging this PR would ship #1188's start-route error behaviour
+>    under a payments title, before #1188 is reviewed.
+> 2. **Live evidence is missing for the "Still being processed" / "Check again" state.** [...] The
+>    new timed-out state [...] has only unit tests, and no capture from the running app.
 >
 > 🔄 CHANGES REQUESTED
 
-说得直白些：讲师写下 "please cite your sources"，学生上传了新的一稿，讲师的这条批注就从学生的页面上消失了。spec 规定早先的反馈必须保持可见（FR-009）。没有测试失败，因为没有测试检查过那个状态。评审智能体是通过对照代码和 spec 发现它的，还点明了缺少哪些测试。
+第一点正是那种能通过所有检查的问题。多出来的 commit 能编译，它的测试也通过了；只是它不属于这里。智能体的 checkout 是从一个已经带有这个 commit 的分支开始的。第二点还是截图规则，这次由一个读者来执行：CI 检查 PR 是否添加了截图，评审智能体则检查每个新状态是否都有截图。
 
-**Agent Review Status** 加上了 `review-fix-1`。三分钟后，开发智能体推送了[修复](https://github.com/AlexTo/discava/pull/683/commits/0bdf55d485d5a5df692d1e8a41ec601499977c03)，并[说明了它做了什么](https://github.com/AlexTo/discava/pull/683#issuecomment-7052122523)：
+**Agent Review Status** 加上了 `review-fix-1`。八分钟后，开发智能体[已经](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172386579)把自己的四个 commit rebase 到 `main` 上，去掉了另外两个，并在替身中添加了一个让退款保持待处理状态的控制项，以及一个安装 Playwright 假时钟、快进 125 秒的 e2e 场景。后来 `ci-fix-3` 修正的就是这个场景。
 
-> Fixed the blocking finding. The newest round is now shown in full only when the status is
-> `returned` or `resubmission_requested`. In any other state every round goes under "Earlier
-> feedback", so the request stays reachable after a resubmit. I added a unit test for `submitted`
-> with a `resubmission_requested` round, and an e2e assertion right after the resubmit.
-
-评审智能体阅读了新的 head，自己运行了组件测试（42 个通过），并以 "No material findings remain. ✅ APPROVED" [结尾](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000351532)。
+在最终的 head 上，评审智能体[确认](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066801083)两点都已解决，全部 12 个 e2e 分片都已通过，并点名了那两张截图："No material findings [...] ✅ APPROVED"。
 
 ## 5. 一个人批准
 
-09:44，维护者[批准](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000379398)并合并。这是第二道人工关卡。摆在他们面前的是：一份列出运行了什么、没运行什么的描述，CI 发布的两张截图，一列全绿的检查，以及一条显示发现并修复了一个缺陷的评审记录。这个 PR 有三个 commit、508 行，分布在六个文件中，其中四分之三是测试。
+11:33，维护者[批准](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066944326)并合并。这是人在这个 PR 上做的唯一一件事。摆在他们面前的是：一份写明运行了什么、没运行什么的描述，CI 发布的两张截图，一列全绿的检查，以及四次修订的记录，每次都附有原因。
 
 ## 6. 合并的内容被部署，测试 issue 打开
 
-在 Discava，`main` 会自动部署到开发 stage。这次[部署](https://github.com/AlexTo/discava/actions/runs/44833259729)在 10:09 完成。一分钟后，**Post-merge Verify** 打开了 [#712](https://github.com/AlexTo/discava/issues/712)，`test(post-merge): verify #683 student sees the grade and feedback (student portal)`。这个 issue 只说明要测试什么：
+在 Discava，`main` 会自动部署到开发 stage。包含这次合并的[部署](https://github.com/AlexTo/discava/actions/runs/45734764281)在 12:28 完成，一分钟后 **Post-merge Verify** 打开了 [#1240](https://github.com/AlexTo/discava/issues/1240)。它列出了这个 PR 改动的 12 个已部署文件，并说明要做哪种测试：
 
 > Kind: **UI change**. It changes a portal: sign in as the user the change is for and click
 > through the flow with Playwright, then call the APIs behind it and check the stored data.
 
 ## 7. 测试智能体测试已部署的 stage
 
-测试智能体不会重跑测试套件。它像人一样使用已部署的产品，然后检查存储了什么。它的[报告](https://github.com/AlexTo/discava/issues/712#issuecomment-7054937096)列出了每一步：
+测试智能体不会重跑测试套件，也不使用 Stripe 替身。它像人一样使用已部署的产品，用的是 sandbox 模式下的真实 Stripe。它的[报告](https://github.com/AlexTo/discava/issues/1240#issuecomment-7180418815)列出了每一步：
 
-1. 以测试讲师的身份，通过 API，它创建并发布了一门课程，其中有一个上传类作业 `pmt-683-essay`，满分 10 分。
-2. 以测试学生的身份，在真实浏览器中，它选了课，在托管登录页面上登录，并上传了第一稿。
-3. 讲师要求重新提交。学生刷新页面，看到了这个要求，并上传了第二稿。
-4. 讲师返回了作业并给出 7 分，随后把成绩改为 8.5 分。每次之后学生都刷新了页面。
-5. 每一步之后，它都调用学生的 API，读取 DynamoDB 中的记录和 S3 中的文件，尝试那些应当被拒绝的调用，最后扫描了该 stage 上全部 46 个 Lambda 函数的日志，查找错误。
+1. 以测试讲师的身份，通过 API，它创建了两门价格为 $19.99 的课程。
+2. 以测试学生的身份，在真实浏览器中，它登录并在 Stripe Checkout 上分别购买了这两门课，使用的是 Stripe 用于"退款失败"和"退款待处理"的测试卡。
+3. 它在课程页面上为每门课申请了退款。
+4. 每一步之后，它都调用 API，读取 DynamoDB 中的订单和选课记录，并读取 webhook 和 API Lambda 的日志。
 
-下面的截图是测试智能体自己拍的，在每一步保存，这里裁剪到只剩作业面板。
+下面的截图是测试智能体自己拍的，这里裁剪到只剩关键部分。
 
-重新提交的要求和旁边可用的表单（`04-resubmission-requested-with-open-form.png`）：
-
-<p>
-  <img alt="学生门户中的作业 pmt-683-essay。在已提交的第一稿下方，一条琥珀色提示写着 Your instructor asked you to resubmit，反馈为 please cite your sources，其下是一个 Choose file 按钮和一个 Submit 按钮" src="/agentic-sdlc/screenshots/post-merge-test-683/04-resubmission-requested-with-open-form.png" width="620" />
-</p>
-
-第二稿上传之后（`07-earlier-feedback-expanded-while-waiting.png`）：
+用退款会失败的卡购买第一门课（`02-stripe-checkout-refund-fails-card.png`）：
 
 <p>
-  <img alt="同一个作业，显示 Submitted、Version 2 和第二稿。下方的 Earlier feedback (1) 已展开，列出 Resubmission requested、Version 1、please cite your sources" src="/agentic-sdlc/screenshots/post-merge-test-683/07-earlier-feedback-expanded-while-waiting.png" width="620" />
+  <img alt="sandbox 模式下 pmt-1195-refund-course 的 Stripe Checkout，价格 US$19.99，已输入测试卡 4000 0000 0000 5126，下方是一个 Pay 按钮" src="/agentic-sdlc/screenshots/post-merge-test-1195/02-stripe-checkout-refund-fails-card.png" width="620" />
 </p>
 
-这正是评审智能体那条发现所针对的状态。在修复之前，这个要求会从这个界面上消失。而在已部署的 stage 上，它就在 "Earlier feedback (1)" 下面。
-
-成绩返回并修改之后（`11-amended-returned-earlier-feedback-expanded.png`）：
+学生申请退款一分钟后（`07-refund-pending-after-60s.png`）：
 
 <p>
-  <img alt="同一个作业，显示 Returned 8.5 / 10、一个更新时间和反馈 regraded after rechecking the rubric，一行 This submission has been returned and can't be changed，以及 Earlier feedback (2)，其中列出版本 2 的 Returned 7 / 10 和版本 1 的 Resubmission requested" src="/agentic-sdlc/screenshots/post-merge-test-683/11-amended-returned-earlier-feedback-expanded.png" width="620" />
+  <img alt="pmt-1195-refund-course 的课程页面。一条提示写着 You're no longer enrolled, Your enrolment has ended. Refunded on 26 November 2026，其下是一个 Buy now 按钮" src="/agentic-sdlc/screenshots/post-merge-test-1195/07-refund-pending-after-60s.png" width="620" />
 </p>
 
-报告中有三张表格：13 项针对界面的检查，14 项针对 API，5 项针对存储的数据。其中一些是人最不可能手动去试的：
+这是错误的结局。这张卡的退款会失败，但 Stripe 一开始报告的是成功，所以订单被标记为 `refunded`，选课在大约三秒内就结束了。失败是后来才发生的，而且没有任何事件为它送达。测试智能体去查原因，找到了两个各自独立的原因（见下一节）。
+
+在这个 stage 上，真实 Stripe 无法让退款保持待处理状态，也无法记录一次失败的退款。所以，为了检查已部署 bundle 中的新界面，测试智能体在浏览器中改写了 `payment.myOrder` 的响应，然后另外检查了真实的 API 响应和存储的数据。它给上限计了时：待处理的退款显示后 **120.2 s**，出现了 "Still being processed"，之后 20 秒内没有任何请求（`13-still-being-processed-after-2-minutes.png`）：
+
+<p>
+  <img alt="pmt-1195-refund-course-2 的课程页面，已选课。在 Refund requested on 26 November 2026 下方，一条提示写着 Still being processed, Your refund is still being processed. This can take a while，其下是一个 Check again 按钮" src="/agentic-sdlc/screenshots/post-merge-test-1195/13-still-being-processed-after-2-minutes.png" width="620" />
+</p>
+
+而当响应中是一次失败的退款时（`15-refund-failed-message.png`），警告会显示，"Request a refund" 按钮消失，轮询停止：
+
+<p>
+  <img alt="同一个课程页面，带有一条红色警告：Your refund failed. The refund you requested on 26 November 2026 could not be completed, and you have not been refunded. Your access continues. Please contact support to sort out your refund" src="/agentic-sdlc/screenshots/post-merge-test-1195/15-refund-failed-message.png" width="620" />
+</p>
+
+报告中有 22 项检查。十七项通过，其中包括：
 
 | 检查 | 结果 |
 | --- | --- |
-| 作业返回之后，学生再次上传 | 被拒绝：412，"This submission has been returned and can't be changed" |
-| 另一个没有选课的用户读取这份提交 | 被拒绝：403 |
-| 学生调用讲师的评分 API | 被拒绝：403 |
-| 讲师给一个满分 10 分的作业打 11 分 | 被拒绝：400，"Points must be between 0 and 10" |
-| 讲师的返回请求被发送了两次 | 被拒绝：409，并且没有发出第二条通知 |
-| 存储的反馈记录写明了给出反馈的讲师 | 写明了，而且学生的 API 不返回这个字段 |
+| 轮询在 2 分钟后停止 | 120.2 s，之后 20 s 内 0 个请求 |
+| "Check again" 重新开始轮询 | 之后 8 s 内 4 个请求，提示消失 |
+| 不带 token 调用 `payment.myOrder` | 被拒绝：401 |
+| 以没有购买的用户身份调用 `payment.myOrder` | 200，返回 `null`：看不到别人的订单 |
+| 对已退款的订单调用 `payment.requestRefund` | 被拒绝：412，"No purchase to refund" |
 
-## 8. 测试智能体关闭 issue
+## 8. 测试智能体让 issue 保持打开
 
-32 项检查全部通过，所以报告以一个结论结尾，测试智能体关闭了 issue：
+三项检查失败，其中两项停在了 PR 没有预料到的状态。[结论](https://github.com/AlexTo/discava/issues/1240#issuecomment-7180418815)：
 
-> **PASS.** The student portal shows the grade and feedback as #681 asks
+> **Verdict: the student-facing UI and `payment.myOrder` work as the PR describes. The
+> failed-refund path does not work end to end on the deployed stage.**
 
-它还列出了它看到的两件与这个 PR 无关的事，以免有人把它们误认为回归。
+它找到了两个原因，都在 PR 的测试能覆盖的范围之外：
 
-### 测试智能体不关闭的时候
+1. **stage 的 Stripe webhook 从来收不到新事件。** PR 把 `refund.failed` 和 `charge.refund.updated` 加进了事件列表，但这个列表只在管理员第一次连接 Stripe 时才会发送给 Stripe。这个 stage 六天前就已经连接好了。测试智能体数了一下，那半小时内 webhook 恰好被调用了四次，没有一次是因为失败。
+2. **在真实 Stripe 中，失败的退款到达时，订单已经是 `refunded`。** 退款一创建，Stripe 就会发送 `charge.refunded`，即使这笔退款还在待处理或者将会失败。等到 `refund.failed` 到达时，新 handler 的条件（订单仍是 `paid`）已经不成立了，于是它悄无声息地什么也不做：
 
-通过并不是唯一的结果。这之前的那个 pull request [#667](https://github.com/AlexTo/discava/pull/667) 添加了评分 API，它的测试 issue [#694](https://github.com/AlexTo/discava/issues/694) 在第一次运行之后保持打开。二十九项检查通过，一项失败：
+   > The student has lost access, hasn't been refunded, and isn't told.
 
-> **Verdict: the new grading flow works end to end for submissions made after this deploy. It
-> does not work for submissions stored before it.** Those have no `reviewRevision` attribute, so
-> an instructor can't open or grade them.
+   PR 的 e2e 场景中的替身从不在让退款失败之前先把它结清，所以 CI 展示的是这件事一切顺利的版本。
 
-单元测试、e2e 测试和评审都不可能发现这个问题。它们都从一个空数据库开始，而这个缺陷只存在于有旧数据的地方。该 stage 上有三份提交受到影响。
+修复小而明确时，测试智能体可以打开修复 PR。它解释了为什么这次没有这样做：
 
-修复小而明确时，测试智能体可以打开修复 PR。这一次它[解释](https://github.com/AlexTo/discava/issues/694#issuecomment-7052102048)了为什么没有这样做：
+> Fixing it means deciding how a refund failure after `charge.refunded` should restore the order
+> and enrolment, or not treating a `pending` refund as refunded. That goes beyond a small fix, so
+> I'm reporting it rather than opening a PR.
 
-> That is a choice between a migration and tolerant reads, and it changes concurrency conditions
-> in two packages, so I haven't opened a fix PR.
-
-所以它停了下来，把两个选项都写清楚，把决定留给人。维护者在该 stage 上回填了这三条记录。测试智能体[重新运行了它的检查](https://github.com/AlexTo/discava/issues/694#issuecomment-7054905761)，确认旧的提交现在有了这个字段，然后关闭了 issue，并提醒：其他任何存有旧提交的环境都需要做同样的回填。同一份报告中的一条次要备注（一条在什么都没有返回时却说 "returned" 的拒绝消息）变成了一个 13 行的修复，[#708](https://github.com/AlexTo/discava/pull/708)。
+它也没有动 stage 的 Stripe 连接，虽然重新保存一次就能修好第一个原因："I didn't do that, because it changes stage configuration." 所以这个 issue 保持打开，两个问题、复现方法以及需要人来做的选择都写得清清楚楚。它列出了自己留在 stage 上的测试数据，以及它看到的一个已在别处跟踪的错误，以免有人把它误认为回归。
 
 <Aside type="tip">
 [合并后验证](../../discava/post-merge-verify/)跟随的是另一个测试 issue：测试智能体在那里发现了一次失败，追查到了原因，并且确实打开了修复 PR。
@@ -178,16 +190,16 @@ spec PR [#662](https://github.com/AlexTo/discava/pull/662) 只包含 spec 文件
 
 | 关卡 | 它拦住了什么 | 为什么前一道关卡没拦住 |
 | --- | --- | --- |
-| CI | 一个没有截图的 UI 变更 | 开发智能体认定截图属于后面的阶段 |
-| 评审智能体 | 重新提交之后反馈消失 | 没有测试覆盖那个状态，所以 CI 是绿的 |
-| 测试智能体（在 #667 上） | 新代码读不了的旧记录 | 测试和评审从来看不到 stage 上已有的数据 |
+| CI | 一个没有截图的 UI 变更、没有测试的代码行，以及智能体自己的 e2e 测试中一个有问题的 locator | 开发智能体没有运行 e2e 套件 |
+| 评审智能体 | 分支上夹带的另一个 PR 的 commit，以及一个没有截图的新界面状态 | 多出来的 commit 通过了所有检查，而 CI 只检查是否添加了某张截图 |
+| 测试智能体 | 一个从来收不到新事件的 webhook endpoint，以及真实 Stripe 先把一次正在失败的退款报告为已退款 | 替身的行为正如代码所预期，而且没有测试能看到 stage 的配置 |
 
-这三者单独来看都算不上聪明。每一个都在看其他两个看不到的东西：CI 看规则，评审智能体看 spec，测试智能体看运行中的产品。
+这三者单独来看都算不上聪明。每一个都在看其他两个看不到的东西：CI 看规则，评审智能体看 issue 和分支，测试智能体看运行中的产品及其背后的真实服务。
 
 ## 人做了什么
 
-1. 在编写 spec 时回答了五个问题，然后评审并合并了 spec PR。
-2. 阅读了 PR #683 及其截图，批准并合并。
+1. 阅读了 PR #1195 及其截图，批准并合并。
+2. 下一步：从测试智能体写出的选项中，决定 `charge.refunded` 之后的退款失败应该怎么处理。
 
 没有人写 prompt、粘贴错误日志，或者手动在 stage 上点一遍。
 

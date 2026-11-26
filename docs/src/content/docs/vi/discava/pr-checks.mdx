@@ -99,7 +99,7 @@ vòng sửa. Discava rút ngắn PR checks của mình theo bốn cách:
   chia nguyên file, theo thời gian trong `packages/e2e/shard-durations.json`. Đến ngày 24 tháng 11,
   19 trong 74 file e2e chưa có trong danh sách và được tính như một file thông thường, trong đó có
   một kịch bản 337 giây, nên hai shard chạy 12 phút test trong khi các shard còn lại chạy 6 đến 8
-  phút. [#1060](https://github.com/AlexTo/discava/pull/1060) đo thời gian mọi file từ một lần chạy
+  phút. [#1060](https://github.com/AlexTo/discava/commit/225776fcd3cb7c518d46739b9bbbbfa9b5b6bff6) đo thời gian mọi file từ một lần chạy
   CI đầy đủ, tách file 337 giây làm hai (một file là mức tối thiểu của bất kỳ shard nào), và chuyển
   sang mười hai shard: shard chậm nhất giờ chạy khoảng 5½ phút test.
 - **Lượt tải chậm nhất bắt đầu trước.** Image của OpenSearch là image lớn nhất mà local stack kéo

@@ -106,7 +106,7 @@ suma a cada ronda de corrección. Discava recortó sus PR checks de cuatro maner
   se reparten enteros, según los tiempos de `packages/e2e/shard-durations.json`. A 24 de noviembre,
   19 de los 74 archivos e2e no estaban en la lista y contaban como un archivo típico, entre ellos un
   escenario de 337 segundos, así que dos shards ejecutaban 12 minutos de tests mientras el resto
-  ejecutaba de 6 a 8. [#1060](https://github.com/AlexTo/discava/pull/1060) cronometró cada archivo
+  ejecutaba de 6 a 8. [#1060](https://github.com/AlexTo/discava/commit/225776fcd3cb7c518d46739b9bbbbfa9b5b6bff6) cronometró cada archivo
   a partir de una ejecución completa del CI, dividió en dos el archivo de 337 segundos (un archivo
   es el mínimo de cualquier shard) y pasó a doce shards: el más lento ejecuta ahora unos 5½ minutos
   de tests.

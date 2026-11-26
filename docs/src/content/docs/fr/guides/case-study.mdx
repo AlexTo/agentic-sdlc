@@ -1,6 +1,6 @@
 ---
 title: "Étude de cas : une pull request, du début à la fin"
-description: Une vraie pull request de Discava suivie de la spec mergée jusqu'au déploiement testé, avec ce que chaque agent a trouvé en chemin.
+description: Une vraie pull request de Discava suivie de l'issue jusqu'au déploiement testé, en passant par quatre tours de correction, avec ce que chaque agent a trouvé en chemin.
 sidebar:
   order: 3
   label: Étude de cas
@@ -9,230 +9,256 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 
 [Comment ça marche](../how-it-works/) décrit la boucle. Cette page la montre en train de tourner une
-fois, sur une vraie pull request de [Discava](https://github.com/AlexTo/discava) : la page où un
-étudiant voit la note et le retour sur un devoir qu'il a déposé.
+fois, sur une vraie pull request de [Discava](https://github.com/AlexTo/discava) : ce que voit un
+étudiant après avoir demandé le remboursement d'un cours qu'il a acheté.
 
-Chaque citation, chaque chiffre et chaque lien viennent de GitHub. Les heures sont à l'heure de Sydney (AEDT, UTC+11), toutes le 21 novembre 2026.
+Chaque citation, chaque chiffre et chaque lien viennent de GitHub. Les heures sont à l'heure de
+Sydney (AEDT, UTC+11), les 25 et 26 novembre 2026.
 
 ## L'exécution complète
 
 | Heure | Qui | Ce qui s'est passé |
 | --- | --- | --- |
-| 06:40 | 🧑&nbsp;Une personne | Merge la PR de spec [#662](https://github.com/AlexTo/discava/pull/662), labellisée `spec-ready` |
-| 08:43 | ⚙️&nbsp;Automatisation | Ouvre l'issue [#681](https://github.com/AlexTo/discava/issues/681) pour la phase 4, une minute après le merge de la PR de la phase 3 |
-| 08:50 | 🤖&nbsp;Agent Développeur | Ouvre la PR [#683](https://github.com/AlexTo/discava/pull/683), sept minutes plus tard |
-| 08:51 | ⚙️&nbsp;CI | Un check échoue : [**UI Screenshots**](https://github.com/AlexTo/discava/actions/runs/44823849814/job/136591295471) |
-| 09:06 | 🤖&nbsp;Agent Développeur | Pousse [la correction](https://github.com/AlexTo/discava/pull/683/commits/3b2e04d2eb8aaf9b230b26e001989f30167dc43c) (`ci-fix-1`) |
-| 09:22 | 🤖&nbsp;Agent Relecteur | [`🔄 CHANGES REQUESTED`](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000171162) : un bug bloquant |
-| 09:26 | 🤖&nbsp;Agent Développeur | Pousse [la correction](https://github.com/AlexTo/discava/pull/683/commits/0bdf55d485d5a5df692d1e8a41ec601499977c03) (`review-fix-1`) |
-| 09:41 | 🤖&nbsp;Agent Relecteur | [`✅ APPROVED`](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000351532) |
-| 09:44 | 🧑&nbsp;Une personne | [Approuve](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000379398) et merge |
-| 10:09 | ⚙️&nbsp;Automatisation | [Le déploiement](https://github.com/AlexTo/discava/actions/runs/44833259729) sur le stage de développement se termine, et une minute plus tard l'issue de test [#712](https://github.com/AlexTo/discava/issues/712) s'ouvre |
-| 12:15 | 🤖&nbsp;Agent Testeur | [Rend compte](https://github.com/AlexTo/discava/issues/712#issuecomment-7054937096) de 32 vérifications, toutes réussies, et ferme l'issue |
+| 22:37 | ⚙️&nbsp;Automatisation | L'issue [#1166](https://github.com/AlexTo/discava/issues/1166) est ouverte : un remboursement en attente interroge l'API sans fin, et un remboursement échoué n'est pas géré |
+| 23:55 | 🤖&nbsp;Agent Développeur | Ouvre la PR [#1195](https://github.com/AlexTo/discava/pull/1195) |
+| 00:07 | ⚙️&nbsp;CI | [**UI Screenshots** échoue](https://github.com/AlexTo/discava/actions/runs/45619342535/job/139224403383), puis **codecov/patch** |
+| 00:55 | 🤖&nbsp;Agent Développeur | [Pousse une correction](https://github.com/AlexTo/discava/pull/1195#issuecomment-7164484931) (`ci-fix-1`) |
+| 01:29 | ⚙️&nbsp;CI | [**Checks (build)** échoue](https://github.com/AlexTo/discava/actions/runs/45628507436/job/139255050292) sur un test que cette PR ne touche pas |
+| 01:42 | 🤖&nbsp;Agent Développeur | [Explique, et relance](https://github.com/AlexTo/discava/pull/1195#issuecomment-7165688653) (`ci-fix-2`) |
+| 06:22 | 🤖&nbsp;Agent Relecteur | [`🔄 CHANGES REQUESTED`](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6063632214) : deux points bloquants |
+| 06:30 | 🤖&nbsp;Agent Développeur | [Pousse une correction](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172386579) (`review-fix-1`) |
+| 06:38 | ⚙️&nbsp;CI | [**E2E tests (11/12)** échoue](https://github.com/AlexTo/discava/actions/runs/45685812586/job/139458011986) sur le nouveau scénario |
+| 06:43 | 🤖&nbsp;Agent Développeur | [Pousse une correction](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172674824) (`ci-fix-3`) |
+| 11:13 | 🤖&nbsp;Agent Relecteur | [`✅ APPROVED`](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066801083) |
+| 11:33 | 🧑&nbsp;Une personne | [Approuve](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066944326) et merge |
+| 12:28 | ⚙️&nbsp;Automatisation | [Le déploiement](https://github.com/AlexTo/discava/actions/runs/45734764281) sur le stage de développement se termine, et une minute plus tard l'issue de test [#1240](https://github.com/AlexTo/discava/issues/1240) s'ouvre |
+| 13:03 | 🤖&nbsp;Agent Testeur | [Rend compte](https://github.com/AlexTo/discava/issues/1240#issuecomment-7180418815) de 22 vérifications : les écrans fonctionnent, mais un remboursement échoué n'est toujours pas géré sur le stage. Il laisse l'issue ouverte |
 
-De l'ouverture de la pull request à son merge : 54 minutes, deux corrections, et deux actions d'une personne.
+De l'ouverture de la pull request à son merge : quatre tours de correction, trois venant de la CI et
+un de la revue, et une action d'une personne. Ensuite, le Testeur a trouvé deux problèmes qu'aucun
+d'eux n'aurait pu voir.
 
-## 1. Une personne merge la spec
+## 1. L'issue
 
-La fonctionnalité est la notation des devoirs à déposer : un formateur rend le travail d'un étudiant
-avec des points et un retour, ou demande un nouveau dépôt, et l'étudiant voit le résultat.
+Un étudiant qui demande un remboursement voit « Refund requested » pendant que Stripe le traite, et
+la page du cours vérifie toutes les 2 secondes s'il est passé. [#1166](https://github.com/AlexTo/discava/issues/1166)
+dit ce qui n'allait pas :
 
-La PR de spec, [#662](https://github.com/AlexTo/discava/pull/662), ne contient que le dossier de
-spec : la spec, le plan, un modèle de données, trois contrats et `tasks.md`, avec **34 tâches en
-8 phases**. Aucun code produit. Sa description liste cinq questions que l'agent a posées en
-l'écrivant, et les réponses du mainteneur. L'une d'elles : une note rendue peut-elle être modifiée ?
-Oui, en gardant l'historique et en prévenant l'étudiant.
+> While a student's refund is pending, the course page refetches `course.myEnrolment` and
+> `payment.myOrder` every 2 s, and never stops. If the refund fails at Stripe or its event never
+> arrives, the order stays `paid` with a refund requested, the page keeps polling for as long as
+> it is open, and the student isn't told anything has gone wrong.
 
-Le mainteneur l'a lue, a ajouté `spec-ready` et l'a mergée à 06:40. C'est le premier des deux
-contrôles humains. Deux minutes plus tard, l'automatisation a ouvert l'issue des phases 1 à 3.
+Ses critères d'acceptation tiennent en deux lignes : l'interrogation s'arrête après une limite, et un
+remboursement échoué, simulé dans le substitut de Stripe, met fin à l'état en attente avec un message
+clair.
 
-## 2. L'agent Développeur prend la phase 4
+Cette issue ne venait pas d'une spec. L'agent Relecteur l'a soulevée en relisant la PR qui permettait
+à un étudiant de demander un remboursement, comme un problème hors du périmètre de cette PR, et elle
+est devenue une issue à part entière. (#1166 est une copie : GitHub a signalé l'ancien compte machine
+des agents, ce qui a masqué tout ce qu'il avait ouvert, et les issues ouvertes ont été
+[rouvertes](../../discava/openhands-setup/#la-github-app) par la GitHub App qu'utilisent maintenant
+les agents.)
 
-Les phases 1 à 3 (les données, les règles et l'API du formateur) sont arrivées avec
-[#667](https://github.com/AlexTo/discava/pull/667), mergée à 08:42. À 08:43, le workflow **Agent
-Issues** a relu `tasks.md` et ouvert
-[#681](https://github.com/AlexTo/discava/issues/681) pour la phase suivante qui avait des tâches non
-cochées :
+## 2. L'agent Développeur ouvre la PR
 
-> Tasks `T016` to `T017` of `tasks.md`: every task under Phase 4: User Story 2 - Student sees the
-> grade and feedback (student portal) (P1). Do not start tasks outside these phases.
+L'agent Développeur a pris l'issue et ouvert [#1195](https://github.com/AlexTo/discava/pull/1195)
+sur `openhands/issue-1166`. Le changement traverse quatre packages : une limite de 2 minutes et un
+bouton « Check again » sur la page du cours, un handler de webhook pour les événements de
+remboursement échoué de Stripe, un champ `refundFailedAt` sur la commande avec un invariant qui veut
+qu'un échec suive une demande, et « Your refund failed » sur la page du cours. La description se
+terminait par ce qu'il avait exécuté et ce qu'il n'avait pas exécuté :
 
-Deux tâches : un composant qui affiche un tour de retour et une liste repliée des tours précédents,
-et les changements de la page du devoir pour chaque état dans lequel un dépôt peut se trouver.
+> Unit tests cover the helper, the webhook, the invariant and the UI (poll limit, check again,
+> failure message). [...] I did not run the e2e tests or try the stand-in control in a browser.
 
-L'agent Développeur a pris l'issue à son passage suivant. Sept minutes après l'ouverture de l'issue,
-il a ouvert [#683](https://github.com/AlexTo/discava/pull/683) sur `openhands/issue-681` : les tests
-d'abord, les deux tâches cochées dans `tasks.md`, et une description qui disait ce qu'il avait
-exécuté et ce qu'il n'avait pas exécuté.
+## 3. La CI la renvoie, trois fois
 
-## 3. La CI la renvoie
+**`ci-fix-1` : pas de captures d'écran, et des lignes sans tests.** La PR changeait ce que voit un
+étudiant mais ne prenait aucune capture, donc [**UI Screenshots** a échoué](https://github.com/AlexTo/discava/actions/runs/45619342535/job/139224403383).
+**codecov/patch** a échoué aussi : de nouvelles lignes n'avaient pas de test. **Agent CI Status** a
+ajouté `ci-fix-1` et renvoyé l'agent Développeur. Sa [réponse](https://github.com/AlexTo/discava/pull/1195#issuecomment-7164484931)
+montre qu'en chemin il a trouvé un problème dans sa propre première tentative :
 
-La description disait aussi ceci :
+> **UI Screenshots:** added a `learner-refund` e2e scenario for a failed refund, with
+> `screenshot(student, 'refund-failed')`. For this the Stripe stand-in has a new
+> `fail-next-refund` control. [...] This replaces the `refund-fail` control from the first push,
+> which the scenario could not use, because the stand-in completed the refund before it could
+> fail.
 
-> No e2e screenshots here: the e2e scenario for this flow is a later phase's task.
+**`ci-fix-2` : un échec qui n'était pas le sien.** L'exécution suivante a échoué dans **Checks
+(build)**, sur un test CDK synth du package d'infrastructure. L'agent a lu le log et
+[n'a changé aucun code pour ça](https://github.com/AlexTo/discava/pull/1195#issuecomment-7165688653) :
 
-L'agent avait fait un choix de jugement, et c'était une lecture raisonnable de la liste de tâches.
-Mais le dépôt a une règle : un changement de ce que voit l'utilisateur est livré avec des captures
-d'écran, pour que la personne qui relit puisse voir l'écran sans lancer l'application. La règle est
-un check, et le check ne pèse pas les arguments. Le lint, les tests unitaires, le build et les six
-shards e2e sont passés. [**UI Screenshots** a échoué](https://github.com/AlexTo/discava/actions/runs/44823849814/job/136591295471).
+> the one failure was `@discava/infra` `instructor-api-stack.test.ts` [...], which hit its 30s
+> timeout while the sibling CDK synth tests in that file took 22–31s. This PR doesn't touch infra
+> or anything the stack synthesises [...], so I made no code change for it. The push below
+> re-runs the build.
 
-**Agent CI Status** a ajouté `ci-fix-1` et renvoyé l'agent Développeur sur la même PR. Sa
-[réponse](https://github.com/AlexTo/discava/pull/683#issuecomment-7051758312), avec la correction :
+Il a couvert la seule ligne partielle que codecov signalait encore, et le push a relancé le build,
+qui est passé. Un agent qui « corrige » un échec en changeant du code qu'il ne comprend pas est pire
+qu'un agent qui dit que l'échec n'est pas le sien, et pourquoi.
 
-> The only finding was the failing `UI Screenshots` check (the PR added no `screenshot(` call). I
-> added an e2e scenario in `assignment.e2e.ts` where a student sees the resubmission request
-> beside the open form, then the returned grade and feedback. It takes a screenshot of each and
-> drives the instructor side through the API. I did not run it locally, so PR CI is its first run.
+**`ci-fix-3` : son propre nouveau test était faux.** Après la revue (section suivante), l'agent a
+ajouté un scénario e2e pour la limite de 2 minutes, et il a échoué dans [**E2E tests (11/12)**](https://github.com/AlexTo/discava/actions/runs/45685812586/job/139458011986).
+Cinq minutes plus tard, [la cause](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172674824) :
 
-L'exécution suivante était verte, et la CI a publié les deux nouvelles captures d'écran dans le
-[commentaire **E2E screenshots**](https://github.com/AlexTo/discava/pull/683#issuecomment-7051642662).
+> the new `a pending refund stops polling and offers to check again` scenario failed with a
+> Playwright strict-mode violation, not a product bug. `getByText('Still being processed')` also
+> matched the alert's description ("Your refund is still being processed…"), so it resolved to two
+> elements. The page did reach the timed-out state. I now match the title with `{ exact: true }`.
 
-## 4. L'agent Relecteur trouve un vrai bug
+L'agent n'avait exécuté aucun scénario e2e en local, et il l'a dit à chaque fois. C'est dans la CI de
+PR qu'ils tournent pour la première fois, et le [commentaire E2E screenshots](https://github.com/AlexTo/discava/pull/1195#issuecomment-7163204279)
+liste les deux écrans que l'exécution a capturés : `learner-refund/01-refund-failed.png` et
+`learner-refund/01-refund-still-being-processed.png`.
 
-Une fois tous les checks terminés, l'agent Relecteur a lu le diff en le comparant à la spec. Tout
-était vert, et le code était quand même faux. Extrait de sa
-[revue](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000171162) :
+## 4. L'agent Relecteur trouve ce que la CI ne pouvait pas voir
 
-> **Blocking: after a resubmission, the resubmission request's feedback disappears for the
-> student.** The component always takes the newest round out of the "Earlier feedback" list. It
-> only displays that round when the status is `resubmission_requested` or `returned`. Once the
-> student uploads again, the status goes back to `submitted`, and the request round is hidden.
-> This breaks FR-009, SC-007 and User Story 2's independent test [...] The new e2e step never
-> checks the page in `submitted` after the resubmit, and no unit test covers `submitted` with a
-> non-empty `feedback`, so nothing catches it.
+Une fois tous les checks du commit de tête terminés, l'agent Relecteur a lu le diff en le comparant à
+l'issue. Il a jugé le code de paiement correct, a relancé lui-même 361 tests ciblés, et a quand même
+[bloqué le merge](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6063632214) :
+
+> 1. **The branch carries another open PR's change.** Commit `e7cb9bc9`, "fix(student-portal):
+>    surface completions and progress load errors on start route", is the change from open PR
+>    #1188, not part of #1166. [...] Merging this PR would ship #1188's start-route error behaviour
+>    under a payments title, before #1188 is reviewed.
+> 2. **Live evidence is missing for the "Still being processed" / "Check again" state.** [...] The
+>    new timed-out state [...] has only unit tests, and no capture from the running app.
 >
 > 🔄 CHANGES REQUESTED
 
-En clair : un formateur écrit « please cite your sources », l'étudiant dépose un nouveau brouillon,
-et la remarque du formateur disparaît de la page de l'étudiant. La spec dit que les retours
-précédents doivent rester visibles (FR-009). Aucun test n'a échoué, parce qu'aucun test ne regardait
-cet état. Le Relecteur l'a trouvé en comparant le code à la spec, et il a aussi nommé les tests
-manquants.
+Le premier point est le genre de chose qui passe tous les checks. Le commit en trop compilait et ses
+tests passaient ; il n'avait simplement rien à faire là. Le checkout de l'agent était parti d'une
+branche qui le contenait déjà. Le second point, c'est encore la règle des captures d'écran,
+appliquée par un lecteur : la CI vérifie qu'une PR ajoute une capture, et le Relecteur vérifie que
+chaque nouvel état a la sienne.
 
-**Agent Review Status** a ajouté `review-fix-1`. Trois minutes plus tard, l'agent Développeur a
-poussé [une correction](https://github.com/AlexTo/discava/pull/683/commits/0bdf55d485d5a5df692d1e8a41ec601499977c03) et [a dit ce qu'il avait fait](https://github.com/AlexTo/discava/pull/683#issuecomment-7052122523) :
+**Agent Review Status** a ajouté `review-fix-1`. Huit minutes plus tard, l'agent Développeur
+[avait](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172386579) rebasé ses quatre
+propres commits sur `main` sans les deux autres, et ajouté un contrôle dans le substitut qui maintient
+un remboursement en attente, ainsi qu'un scénario e2e qui installe la fausse horloge de Playwright et
+avance de 125 secondes. C'est ce scénario que `ci-fix-3` a ensuite corrigé.
 
-> Fixed the blocking finding. The newest round is now shown in full only when the status is
-> `returned` or `resubmission_requested`. In any other state every round goes under "Earlier
-> feedback", so the request stays reachable after a resubmit. I added a unit test for `submitted`
-> with a `resubmission_requested` round, and an e2e assertion right after the resubmit.
-
-Le Relecteur a lu le nouveau commit de tête, a exécuté lui-même les tests du composant (42 réussis)
-et a [conclu](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000351532) par
-« No material findings remain. ✅ APPROVED ».
+Sur le commit de tête final, le Relecteur a [confirmé](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066801083)
+que les deux points étaient résolus, que les 12 shards e2e étaient passés, et a nommé les deux
+captures : « No material findings [...] ✅ APPROVED ».
 
 ## 5. Une personne approuve
 
-À 09:44, le mainteneur a [approuvé](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000379398) et mergé. C'est le second contrôle humain. Ce qu'il avait sous les
-yeux : une description listant ce qui avait été exécuté et ce qui ne l'avait pas été, les deux
-captures d'écran de la CI, une liste de checks verte, et un historique de revue montrant un bug
-trouvé et corrigé. La PR faisait trois commits et 508 lignes réparties sur six fichiers, dont les
-trois quarts étaient des tests.
+À 11:33, le mainteneur a [approuvé](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066944326)
+et mergé. C'est la seule chose qu'une personne a faite sur cette PR. Ce qu'il avait sous les yeux :
+une description qui disait ce qui avait été exécuté et ce qui ne l'avait pas été, les deux captures
+d'écran de la CI, une liste de checks verte, et une trace de quatre révisions, chacune avec sa raison.
 
 ## 6. Le merge est déployé, et une issue de test s'ouvre
 
-Sur Discava, `main` se déploie de lui-même sur un stage de développement. Ce [déploiement](https://github.com/AlexTo/discava/actions/runs/44833259729) s'est terminé à 10:09. Une
-minute plus tard, **Post-merge Verify** a ouvert
-[#712](https://github.com/AlexTo/discava/issues/712), `test(post-merge): verify #683 student sees
-the grade and feedback (student portal)`. L'issue dit seulement quoi tester :
+Sur Discava, `main` se déploie de lui-même sur un stage de développement. Le [déploiement](https://github.com/AlexTo/discava/actions/runs/45734764281)
+qui portait ce merge s'est terminé à 12:28, et une minute plus tard **Post-merge Verify** a ouvert
+[#1240](https://github.com/AlexTo/discava/issues/1240). Elle liste les 12 fichiers déployés que la PR
+a changés et dit quel type de test faire :
 
 > Kind: **UI change**. It changes a portal: sign in as the user the change is for and click
 > through the flow with Playwright, then call the APIs behind it and check the stored data.
 
 ## 7. L'agent Testeur teste le stage déployé
 
-L'agent Testeur ne relance pas la suite de tests. Il utilise le produit déployé comme le ferait une
-personne, puis vérifie ce qui a été stocké. Son
-[rapport](https://github.com/AlexTo/discava/issues/712#issuecomment-7054937096) liste chaque étape :
+L'agent Testeur ne relance pas la suite de tests, et n'utilise pas le substitut de Stripe. Il utilise
+le produit déployé comme le ferait une personne, avec le vrai Stripe en mode sandbox. Son
+[rapport](https://github.com/AlexTo/discava/issues/1240#issuecomment-7180418815) liste chaque étape :
 
-1. En tant que formateur de test, via l'API, il a créé et publié un cours avec un devoir à déposer,
-   `pmt-683-essay`, noté sur 10 points.
-2. En tant qu'étudiant de test, dans un vrai navigateur, il s'est inscrit, s'est connecté sur la
-   page de connexion hébergée et a déposé un premier brouillon.
-3. Le formateur a demandé un nouveau dépôt. L'étudiant a rechargé la page, a vu la demande et a
-   déposé un second brouillon.
-4. Le formateur a rendu le travail avec 7 points, puis a corrigé la note à 8,5. L'étudiant a
-   rechargé la page après chacune de ces actions.
-5. Après chaque étape, il a appelé l'API de l'étudiant, lu les enregistrements dans DynamoDB et les
-   fichiers dans S3, essayé les appels qui devaient être refusés, et à la fin parcouru les logs des
-   46 fonctions Lambda du stage à la recherche d'erreurs.
+1. En tant que formateur de test, via l'API, il a créé deux cours à $19.99.
+2. En tant qu'étudiant de test, dans un vrai navigateur, il s'est connecté et a acheté chacun d'eux
+   sur Stripe Checkout, avec les cartes de test de Stripe pour « le remboursement échoue » et « le
+   remboursement reste en attente ».
+3. Il a demandé un remboursement pour chacun depuis la page du cours.
+4. Après chaque étape, il a appelé les API, lu les commandes et les inscriptions dans DynamoDB, et lu
+   les logs des Lambda du webhook et de l'API.
 
-Les captures d'écran ci-dessous sont celles du Testeur, enregistrées à chaque étape et recadrées ici
-sur le panneau du devoir.
+Les captures d'écran ci-dessous sont celles du Testeur, recadrées ici sur la partie qui compte.
 
-La demande de nouveau dépôt à côté d'un formulaire ouvert
-(`04-resubmission-requested-with-open-form.png`) :
+L'achat du premier cours avec la carte dont les remboursements échouent (`02-stripe-checkout-refund-fails-card.png`) :
 
 <p>
-  <img alt="Le devoir pmt-683-essay dans le portail étudiant. Sous le premier brouillon déposé, un encart ambre indique Your instructor asked you to resubmit, avec le retour please cite your sources, au-dessus d'un bouton Choose file et d'un bouton Submit" src="/agentic-sdlc/screenshots/post-merge-test-683/04-resubmission-requested-with-open-form.png" width="620" />
+  <img alt="Stripe Checkout en mode sandbox pour pmt-1195-refund-course à US$19.99, avec la carte de test 4000 0000 0000 5126 saisie et un bouton Pay" src="/agentic-sdlc/screenshots/post-merge-test-1195/02-stripe-checkout-refund-fails-card.png" width="620" />
 </p>
 
-Après le dépôt du second brouillon (`07-earlier-feedback-expanded-while-waiting.png`) :
+Une minute après que l'étudiant a demandé un remboursement (`07-refund-pending-after-60s.png`) :
 
 <p>
-  <img alt="Le même devoir, qui affiche Submitted, Version 2 et le second brouillon. En dessous, Earlier feedback (1) est déplié et liste Resubmission requested, Version 1, please cite your sources" src="/agentic-sdlc/screenshots/post-merge-test-683/07-earlier-feedback-expanded-while-waiting.png" width="620" />
+  <img alt="La page du cours pmt-1195-refund-course. Un encart indique You're no longer enrolled, Your enrolment has ended. Refunded on 26 November 2026, au-dessus d'un bouton Buy now" src="/agentic-sdlc/screenshots/post-merge-test-1195/07-refund-pending-after-60s.png" width="620" />
 </p>
 
-C'est exactement l'état sur lequel portait la remarque du Relecteur. Avant la correction, la demande
-aurait disparu de cet écran. La voici sur le stage déployé, sous « Earlier feedback (1) ».
+Ce n'est pas la bonne fin. Le remboursement de cette carte échoue, mais Stripe le signale d'abord
+comme réussi, donc la commande a été marquée `refunded` et l'inscription a pris fin en trois secondes environ. L'échec est
+arrivé plus tard, et rien n'est arrivé pour lui. Le Testeur a cherché pourquoi, et a trouvé deux
+causes distinctes (section suivante).
 
-Après que la note a été rendue puis corrigée
-(`11-amended-returned-earlier-feedback-expanded.png`) :
+Sur ce stage, le vrai Stripe ne pouvait ni maintenir un remboursement en attente ni en enregistrer un
+échoué. Donc, pour vérifier les nouveaux écrans dans le bundle déployé, le Testeur a réécrit la
+réponse de `payment.myOrder` dans le navigateur, puis a vérifié séparément les vraies réponses de
+l'API et les données stockées. Il a chronométré la limite : « Still being processed » est apparu
+**120.2 s** après l'affichage du remboursement en attente, et aucune requête n'a suivi dans les 20
+secondes suivantes (`13-still-being-processed-after-2-minutes.png`) :
 
 <p>
-  <img alt="Le même devoir, qui affiche Returned 8.5 / 10 avec une heure de mise à jour et le retour regraded after rechecking the rubric, la ligne This submission has been returned and can't be changed, et Earlier feedback (2) qui liste Returned 7 / 10 pour la version 2 et Resubmission requested pour la version 1" src="/agentic-sdlc/screenshots/post-merge-test-683/11-amended-returned-earlier-feedback-expanded.png" width="620" />
+  <img alt="La page du cours pmt-1195-refund-course-2, avec inscription. Sous Refund requested on 26 November 2026, un encart indique Still being processed, Your refund is still being processed. This can take a while, au-dessus d'un bouton Check again" src="/agentic-sdlc/screenshots/post-merge-test-1195/13-still-being-processed-after-2-minutes.png" width="620" />
 </p>
 
-Le rapport comporte trois tableaux : 13 vérifications sur les écrans, 14 sur les API et 5 sur les
-données stockées. Quelques-unes des lignes qu'une personne aurait le moins de chances d'essayer à la
-main :
+Et avec un remboursement échoué dans la réponse (`15-refund-failed-message.png`), l'alerte s'affiche,
+le bouton « Request a refund » disparaît et l'interrogation s'arrête :
+
+<p>
+  <img alt="La même page du cours avec une alerte rouge : Your refund failed. The refund you requested on 26 November 2026 could not be completed, and you have not been refunded. Your access continues. Please contact support to sort out your refund" src="/agentic-sdlc/screenshots/post-merge-test-1195/15-refund-failed-message.png" width="620" />
+</p>
+
+Le rapport comporte 22 vérifications. Dix-sept ont réussi, dont celles-ci :
 
 | Vérification | Résultat |
 | --- | --- |
-| L'étudiant dépose à nouveau après que le travail a été rendu | Refusé : 412, « This submission has been returned and can't be changed » |
-| Un autre utilisateur, non inscrit, lit le dépôt | Refusé : 403 |
-| L'étudiant appelle l'API de notation du formateur | Refusé : 403 |
-| Le formateur rend 11 points sur un devoir noté sur 10 | Refusé : 400, « Points must be between 0 and 10 » |
-| Le rendu du formateur est envoyé deux fois | Refusé : 409, et aucune seconde notification n'est envoyée |
-| Les enregistrements de retour stockés nomment le formateur qui les a donnés | Oui, et l'API de l'étudiant ne renvoie pas ce champ |
+| L'interrogation s'arrête après 2 minutes | 120.2 s, puis 0 requête dans les 20 s suivantes |
+| « Check again » relance l'interrogation | 4 requêtes dans les 8 s suivantes, et l'encart disparaît |
+| `payment.myOrder` sans jeton | Refusé : 401 |
+| `payment.myOrder` en tant qu'utilisateur qui n'a pas acheté | 200 avec `null` : aucune commande d'autrui |
+| `payment.requestRefund` sur une commande déjà remboursée | Refusé : 412, « No purchase to refund » |
 
-## 8. Le Testeur ferme l'issue
+## 8. Le Testeur laisse l'issue ouverte
 
-Les 32 vérifications ont toutes réussi, donc le rapport s'est terminé par un verdict et le Testeur a
-fermé l'issue :
+Trois vérifications ont échoué, et deux se sont terminées dans un état que la PR n'attendait pas. Le
+[verdict](https://github.com/AlexTo/discava/issues/1240#issuecomment-7180418815) :
 
-> **PASS.** The student portal shows the grade and feedback as #681 asks
+> **Verdict: the student-facing UI and `payment.myOrder` work as the PR describes. The
+> failed-refund path does not work end to end on the deployed stage.**
 
-Il a aussi listé deux choses qu'il avait vues et qui ne venaient pas de cette PR, pour que personne
-ne les prenne pour des régressions.
+Il a trouvé deux causes, toutes deux hors de portée des tests de la PR :
 
-### Quand le Testeur ne ferme pas
+1. **Le webhook Stripe du stage ne reçoit jamais les nouveaux événements.** La PR a ajouté
+   `refund.failed` et `charge.refund.updated` à la liste des événements, mais cette liste n'est
+   envoyée à Stripe que lorsqu'un administrateur le connecte pour la première fois. Le stage avait été
+   connecté six jours plus tôt. Le Testeur a compté exactement quatre invocations du webhook dans la
+   demi-heure, aucune pour un échec.
+2. **Avec le vrai Stripe, un remboursement échoué arrive alors que la commande est déjà `refunded`.**
+   Stripe envoie `charge.refunded` dès qu'un remboursement est créé, même s'il est en attente ou va
+   échouer. Quand `refund.failed` arrive, la condition du nouveau handler (la commande est toujours
+   `paid`) n'est plus remplie, et il ne fait rien, sans rien signaler :
 
-Un succès n'est pas la seule issue possible. La pull request précédente,
-[#667](https://github.com/AlexTo/discava/pull/667), ajoutait les API de notation, et son issue de
-test [#694](https://github.com/AlexTo/discava/issues/694) est restée ouverte après la première
-exécution. Vingt-neuf vérifications ont réussi et une a échoué :
+   > The student has lost access, hasn't been refunded, and isn't told.
 
-> **Verdict: the new grading flow works end to end for submissions made after this deploy. It
-> does not work for submissions stored before it.** Those have no `reviewRevision` attribute, so
-> an instructor can't open or grade them.
+   Le substitut du scénario e2e de la PR ne règle jamais un remboursement avant de le faire échouer,
+   donc la CI a montré la version heureuse de tout ça.
 
-Aucun test unitaire, aucun test e2e ni aucune revue n'aurait pu le trouver. Tous partent d'une base
-de données vide, et le bug n'existe que là où il y a d'anciennes données. Trois dépôts sur le stage
-étaient concernés.
+Le Testeur peut ouvrir une PR de correction quand la correction est petite et claire. Il a expliqué
+pourquoi il ne l'a pas fait :
 
-Le Testeur peut ouvrir une PR de correction quand la correction est petite et claire. Ici, il a [expliqué](https://github.com/AlexTo/discava/issues/694#issuecomment-7052102048) pourquoi il ne l'a pas fait :
+> Fixing it means deciding how a refund failure after `charge.refunded` should restore the order
+> and enrolment, or not treating a `pending` refund as refunded. That goes beyond a small fix, so
+> I'm reporting it rather than opening a PR.
 
-> That is a choice between a migration and tolerant reads, and it changes concurrency conditions
-> in two packages, so I haven't opened a fix PR.
-
-Il s'est donc arrêté et a laissé la décision à une personne, avec les deux options écrites noir sur
-blanc. Le mainteneur a complété les trois enregistrements sur le stage. Le Testeur [a relancé ses vérifications](https://github.com/AlexTo/discava/issues/694#issuecomment-7054905761), a confirmé que les anciens
-dépôts avaient désormais le champ, et a fermé l'issue en avertissant que tout autre environnement
-contenant d'anciens dépôts a besoin du même rattrapage. Une remarque mineure du même rapport (un
-message de refus qui disait « returned » alors que rien n'avait été rendu) est devenue une
-correction de 13 lignes, [#708](https://github.com/AlexTo/discava/pull/708).
+Il n'a pas non plus touché à la connexion Stripe du stage, même si l'enregistrer de nouveau
+corrigerait la première cause : « I didn't do that, because it changes stage configuration. » L'issue
+reste donc ouverte, avec les deux problèmes décrits, comment les reproduire, et les choix qu'une
+personne doit faire. Il a listé les données de test qu'il a laissées sur le stage, et une erreur qu'il
+a vue et qui était déjà suivie ailleurs, pour que personne ne la prenne pour une régression.
 
 <Aside type="tip">
 [Vérification après merge](../../discava/post-merge-verify/) suit une autre issue de test, où le
@@ -243,17 +269,19 @@ Testeur a trouvé un échec, est remonté jusqu'à sa cause et a bel et bien ouv
 
 | Contrôle | Ce qu'il a rattrapé | Pourquoi le contrôle précédent ne l'a pas vu |
 | --- | --- | --- |
-| CI | Un changement d'UI sans captures d'écran | L'agent Développeur a décidé qu'elles relevaient d'une phase ultérieure |
-| Agent Relecteur | Un retour qui disparaît après un nouveau dépôt | Aucun test ne couvrait cet état, donc la CI était verte |
-| Agent Testeur (sur #667) | D'anciens enregistrements que le nouveau code ne sait pas lire | Les tests et la revue ne voient jamais les données existantes du stage |
+| CI | Un changement d'UI sans capture d'écran, des lignes sans tests et un locator cassé dans le propre test e2e de l'agent | L'agent Développeur n'avait pas exécuté la suite e2e |
+| Agent Relecteur | Le commit d'une autre PR embarqué sur la branche, et un nouvel état d'écran sans capture | Le commit en trop passait tous les checks, et la CI vérifie seulement qu'une capture a été ajoutée |
+| Agent Testeur | Un endpoint de webhook qui ne reçoit jamais les nouveaux événements, et le vrai Stripe qui signale d'abord comme remboursé un remboursement qui échoue | Le substitut se comporte comme le code s'y attend, et aucun test ne voit la configuration du stage |
 
 Aucun des trois n'est malin à lui seul. Chacun regarde quelque chose que les autres ne peuvent pas
-voir : la CI les règles, le Relecteur la spec, le Testeur le produit qui tourne.
+voir : la CI les règles, le Relecteur l'issue et la branche, le Testeur le produit qui tourne et les
+vrais services derrière lui.
 
 ## Ce qu'a fait la personne
 
-1. Elle a répondu à cinq questions pendant l'écriture de la spec, puis a relu et mergé la PR de spec.
-2. Elle a lu la PR #683 et ses captures d'écran, l'a approuvée et mergée.
+1. Elle a lu la PR #1195 et ses captures d'écran, l'a approuvée et mergée.
+2. Ensuite : décider ce que doit faire un échec de remboursement après `charge.refunded`, parmi les
+   options que le Testeur a écrites.
 
 Personne n'a écrit de prompt, collé de log d'erreur ni parcouru le stage à la main.
 

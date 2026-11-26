@@ -1,6 +1,6 @@
 ---
 title: "Case study: một pull request, từ đầu đến cuối"
-description: Một pull request thật của Discava được lần theo từ lúc spec được merge đến một bản deploy đã được test, kèm những gì mỗi agent tìm ra trên đường đi.
+description: Một pull request thật của Discava được lần theo từ issue đến một bản deploy đã được test, qua bốn vòng sửa, kèm những gì mỗi agent tìm ra trên đường đi.
 sidebar:
   order: 3
   label: Case study
@@ -9,219 +9,248 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 
 [Cách hoạt động](../how-it-works/) mô tả vòng lặp. Trang này cho thấy nó chạy một lần, trên một
-pull request thật của [Discava](https://github.com/AlexTo/discava): trang nơi một student xem điểm
-và nhận xét cho bài tập mà họ đã nộp.
+pull request thật của [Discava](https://github.com/AlexTo/discava): những gì một student thấy sau
+khi yêu cầu hoàn tiền cho một khóa học họ đã mua.
 
-Mọi trích dẫn, con số và liên kết đều lấy từ GitHub. Giờ là giờ Sydney (AEDT, UTC+11), tất cả vào ngày 21 tháng 11 năm 2026.
+Mọi trích dẫn, con số và liên kết đều lấy từ GitHub. Giờ là giờ Sydney (AEDT, UTC+11), vào ngày 25
+và 26 tháng 11 năm 2026.
 
 ## Toàn bộ lần chạy
 
 | Giờ | Ai | Chuyện gì đã xảy ra |
 | --- | --- | --- |
-| 06:40 | 🧑&nbsp;Một người | Merge spec PR [#662](https://github.com/AlexTo/discava/pull/662), có label `spec-ready` |
-| 08:43 | ⚙️&nbsp;Automation | Mở issue [#681](https://github.com/AlexTo/discava/issues/681) cho giai đoạn 4, một phút sau khi PR của giai đoạn 3 được merge |
-| 08:50 | 🤖&nbsp;Agent Developer | Mở PR [#683](https://github.com/AlexTo/discava/pull/683), bảy phút sau đó |
-| 08:51 | ⚙️&nbsp;CI | Một check thất bại: [**UI Screenshots**](https://github.com/AlexTo/discava/actions/runs/44823849814/job/136591295471) |
-| 09:06 | 🤖&nbsp;Agent Developer | Push [bản sửa](https://github.com/AlexTo/discava/pull/683/commits/3b2e04d2eb8aaf9b230b26e001989f30167dc43c) (`ci-fix-1`) |
-| 09:22 | 🤖&nbsp;Agent Reviewer | [`🔄 CHANGES REQUESTED`](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000171162): một lỗi chặn merge |
-| 09:26 | 🤖&nbsp;Agent Developer | Push [bản sửa](https://github.com/AlexTo/discava/pull/683/commits/0bdf55d485d5a5df692d1e8a41ec601499977c03) (`review-fix-1`) |
-| 09:41 | 🤖&nbsp;Agent Reviewer | [`✅ APPROVED`](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000351532) |
-| 09:44 | 🧑&nbsp;Một người | [Duyệt](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000379398) và merge |
-| 10:09 | ⚙️&nbsp;Automation | [Lần deploy](https://github.com/AlexTo/discava/actions/runs/44833259729) lên stage development hoàn tất, và một phút sau issue test [#712](https://github.com/AlexTo/discava/issues/712) được mở |
-| 12:15 | 🤖&nbsp;Agent Tester | [Báo cáo](https://github.com/AlexTo/discava/issues/712#issuecomment-7054937096) 32 kiểm tra, tất cả đều pass, và đóng issue |
+| 22:37 | ⚙️&nbsp;Automation | Issue [#1166](https://github.com/AlexTo/discava/issues/1166) đang mở: một yêu cầu hoàn tiền đang chờ bị poll mãi không dừng, và một lần hoàn tiền thất bại không được xử lý |
+| 23:55 | 🤖&nbsp;Agent Developer | Mở PR [#1195](https://github.com/AlexTo/discava/pull/1195) |
+| 00:07 | ⚙️&nbsp;CI | [**UI Screenshots** thất bại](https://github.com/AlexTo/discava/actions/runs/45619342535/job/139224403383), rồi đến **codecov/patch** |
+| 00:55 | 🤖&nbsp;Agent Developer | [Push bản sửa](https://github.com/AlexTo/discava/pull/1195#issuecomment-7164484931) (`ci-fix-1`) |
+| 01:29 | ⚙️&nbsp;CI | [**Checks (build)** thất bại](https://github.com/AlexTo/discava/actions/runs/45628507436/job/139255050292) ở một test mà PR này không đụng tới |
+| 01:42 | 🤖&nbsp;Agent Developer | [Giải thích, và chạy lại](https://github.com/AlexTo/discava/pull/1195#issuecomment-7165688653) (`ci-fix-2`) |
+| 06:22 | 🤖&nbsp;Agent Reviewer | [`🔄 CHANGES REQUESTED`](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6063632214): hai điểm chặn merge |
+| 06:30 | 🤖&nbsp;Agent Developer | [Push bản sửa](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172386579) (`review-fix-1`) |
+| 06:38 | ⚙️&nbsp;CI | [**E2E tests (11/12)** thất bại](https://github.com/AlexTo/discava/actions/runs/45685812586/job/139458011986) ở scenario mới |
+| 06:43 | 🤖&nbsp;Agent Developer | [Push bản sửa](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172674824) (`ci-fix-3`) |
+| 11:13 | 🤖&nbsp;Agent Reviewer | [`✅ APPROVED`](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066801083) |
+| 11:33 | 🧑&nbsp;Một người | [Duyệt](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066944326) và merge |
+| 12:28 | ⚙️&nbsp;Automation | [Lần deploy](https://github.com/AlexTo/discava/actions/runs/45734764281) lên stage development hoàn tất, và một phút sau issue test [#1240](https://github.com/AlexTo/discava/issues/1240) được mở |
+| 13:03 | 🤖&nbsp;Agent Tester | [Báo cáo](https://github.com/AlexTo/discava/issues/1240#issuecomment-7180418815) 22 kiểm tra: các màn hình hoạt động, nhưng trên stage một lần hoàn tiền thất bại vẫn không được xử lý. Nó để issue mở |
 
-Từ lúc pull request được mở đến lúc nó được merge: 54 phút, hai bản sửa, và hai hành động của một người.
+Từ lúc pull request được mở đến lúc nó được merge: bốn vòng sửa, ba từ CI và một từ review, và một
+hành động của một người. Sau đó Tester tìm ra hai vấn đề mà không ai trong số đó có thể thấy.
 
-## 1. Một người merge spec
+## 1. Issue
 
-Tính năng là chấm điểm cho các bài tập nộp file: một instructor trả bài cho student kèm điểm và
-nhận xét, hoặc yêu cầu nộp lại, và student thấy kết quả.
+Một student yêu cầu hoàn tiền sẽ thấy "Refund requested" trong lúc Stripe xử lý, và trang khóa học
+cứ 2 giây lại kiểm tra xem việc hoàn tiền đã xong chưa. [#1166](https://github.com/AlexTo/discava/issues/1166)
+nói điều đó sai ở đâu:
 
-Spec PR, [#662](https://github.com/AlexTo/discava/pull/662), chỉ chứa thư mục spec: spec, kế
-hoạch, một data model, ba contract và `tasks.md`, với **34 task trong 8 giai đoạn**. Không có code
-sản phẩm. Mô tả của nó liệt kê năm câu hỏi mà agent đã hỏi trong lúc viết, cùng câu trả lời của
-maintainer. Một trong số đó: điểm đã trả có sửa được không? Có, lịch sử được giữ lại và student
-được báo.
+> While a student's refund is pending, the course page refetches `course.myEnrolment` and
+> `payment.myOrder` every 2 s, and never stops. If the refund fails at Stripe or its event never
+> arrives, the order stays `paid` with a refund requested, the page keeps polling for as long as
+> it is open, and the student isn't told anything has gone wrong.
 
-Maintainer đọc nó, thêm `spec-ready` và merge lúc 06:40. Đó là cổng đầu tiên trong hai cổng người
-duyệt. Hai phút sau, automation mở issue cho các giai đoạn 1 đến 3.
+Tiêu chí chấp nhận của nó có hai dòng: việc poll dừng lại sau một giới hạn, và một lần hoàn tiền
+thất bại, được giả lập trong bản thay thế Stripe, kết thúc trạng thái chờ bằng một thông báo rõ
+ràng.
 
-## 2. Agent Developer nhận giai đoạn 4
+Issue này không đến từ một spec. Agent Reviewer nêu ra nó trong lúc review PR cho phép student yêu
+cầu hoàn tiền, như một vấn đề nằm ngoài phạm vi của PR đó, và nó trở thành một issue riêng. (#1166
+là một bản sao: tài khoản máy cũ của các agent bị GitHub gắn cờ, khiến mọi thứ nó đã mở bị ẩn đi,
+và các issue còn mở đã được [mở lại](../../discava/openhands-setup/#github-app) bởi GitHub App
+mà các agent dùng bây giờ.)
 
-Các giai đoạn 1 đến 3 (dữ liệu, các quy tắc và API của instructor) đi vào dưới dạng
-[#667](https://github.com/AlexTo/discava/pull/667) và được merge lúc 08:42. Lúc 08:43, workflow
-**Agent Issues** đọc lại `tasks.md` và mở
-[#681](https://github.com/AlexTo/discava/issues/681) cho giai đoạn tiếp theo còn task chưa đánh dấu:
+## 2. Agent Developer mở PR
 
-> Tasks `T016` to `T017` of `tasks.md`: every task under Phase 4: User Story 2 - Student sees the
-> grade and feedback (student portal) (P1). Do not start tasks outside these phases.
+Agent Developer nhận issue và mở [#1195](https://github.com/AlexTo/discava/pull/1195) trên
+`openhands/issue-1166`. Thay đổi đi qua bốn package: một giới hạn 2 phút và một nút "Check again"
+trên trang khóa học, một webhook handler cho các sự kiện hoàn tiền thất bại của Stripe, một trường
+`refundFailedAt` trên đơn hàng cùng một invariant rằng một lần thất bại phải đi sau một yêu cầu, và
+"Your refund failed" trên trang khóa học. Mô tả kết thúc bằng những gì nó đã chạy và chưa chạy:
 
-Hai task: một component hiển thị một vòng nhận xét cùng một danh sách thu gọn các vòng trước đó, và
-các thay đổi trên trang bài tập cho từng trạng thái mà một bài nộp có thể có.
+> Unit tests cover the helper, the webhook, the invariant and the UI (poll limit, check again,
+> failure message). [...] I did not run the e2e tests or try the stand-in control in a browser.
 
-Agent Developer nhận issue ở lần poll kế tiếp. Bảy phút sau khi issue được mở, nó mở
-[#683](https://github.com/AlexTo/discava/pull/683) trên `openhands/issue-681`: test viết trước,
-cả hai task đã được đánh dấu trong `tasks.md`, và một mô tả nói rõ nó đã chạy gì và chưa chạy gì.
+## 3. CI trả nó lại, ba lần
 
-## 3. CI trả nó lại
+**`ci-fix-1`: không có ảnh chụp màn hình, và những dòng không có test.** PR thay đổi những gì một
+student thấy nhưng không chụp màn hình nào, nên [**UI Screenshots** thất bại](https://github.com/AlexTo/discava/actions/runs/45619342535/job/139224403383).
+**codecov/patch** cũng thất bại: các dòng mới không có test. **Agent CI Status** thêm `ci-fix-1` và
+gửi agent Developer quay lại. [Câu trả lời](https://github.com/AlexTo/discava/pull/1195#issuecomment-7164484931)
+của nó cho thấy trên đường sửa, nó đã tìm ra một vấn đề trong lần thử đầu tiên của chính mình:
 
-Mô tả còn nói điều này:
+> **UI Screenshots:** added a `learner-refund` e2e scenario for a failed refund, with
+> `screenshot(student, 'refund-failed')`. For this the Stripe stand-in has a new
+> `fail-next-refund` control. [...] This replaces the `refund-fail` control from the first push,
+> which the scenario could not use, because the stand-in completed the refund before it could
+> fail.
 
-> No e2e screenshots here: the e2e scenario for this flow is a later phase's task.
+**`ci-fix-2`: một lỗi không phải của nó.** Lần chạy kế tiếp thất bại ở **Checks (build)**, trong
+một test CDK synth của package hạ tầng. Agent đọc log và
+[không sửa code nào cho nó](https://github.com/AlexTo/discava/pull/1195#issuecomment-7165688653):
 
-Agent đã tự phán đoán, và đó là một cách hiểu hợp lý về danh sách task. Nhưng repository có một quy
-tắc: một thay đổi với những gì người dùng nhìn thấy phải đi kèm ảnh chụp màn hình của nó, để người
-review thấy được màn hình mà không cần chạy ứng dụng. Quy tắc đó là một check, và check thì không
-cân nhắc lý lẽ. Lint, unit test, build và cả sáu shard e2e đều pass. [**UI Screenshots** thất bại](https://github.com/AlexTo/discava/actions/runs/44823849814/job/136591295471).
+> the one failure was `@discava/infra` `instructor-api-stack.test.ts` [...], which hit its 30s
+> timeout while the sibling CDK synth tests in that file took 22–31s. This PR doesn't touch infra
+> or anything the stack synthesises [...], so I made no code change for it. The push below
+> re-runs the build.
 
-**Agent CI Status** thêm `ci-fix-1` và gửi agent Developer quay lại chính PR đó.
-[Câu trả lời](https://github.com/AlexTo/discava/pull/683#issuecomment-7051758312) của nó, kèm bản sửa:
+Nó bao phủ dòng còn thiếu một phần mà codecov vẫn báo, và lần push đó chạy lại build, lần này pass.
+Một agent "sửa" một lỗi bằng cách thay đổi code mà nó không hiểu còn tệ hơn một agent nói rằng lỗi
+đó không phải của nó và giải thích vì sao.
 
-> The only finding was the failing `UI Screenshots` check (the PR added no `screenshot(` call). I
-> added an e2e scenario in `assignment.e2e.ts` where a student sees the resubmission request
-> beside the open form, then the returned grade and feedback. It takes a screenshot of each and
-> drives the instructor side through the API. I did not run it locally, so PR CI is its first run.
+**`ci-fix-3`: test mới của chính nó bị sai.** Sau review (phần kế tiếp), agent thêm một e2e
+scenario cho giới hạn 2 phút, và nó thất bại ở [**E2E tests (11/12)**](https://github.com/AlexTo/discava/actions/runs/45685812586/job/139458011986).
+Năm phút sau, [nguyên nhân](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172674824):
 
-Lần chạy kế tiếp xanh, và CI đăng hai ảnh chụp màn hình mới trong
-[comment **E2E screenshots**](https://github.com/AlexTo/discava/pull/683#issuecomment-7051642662).
+> the new `a pending refund stops polling and offers to check again` scenario failed with a
+> Playwright strict-mode violation, not a product bug. `getByText('Still being processed')` also
+> matched the alert's description ("Your refund is still being processed…"), so it resolved to two
+> elements. The page did reach the timed-out state. I now match the title with `{ exact: true }`.
 
-## 4. Agent Reviewer tìm ra một lỗi thật
+Agent chưa chạy e2e scenario nào trên máy; lần nào nó cũng nói vậy. PR CI là nơi chúng chạy lần
+đầu, và [comment E2E screenshots](https://github.com/AlexTo/discava/pull/1195#issuecomment-7163204279)
+liệt kê hai màn hình mà lần chạy đã chụp: `learner-refund/01-refund-failed.png` và
+`learner-refund/01-refund-still-being-processed.png`.
 
-Khi mọi check đã xong, agent Reviewer đọc diff và đối chiếu với spec. Mọi thứ đều xanh, vậy mà code
-vẫn sai. Trích từ
-[review](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000171162) của nó:
+## 4. Agent Reviewer tìm ra những gì CI không thể
 
-> **Blocking: after a resubmission, the resubmission request's feedback disappears for the
-> student.** The component always takes the newest round out of the "Earlier feedback" list. It
-> only displays that round when the status is `resubmission_requested` or `returned`. Once the
-> student uploads again, the status goes back to `submitted`, and the request round is hidden.
-> This breaks FR-009, SC-007 and User Story 2's independent test [...] The new e2e step never
-> checks the page in `submitted` after the resubmit, and no unit test covers `submitted` with a
-> non-empty `feedback`, so nothing catches it.
+Khi mọi check trên head đã xong, agent Reviewer đọc diff và đối chiếu với issue. Nó thấy code thanh
+toán đúng, tự chạy lại 361 test liên quan, và vẫn
+[chặn merge](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6063632214):
+
+> 1. **The branch carries another open PR's change.** Commit `e7cb9bc9`, "fix(student-portal):
+>    surface completions and progress load errors on start route", is the change from open PR
+>    #1188, not part of #1166. [...] Merging this PR would ship #1188's start-route error behaviour
+>    under a payments title, before #1188 is reviewed.
+> 2. **Live evidence is missing for the "Still being processed" / "Check again" state.** [...] The
+>    new timed-out state [...] has only unit tests, and no capture from the running app.
 >
 > 🔄 CHANGES REQUESTED
 
-Nói đơn giản: một instructor viết "please cite your sources", student nộp một bản nháp mới, và lời
-nhắn của instructor biến mất khỏi trang của student. Spec nói các nhận xét trước đó phải luôn hiển
-thị (FR-009). Không test nào thất bại, vì không test nào nhìn vào trạng thái đó. Reviewer tìm ra
-nó bằng cách so code với spec, và nó cũng chỉ ra luôn những test còn thiếu.
+Điểm đầu tiên là loại chuyện lọt qua mọi check. Commit thừa vẫn compile và test của nó vẫn pass; chỉ
+là nó không thuộc về đây. Bản checkout của agent đã bắt đầu từ một branch có sẵn commit đó. Điểm thứ
+hai lại là quy tắc ảnh chụp màn hình, lần này do một người đọc áp dụng: CI kiểm tra rằng PR có thêm
+một ảnh chụp màn hình, còn Reviewer kiểm tra rằng mọi trạng thái mới đều có một ảnh.
 
-**Agent Review Status** thêm `review-fix-1`. Ba phút sau, agent Developer push
-[một bản sửa](https://github.com/AlexTo/discava/pull/683/commits/0bdf55d485d5a5df692d1e8a41ec601499977c03) và [nói nó đã làm gì](https://github.com/AlexTo/discava/pull/683#issuecomment-7052122523):
+**Agent Review Status** thêm `review-fix-1`. Tám phút sau, agent Developer
+[đã](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172386579) rebase bốn commit của chính
+nó lên `main` mà không mang theo hai commit kia, và thêm một control trong bản thay thế để giữ một
+lần hoàn tiền ở trạng thái chờ, cùng một e2e scenario cài fake clock của Playwright và tua nhanh 125
+giây. Đó chính là scenario mà `ci-fix-3` sau đó sửa lại.
 
-> Fixed the blocking finding. The newest round is now shown in full only when the status is
-> `returned` or `resubmission_requested`. In any other state every round goes under "Earlier
-> feedback", so the request stays reachable after a resubmit. I added a unit test for `submitted`
-> with a `resubmission_requested` round, and an e2e assertion right after the resubmit.
-
-Reviewer đọc head mới, tự chạy các test của component (42 test pass) và
-[kết thúc](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000351532) bằng
-"No material findings remain. ✅ APPROVED" (Không còn phát hiện đáng kể nào. ✅ APPROVED).
+Trên head cuối cùng, Reviewer [xác nhận](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066801083)
+cả hai điểm đã được giải quyết, cả 12 shard e2e đều pass, và nêu tên hai ảnh chụp màn hình: "No
+material findings [...] ✅ APPROVED" (Không có phát hiện đáng kể nào [...] ✅ APPROVED).
 
 ## 5. Một người duyệt
 
-Lúc 09:44, maintainer [duyệt](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000379398) và merge. Đó là cổng người duyệt thứ hai. Những gì họ có trước
-mắt: một mô tả liệt kê cái gì đã chạy và cái gì chưa, hai ảnh chụp màn hình từ CI, một danh sách
-check xanh, và một chuỗi review cho thấy một lỗi đã được tìm ra và sửa. PR gồm ba commit và
-508 dòng trên sáu file, ba phần tư trong số đó là test.
+Lúc 11:33, maintainer [duyệt](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066944326)
+và merge. Đó là việc duy nhất một người làm trên PR này. Những gì họ có trước mắt: một mô tả nói rõ
+cái gì đã chạy và cái gì chưa, hai ảnh chụp màn hình từ CI, một danh sách check xanh, và một chuỗi
+bốn lần chỉnh sửa, mỗi lần kèm lý do của nó.
 
 ## 6. Lần merge được deploy, và một issue test được mở
 
-Ở Discava, `main` tự deploy lên một stage development. [Lần deploy](https://github.com/AlexTo/discava/actions/runs/44833259729) đó hoàn tất lúc 10:09. Một
-phút sau, **Post-merge Verify** mở
-[#712](https://github.com/AlexTo/discava/issues/712), `test(post-merge): verify #683 student sees
-the grade and feedback (student portal)`. Issue chỉ nói test cái gì:
+Ở Discava, `main` tự deploy lên một stage development. [Lần deploy](https://github.com/AlexTo/discava/actions/runs/45734764281)
+mang lần merge này hoàn tất lúc 12:28, và một phút sau **Post-merge Verify** mở
+[#1240](https://github.com/AlexTo/discava/issues/1240). Issue liệt kê 12 file đã deploy mà PR thay
+đổi và nói nên chạy loại test nào:
 
 > Kind: **UI change**. It changes a portal: sign in as the user the change is for and click
 > through the flow with Playwright, then call the APIs behind it and check the stored data.
 
 ## 7. Agent Tester test stage đã deploy
 
-Agent Tester không chạy lại bộ test. Nó dùng sản phẩm đã deploy như một người sẽ dùng, rồi kiểm tra
-những gì đã được lưu.
-[Báo cáo](https://github.com/AlexTo/discava/issues/712#issuecomment-7054937096) của nó liệt kê từng bước:
+Agent Tester không chạy lại bộ test, và không dùng bản thay thế Stripe. Nó dùng sản phẩm đã deploy
+như một người sẽ dùng, với Stripe thật ở chế độ sandbox.
+[Báo cáo](https://github.com/AlexTo/discava/issues/1240#issuecomment-7180418815) của nó liệt kê từng
+bước:
 
-1. Với tư cách một instructor test, qua API, nó tạo và xuất bản một khóa học có một bài tập nộp
-   file, `pmt-683-essay`, trị giá 10 điểm.
-2. Với tư cách một student test, trong một trình duyệt thật, nó ghi danh, đăng nhập trên trang đăng
-   nhập hosted và nộp bản nháp đầu tiên.
-3. Instructor yêu cầu nộp lại. Student tải lại trang, thấy yêu cầu, và nộp bản nháp thứ hai.
-4. Instructor trả bài với 7 điểm, rồi sửa điểm thành 8.5. Student tải lại trang sau mỗi lần.
-5. Sau mỗi bước, nó gọi API của student, đọc các bản ghi trong DynamoDB và các file trong S3, thử
-   những lời gọi lẽ ra phải bị từ chối, và cuối cùng quét log của cả 46 Lambda function trên stage
-   để tìm lỗi.
+1. Với tư cách một instructor test, qua API, nó tạo hai khóa học giá $19.99.
+2. Với tư cách một student test, trong một trình duyệt thật, nó đăng nhập và mua từng khóa trên
+   Stripe Checkout, dùng các thẻ test của Stripe cho "hoàn tiền thất bại" và "hoàn tiền đang chờ".
+3. Nó yêu cầu hoàn tiền cho từng khóa từ trang khóa học.
+4. Sau mỗi bước, nó gọi các API, đọc các đơn hàng và lượt ghi danh trong DynamoDB, và đọc log của
+   webhook và các Lambda API.
 
-Các ảnh chụp màn hình dưới đây là của chính Tester, được lưu ở mỗi bước và được cắt ở đây cho vừa
-khung bài tập.
+Các ảnh chụp màn hình dưới đây là của chính Tester, được cắt ở đây cho còn phần quan trọng.
 
-Yêu cầu nộp lại bên cạnh một form đang mở
-(`04-resubmission-requested-with-open-form.png`):
+Mua khóa học đầu tiên bằng thẻ có lần hoàn tiền thất bại (`02-stripe-checkout-refund-fails-card.png`):
 
 <p>
-  <img alt="Bài tập pmt-683-essay trên cổng student. Dưới bản nháp đầu tiên đã nộp, một thông báo màu hổ phách ghi Your instructor asked you to resubmit, kèm nhận xét please cite your sources, phía trên nút Choose file và nút Submit" src="/agentic-sdlc/screenshots/post-merge-test-683/04-resubmission-requested-with-open-form.png" width="620" />
+  <img alt="Stripe Checkout ở chế độ sandbox cho pmt-1195-refund-course giá US$19.99, đã nhập thẻ test 4000 0000 0000 5126, cùng một nút Pay" src="/agentic-sdlc/screenshots/post-merge-test-1195/02-stripe-checkout-refund-fails-card.png" width="620" />
 </p>
 
-Sau khi bản nháp thứ hai được nộp (`07-earlier-feedback-expanded-while-waiting.png`):
+Một phút sau khi student yêu cầu hoàn tiền (`07-refund-pending-after-60s.png`):
 
 <p>
-  <img alt="Cùng bài tập đó, hiện Submitted, Version 2 và bản nháp thứ hai. Bên dưới, mục Earlier feedback (1) được mở rộng và liệt kê Resubmission requested, Version 1, please cite your sources" src="/agentic-sdlc/screenshots/post-merge-test-683/07-earlier-feedback-expanded-while-waiting.png" width="620" />
+  <img alt="Trang khóa học pmt-1195-refund-course. Một thông báo ghi You're no longer enrolled, Your enrolment has ended. Refunded on 26 November 2026, phía trên một nút Buy now" src="/agentic-sdlc/screenshots/post-merge-test-1195/07-refund-pending-after-60s.png" width="620" />
 </p>
 
-Đây chính là trạng thái mà phát hiện của Reviewer nói đến. Trước bản sửa, yêu cầu hẳn đã biến mất
-khỏi màn hình này. Ở đây nó có mặt trên stage đã deploy, dưới "Earlier feedback (1)".
+Đó là một kết cục sai. Lần hoàn tiền của thẻ này thất bại, nhưng ban đầu Stripe báo là thành công,
+nên đơn hàng bị đánh dấu `refunded` và lượt ghi danh kết thúc chỉ sau khoảng ba giây. Lỗi đến sau đó, và không có gì được
+gửi đến cho nó. Tester đi tìm lý do, và tìm ra hai nguyên nhân riêng biệt (phần kế tiếp).
 
-Sau khi điểm được trả rồi được sửa
-(`11-amended-returned-earlier-feedback-expanded.png`):
+Stripe thật không thể giữ một lần hoàn tiền ở trạng thái chờ hay ghi nhận một lần thất bại trên stage
+này. Vì vậy, để kiểm tra các màn hình mới trong bundle đã deploy, Tester viết lại response của
+`payment.myOrder` trong trình duyệt, rồi kiểm tra riêng các response API thật và dữ liệu đã lưu. Nó
+đo giới hạn: "Still being processed" xuất hiện **120.2 s** sau khi lần hoàn tiền đang chờ hiện ra, và
+không có request nào trong 20 giây tiếp theo (`13-still-being-processed-after-2-minutes.png`):
 
 <p>
-  <img alt="Cùng bài tập đó, hiện Returned 8.5 / 10 với giờ cập nhật và nhận xét regraded after rechecking the rubric, dòng This submission has been returned and can't be changed, và mục Earlier feedback (2) liệt kê Returned 7 / 10 cho version 2 và Resubmission requested cho version 1" src="/agentic-sdlc/screenshots/post-merge-test-683/11-amended-returned-earlier-feedback-expanded.png" width="620" />
+  <img alt="Trang khóa học pmt-1195-refund-course-2, đã ghi danh. Dưới Refund requested on 26 November 2026, một thông báo ghi Still being processed, Your refund is still being processed. This can take a while, phía trên một nút Check again" src="/agentic-sdlc/screenshots/post-merge-test-1195/13-still-being-processed-after-2-minutes.png" width="620" />
 </p>
 
-Báo cáo có ba bảng: 13 kiểm tra trên các màn hình, 14 trên các API và 5 trên dữ liệu đã lưu. Vài
-dòng trong số đó là những thứ một người ít khi tự tay thử nhất:
+Và với một lần hoàn tiền thất bại trong response (`15-refund-failed-message.png`), cảnh báo hiện ra,
+nút "Request a refund" biến mất và việc poll dừng lại:
+
+<p>
+  <img alt="Cùng trang khóa học đó với một cảnh báo màu đỏ: Your refund failed. The refund you requested on 26 November 2026 could not be completed, and you have not been refunded. Your access continues. Please contact support to sort out your refund" src="/agentic-sdlc/screenshots/post-merge-test-1195/15-refund-failed-message.png" width="620" />
+</p>
+
+Báo cáo có 22 kiểm tra. Mười bảy pass, trong đó có những cái này:
 
 | Kiểm tra | Kết quả |
 | --- | --- |
-| Student nộp lại sau khi bài đã được trả | Bị từ chối: 412, "This submission has been returned and can't be changed" |
-| Một người dùng khác, không ghi danh, đọc bài nộp | Bị từ chối: 403 |
-| Student gọi API chấm điểm của instructor | Bị từ chối: 403 |
-| Instructor trả 11 điểm cho một bài tập 10 điểm | Bị từ chối: 400, "Points must be between 0 and 10" |
-| Lần trả bài của instructor được gửi hai lần | Bị từ chối: 409, và không có thông báo thứ hai nào được gửi |
-| Các bản ghi nhận xét đã lưu nêu tên instructor đã viết chúng | Có, và API của student không trả về trường đó |
+| Việc poll dừng sau 2 phút | 120.2 s, rồi 0 request trong 20 s tiếp theo |
+| "Check again" bắt đầu poll lại | 4 request trong 8 s tiếp theo, và thông báo biến mất |
+| `payment.myOrder` không có token | Bị từ chối: 401 |
+| `payment.myOrder` với một người dùng không mua | 200 với `null`: không có đơn hàng của người khác |
+| `payment.requestRefund` trên một đơn hàng đã được hoàn tiền | Bị từ chối: 412, "No purchase to refund" |
 
-## 8. Tester đóng issue
+## 8. Tester để issue mở
 
-Cả 32 kiểm tra đều pass, nên báo cáo kết thúc bằng một verdict và Tester đóng issue:
+Ba kiểm tra thất bại, và hai cái kết thúc ở một trạng thái mà PR không lường trước.
+[Verdict](https://github.com/AlexTo/discava/issues/1240#issuecomment-7180418815):
 
-> **PASS.** The student portal shows the grade and feedback as #681 asks
+> **Verdict: the student-facing UI and `payment.myOrder` work as the PR describes. The
+> failed-refund path does not work end to end on the deployed stage.**
 
-Nó cũng liệt kê hai thứ nó thấy mà không phải do PR này, để không ai nhầm chúng là regression.
+Nó tìm ra hai nguyên nhân, cả hai đều nằm ngoài mọi thứ mà test của PR có thể chạm tới:
 
-### Khi Tester không đóng
+1. **Webhook Stripe của stage không bao giờ nhận được các sự kiện mới.** PR đã thêm `refund.failed`
+   và `charge.refund.updated` vào danh sách sự kiện, nhưng danh sách đó chỉ được gửi cho Stripe khi
+   một quản trị viên kết nối lần đầu. Stage đã được kết nối từ sáu ngày trước. Tester đếm được đúng
+   bốn lần gọi webhook trong nửa giờ đó, không lần nào cho một lần thất bại.
+2. **Với Stripe thật, một lần hoàn tiền thất bại đến khi đơn hàng đã là `refunded`.** Stripe gửi
+   `charge.refunded` ngay khi một lần hoàn tiền được tạo, kể cả một lần đang chờ hoặc sẽ thất bại.
+   Đến lúc `refund.failed` tới, điều kiện của handler mới (đơn hàng vẫn là `paid`) không còn đúng
+   nữa, và nó lặng lẽ không làm gì:
 
-Pass không phải là kết quả duy nhất. Pull request ngay trước cái này,
-[#667](https://github.com/AlexTo/discava/pull/667), thêm các API chấm điểm, và issue test của nó,
-[#694](https://github.com/AlexTo/discava/issues/694), vẫn mở sau lần chạy đầu. Hai mươi chín
-kiểm tra pass và một thất bại:
+   > The student has lost access, hasn't been refunded, and isn't told.
 
-> **Verdict: the new grading flow works end to end for submissions made after this deploy. It
-> does not work for submissions stored before it.** Those have no `reviewRevision` attribute, so
-> an instructor can't open or grade them.
+   Bản thay thế trong e2e scenario của PR không bao giờ hoàn tất một lần hoàn tiền trước khi làm nó
+   thất bại, nên CI chỉ cho thấy phiên bản suôn sẻ của chuyện này.
 
-Không unit test, e2e test hay review nào có thể tìm ra điều này. Tất cả đều bắt đầu từ một database
-trống, còn lỗi chỉ tồn tại ở nơi có dữ liệu cũ. Trên stage có ba bài nộp như vậy.
+Tester có thể mở một fix PR khi bản sửa nhỏ và rõ ràng. Nó giải thích vì sao nó không làm thế:
 
-Tester có thể mở một fix PR khi bản sửa nhỏ và rõ ràng. Ở đây nó [giải thích](https://github.com/AlexTo/discava/issues/694#issuecomment-7052102048) vì sao nó không làm thế:
+> Fixing it means deciding how a refund failure after `charge.refunded` should restore the order
+> and enrolment, or not treating a `pending` refund as refunded. That goes beyond a small fix, so
+> I'm reporting it rather than opening a PR.
 
-> That is a choice between a migration and tolerant reads, and it changes concurrency conditions
-> in two packages, so I haven't opened a fix PR.
-
-Nên nó dừng lại và để quyết định cho một người, với cả hai lựa chọn được viết ra. Maintainer
-backfill ba bản ghi trên stage. Tester [chạy lại các kiểm tra của nó](https://github.com/AlexTo/discava/issues/694#issuecomment-7054905761), xác nhận các bài nộp
-cũ giờ đã có trường đó, và đóng issue kèm một cảnh báo rằng mọi môi trường khác còn giữ bài nộp
-cũ đều cần cùng lần backfill đó. Một ghi chú nhỏ trong cùng báo cáo (một thông báo từ chối nói
-"returned" khi chưa có gì được trả) trở thành một bản sửa 13 dòng,
-[#708](https://github.com/AlexTo/discava/pull/708).
+Nó cũng không đụng vào kết nối Stripe của stage, dù lưu lại kết nối đó sẽ sửa được nguyên nhân thứ
+nhất: "I didn't do that, because it changes stage configuration." (Tôi đã không làm thế, vì nó thay
+đổi cấu hình của stage.) Nên issue vẫn mở, với cả hai vấn đề được viết ra, cách tái hiện chúng, và
+những lựa chọn để một người quyết định. Nó liệt kê dữ liệu test nó để lại trên stage, và một lỗi nó
+thấy đã được theo dõi ở chỗ khác, để không ai nhầm đó là regression.
 
 <Aside type="tip">
 [Kiểm chứng sau merge](../../discava/post-merge-verify/) theo chân một issue test khác, nơi Tester
@@ -232,17 +261,19 @@ tìm ra một lỗi, lần ra nguyên nhân của nó và đã mở fix PR.
 
 | Cổng | Nó bắt được gì | Vì sao cổng trước nó không bắt được |
 | --- | --- | --- |
-| CI | Một thay đổi UI không có ảnh chụp màn hình | Agent Developer quyết định rằng chúng thuộc về một giai đoạn sau |
-| Agent Reviewer | Nhận xét biến mất sau khi nộp lại | Không test nào bao phủ trạng thái đó, nên CI xanh |
-| Agent Tester (trên #667) | Các bản ghi cũ mà code mới không đọc được | Test và review không bao giờ thấy dữ liệu có sẵn trên stage |
+| CI | Một thay đổi UI không có ảnh chụp màn hình, những dòng chưa có test, và một locator hỏng trong e2e test của chính agent | Agent Developer chưa chạy bộ e2e |
+| Agent Reviewer | Commit của một PR khác đi kèm trên branch, và một trạng thái màn hình mới không có ảnh chụp màn hình | Commit thừa pass mọi check, và CI chỉ kiểm tra rằng có thêm một ảnh chụp màn hình nào đó |
+| Agent Tester | Một webhook endpoint không bao giờ nhận được các sự kiện mới, và Stripe thật báo một lần hoàn tiền đang thất bại là đã hoàn tiền trước | Bản thay thế hoạt động đúng như code mong đợi, và không test nào thấy cấu hình của stage |
 
 Không cổng nào trong ba cổng tự nó tài giỏi gì. Mỗi cổng nhìn vào thứ mà các cổng kia không thấy
-được: CI nhìn vào các quy tắc, Reviewer nhìn vào spec, Tester nhìn vào sản phẩm đang chạy.
+được: CI nhìn vào các quy tắc, Reviewer nhìn vào issue và branch, Tester nhìn vào sản phẩm đang chạy
+và các dịch vụ thật phía sau nó.
 
 ## Người đã làm gì
 
-1. Trả lời năm câu hỏi trong lúc spec được viết, rồi review và merge spec PR.
-2. Đọc PR #683 và các ảnh chụp màn hình của nó, duyệt và merge.
+1. Đọc PR #1195 và các ảnh chụp màn hình của nó, duyệt và merge.
+2. Tiếp theo: quyết định một lần hoàn tiền thất bại sau `charge.refunded` nên làm gì, từ các lựa
+   chọn mà Tester đã viết ra.
 
 Không ai viết prompt, dán log lỗi, hay tự tay bấm qua stage.
 

@@ -107,7 +107,7 @@ aggiunge a ogni giro di correzione. Discava ha accorciato i suoi check delle PR 
   vengono distribuiti interi, in base ai tempi in `packages/e2e/shard-durations.json`. Al 24 novembre
   19 dei 74 file e2e non erano elencati e contavano come un file tipico, tra cui uno scenario da 337
   secondi, così due shard eseguivano 12 minuti di test mentre gli altri ne eseguivano da 6 a 8.
-  [#1060](https://github.com/AlexTo/discava/pull/1060) ha misurato ogni file da un'esecuzione
+  [#1060](https://github.com/AlexTo/discava/commit/225776fcd3cb7c518d46739b9bbbbfa9b5b6bff6) ha misurato ogni file da un'esecuzione
   completa della CI, ha diviso in due il file da 337 secondi (un file è il minimo per qualsiasi
   shard), ed è passato a dodici shard: il più lento ora esegue circa 5 minuti e mezzo di test.
 - **Il download più lento parte per primo.** L'immagine di OpenSearch è la più grande che lo stack

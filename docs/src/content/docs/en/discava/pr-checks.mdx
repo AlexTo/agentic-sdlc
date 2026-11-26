@@ -99,7 +99,7 @@ Discava cut its PR checks in four ways:
 - **The shards are dealt by recorded run times, so keep them current.** Files are dealt out whole,
   by the times in `packages/e2e/shard-durations.json`. By 24 November 19 of the 74 e2e files
   weren't listed and counted as a typical file, among them a 337-second scenario, so two shards
-  ran 12 minutes of tests while the rest ran 6 to 8. [#1060](https://github.com/AlexTo/discava/pull/1060)
+  ran 12 minutes of tests while the rest ran 6 to 8. [#1060](https://github.com/AlexTo/discava/commit/225776fcd3cb7c518d46739b9bbbbfa9b5b6bff6)
   timed every file from one full CI run, split the 337-second file in two (a file is the floor for
   any shard), and went to twelve shards: the slowest now runs about 5½ minutes of tests.
 - **The slowest download starts first.** OpenSearch's image is the largest the local stack pulls,

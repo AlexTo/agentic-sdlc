@@ -1,6 +1,6 @@
 ---
 title: "사례 연구: pull request 하나, 처음부터 끝까지"
-description: 실제 Discava pull request 하나를 merge된 spec에서 테스트된 배포까지 따라가며, 그 과정에서 각 에이전트가 무엇을 찾아냈는지 살펴봅니다.
+description: 실제 Discava pull request 하나를 issue에서 테스트된 배포까지, 네 번의 수정 라운드를 거치며 따라가고, 그 과정에서 각 에이전트가 무엇을 찾아냈는지 살펴봅니다.
 sidebar:
   order: 3
   label: 사례 연구
@@ -9,213 +9,238 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 
 [동작 방식](../how-it-works/)은 루프를 설명합니다. 이 페이지는 그 루프가 실제로 한 번 도는 모습을
-[Discava](https://github.com/AlexTo/discava)의 실제 pull request로 보여 줍니다. 학생이 자신이 업로드한 과제의
-점수와 피드백을 보는 페이지입니다.
+[Discava](https://github.com/AlexTo/discava)의 실제 pull request로 보여 줍니다. 학생이 구매한 강좌의 환불을 요청한
+뒤에 보는 화면입니다.
 
-모든 인용문, 숫자, 링크는 GitHub에서 가져왔습니다. 시각은 시드니 시간(AEDT, UTC+11)이며, 모두 2026년 11월 21일입니다.
+모든 인용문, 숫자, 링크는 GitHub에서 가져왔습니다. 시각은 시드니 시간(AEDT, UTC+11)이며, 2026년 11월 25일과
+26일입니다.
 
 ## 전체 실행
 
 | 시각 | 누가 | 무슨 일이 있었나 |
 | --- | --- | --- |
-| 06:40 | 🧑&nbsp;사람 | `spec-ready` label이 붙은 spec PR [#662](https://github.com/AlexTo/discava/pull/662)를 merge합니다 |
-| 08:43 | ⚙️&nbsp;자동화 | phase 3의 PR이 merge되고 1분 뒤, phase 4에 대한 issue [#681](https://github.com/AlexTo/discava/issues/681)을 엽니다 |
-| 08:50 | 🤖&nbsp;개발자 에이전트 | 7분 뒤 PR [#683](https://github.com/AlexTo/discava/pull/683)을 엽니다 |
-| 08:51 | ⚙️&nbsp;CI | 검사 하나가 실패합니다: [**UI Screenshots**](https://github.com/AlexTo/discava/actions/runs/44823849814/job/136591295471) |
-| 09:06 | 🤖&nbsp;개발자 에이전트 | [수정](https://github.com/AlexTo/discava/pull/683/commits/3b2e04d2eb8aaf9b230b26e001989f30167dc43c)을 push합니다 (`ci-fix-1`) |
-| 09:22 | 🤖&nbsp;리뷰어 에이전트 | [`🔄 CHANGES REQUESTED`](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000171162): merge를 막는 버그 하나 |
-| 09:26 | 🤖&nbsp;개발자 에이전트 | [수정](https://github.com/AlexTo/discava/pull/683/commits/0bdf55d485d5a5df692d1e8a41ec601499977c03)을 push합니다 (`review-fix-1`) |
-| 09:41 | 🤖&nbsp;리뷰어 에이전트 | [`✅ APPROVED`](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000351532) |
-| 09:44 | 🧑&nbsp;사람 | [승인](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000379398)하고 merge합니다 |
-| 10:09 | ⚙️&nbsp;자동화 | 개발 stage로의 [배포](https://github.com/AlexTo/discava/actions/runs/44833259729)가 끝나고, 1분 뒤 테스트 issue [#712](https://github.com/AlexTo/discava/issues/712)가 열립니다 |
-| 12:15 | 🤖&nbsp;테스터 에이전트 | 확인 항목 32개가 모두 통과했다고 [보고](https://github.com/AlexTo/discava/issues/712#issuecomment-7054937096)하고 issue를 닫습니다 |
+| 22:37 | ⚙️&nbsp;자동화 | issue [#1166](https://github.com/AlexTo/discava/issues/1166)이 열려 있습니다: 보류 중인 환불이 끝없이 폴링하고, 실패한 환불은 처리되지 않습니다 |
+| 23:55 | 🤖&nbsp;개발자 에이전트 | PR [#1195](https://github.com/AlexTo/discava/pull/1195)를 엽니다 |
+| 00:07 | ⚙️&nbsp;CI | [**UI Screenshots**가 실패하고](https://github.com/AlexTo/discava/actions/runs/45619342535/job/139224403383), 이어서 **codecov/patch**도 실패합니다 |
+| 00:55 | 🤖&nbsp;개발자 에이전트 | [수정을 push합니다](https://github.com/AlexTo/discava/pull/1195#issuecomment-7164484931) (`ci-fix-1`) |
+| 01:29 | ⚙️&nbsp;CI | 이 PR이 건드리지 않는 테스트에서 [**Checks (build)**가 실패합니다](https://github.com/AlexTo/discava/actions/runs/45628507436/job/139255050292) |
+| 01:42 | 🤖&nbsp;개발자 에이전트 | [설명하고 다시 실행합니다](https://github.com/AlexTo/discava/pull/1195#issuecomment-7165688653) (`ci-fix-2`) |
+| 06:22 | 🤖&nbsp;리뷰어 에이전트 | [`🔄 CHANGES REQUESTED`](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6063632214): merge를 막는 지적 두 개 |
+| 06:30 | 🤖&nbsp;개발자 에이전트 | [수정을 push합니다](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172386579) (`review-fix-1`) |
+| 06:38 | ⚙️&nbsp;CI | 새 시나리오에서 [**E2E tests (11/12)**가 실패합니다](https://github.com/AlexTo/discava/actions/runs/45685812586/job/139458011986) |
+| 06:43 | 🤖&nbsp;개발자 에이전트 | [수정을 push합니다](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172674824) (`ci-fix-3`) |
+| 11:13 | 🤖&nbsp;리뷰어 에이전트 | [`✅ APPROVED`](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066801083) |
+| 11:33 | 🧑&nbsp;사람 | [승인](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066944326)하고 merge합니다 |
+| 12:28 | ⚙️&nbsp;자동화 | 개발 stage로의 [배포](https://github.com/AlexTo/discava/actions/runs/45734764281)가 끝나고, 1분 뒤 테스트 issue [#1240](https://github.com/AlexTo/discava/issues/1240)이 열립니다 |
+| 13:03 | 🤖&nbsp;테스터 에이전트 | 확인 항목 22개를 [보고합니다](https://github.com/AlexTo/discava/issues/1240#issuecomment-7180418815): 화면은 동작하지만, stage에서는 실패한 환불이 여전히 처리되지 않습니다. issue는 열어 둡니다 |
 
-pull request가 열리고 merge되기까지 54분, 수정 두 번, 사람의 행동 두 번입니다.
+pull request가 열리고 merge되기까지 수정 라운드 네 번(CI에서 세 번, 리뷰에서 한 번), 사람의 행동 한 번입니다.
+그다음 테스터가, 앞선 어느 것도 볼 수 없었던 문제 두 가지를 찾아냈습니다.
 
-## 1. 사람이 spec을 merge한다
+## 1. issue
 
-기능은 업로드 과제의 채점입니다. 강사가 학생의 과제를 점수와 피드백과 함께 돌려주거나 재제출을 요청하고, 학생은 그
-결과를 봅니다.
+환불을 요청한 학생에게는 Stripe가 처리하는 동안 "Refund requested"가 표시되고, 강좌 페이지는 2초마다 환불이
+끝났는지 확인합니다. [#1166](https://github.com/AlexTo/discava/issues/1166)은 거기서 무엇이 잘못되었는지
+말합니다.
 
-spec PR인 [#662](https://github.com/AlexTo/discava/pull/662)에는 spec 폴더만 들어 있습니다. spec, plan, 데이터
-모델, contract 세 개, 그리고 **phase 8개에 작업 34개**가 담긴 `tasks.md`입니다. 제품 코드는 없습니다. PR 설명에는
-에이전트가 spec을 쓰면서 물은 질문 다섯 개와 maintainer의 답이 나열되어 있습니다. 그중 하나는 이렇습니다. 돌려준
-점수를 바꿀 수 있는가? 그렇다. 단, 이력을 남기고 학생에게 알린다.
+> While a student's refund is pending, the course page refetches `course.myEnrolment` and
+> `payment.myOrder` every 2 s, and never stops. If the refund fails at Stripe or its event never
+> arrives, the order stays `paid` with a refund requested, the page keeps polling for as long as
+> it is open, and the student isn't told anything has gone wrong.
 
-maintainer는 이를 읽고 `spec-ready`를 붙인 뒤 06:40에 merge했습니다. 두 사람 게이트 중 첫 번째입니다. 2분 뒤
-자동화가 phase 1~3에 대한 issue를 열었습니다.
+인수 조건은 두 줄입니다. 폴링은 한도에 이르면 멈춘다. 그리고 Stripe 대체물에서 시뮬레이션한 실패한 환불은 분명한
+메시지와 함께 보류 상태를 끝낸다.
 
-## 2. 개발자 에이전트가 phase 4를 맡는다
+이 issue는 spec에서 나온 것이 아닙니다. 학생이 환불을 요청할 수 있게 하는 PR을 리뷰하던 리뷰어 에이전트가 그 PR의
+범위 밖의 문제로 제기했고, 그것이 별도의 issue가 되었습니다. (#1166은 사본입니다. 에이전트의 예전 머신 계정이
+GitHub에 의해 플래그 처리되어 그 계정이 연 모든 것이 숨겨졌고, 열려 있던 issue는 에이전트가 지금 쓰는 GitHub App이
+[다시 열었습니다](../../discava/openhands-setup/#github-app).)
 
-phase 1~3(데이터, 규칙, 강사용 API)은 [#667](https://github.com/AlexTo/discava/pull/667)로 들어가 08:42에
-merge되었습니다. 08:43에 **Agent Issues** workflow가 `tasks.md`를 다시 읽고, 체크되지 않은 작업이 남은 다음 phase에
-대해 [#681](https://github.com/AlexTo/discava/issues/681)을 열었습니다.
+## 2. 개발자 에이전트가 PR을 연다
 
-> Tasks `T016` to `T017` of `tasks.md`: every task under Phase 4: User Story 2 - Student sees the
-> grade and feedback (student portal) (P1). Do not start tasks outside these phases.
+개발자 에이전트가 issue를 가져가 `openhands/issue-1166`에서 [#1195](https://github.com/AlexTo/discava/pull/1195)를
+열었습니다. 변경은 패키지 네 개에 걸쳐 있습니다. 강좌 페이지의 2분 한도와 "Check again" 버튼, Stripe의 환불 실패
+이벤트를 처리하는 webhook 핸들러, 실패는 반드시 요청 뒤에 와야 한다는 invariant가 붙은 주문의 `refundFailedAt`
+필드, 그리고 강좌 페이지의 "Your refund failed"입니다. 설명은 무엇을 실행했고 무엇을 실행하지 않았는지로
+끝났습니다.
 
-작업은 두 개입니다. 피드백 한 라운드를 보여 주고 이전 라운드들을 접힌 목록으로 보여 주는 컴포넌트, 그리고 제출물이
-가질 수 있는 각 상태에 맞춘 과제 페이지의 변경입니다.
+> Unit tests cover the helper, the webhook, the invariant and the UI (poll limit, check again,
+> failure message). [...] I did not run the e2e tests or try the stand-in control in a browser.
 
-개발자 에이전트는 다음 폴링 때 issue를 가져갔습니다. issue가 열리고 7분 뒤 `openhands/issue-681`에서
-[#683](https://github.com/AlexTo/discava/pull/683)을 올렸습니다. 테스트를 먼저 작성했고, `tasks.md`에서 두 작업에
-체크 표시를 했으며, 설명에는 무엇을 실행했고 무엇을 실행하지 않았는지 적었습니다.
+## 3. CI가 세 번 되돌려 보낸다
 
-## 3. CI가 되돌려 보낸다
+**`ci-fix-1`: 스크린샷이 없고, 테스트가 없는 줄이 있다.** PR은 학생이 보는 것을 바꿨지만 스크린샷을 찍지 않았기
+때문에 [**UI Screenshots**가 실패했습니다](https://github.com/AlexTo/discava/actions/runs/45619342535/job/139224403383).
+**codecov/patch**도 실패했습니다. 새 줄에 테스트가 없었습니다. **Agent CI Status**가 `ci-fix-1`을 붙이고 개발자
+에이전트를 돌려보냈습니다. 에이전트의 [답글](https://github.com/AlexTo/discava/pull/1195#issuecomment-7164484931)을
+보면, 그 과정에서 자신의 첫 시도에 있던 문제도 찾아냈음을 알 수 있습니다.
 
-설명에는 이런 말도 있었습니다.
+> **UI Screenshots:** added a `learner-refund` e2e scenario for a failed refund, with
+> `screenshot(student, 'refund-failed')`. For this the Stripe stand-in has a new
+> `fail-next-refund` control. [...] This replaces the `refund-fail` control from the first push,
+> which the scenario could not use, because the stand-in completed the refund before it could
+> fail.
 
-> No e2e screenshots here: the e2e scenario for this flow is a later phase's task.
+**`ci-fix-2`: 자기 것이 아닌 실패.** 다음 실행은 **Checks (build)**에서, 인프라 패키지의 CDK synth 테스트에서
+실패했습니다. 에이전트는 로그를 읽고
+[이를 위해 코드를 바꾸지 않았습니다](https://github.com/AlexTo/discava/pull/1195#issuecomment-7165688653).
 
-에이전트가 스스로 판단을 내린 것이고, 작업 목록을 그렇게 읽는 것도 무리는 아니었습니다. 하지만 이 저장소에는 규칙이
-있습니다. 사용자에게 보이는 것을 바꾸는 변경은 그 화면의 스크린샷과 함께 나가야 합니다. 리뷰하는 사람이 앱을
-실행하지 않고도 화면을 볼 수 있게 하기 위해서입니다. 이 규칙은 검사로 구현되어 있고, 검사는 사정을 따져 주지
-않습니다. lint, 단위 테스트, build, 그리고 e2e 샤드 여섯 개가 모두 통과했습니다. [**UI Screenshots**는 실패했습니다](https://github.com/AlexTo/discava/actions/runs/44823849814/job/136591295471).
+> the one failure was `@discava/infra` `instructor-api-stack.test.ts` [...], which hit its 30s
+> timeout while the sibling CDK synth tests in that file took 22–31s. This PR doesn't touch infra
+> or anything the stack synthesises [...], so I made no code change for it. The push below
+> re-runs the build.
 
-**Agent CI Status**가 `ci-fix-1`을 붙이고 개발자 에이전트를 같은 PR로 돌려보냈습니다. 에이전트가 수정과 함께 남긴
-[답글](https://github.com/AlexTo/discava/pull/683#issuecomment-7051758312)입니다.
+에이전트는 codecov가 아직 보고하던 부분적으로만 테스트된 줄 하나를 커버했고, 그 push로 build가 다시 실행되어
+통과했습니다. 이해하지 못한 코드를 바꿔서 실패를 "고치는" 에이전트는, 그 실패가 자기 것이 아니라고 이유와 함께
+말하는 에이전트보다 나쁩니다.
 
-> The only finding was the failing `UI Screenshots` check (the PR added no `screenshot(` call). I
-> added an e2e scenario in `assignment.e2e.ts` where a student sees the resubmission request
-> beside the open form, then the returned grade and feedback. It takes a screenshot of each and
-> drives the instructor side through the API. I did not run it locally, so PR CI is its first run.
+**`ci-fix-3`: 자신이 새로 만든 테스트가 틀렸다.** 리뷰 뒤(다음 절) 에이전트는 2분 한도에 대한 e2e 시나리오를
+추가했고, 그것이 [**E2E tests (11/12)**](https://github.com/AlexTo/discava/actions/runs/45685812586/job/139458011986)에서
+실패했습니다. 5분 뒤 [원인](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172674824)입니다.
 
-다음 실행은 초록색이었고, CI는 새 스크린샷 두 장을
-[**E2E screenshots** 댓글](https://github.com/AlexTo/discava/pull/683#issuecomment-7051642662)에 게시했습니다.
+> the new `a pending refund stops polling and offers to check again` scenario failed with a
+> Playwright strict-mode violation, not a product bug. `getByText('Still being processed')` also
+> matched the alert's description ("Your refund is still being processed…"), so it resolved to two
+> elements. The page did reach the timed-out state. I now match the title with `{ exact: true }`.
 
-## 4. 리뷰어 에이전트가 진짜 버그를 찾는다
+에이전트는 e2e 시나리오를 로컬에서 하나도 실행하지 않았고, 매번 그렇게 밝혔습니다. 시나리오가 처음 실행되는 곳은
+PR CI이며, [E2E screenshots 댓글](https://github.com/AlexTo/discava/pull/1195#issuecomment-7163204279)에는 그 실행이
+찍은 두 화면이 나열되어 있습니다. `learner-refund/01-refund-failed.png`와
+`learner-refund/01-refund-still-being-processed.png`입니다.
 
-모든 검사가 끝나자 리뷰어 에이전트가 diff를 spec과 대조해 읽었습니다. 모든 것이 초록색이었지만 코드는 여전히
-틀려 있었습니다. 에이전트의
-[리뷰](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000171162)에서 옮깁니다.
+## 4. 리뷰어 에이전트가 CI가 찾지 못한 것을 찾는다
 
-> **Blocking: after a resubmission, the resubmission request's feedback disappears for the
-> student.** The component always takes the newest round out of the "Earlier feedback" list. It
-> only displays that round when the status is `resubmission_requested` or `returned`. Once the
-> student uploads again, the status goes back to `submitted`, and the request round is hidden.
-> This breaks FR-009, SC-007 and User Story 2's independent test [...] The new e2e step never
-> checks the page in `submitted` after the resubmit, and no unit test covers `submitted` with a
-> non-empty `feedback`, so nothing catches it.
+head의 모든 검사가 끝나자 리뷰어 에이전트가 diff를 issue와 대조해 읽었습니다. 결제 코드는 맞다고 판단했고, 대상을
+좁힌 테스트 361개를 직접 다시 실행했는데도
+[merge를 막았습니다](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6063632214).
+
+> 1. **The branch carries another open PR's change.** Commit `e7cb9bc9`, "fix(student-portal):
+>    surface completions and progress load errors on start route", is the change from open PR
+>    #1188, not part of #1166. [...] Merging this PR would ship #1188's start-route error behaviour
+>    under a payments title, before #1188 is reviewed.
+> 2. **Live evidence is missing for the "Still being processed" / "Check again" state.** [...] The
+>    new timed-out state [...] has only unit tests, and no capture from the running app.
 >
 > 🔄 CHANGES REQUESTED
 
-쉽게 말하면 이렇습니다. 강사가 "please cite your sources"라고 쓰고, 학생이 새 초안을 업로드하면, 강사의 메모가
-학생의 페이지에서 사라집니다. spec은 이전 피드백이 계속 보여야 한다고 말합니다(FR-009). 실패한 테스트는
-없었습니다. 그 상태를 들여다본 테스트가 없었기 때문입니다. 리뷰어는 코드를 spec과 비교해서 이를 찾아냈고, 빠진
-테스트까지 짚어 주었습니다.
+첫 번째 지적은 모든 검사를 빠져나가는 종류의 문제입니다. 여분의 커밋은 컴파일되었고 그 테스트도 통과했습니다.
+다만 여기에 속하지 않았을 뿐입니다. 에이전트의 checkout이 이미 그 커밋을 가진 branch에서 시작되었던 것입니다. 두
+번째 지적은 스크린샷 규칙을 읽는 쪽이 다시 적용한 것입니다. CI는 PR이 스크린샷을 추가했는지 확인하고, 리뷰어는 새
+상태마다 스크린샷이 있는지 확인합니다.
 
-**Agent Review Status**가 `review-fix-1`을 붙였습니다. 3분 뒤 개발자 에이전트가
-[수정](https://github.com/AlexTo/discava/pull/683/commits/0bdf55d485d5a5df692d1e8a41ec601499977c03)을 push하고 [무엇을 했는지 설명했습니다](https://github.com/AlexTo/discava/pull/683#issuecomment-7052122523).
+**Agent Review Status**가 `review-fix-1`을 붙였습니다. 8분 뒤 개발자 에이전트는 자신의 커밋 네 개를 다른 두 개 없이
+`main` 위로 [rebase해 두었고](https://github.com/AlexTo/discava/pull/1195#issuecomment-7172386579), 환불을 보류 상태로
+붙잡아 두는 대체물 control과, Playwright의 가짜 시계를 설치해 125초를 빨리 감는 e2e 시나리오를 추가했습니다. 이것이
+그 뒤 `ci-fix-3`이 바로잡은 시나리오입니다.
 
-> Fixed the blocking finding. The newest round is now shown in full only when the status is
-> `returned` or `resubmission_requested`. In any other state every round goes under "Earlier
-> feedback", so the request stays reachable after a resubmit. I added a unit test for `submitted`
-> with a `resubmission_requested` round, and an e2e assertion right after the resubmit.
-
-리뷰어는 새 head를 읽고, 컴포넌트 테스트를 직접 실행한 뒤(42개 통과)
-"No material findings remain. ✅ APPROVED"로
-[마무리했습니다](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000351532).
+마지막 head에서 리뷰어는 두 지적이 모두 해결되었고 e2e 샤드 12개가 모두 통과했음을
+[확인했으며](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066801083), 스크린샷 두 장을 짚었습니다.
+"No material findings [...] ✅ APPROVED".
 
 ## 5. 사람이 승인한다
 
-09:44에 maintainer가 [승인](https://github.com/AlexTo/discava/pull/683#pullrequestreview-6000379398)하고 merge했습니다. 두 번째 사람 게이트입니다. 그때 maintainer 앞에 놓여
-있던 것은 이렇습니다. 무엇을 실행했고 무엇을 실행하지 않았는지 적은 설명, CI가 올린 스크린샷 두 장, 초록색 검사
-목록, 그리고 버그 하나를 찾아 고친 과정이 남은 리뷰 기록입니다. PR은 커밋 세 개, 파일 여섯 개에 걸친 508줄이었고,
-그중 4분의 3이 테스트였습니다.
+11:33에 maintainer가 [승인](https://github.com/AlexTo/discava/pull/1195#pullrequestreview-6066944326)하고
+merge했습니다. 이 PR에서 사람이 한 일은 그것뿐입니다. 그때 maintainer 앞에 놓여 있던 것은 이렇습니다. 무엇을
+실행했고 무엇을 실행하지 않았는지 적은 설명, CI가 올린 스크린샷 두 장, 초록색 검사 목록, 그리고 각각 이유가 붙은
+네 번의 수정 기록입니다.
 
 ## 6. merge가 배포되고, 테스트 issue가 열린다
 
-Discava에서는 `main`이 스스로 개발 stage에 배포됩니다. 그 [배포](https://github.com/AlexTo/discava/actions/runs/44833259729)는 10:09에 끝났습니다. 1분 뒤
-**Post-merge Verify**가 [#712](https://github.com/AlexTo/discava/issues/712), `test(post-merge): verify #683 student sees
-the grade and feedback (student portal)`을 열었습니다. issue는 무엇을 테스트할지만 말합니다.
+Discava에서는 `main`이 스스로 개발 stage에 배포됩니다. 이 merge를 담은 [배포](https://github.com/AlexTo/discava/actions/runs/45734764281)는
+12:28에 끝났고, 1분 뒤 **Post-merge Verify**가 [#1240](https://github.com/AlexTo/discava/issues/1240)을 열었습니다.
+issue에는 PR이 바꾼 배포 파일 12개와, 어떤 종류의 테스트를 할지가 적혀 있습니다.
 
 > Kind: **UI change**. It changes a portal: sign in as the user the change is for and click
 > through the flow with Playwright, then call the APIs behind it and check the stored data.
 
 ## 7. 테스터 에이전트가 배포된 stage를 테스트한다
 
-테스터 에이전트는 테스트 스위트를 다시 돌리지 않습니다. 배포된 제품을 사람이 쓰듯이 써 보고, 그런 다음 무엇이
-저장되었는지 확인합니다. 에이전트의
-[보고서](https://github.com/AlexTo/discava/issues/712#issuecomment-7054937096)에는 모든 단계가 나열되어 있습니다.
+테스터 에이전트는 테스트 스위트를 다시 돌리지 않고, Stripe 대체물도 쓰지 않습니다. 배포된 제품을 sandbox 모드의
+실제 Stripe와 함께, 사람이 쓰듯이 써 봅니다. 에이전트의
+[보고서](https://github.com/AlexTo/discava/issues/1240#issuecomment-7180418815)에는 모든 단계가 나열되어 있습니다.
 
-1. 테스트 강사로서 API를 통해, 10점짜리 업로드 과제 `pmt-683-essay` 하나가 있는 강좌를 만들고 공개했습니다.
-2. 테스트 학생으로서 실제 브라우저에서 수강 등록을 하고, 호스팅 로그인 페이지에서 로그인하고, 첫 번째 초안을
-   업로드했습니다.
-3. 강사가 재제출을 요청했습니다. 학생은 페이지를 새로 고쳐 요청을 확인하고 두 번째 초안을 업로드했습니다.
-4. 강사가 과제를 7점으로 돌려준 다음, 점수를 8.5로 정정했습니다. 학생은 그때마다 페이지를 새로 고쳤습니다.
-5. 단계마다 학생용 API를 호출하고, DynamoDB의 레코드와 S3의 파일을 읽고, 거부되어야 하는 호출을 시도했으며,
-   마지막에는 stage에 있는 Lambda 함수 46개 전체의 로그에서 오류를 찾아봤습니다.
+1. 테스트 강사로서 API를 통해 $19.99짜리 강좌 두 개를 만들었습니다.
+2. 테스트 학생으로서 실제 브라우저에서 로그인하고, Stripe Checkout에서 각각을 구매했습니다. 이때 "refund fails"와
+   "refund pending"용 Stripe 테스트 카드를 썼습니다.
+3. 강좌 페이지에서 각각에 대해 환불을 요청했습니다.
+4. 단계마다 API를 호출하고, DynamoDB의 주문과 수강 등록을 읽고, webhook과 API Lambda의 로그를 읽었습니다.
 
-아래 스크린샷은 테스터가 직접 찍은 것으로, 단계마다 저장되었으며 여기서는 과제 패널만 보이도록 잘랐습니다.
+아래 스크린샷은 테스터가 직접 찍은 것으로, 여기서는 중요한 부분만 보이도록 잘랐습니다.
 
-열린 양식 옆에 표시된 재제출 요청
-(`04-resubmission-requested-with-open-form.png`):
+환불이 실패하는 카드로 첫 번째 강좌를 구매합니다 (`02-stripe-checkout-refund-fails-card.png`):
 
 <p>
-  <img alt="학생 포털의 pmt-683-essay 과제. 제출된 첫 번째 초안 아래에 Your instructor asked you to resubmit이라는 호박색 알림이 please cite your sources라는 피드백과 함께 표시되고, 그 아래에 Choose file 버튼과 Submit 버튼이 있습니다" src="/agentic-sdlc/screenshots/post-merge-test-683/04-resubmission-requested-with-open-form.png" width="620" />
+  <img alt="sandbox 모드의 Stripe Checkout. US$19.99인 pmt-1195-refund-course에 테스트 카드 4000 0000 0000 5126이 입력되어 있고 Pay 버튼이 있습니다" src="/agentic-sdlc/screenshots/post-merge-test-1195/02-stripe-checkout-refund-fails-card.png" width="620" />
 </p>
 
-두 번째 초안을 업로드한 뒤 (`07-earlier-feedback-expanded-while-waiting.png`):
+학생이 환불을 요청하고 1분 뒤 (`07-refund-pending-after-60s.png`):
 
 <p>
-  <img alt="같은 과제. Submitted, Version 2와 두 번째 초안이 표시됩니다. 그 아래에 Earlier feedback (1)이 펼쳐져 있고 Resubmission requested, Version 1, please cite your sources가 나열되어 있습니다" src="/agentic-sdlc/screenshots/post-merge-test-683/07-earlier-feedback-expanded-while-waiting.png" width="620" />
+  <img alt="pmt-1195-refund-course의 강좌 페이지. Buy now 버튼 위에 You're no longer enrolled, Your enrolment has ended. Refunded on 26 November 2026이라는 알림이 있습니다" src="/agentic-sdlc/screenshots/post-merge-test-1195/07-refund-pending-after-60s.png" width="620" />
 </p>
 
-리뷰어가 지적한 바로 그 상태입니다. 수정 전이었다면 이 화면에서 요청이 사라졌을 것입니다. 여기 배포된 stage에서는
-"Earlier feedback (1)" 아래에 남아 있습니다.
+이것은 잘못된 결말입니다. 이 카드의 환불은 실패하지만, Stripe가 처음에는 성공으로 보고하기 때문에 주문은
+`refunded`로 표시되고 약 3초 만에 수강 등록이 끝났습니다. 실패는 그 뒤에 일어났고, 그에 대해서는 아무것도 도착하지 않았습니다.
+테스터는 그 이유를 찾아 나섰고, 서로 다른 원인 두 가지를 찾아냈습니다(다음 절).
 
-점수를 돌려주고 정정한 뒤
-(`11-amended-returned-earlier-feedback-expanded.png`):
+이 stage에서는 실제 Stripe로 환불을 보류 상태로 붙잡아 두거나 실패한 환불을 기록할 수 없었습니다. 그래서 테스터는
+배포된 번들의 새 화면을 확인하려고 브라우저에서 `payment.myOrder` 응답을 바꿔 쓰고, 실제 API 응답과 저장된 데이터는
+따로 확인했습니다. 한도의 시간도 쟀습니다. "Still being processed"는 보류 중인 환불이 표시되고 **120.2 s** 뒤에
+나타났고, 그다음 20초 동안 요청은 없었습니다 (`13-still-being-processed-after-2-minutes.png`):
 
 <p>
-  <img alt="같은 과제. Returned 8.5 / 10이 갱신된 시각, 그리고 regraded after rechecking the rubric이라는 피드백과 함께 표시되고, This submission has been returned and can't be changed라는 문구가 보이며, Earlier feedback (2)에는 버전 2의 Returned 7 / 10과 버전 1의 Resubmission requested가 나열되어 있습니다" src="/agentic-sdlc/screenshots/post-merge-test-683/11-amended-returned-earlier-feedback-expanded.png" width="620" />
+  <img alt="수강 중인 pmt-1195-refund-course-2의 강좌 페이지. Refund requested on 26 November 2026 아래에 Still being processed, Your refund is still being processed. This can take a while라는 알림이 있고, 그 아래에 Check again 버튼이 있습니다" src="/agentic-sdlc/screenshots/post-merge-test-1195/13-still-being-processed-after-2-minutes.png" width="620" />
 </p>
 
-보고서에는 표가 세 개 있습니다. 화면에 대한 확인 항목 13개, API에 대한 14개, 저장된 데이터에 대한 5개입니다. 그중
-사람이 손으로 해 볼 가능성이 가장 낮은 행 몇 개를 옮깁니다.
+그리고 응답에 실패한 환불이 있으면 (`15-refund-failed-message.png`), 경고가 표시되고, "Request a refund" 버튼이
+사라지고, 폴링이 멈춥니다.
+
+<p>
+  <img alt="같은 강좌 페이지에 빨간 경고: Your refund failed. The refund you requested on 26 November 2026 could not be completed, and you have not been refunded. Your access continues. Please contact support to sort out your refund" src="/agentic-sdlc/screenshots/post-merge-test-1195/15-refund-failed-message.png" width="620" />
+</p>
+
+보고서에는 확인 항목이 22개 있습니다. 17개가 통과했고, 그중에는 다음이 있습니다.
 
 | 확인 항목 | 결과 |
 | --- | --- |
-| 과제를 돌려받은 뒤 학생이 다시 업로드한다 | 거부됨: 412, "This submission has been returned and can't be changed" |
-| 수강 등록하지 않은 다른 사용자가 제출물을 읽는다 | 거부됨: 403 |
-| 학생이 강사용 채점 API를 호출한다 | 거부됨: 403 |
-| 강사가 10점짜리 과제에 11점을 준다 | 거부됨: 400, "Points must be between 0 and 10" |
-| 강사의 반환 요청이 두 번 전송된다 | 거부됨: 409, 두 번째 알림은 발송되지 않음 |
-| 저장된 피드백 레코드에 피드백을 준 강사가 기록되어 있다 | 기록되어 있으며, 학생용 API는 그 필드를 반환하지 않음 |
+| 2분 뒤 폴링이 멈춘다 | 120.2 s, 그다음 20 s 동안 요청 0개 |
+| "Check again"이 폴링을 다시 시작한다 | 그다음 8 s 동안 요청 4개, 알림은 사라짐 |
+| 토큰 없는 `payment.myOrder` | 거부됨: 401 |
+| 구매하지 않은 사용자로서의 `payment.myOrder` | 200과 `null`: 다른 사람의 주문은 나오지 않음 |
+| 이미 환불된 주문에 대한 `payment.requestRefund` | 거부됨: 412, "No purchase to refund" |
 
-## 8. 테스터가 issue를 닫는다
+## 8. 테스터가 issue를 열어 둔다
 
-확인 항목 32개가 모두 통과했으므로, 보고서는 판정으로 끝났고 테스터는 issue를 닫았습니다.
+확인 항목 세 개가 실패했고, 그중 두 개는 PR이 예상하지 않은 상태로 끝났습니다.
+[판정](https://github.com/AlexTo/discava/issues/1240#issuecomment-7180418815)입니다.
 
-> **PASS.** The student portal shows the grade and feedback as #681 asks
+> **Verdict: the student-facing UI and `payment.myOrder` work as the PR describes. The
+> failed-refund path does not work end to end on the deployed stage.**
 
-테스터는 이 PR에서 비롯되지 않은 문제 두 가지도 함께 적어 두었습니다. 누구도 이를 회귀로 오해하지 않게 하기
-위해서입니다.
+테스터가 찾은 원인은 두 가지이며, 둘 다 PR의 테스트가 닿을 수 있는 범위 밖에 있었습니다.
 
-### 테스터가 닫지 않을 때
+1. **stage의 Stripe webhook이 새 이벤트를 받지 못한다.** PR은 `refund.failed`와 `charge.refund.updated`를 이벤트
+   목록에 추가했지만, 그 목록은 관리자가 처음 연결할 때만 Stripe로 보내집니다. stage는 6일 전에 연결되었습니다.
+   테스터는 그 30분 동안 webhook 호출이 정확히 네 번이었고, 그중 실패에 대한 것은 하나도 없었음을 세었습니다.
+2. **실제 Stripe에서는 실패한 환불이 주문이 이미 `refunded`가 된 뒤에 도착한다.** Stripe는 환불이 만들어지자마자,
+   보류 중이거나 실패할 환불이라도 `charge.refunded`를 보냅니다. `refund.failed`가 도착할 즈음에는 새 핸들러의
+   조건(주문이 아직 `paid`일 것)이 더 이상 성립하지 않아, 핸들러는 조용히 아무것도 하지 않습니다.
 
-통과만이 유일한 결과는 아닙니다. 이 PR 바로 앞의 pull request인
-[#667](https://github.com/AlexTo/discava/pull/667)은 채점 API를 추가했는데, 그 테스트 issue
-[#694](https://github.com/AlexTo/discava/issues/694)는 첫 실행 뒤에도 열려 있었습니다. 확인 항목 29개가 통과했고
-하나가 실패했습니다.
+   > The student has lost access, hasn't been refunded, and isn't told.
 
-> **Verdict: the new grading flow works end to end for submissions made after this deploy. It
-> does not work for submissions stored before it.** Those have no `reviewRevision` attribute, so
-> an instructor can't open or grade them.
+   PR의 e2e 시나리오에 있는 대체물은 환불을 실패시키기 전에 확정하는 일이 없기 때문에, CI는 이 일이 잘 풀리는
+   경우만 보여 주었습니다.
 
-단위 테스트도, e2e 테스트도, 리뷰도 이를 찾아낼 수 없었습니다. 모두 빈 데이터베이스에서 시작하는데, 이 버그는 오래된
-데이터가 있는 곳에만 존재하기 때문입니다. stage에는 그런 제출물이 세 개 있었습니다.
+테스터는 수정이 작고 분명할 때 수정 PR을 열 수 있습니다. 열지 않은 이유를 설명했습니다.
 
-테스터는 수정이 작고 분명할 때 수정 PR을 열 수 있습니다. 이번에는 왜 열지 않았는지 [설명했습니다](https://github.com/AlexTo/discava/issues/694#issuecomment-7052102048).
+> Fixing it means deciding how a refund failure after `charge.refunded` should restore the order
+> and enrolment, or not treating a `pending` refund as refunded. That goes beyond a small fix, so
+> I'm reporting it rather than opening a PR.
 
-> That is a choice between a migration and tolerant reads, and it changes concurrency conditions
-> in two packages, so I haven't opened a fix PR.
-
-그래서 테스터는 멈추고, 두 선택지를 모두 적어 둔 채 결정을 사람에게 넘겼습니다. maintainer는 stage의 레코드 세 개를
-backfill했습니다. 테스터는 [확인을 다시 실행해](https://github.com/AlexTo/discava/issues/694#issuecomment-7054905761) 오래된 제출물에 이제 그 필드가 있음을
-확인하고 issue를 닫았습니다. 오래된 제출물이 있는 다른 환경에도 같은 backfill이 필요하다는 경고도 함께 남겼습니다.
-같은 보고서에 있던 사소한 지적 하나(아무것도 돌려주지 않았는데 "returned"라고 말하는 거부 메시지)는 13줄짜리 수정
-[#708](https://github.com/AlexTo/discava/pull/708)이 되었습니다.
+stage의 Stripe 연결도 건드리지 않았습니다. 다시 저장하면 첫 번째 원인은 고쳐지는데도 말입니다.
+"I didn't do that, because it changes stage configuration." 그래서 issue는 열린 채로 남아 있고, 두 문제와 그 재현
+방법, 그리고 사람이 내려야 할 선택지가 적혀 있습니다. 테스터는 stage에 남겨 둔 테스트 데이터와, 이미 다른 곳에서
+추적 중인 오류 하나도 함께 적어 두었습니다. 누구도 이를 회귀로 오해하지 않게 하기 위해서입니다.
 
 <Aside type="tip">
 [merge 후 검증](../../discava/post-merge-verify/)은 또 다른 테스트 issue를 따라갑니다. 거기서는 테스터가 실패를
@@ -226,17 +251,17 @@ backfill했습니다. 테스터는 [확인을 다시 실행해](https://github.c
 
 | 게이트 | 잡아낸 것 | 앞선 게이트가 잡지 못한 이유 |
 | --- | --- | --- |
-| CI | 스크린샷이 없는 UI 변경 | 개발자 에이전트가 스크린샷은 뒤의 phase에 속한다고 판단했습니다 |
-| 리뷰어 에이전트 | 재제출 후 사라지는 피드백 | 그 상태를 다루는 테스트가 없어서 CI는 초록색이었습니다 |
-| 테스터 에이전트 (#667에서) | 새 코드가 읽지 못하는 오래된 레코드 | 테스트와 리뷰는 stage에 이미 있는 데이터를 볼 일이 없습니다 |
+| CI | 스크린샷이 없는 UI 변경, 테스트가 없는 줄, 에이전트가 직접 만든 e2e 테스트의 깨진 locator | 개발자 에이전트가 e2e 스위트를 실행하지 않았습니다 |
+| 리뷰어 에이전트 | branch에 함께 실려 온 다른 PR의 커밋, 스크린샷이 없는 새 화면 상태 | 여분의 커밋은 모든 검사를 통과했고, CI는 스크린샷이 하나라도 추가되었는지만 확인합니다 |
+| 테스터 에이전트 | 새 이벤트를 받지 못하는 webhook 엔드포인트, 실패하는 환불을 처음에는 환불된 것으로 보고하는 실제 Stripe | 대체물은 코드가 기대하는 대로 동작하고, stage의 설정을 보는 테스트는 없습니다 |
 
-셋 중 어느 것도 혼자서는 대단하지 않습니다. 각자 다른 둘이 볼 수 없는 것을 봅니다. CI는 규칙을, 리뷰어는 spec을,
-테스터는 실행 중인 제품을 봅니다.
+셋 중 어느 것도 혼자서는 대단하지 않습니다. 각자 다른 둘이 볼 수 없는 것을 봅니다. CI는 규칙을, 리뷰어는 issue와
+branch를, 테스터는 실행 중인 제품과 그 뒤에 있는 실제 서비스를 봅니다.
 
 ## 사람이 한 일
 
-1. spec이 작성되는 동안 질문 다섯 개에 답하고, spec PR을 리뷰하고 merge했습니다.
-2. PR #683과 그 스크린샷을 읽고, 승인하고 merge했습니다.
+1. PR #1195와 그 스크린샷을 읽고, 승인하고 merge했습니다.
+2. 다음: 테스터가 적어 둔 선택지 중에서, `charge.refunded` 뒤의 환불 실패를 어떻게 처리할지 정합니다.
 
 누구도 프롬프트를 작성하거나, 오류 로그를 붙여 넣거나, stage를 손으로 클릭해 보지 않았습니다.
 
